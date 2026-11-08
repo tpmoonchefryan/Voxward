@@ -653,7 +653,7 @@ SC 卡片保留原文与译文的明确区分，AI 生成内容不伪装成观�
 
 主赛道目标为 Frankenstein：把官方直播消息、频道评分、AI 审核与精翻、人工协作及直播展示整合成完整工作流。万圣节视觉用于演示与舞台表达，不改变审核或数据责任。
 
-Kiro CLI／Crew 是 MVP 的实际 AI 与协调选型，同时保留 Kiro 开发过程和 Specs 证据。`Best Kiro Crew App`、`Blog Prize`、`Social Blitz` 为目标附加奖项；`Startup Project` 需满足官方对创始人及所需材料的条件，不能仅因个人参赛就认定符合。[Kiroween 2026 规则](https://kiroween.devpost.com/rules)
+Kiro CLI／Crew 是 MVP 的实际 AI 与协调选型，同时保留 Kiro 开发过程和 Specs 证据。本项目只参加 Frankenstein 主赛道，不申请附加奖项（含 Best Kiro Crew App）。[Kiroween 2026 规则](https://kiroween.devpost.com/rules)
 
 截至本版核对的官方截止时间为 **2026-12-04 14:00 PST**，即 **2026-12-04 22:00 UTC／北京时间 2026-12-05 06:00**。提交前重新核对页面，计划保留提前完成时间。[赛事页面](https://kiroween.devpost.com/)
 
@@ -671,7 +671,7 @@ Kiro CLI／Crew 是 MVP 的实际 AI 与协调选型，同时保留 Kiro 开发�
 
 ### 19.3 提交清单
 
-按官方规则准备可运行的演示地址、公开 GitHub 仓库与开源许可证、保留有效 `/.kiro` 材料、少于三分钟的公开视频及项目说明。附加 Crew 奖项准备单独的公开应用仓库，GitHub 账户与整体提交一致，并附功能说明；博客注明 Kiroween 2026，社交帖以 `#KiroweenHackathon26` 开头。[提交规则](https://kiroween.devpost.com/rules)、[官方 FAQ](https://kiroween.devpost.com/details/faqs)
+按官方规则准备可运行的演示地址、公开 GitHub 仓库与开源许可证、保留有效 `/.kiro` 材料、少于三分钟的公开视频及项目说明。[提交规则](https://kiroween.devpost.com/rules)、[官方 FAQ](https://kiroween.devpost.com/details/faqs)
 
 提交材料提供英文版本或英文翻译，说明 Kiro 的实际使用方式，并保持评委所需的访问能力至评审结束。作品需在本届规定期间新建，纳入的既有组件需披露；模型与工具选用遵守所在地区的可用范围。[官方规则](https://kiroween.devpost.com/rules)
 
@@ -689,7 +689,6 @@ Kiro CLI／Crew 是 MVP 的实际 AI 与协调选型，同时保留 Kiro 开发�
 | OneComme、VTS 与 blivechat 的具体版本兼容性 | 尚无本项目端到端验证 | 实施时记录实际版本、拓扑、权限和结果，更新接入页面 |
 | Kiro／Crew 清理与提供方留存 | 文档能力已核对，本项目实现尚未验证 | 适配器实现后实测清理；部署时展示所选服务实际条款 |
 | 模型推荐、reasoning、延迟和容量 | 尚无本项目基准结果 | 以第 18 节测量为依据，不给出虚构性能保证 |
-| 附加奖项资格与发布 | 仍需按实际材料核对 | 参赛者按官方规则确认，保留提交结果 |
 
 这些事项不改变已确定的 Middleware 定位、频道评分核心、多房管浏览器协作和远端自托管方向。其状态应体现在实施与部署文档中，不能被“完整 proposal”这一文档状态掩盖。
 
@@ -722,6 +721,7 @@ Kiro CLI／Crew 是 MVP 的实际 AI 与协调选型，同时保留 Kiro 开发�
 | 不开放基于 API 的日志检索；不声称昵称天然匿名或提供方零留存 | 第 8、11、12 节 |
 | 协助 YouTube 用途确认；当前无配额扩展／重新审核需求，申请未提交 | 第 3、15 节 |
 | 保留 SC 精翻、后台复盘、候选词确认及万圣节 OBS 演示 | 第 5、8、14、19 节 |
+| 只参加 Frankenstein 主赛道，不申请附加奖项（含 Best Kiro Crew App） | 第 19 节 |
 | 完整提案包含具体建议、原因、投入回报、验收与开发计划 | 第 17–20 节 |
 
 本文替代旧稿中与上述决策冲突的设计，包括白名单完全绕过检查、语音独立裁决、浏览器默认回环注入、固定子代理数量、无限累积队列、全局无限保序等待及未经实测的性能承诺。后续 Specs 以本版的产品决策为基础，外部许可与实测状态按证据更新。
