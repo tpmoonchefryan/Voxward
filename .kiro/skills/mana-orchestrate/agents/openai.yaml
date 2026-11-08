@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mana Orchestrate"
+  short_description: "Einzbern memory and readable coding guidance"
+  default_prompt: "Use $mana-orchestrate to recall project context and apply the shared coding guide, or to install and maintain Einzbern."

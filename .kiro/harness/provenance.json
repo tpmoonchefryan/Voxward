@@ -1,0 +1,225 @@
+{
+  "schemaVersion": "voxward.kiro-harness-source.v1",
+  "pathBase": "Voxward project root; file entries relative to .kiro",
+  "scope": "Voxward project-local Owner exception",
+  "sourceRepository": "tpmoonchefryan/einzbern",
+  "sourceCommit": "aff02aa48076da6910c1a971a77583d42ce1a84e",
+  "renderVersion": "4.4.0",
+  "releaseStatus": "unreleased INIT-085 candidate project copy",
+  "sourceAgentsSha256": "f69f41487e98eb789e55d506ad81ba29c64c0628afaa6d75896817319097ab75",
+  "sourceSections": {
+    "navigation": {
+      "revision": 2,
+      "declaredDigest": "3adee046eee03faf0e1491cd20e00c89c25990dae8ef13befec61c5883944c95",
+      "bodySha256": "9b23468ba3ad32a90707e513cd79aa2ec7b18b32872583973d1d498fbbf51ec8"
+    },
+    "rule:design-authority": {
+      "revision": 5,
+      "declaredDigest": "14ad22ed083ef6e75898b48639ba286c8597ead3d53eca17835bd631bdacc300",
+      "bodySha256": "38cc5c8735e9393908e4b0213d0951dc1214dc29a06869aac31efb7496cbde1d"
+    },
+    "rule:autonomy": {
+      "revision": 3,
+      "declaredDigest": "7a95dbceb37386b24def5e2d759273fcc8beb574a0b80c10e041b0a66bab5253",
+      "bodySha256": "f9a1e0e30df50200c613a7a961e387cfcd71cd1aa262a350bc28d85354ec335a"
+    },
+    "rule:batch": {
+      "revision": 7,
+      "declaredDigest": "e4e5b8fb26e14d2917e5943e500d5f3e25695d6c0ed3a3df23f7b8a4c24a7b09",
+      "bodySha256": "5a83fda5c8f2cce3fe40ed6809ae97ba297df8052d76ba563c6f2d4611524b18"
+    },
+    "rule:unattended-commands": {
+      "revision": 4,
+      "declaredDigest": "623b47fe9e135040b8b1c1c58d6ccd2d763866a8597ec436a974ea6fd6e22dc4",
+      "bodySha256": "70f2c3d70911cf7f62b43bc1440f2ed7aa03fd4cf75e063c5645a2b0a85ca5e8"
+    },
+    "rule:silent-reporting": {
+      "revision": 5,
+      "declaredDigest": "2876baf562b1d287bc96b25ce3c5aff64f11b4658d2ed58438d7de281cfcc37c",
+      "bodySha256": "e8044bdbb740e91f4a92ef4dcc79fb227d5ed5bfffff7723bdb2543762d5066d"
+    },
+    "rule:residue-cleanup": {
+      "revision": 3,
+      "declaredDigest": "81d5d2dd2999b062c5ee3ad0178fe1ab745cebe1f33489f3de4367830399ca07",
+      "bodySha256": "9e920f2097d3d16cd341df9bb2b8982ab5328bc2069539317d1b4c75f60ca409"
+    },
+    "rule:goal-writing": {
+      "revision": 2,
+      "declaredDigest": "11985a22443ec591cd0e2a431c28fd82e3ab6db172c9de4db1c4431c9373fae6",
+      "bodySha256": "50ec542cfc34ea0f3eb1f81aeaa1097db4a3b9de832a985f2bf27ca7f8cfc685"
+    }
+  },
+  "localChanges": [
+    "Split AGENTS into nine always Steering files",
+    "Rebase on-demand document links to project-local references",
+    "Add project overlay to generated Mana Skill",
+    "Pin the Kiro-aware hook runtime in project while preserving device registry resolution",
+    "Set the project prompt-recall timeout to 60 seconds after observing a 41-second real shared-library recall",
+    "Repair project proposal navigation after the proposal moved to docs/proposal/y3_project_proposal.md"
+  ],
+  "ownerDecision": "minutes:b1b4b07baf65e493a75c31c8#D1",
+  "modelRequestsForInstallation": 0,
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "f33162df56e39f8699f7b71020df5198db8ed2e55604266a5dc204ba818470b1",
+      "bytes": 2971
+    },
+    {
+      "path": "harness/LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357
+    },
+    {
+      "path": "harness/NOTICE",
+      "sha256": "045fa532821b114e93e7c1c1ba41a80f642d7a4d57967e6d51e8d3c53a7a98dd",
+      "bytes": 404
+    },
+    {
+      "path": "harness/THIRD_PARTY_NOTICES.txt",
+      "sha256": "4ed9fbf62ca58c4588755446b7563e411645d156b6a2542181641e4716d64af1",
+      "bytes": 1557
+    },
+    {
+      "path": "harness/engine-hook.mjs",
+      "sha256": "1be8a00b6eaa9318156f3b58347505f9bcafb9b3b63e6e15d343643e18a61af9",
+      "bytes": 1834382
+    },
+    {
+      "path": "harness/hook.mjs",
+      "sha256": "6f5e8a7164527fcc1e18ddaaa0c65204ae19286a4690a8b2ae0074f85bd38463",
+      "bytes": 546
+    },
+    {
+      "path": "harness/launcher.mjs",
+      "sha256": "aa0b51e7c44d05f8ee534f37b12f08844bcec58d46b489c4c8dcc24d1062ee14",
+      "bytes": 22144
+    },
+    {
+      "path": "hooks/einzbern.json",
+      "sha256": "ee94287ee7fb1774266e4067ef6ce33fe7178593110fea3af5d4399f3f63aeec",
+      "bytes": 567
+    },
+    {
+      "path": "references/owner-output-contract.md",
+      "sha256": "4472453078c83bbe93f5bed1b341fe7a1e5ed7955458af0fd74d2ea01d3506f5",
+      "bytes": 1930
+    },
+    {
+      "path": "references/project-context.md",
+      "sha256": "ec8e9663f01d815f4c21a052613c9e40abd00f36945bc2f60cbed9953ee98bde",
+      "bytes": 1252
+    },
+    {
+      "path": "skills/mana-orchestrate/SKILL.md",
+      "sha256": "f410b9e04e7c7655dd3a14194f23f4ac72d09c6b7a66869d4fded569a6c2ce82",
+      "bytes": 7152
+    },
+    {
+      "path": "skills/mana-orchestrate/agents/openai.yaml",
+      "sha256": "5921286d1e1ccbd994d53e1276e7085bd842c57bfed377d0163425823af13f65",
+      "bytes": 254
+    },
+    {
+      "path": "skills/mana-orchestrate/references/doctor.md",
+      "sha256": "e117e7a7dc934dbcf4778b40fdb0bc673a539ff963d3f8a0cddaea85e49aad0c",
+      "bytes": 15534
+    },
+    {
+      "path": "skills/mana-orchestrate/references/install.md",
+      "sha256": "0cc4640cb7263ac2d06f17bb0a44ee2fb2d222e7112212c0b03f5637042df005",
+      "bytes": 32484
+    },
+    {
+      "path": "skills/mana-orchestrate/references/kiro-specs.md",
+      "sha256": "29a3d56331d38e4ad95a43391842cf98d7dcfc135c6db45f89c397f4cbd208bb",
+      "bytes": 8955
+    },
+    {
+      "path": "skills/mana-orchestrate/references/migrate.md",
+      "sha256": "acb9cee96738c8d47cd03a9766269a288b5ab6d1004c32acf7a2335dfa35c87d",
+      "bytes": 25037
+    },
+    {
+      "path": "skills/mana-orchestrate/references/restore.md",
+      "sha256": "bd95b271b0775631cd5f8adac41716ab259b141c04bad28dc2fdb03bed740936",
+      "bytes": 7629
+    },
+    {
+      "path": "skills/mana-orchestrate/references/uninstall.md",
+      "sha256": "2f5e0ddcc2def50cb70fe6800548f38d23e06af04eb1bac959c12fe20c8255f8",
+      "bytes": 4758
+    },
+    {
+      "path": "skills/mana-orchestrate/references/update.md",
+      "sha256": "47a173054768032524a32b4249ce17705bfe6ea3915e17d1a9818aea0e0734cc",
+      "bytes": 13069
+    },
+    {
+      "path": "skills/mana-orchestrate/scripts/install.mjs",
+      "sha256": "86d17f9350a597d94bf000b34e27ec483468ab796b888bfcfeb3e653abe8d36f",
+      "bytes": 18155
+    },
+    {
+      "path": "skills/mana-orchestrate/scripts/kiro-run.mjs",
+      "sha256": "9fd5c8c750aa771e05f40c94d2b09ad3b3522225db36a6b2bbd419aa62797428",
+      "bytes": 11340
+    },
+    {
+      "path": "skills/mana-orchestrate/scripts/kiro-specs.mjs",
+      "sha256": "59ee6d70f7e9359115bc6af20fdac4876da68cb4bb2f492342295c9a0e39ee45",
+      "bytes": 37109
+    },
+    {
+      "path": "skills/mana-orchestrate/scripts/trash-empty.mjs",
+      "sha256": "8ed5912fa1fa13d2c52afe8829168f599887601e69bc66cdae7daefbbbc119c3",
+      "bytes": 9297
+    },
+    {
+      "path": "steering/00-harness.md",
+      "sha256": "77087b98025b74023dab082cf75028c26ddb53c3844c3eff58cde6fb3081d9ca",
+      "bytes": 990
+    },
+    {
+      "path": "steering/10-governance.md",
+      "sha256": "18aeb4cde8807fd0f7aeef72a44bf762dfc20fa904950e161c64f039182ab4ae",
+      "bytes": 1643
+    },
+    {
+      "path": "steering/20-design-authority.md",
+      "sha256": "d365f2c5bb953628a49beed798d987637b251226cea5412072134bad09582598",
+      "bytes": 867
+    },
+    {
+      "path": "steering/30-autonomy.md",
+      "sha256": "27ac00aed5bc775be26fce8d8dd95c3bc25234f3405328176db05d50f5a53553",
+      "bytes": 3136
+    },
+    {
+      "path": "steering/40-batch.md",
+      "sha256": "9a1322b9b8e1c4063da20e8b220aa820f5f7dc56d1b0f95d80b0625760e0b85e",
+      "bytes": 987
+    },
+    {
+      "path": "steering/50-unattended-commands.md",
+      "sha256": "afa05e178e4b6ee136535531391c5aa799d5aea9794a19e9c866ea1863b8b829",
+      "bytes": 485
+    },
+    {
+      "path": "steering/60-silent-reporting.md",
+      "sha256": "832b28d0f3bb5ebb7b03a501746a2dd0d07ba2e5de8f7d9ffc7fbe18add369d6",
+      "bytes": 874
+    },
+    {
+      "path": "steering/70-residue-cleanup.md",
+      "sha256": "2213690d7b597858d4a4ffedb36a99cb435cc838de3e6f75d46c831d1f9b0fc9",
+      "bytes": 772
+    },
+    {
+      "path": "steering/80-goal-writing.md",
+      "sha256": "539bbbadc2e2593e76d3ea96f614bedbbe34034f021beced36f91aa7a0f1d7bb",
+      "bytes": 674
+    }
+  ],
+  "installationRecord": "VOXWARD-MIN-20261108-PROJECT-KIRO-HARNESS D1-D4"
+}

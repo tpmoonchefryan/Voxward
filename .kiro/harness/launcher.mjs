@@ -1,0 +1,507 @@
+#!/usr/bin/env node
+import { constants as bufferConstants } from "node:buffer";
+// SPDX-License-Identifier: Apache-2.0
+// TCRN-CROSS-STORY-477 R1, R2, R5 (MIN-227 D4, D5, D23): the stable hook launcher. The installer
+// places this file as engine/hook.mjs in the device directory, beside engine/einzbern.mjs
+// (scripts/einzbern-launcher.mjs), and the one hook a host runs for Einzbern names it
+// (packages/core/src/host-hooks.ts):
+//
+//   node "<device directory>/engine/hook.mjs" user-prompt-submit
+//
+// The supported Node.js line is checked before stdin or an engine version is read: an old Node can
+// silently skip a hook entry whose syntax it cannot load. Most prompts are typed where no library
+// is, so the next question is whether this device's registry holds the prompt's directory. The
+// launcher reads the registry and, at most, one repository's Git configuration; it starts no
+// process (no git: problem list #6) and opens no library, and a directory no entry matches ends
+// the hook with exit code 0 and nothing printed (R2). Such a directory inside a known container (a
+// library, an old-layout workspace or an old platform container) is noted, so a hook that answers
+// nothing can be told from one that never ran (TCRN-CROSS-INIT-053 R47-06): one line is appended
+// to log/hook.ndjson in the device directory, naming why, and a note that cannot be written is
+// dropped. Finding the container stats marker paths only; no library file is opened or read.
+// The match is a fast subset of the engine's resolveLibrary (packages/core/src/registry.ts): the
+// nearest registered project the directory lies in, otherwise
+// the remote of the Git working tree the directory is in (origin, else the first remote by name),
+// in the registry's one spelling (normalizeGitRemote, kept identical). A match reads
+// engine/current and imports that version's hook entry (scripts/einzbern-hook.mjs), whose
+// runHookEvent confirms the library through resolveLibrary and decides what is printed (D5).
+//
+// It imports nothing but node: built-ins, so no engine update changes it, and a host file naming it
+// stays current across updates and rollbacks. Within the supported Node.js line, every failure
+// ends the hook with exit code 0 and one line on stderr: a hook never blocks a session. A
+// below-floor runtime ends quietly before engine loading. The same file runs on macOS, Linux and
+// Windows (R5): paths are the platform's own, and the engine's entry is imported through the file URL
+// pathToFileURL builds, never a string joined by hand.
+
+import { appendFileSync, mkdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, isAbsolute, join, posix, resolve, sep, win32 } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+/** The most the launcher reads from stdin; a larger hook input is refused. */
+export const HOOK_STDIN_MAX_BYTES = bufferConstants.MAX_LENGTH;
+const DEVICE_DIRECTORY = ".einzbern";
+const REGISTRY_FILE = "registry.json";
+const REGISTRY_SCHEMA_VERSION = "einzbern.registry.v2";
+const ENGINE_DIRECTORY = "engine";
+const CURRENT_FILE = "current";
+const CURRENT_SCHEMA_VERSION = "einzbern.engine-current.v1";
+const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u;
+const HOOK_ENTRY = Object.freeze(["scripts", "einzbern-hook.mjs"]);
+// Keep in sync with packages/core/src/node-floor.ts. This launcher must check before importing a
+// versioned hook, so it cannot use that version's compiled helper here.
+export const HOOK_NODE_FLOOR = "24.0.0";
+const NODE_VERSION = /^v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/u;
+// TCRN-CROSS-INIT-053 R47-06: the note a prompt leaves when it is typed in a known container that the
+// registry does not cover. The file is appended to and never rotated here; deleting it loses nothing.
+const LOG_DIRECTORY = "log";
+const LOG_FILE = "hook.ndjson";
+const LOG_SCHEMA_VERSION = "einzbern.hook-log.v1";
+// The markers of a known container, held equal to packages/core/src/names.ts (DIRECTORY.library,
+// LEGACY_CONTROL_DIRECTORY, LEGACY_CONTAINER_DIRECTORY) and to LIBRARY_FILES.manifest by
+// tests/hook-launcher.test.mjs: this launcher imports only node: built-ins. An old-layout workspace
+// is a control directory holding workspace.json (legacyControlDirectory reads it the same way), so
+// the old device directory of the same name in a user's home is not taken for one.
+export const LIBRARY_DIRECTORY = ".ether";
+export const LIBRARY_MANIFEST = "manifest.json";
+export const LEGACY_CONTROL_DIRECTORY = ".tcrn-workflow";
+export const LEGACY_WORKSPACE_FILE = "workspace.json";
+export const LEGACY_CONTAINER_DIRECTORY = ".tcrn-workspace";
+
+class HookLaunchError extends Error {
+  constructor(reasonCode, message) {
+    super(message);
+    this.name = "HookLaunchError";
+    this.reasonCode = reasonCode;
+  }
+}
+
+function versionNumbers(version) {
+  if (typeof version !== "string") return null;
+  const match = NODE_VERSION.exec(version);
+  if (match === null) return null;
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+function meetsNodeFloor(actual) {
+  const found = versionNumbers(actual);
+  const required = versionNumbers(HOOK_NODE_FLOOR);
+  if (found === null || required === null) return false;
+  for (let index = 0; index < required.length; index += 1) {
+    const value = found[index] ?? 0;
+    if (value !== required[index]) return value > required[index];
+  }
+  return true;
+}
+
+/** The device directory: EINZBERN_HOME when it is set and non-empty, otherwise .einzbern in the user's home (device-home.ts). */
+export function deviceDirectory(env = process.env, home = homedir()) {
+  const configured = env.EINZBERN_HOME;
+  if (typeof configured === "string" && configured.length > 0) {
+    if (!isAbsolute(configured)) throw new HookLaunchError("DEVICE_HOME_INVALID", "EINZBERN_HOME must be an absolute device directory");
+    return resolve(configured);
+  }
+  return join(home, DEVICE_DIRECTORY);
+}
+
+function registryEntry(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value) &&
+    typeof value.projectPath === "string" && typeof value.libraryPath === "string" &&
+    (value.gitRemote === null || typeof value.gitRemote === "string");
+}
+
+/** The entries of the device's registry: none when it has no registry file; HOOK_REGISTRY_INVALID when the file is not one. */
+export function registryEntries(device) {
+  let text;
+  try {
+    text = readFileSync(join(device, REGISTRY_FILE), "utf8");
+  } catch (error) {
+    if (error?.code === "ENOENT") return [];
+    throw new HookLaunchError("HOOK_REGISTRY_INVALID", `the registry cannot be read (${error?.code ?? "error"})`);
+  }
+  let value;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    throw new HookLaunchError("HOOK_REGISTRY_INVALID", "the registry is not JSON");
+  }
+  if (value === null || typeof value !== "object" || ![REGISTRY_SCHEMA_VERSION, "einzbern.registry.v1"].includes(value.schemaVersion) || !Array.isArray(value.entries) ||
+    !value.entries.every(registryEntry)) {
+    throw new HookLaunchError("HOOK_REGISTRY_INVALID", `the registry is not an ${REGISTRY_SCHEMA_VERSION} registry`);
+  }
+  return value.entries.map(entry => ({ ...entry, projectPath: resolve(device, entry.projectPath), libraryPath: resolve(device, entry.libraryPath) }));
+}
+
+/**
+ * One remote in one spelling, so an https and an ssh clone of the same repository compare equal.
+ * The same steps as normalizeGitRemote in packages/core/src/registry.ts, which wrote the
+ * registry's gitRemote; tests/hook-launcher.test.mjs holds the two to the same answers.
+ */
+export function normalizeGitRemote(remote) {
+  let value = remote.trim();
+  value = value.replace(/^[a-z][a-z0-9+.-]*:\/\//iu, "");
+  value = value.replace(/^[^@/]+@/u, "");
+  // scp-like ssh: host:owner/repo
+  value = value.replace(/^([^/:]+):(?!\d+\/)/u, "$1/");
+  value = value.replace(/^([^/:]+):\d+\//u, "$1/");
+  value = value.replace(/\/+$/u, "").replace(/\.git$/iu, "").replace(/\/+$/u, "");
+  const slash = value.indexOf("/");
+  return slash < 0 ? value.toLowerCase() : `${value.slice(0, slash).toLowerCase()}${value.slice(slash)}`;
+}
+
+function within(path, parent) {
+  if (path === parent) return true;
+  return path.startsWith(parent.endsWith(sep) ? parent : `${parent}${sep}`);
+}
+
+function entryKind(path) {
+  try {
+    const stats = statSync(path, { throwIfNoEntry: false });
+    if (stats === undefined) return null;
+    return stats.isDirectory() ? "directory" : stats.isFile() ? "file" : null;
+  } catch {
+    return null;
+  }
+}
+
+// A .git file (a linked worktree or a submodule) names the git directory; a linked worktree's git
+// directory names, in commondir, the repository directory that holds the shared config.
+function linkedConfigPath(workingTree, dotGit) {
+  const text = readFileSync(dotGit, "utf8");
+  if (!text.startsWith("gitdir: ")) return null;
+  const gitDirectory = resolve(workingTree, text.slice("gitdir: ".length).replace(/[\r\n]+$/u, ""));
+  let common = gitDirectory;
+  try {
+    common = resolve(gitDirectory, readFileSync(join(gitDirectory, "commondir"), "utf8").replace(/[\r\n]+$/u, ""));
+  } catch {
+    // No commondir: the git directory is the repository's own (a submodule, or a plain gitdir file).
+  }
+  return join(common, "config");
+}
+
+/** The config file of the Git repository `directory` is in: the nearest .git above it, a directory or a gitdir file; null outside one. */
+export function gitConfigPath(directory) {
+  let current = directory;
+  for (;;) {
+    const dotGit = join(current, ".git");
+    const kind = entryKind(dotGit);
+    if (kind === "directory") return join(dotGit, "config");
+    if (kind === "file") return linkedConfigPath(current, dotGit);
+    const parent = dirname(current);
+    if (parent === current) return null;
+    current = parent;
+  }
+}
+
+/**
+ * The remotes a Git config file defines, in the order they appear, each with its urls (an empty
+ * url clears the ones before it, as git reads it); null when git would refuse the file. The syntax
+ * is git-config's: [remote "name"] sections and the older [remote.name], keys in any case, values
+ * with quotes, the \" \\ \n \t \b escapes and a backslash continuing the line, and # or ;
+ * comments. An include is not followed, and a url.<base>.insteadOf rewrite is not applied.
+ */
+export function gitConfigRemotes(text) {
+  const source = String(text).replace(/^﻿/u, "").replace(/\r\n/gu, "\n");
+  const remotes = new Map();
+  let position = 0;
+  let section = null;
+  const blank = (char) => char === " " || char === "\t";
+  const skipLine = () => {
+    while (position < source.length && source[position] !== "\n") position += 1;
+    position += 1;
+  };
+  const readSection = () => {
+    position += 1;
+    let name = "";
+    while (position < source.length && /[A-Za-z0-9.-]/u.test(source[position])) {
+      name += source[position];
+      position += 1;
+    }
+    if (name.length === 0) return null;
+    if (source[position] === "]") {
+      position += 1;
+      const dot = name.indexOf(".");
+      return dot < 0 ? { name: name.toLowerCase(), subsection: null } : { name: name.slice(0, dot).toLowerCase(), subsection: name.slice(dot + 1).toLowerCase() };
+    }
+    if (!blank(source[position])) return null;
+    while (blank(source[position])) position += 1;
+    if (source[position] !== "\"") return null;
+    position += 1;
+    let subsection = "";
+    for (;;) {
+      const char = source[position];
+      position += 1;
+      if (char === undefined || char === "\n") return null;
+      if (char === "\"") break;
+      if (char === "\\") {
+        const next = source[position];
+        position += 1;
+        if (next === undefined || next === "\n") return null;
+        subsection += next;
+      } else {
+        subsection += char;
+      }
+    }
+    if (source[position] !== "]") return null;
+    position += 1;
+    return { name: name.toLowerCase(), subsection };
+  };
+  const readValue = () => {
+    let value = "";
+    let quoted = false;
+    let comment = false;
+    let spaces = 0;
+    for (;;) {
+      const char = source[position];
+      position += 1;
+      if (char === undefined || char === "\n") return quoted ? null : value;
+      if (comment) continue;
+      if (blank(char) && !quoted) {
+        if (value.length > 0) spaces += 1;
+        continue;
+      }
+      if (!quoted && (char === "#" || char === ";")) {
+        comment = true;
+        continue;
+      }
+      value += " ".repeat(spaces);
+      spaces = 0;
+      if (char === "\\") {
+        const next = source[position];
+        position += 1;
+        if (next === "\n") continue;
+        const escaped = { t: "\t", b: "\b", n: "\n", "\\": "\\", "\"": "\"" }[next];
+        if (escaped === undefined) return null;
+        value += escaped;
+      } else if (char === "\"") {
+        quoted = !quoted;
+      } else {
+        value += char;
+      }
+    }
+  };
+  while (position < source.length) {
+    const char = source[position];
+    if (blank(char) || char === "\n") {
+      position += 1;
+      continue;
+    }
+    if (char === "#" || char === ";") {
+      skipLine();
+      continue;
+    }
+    if (char === "[") {
+      section = readSection();
+      if (section === null) return null;
+      continue;
+    }
+    if (!/[A-Za-z]/u.test(char)) return null;
+    let key = "";
+    while (position < source.length && /[A-Za-z0-9-]/u.test(source[position])) {
+      key += source[position];
+      position += 1;
+    }
+    while (blank(source[position])) position += 1;
+    let value = null;
+    if (source[position] === "=") {
+      position += 1;
+      value = readValue();
+      if (value === null) return null;
+    } else if (position >= source.length || source[position] === "\n") {
+      position += 1;
+    } else {
+      return null;
+    }
+    if (section?.name === "remote" && section.subsection !== null) {
+      const urls = remotes.get(section.subsection) ?? [];
+      remotes.set(section.subsection, urls);
+      if (key.toLowerCase() === "url") {
+        // git refuses a url key without a value.
+        if (value === null) return null;
+        if (value.length === 0) urls.length = 0;
+        else urls.push(value);
+      }
+    }
+  }
+  return remotes;
+}
+
+/**
+ * The url `git remote get-url` gives for the working tree `directory` is in: that of origin, else
+ * of the first remote by name, and a remote left without a url answers with its name, as git
+ * does; null outside a working tree or without a remote.
+ */
+export function repositoryRemote(directory) {
+  const config = gitConfigPath(directory);
+  if (config === null) return null;
+  let text;
+  try {
+    text = readFileSync(config, "utf8");
+  } catch {
+    return null;
+  }
+  const remotes = gitConfigRemotes(text);
+  if (remotes === null || remotes.size === 0) return null;
+  const name = remotes.has("origin") ? "origin" : [...remotes.keys()].sort()[0];
+  return remotes.get(name)?.[0] ?? name;
+}
+
+/**
+ * The registry entry for `directory` (a real path): the nearest registered project it lies in,
+ * otherwise the entry with its working tree's remote; null when none. Starts no process.
+ */
+export function matchRegistry(entries, directory) {
+  let nearest = null;
+  for (const entry of entries) {
+    if (within(directory, entry.projectPath) && (nearest === null || entry.projectPath.length > nearest.projectPath.length)) nearest = entry;
+  }
+  if (nearest !== null) return nearest;
+  if (!entries.some((entry) => typeof entry.gitRemote === "string")) return null;
+  const remote = repositoryRemote(directory);
+  if (remote === null) return null;
+  const normalized = normalizeGitRemote(remote);
+  return entries.find((entry) => entry.gitRemote === normalized) ?? null;
+}
+
+/**
+ * The known container `directory` (a real path) lies in: the nearest of it and its ancestors that holds
+ * a library (marker "library") or an old-layout workspace or platform container (marker "legacy");
+ * null when none. Only marker paths are statted.
+ */
+export function knownContainer(directory) {
+  let current = directory;
+  for (;;) {
+    if (entryKind(join(current, LIBRARY_DIRECTORY, LIBRARY_MANIFEST)) === "file") return { container: current, marker: "library" };
+    if (entryKind(join(current, LEGACY_CONTROL_DIRECTORY, LEGACY_WORKSPACE_FILE)) === "file" ||
+      entryKind(join(current, LEGACY_CONTAINER_DIRECTORY)) === "directory") return { container: current, marker: "legacy" };
+    const parent = dirname(current);
+    if (parent === current) return null;
+    current = parent;
+  }
+}
+
+/**
+ * Why a prompt in the known container `found` got no answer from a registry with `entries` and no
+ * entry for its directory: no registry, an unregistered project in an old layout, or a library the
+ * registry does not hold; null when the container's library is registered for another project.
+ */
+export function unansweredReason(entries, found) {
+  if (entries.length === 0) return "HOOK_REGISTRY_ABSENT";
+  if (found.marker === "legacy") return "HOOK_PROJECT_UNREGISTERED";
+  const library = join(found.container, LIBRARY_DIRECTORY);
+  return entries.some((entry) => resolve(entry.libraryPath) === library) ? null : "HOOK_LIBRARY_UNREGISTERED";
+}
+
+function promptDirectory(payload) {
+  const cwd = typeof payload.cwd === "string" && payload.cwd.length > 0 && isAbsolute(payload.cwd) ? payload.cwd : process.cwd();
+  return realpathSync.native(cwd);
+}
+
+// One line in log/hook.ndjson when the prompt's directory is in a known container (R47-06). Every
+// failure here is dropped: the hook's exit code, stdout and stderr stay what they were without it.
+function noteUnanswered(device, entries, event, payload, directory = null) {
+  try {
+    const cwd = directory ?? promptDirectory(payload);
+    const found = knownContainer(cwd);
+    if (found === null) return;
+    const reasonCode = unansweredReason(entries, found);
+    if (reasonCode === null) return;
+    const logDirectory = join(device, LOG_DIRECTORY);
+    try {
+      mkdirSync(logDirectory, { mode: 0o700 });
+    } catch (error) {
+      if (error?.code !== "EEXIST") return;
+    }
+    const line = { schemaVersion: LOG_SCHEMA_VERSION, at: new Date().toISOString(), event, cwd, container: found.container, marker: found.marker, reasonCode };
+    appendFileSync(join(logDirectory, LOG_FILE), `${JSON.stringify(line)}\n`, { mode: 0o600 });
+  } catch {
+    // A hook never blocks a session, and a note it cannot write changes nothing it answers.
+  }
+}
+
+/** The file URL of a version's hook entry under `engineDirectory`, written for `platform` (R5). */
+export function hookEntryUrl(engineDirectory, version, platform = process.platform) {
+  const paths = platform === "win32" ? win32 : posix;
+  return pathToFileURL(paths.join(engineDirectory, version, ...HOOK_ENTRY), { windows: platform === "win32" }).href;
+}
+
+function currentVersion(engineDirectory) {
+  let current;
+  try {
+    current = JSON.parse(readFileSync(join(engineDirectory, CURRENT_FILE), "utf8"));
+  } catch (error) {
+    throw new HookLaunchError("HOOK_ENGINE_CURRENT_INVALID", error?.code === "ENOENT" ? "no engine version is current" : "engine/current cannot be read");
+  }
+  if (current?.schemaVersion !== CURRENT_SCHEMA_VERSION || typeof current.version !== "string" || !VERSION_PATTERN.test(current.version)) {
+    throw new HookLaunchError("HOOK_ENGINE_CURRENT_INVALID", "engine/current does not name an engine version");
+  }
+  return current.version;
+}
+
+async function readInput() {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of process.stdin) {
+    size += chunk.length;
+    if (size > HOOK_STDIN_MAX_BYTES) throw new HookLaunchError("HOOK_INPUT_TOO_LARGE", `the hook input is larger than ${HOOK_STDIN_MAX_BYTES} bytes`);
+    chunks.push(chunk);
+  }
+  let payload;
+  try {
+    payload = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    throw new HookLaunchError("HOOK_INPUT_INVALID", "the hook input is not JSON");
+  }
+  if (payload === null || typeof payload !== "object" || Array.isArray(payload)) throw new HookLaunchError("HOOK_INPUT_INVALID", "the hook input is not a JSON object");
+  return payload;
+}
+
+export async function launch(argv, env) {
+  if (!meetsNodeFloor(process.versions.node)) return null;
+  const event = argv[0];
+  if (typeof event !== "string" || event.length === 0) throw new HookLaunchError("HOOK_EVENT_MISSING", "the hook command names no event");
+  const payload = await readInput();
+  const device = deviceDirectory(env);
+  const entries = registryEntries(device);
+  if (entries.length === 0) {
+    noteUnanswered(device, entries, event, payload);
+    return null;
+  }
+  const directory = promptDirectory(payload);
+  const entry = matchRegistry(entries, directory);
+  if (entry === null) {
+    noteUnanswered(device, entries, event, payload, directory);
+    return null;
+  }
+  // VoxWard project copy: keep device registry resolution, pin the Kiro-aware runtime locally.
+  const hook = await import(new URL("./engine-hook.mjs", import.meta.url));
+  if (typeof hook.runHookEvent !== "function") throw new HookLaunchError("HOOK_ENTRY_INVALID", "the current engine's hook entry has no runHookEvent");
+  const output = await hook.runHookEvent({ event, payload, libraryPath: entry.libraryPath, cwd: directory });
+  return typeof output === "string" && output.length > 0 ? output : null;
+}
+
+function report(error) {
+  const reasonCode = typeof error?.reasonCode === "string" ? error.reasonCode : "HOOK_LAUNCH_FAILED";
+  process.stderr.write(`${JSON.stringify({ ok: false, reasonCode, error: String(error?.message ?? error) })}\n`);
+  process.exitCode = 0;
+}
+
+function launchedDirectly() {
+  if (typeof import.meta.main === "boolean") return import.meta.main;
+  try {
+    return typeof process.argv[1] === "string" && realpathSync.native(process.argv[1]) === realpathSync.native(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (launchedDirectly()) {
+  process.on("uncaughtException", report);
+  process.on("unhandledRejection", report);
+  try {
+    const output = await launch(process.argv.slice(2), process.env);
+    if (output !== null) process.stdout.write(output);
+  } catch (error) {
+    report(error);
+  }
+  process.exitCode = 0;
+}
