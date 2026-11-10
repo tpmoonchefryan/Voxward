@@ -112,15 +112,17 @@ apps/server/test/moderation-engine/
 
 ## 5. 受约束正则（rules/bounded-regex.ts，自定常量）
 
-- 准入条件：源长不超过 100；无反向引用（`\1`–`\9`、`\k`）、无前后查找、无命名分组；量词不能作用于分组；量词总数不超过 3；无界量词（`*`、`+`、`{n,}`）不超过 1；有界重复上限为 8；模式不能匹配空串；能被 `RegExp(source, "u")` 编译。
+- 准入条件：源长不超过 100；无反向引用（`\1`–`\9`、`\k`）、无前后查找、无命名分组；量词不能作用于分组；分组内不能有分支（`(a|b)`、`(?:a|b)`，拒绝码 `GROUP_ALTERNATION`），顶层分支（`ab|cd`）允许；量词总数不超过 3；无界量词（`*`、`+`、`{n,}`）不超过 1，且不能与变长有界量词（`?`、`{m,n}` 且 m<n）同现（`UNBOUNDED_WITH_VARIABLE_REPEAT`）；有界重复上限为 8；变长有界量词的选择数乘积不超过 81（`REPEAT_CHOICES_TOO_MANY`）；模式不能匹配空串；能被 `RegExp(source, "u")` 编译。
 - 匹配只在归一化文本上做，模式应写成小写。零长匹配不计命中。
-- 上述静态约束不能证明所有模式的最坏复杂度。残余风险见 §9 的未验证项。
+- 成本依据（B2 修复，第 2 批返工）：同步正则无法中断，成本只能由准入约束限定。回溯引擎对每个起点探索所有路径，路径数来自三处：分组分支的乘积（`(a|a|a)` 连写 13 次为 3^13）、变长量词选择数的乘积，以及无界量词（对每种变长有界选择都重新扫描输入）。修复前 S1–S6 全部通过准入，50 字符消息稳态耗时 1.6 s（验收 E33）。修复后 S1–S4 因分组分支被拒，S5、S6 因无界与变长有界同现被拒。
+- 上限 81 的取值：实测选择数乘积 729（三个 `{0,8}`）加 20 个字符类的形状，在 n=1000 时稳态约 7–8 ms（单条规则）；乘积 81 加 20 个字符类约 0.3–1 ms。`a{0,8}a*` 在 n=1000 时约 5 ms，`a*a{0,8}` 约 16 ms，因此无界量词与变长有界量词不同现。测量环境与原始数字见 `evidence/rework-self-check.md`。
+- 准入只给出结构上界，不是对具体引擎的形式化证明。V8 的正则优化随版本变化；每次升级 Node 后应复跑 `test/moderation-engine/rules/regex-cost.test.ts`。
 
 ## 6. 输入上限与执行时限（自定）
 
 - 正文不超过 500 个 UTF-16 单位，昵称不超过 100 个。归一化后的昵称加正文不超过 1000。超出则路由 REVIEW，且不运行规则。
-- 每次判定有 20 ms 预算，时钟可注入。每条规则开始前检查预算，超出则停止，结果标记为未完成，路由 REVIEW。已找到的 BLOCK 命中仍然生效。
-- JavaScript 的同步正则无法中断。预算是逐条检查加事后判定，不是硬中断。
+- 每次判定有 20 ms 预算，时钟可注入。每条规则开始前检查预算，超出则停止，结果标记为未完成，路由 REVIEW。已找到的 BLOCK 命中仍然生效。最后一条规则结束后也检查一次（B2 修复）：它本身超出预算时，该范围同样标为未完成，不会以完整结果通过。
+- JavaScript 的同步正则无法中断。预算是逐条检查加事后判定，不是硬中断。因此单条规则的耗时必须由 §5 的准入约束限定，预算只负责把超出的消息转为 REVIEW。
 
 ## 7. 命中、分组与路由（rules/groups.ts、rules/engine.ts）
 
@@ -149,11 +151,12 @@ apps/server/test/moderation-engine/
 | 测试 | 证明什么 | 对应验收 |
 |---|---|---|
 | `rules/normalize.test.ts` | 零宽、全角、组合标记、混合语言的命中区间映射回原文 | VW-SUB008-AC001 |
-| `rules/bounded-regex.test.ts` | 嵌套量词、反向引用、查找、空匹配被拒绝；合法模式通过 | VW-SUB008-AC001 |
+| `rules/bounded-regex.test.ts` | 嵌套量词、分组分支、无界与变长量词同现、选择数超限、反向引用、查找、空匹配被拒绝；合法模式（含顶层分支）通过 | VW-SUB008-AC001 |
+| `rules/regex-cost.test.ts` | B2：验收 §2.1 的 S1–S6 形状在准入被拒绝；保留的最坏形状在输入上限内，每组 1 次冷启动加 4 次稳态的中位数不超过 20 ms | VW-SUB008-AC001 |
 | `rules/groups.test.ts` | 编译校验（读音不得惩罚、重复 id、扣分值）；最大扣分只记一次；BLOCK 优先 | VW-SUB008-AC001 |
 | `rules/transliterate.test.ts` | 表驱动读音、未知字符为 incomplete、忽略字符 | VW-SUB008-AC001 |
-| `rules/engine.test.ts` | 噪声文本仍检查；同音命中只 REVIEW；组合跨字段命中；输入超限与预算超出为 REVIEW；BLOCK 不被预算降级 | VW-SUB008-AC001 |
-| `moderation-engine.test.ts` | 契约输出带 correlationId；无规则集、无昵称源时为 REVIEW | VW-S004-AC001 |
+| `rules/engine.test.ts` | 噪声文本仍检查；同音命中只 REVIEW；组合跨字段命中；输入超限与预算超出为 REVIEW；最后一条规则超预算也标为未完成；BLOCK 不被预算降级 | VW-SUB008-AC001 |
+| `moderation-engine.test.ts` | 契约输出带 correlationId；无规则集、无昵称源时为 REVIEW。模块入口用例固定预算时钟，只验证契约输出 | VW-S004-AC001 |
 | `nickname-cache/cache.test.ts` | 命中跳过昵称检查；改名、规则版本、到期失效；只存完整结果；LRU 上限 | VW-SUB009-AC001 |
 | `nickname-cache/engine-cache.test.ts` | 缓存命中时正文与组合仍检查 | VW-SUB009-AC001 |
 | `nickname-cache/safe-alias.test.ts` | 安全称呼优先；完整转写可用；不完整则人工确认 | VW-SUB009-AC001 |
