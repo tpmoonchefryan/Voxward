@@ -19,6 +19,7 @@ const ENV_KEYS: Readonly<Record<string, string>> = {
   VOXWARD_HOST: "host",
   VOXWARD_PORT: "port",
   VOXWARD_ADAPTERS: "adapters",
+  VOXWARD_DATABASE_FILE: "databaseFile",
 };
 
 class ConfigFailure extends Error {

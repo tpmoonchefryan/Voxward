@@ -18,4 +18,35 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   });
 }
 
-await app.listen({ host: config.host, port: config.port });
+try {
+  await app.listen({ host: config.host, port: config.port });
+} catch (error) {
+  process.stderr.write(`${describeListenError(error)}\n`);
+  process.exit(1);
+}
+
+/** One line for operators: the setting and the reason. Like config errors, it never echoes a value. */
+function describeListenError(error: unknown): string {
+  const code = errorCode(error);
+  switch (code) {
+    case "EADDRINUSE":
+      return "LISTEN_FAILED: port (address already in use)";
+    case "EADDRNOTAVAIL":
+      return "LISTEN_FAILED: host (address is not available on this machine)";
+    case "ENOTFOUND":
+    case "EAI_AGAIN":
+    case "EAI_NONAME":
+      return "LISTEN_FAILED: host (cannot be resolved)";
+    case "EACCES":
+      return "LISTEN_FAILED: port (permission denied)";
+    default:
+      return `LISTEN_FAILED: ${code ?? "unexpected error"}`;
+  }
+}
+
+function errorCode(error: unknown): string | undefined {
+  if (typeof error === "object" && error !== null && "code" in error && typeof error.code === "string") {
+    return error.code;
+  }
+  return undefined;
+}

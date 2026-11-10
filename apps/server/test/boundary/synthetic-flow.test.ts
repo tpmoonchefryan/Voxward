@@ -4,7 +4,7 @@ import { createSyntheticOutputAdapter } from "../../src/adapters/synthetic/outpu
 import type { ServerConfig } from "../../src/config/schema.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 
-const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic" };
+const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" };
 
 describe("synthetic boundary flow through the registry", () => {
   it("carries a synthetic event from platform to output without any vendor object", async () => {
