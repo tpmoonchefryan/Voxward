@@ -22,7 +22,7 @@ A checked task is local progress only. Formal completion still requires the engi
 
 - [x] 0. 本 spec commit：`VOXWARD-STORY-006: add spec`（含 `kiro-specs.mjs check` 得 SPEC_CURRENT）
 - [ ] 1. VOXWARD-SUB-012 统一审核路由真值表、快速通道与处理状态
-  - [ ] 1.1 Q6：`rules/normalize.ts` 组合标记选项、`groups.ts` 规则集字段、`engine.ts` 接入，并加测试
+  - [x] 1.1 Q6：`rules/normalize.ts` 组合标记选项、`groups.ts` 规则集字段、`engine.ts` 接入，并加测试
   - [ ] 1.2 Q12：`groups.ts` 准入提示文案与测试
   - [ ] 1.3 Q22：`packages/contracts` 的 `Verdict.penaltyHits`；scoring-engine 的 `selectPenalty` 接线与校验；测试
   - [ ] 1.4 Q8：删除 `subject_nickname_checks`（`schema/subjects.ts`、drizzle-kit 迁移 0002、`docs/data-dictionary.md`、`schema.test.ts`）

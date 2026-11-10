@@ -29,6 +29,19 @@ export interface RawUnit {
 // compose with the leading jamo under NFKC, so they stay in the same unit.
 const ATTACHES_TO_PREVIOUS = /^[\p{M}\p{Cf}\u1160-\u11FF\uD7B0-\uD7FF]$/u;
 const MATCH_IGNORED = /[\p{M}\p{Cf}]/gu;
+const COMBINING_MARKS = /\p{M}/gu;
+
+/**
+ * Options for the matching copy. Rule patterns and message text pass through the same options, so both sides agree.
+ * `stripCombiningMarks` removes a mark that composes with its base letter. Without it, NFKC composes `a` with U+0301
+ * into `á`, which then fails to match `a` (proposal §4.3 names the normalization steps; the default is S006's choice).
+ */
+export interface NormalizeOptions {
+  readonly stripCombiningMarks: boolean;
+}
+
+/** Strips composed marks by default, because the bypass is an evasion path. A rule set can switch it off. */
+export const DEFAULT_NORMALIZE_OPTIONS: NormalizeOptions = { stripCombiningMarks: true };
 
 /** Splits text into units at code point boundaries, attaching marks and format characters to the unit before them. */
 export function splitUnits(raw: string): RawUnit[] {
@@ -48,26 +61,36 @@ export function splitUnits(raw: string): RawUnit[] {
   return units;
 }
 
-/** Normalizes one unit for matching: compatibility decomposition, lower case, no marks or format characters. */
-export function normalizeUnit(raw: string): string {
-  return raw.normalize("NFKC").toLowerCase().replace(MATCH_IGNORED, "");
+/**
+ * Normalizes one unit for matching: compatibility decomposition, lower case, no marks or format characters.
+ * With `stripCombiningMarks`, the unit is decomposed first, so a mark is removed before NFKC can compose it.
+ */
+export function normalizeUnit(raw: string, options: NormalizeOptions = DEFAULT_NORMALIZE_OPTIONS): string {
+  const composed = options.stripCombiningMarks
+    ? raw.normalize("NFKD").replace(COMBINING_MARKS, "").normalize("NFKC")
+    : raw.normalize("NFKC");
+  return composed.toLowerCase().replace(MATCH_IGNORED, "");
 }
 
 /** Normalizes a whole string. Used for rule patterns, so patterns and text pass through the same function. */
-export function normalizeText(raw: string): string {
+export function normalizeText(raw: string, options: NormalizeOptions = DEFAULT_NORMALIZE_OPTIONS): string {
   let text = "";
   for (const unit of splitUnits(raw)) {
-    text += normalizeUnit(unit.raw);
+    text += normalizeUnit(unit.raw, options);
   }
   return text;
 }
 
 /** Matching copy of one field. Each unit is normalized and mapped back to its original span. */
-export function normalizeField(field: MatchField, raw: string): MappedText {
+export function normalizeField(
+  field: MatchField,
+  raw: string,
+  options: NormalizeOptions = DEFAULT_NORMALIZE_OPTIONS,
+): MappedText {
   let text = "";
   const units: MappedUnit[] = [];
   for (const unit of splitUnits(raw)) {
-    const normal = normalizeUnit(unit.raw);
+    const normal = normalizeUnit(unit.raw, options);
     units.push({
       start: text.length,
       end: text.length + normal.length,
