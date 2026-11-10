@@ -25,12 +25,12 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 1.3 `apps/web`：Vite + React 空壳、`routes.tsx` 自动注册
   - [x] 1.4 `packages/contracts`：`package.json`、`tsconfig.json`
   - [x] 1.5 自测：`pnpm install`、`pnpm -r build`、`pnpm -r typecheck`、启动冒烟（VW-SUB001-AC001）
-- [ ] 2. VOXWARD-SUB-002 版本化契约
-  - [ ] 2.1 `version.ts`、`events/`、`tasks/`、`decisions/`、`delivery/`、`errors/`
-  - [ ] 2.2 `modules/` 九个接口，对照提案 §9.3
-  - [ ] 2.3 契约测试
-  - [ ] 2.4 `kiro-specs.mjs init` 生成 `.kiro/specs/voxward-core-contracts/`，再 `check` 得 SPEC_CURRENT
-  - [ ] 2.5 自测：contracts 的 typecheck 与 test（VW-SUB002-AC001）
+- [x] 2. VOXWARD-SUB-002 版本化契约
+  - [x] 2.1 `version.ts`、`events/`、`tasks/`、`decisions/`、`delivery/`、`errors/`
+  - [x] 2.2 `modules/` 九个接口，对照提案 §9.3
+  - [x] 2.3 契约测试
+  - [x] 2.4 `kiro-specs.mjs init` 生成 `.kiro/specs/voxward-core-contracts/`，再 `check` 得 SPEC_CURRENT
+  - [x] 2.5 自测：contracts 的 typecheck 与 test（VW-SUB002-AC001）
 - [ ] 3. VOXWARD-SUB-003 配置、注册表与边界测试
   - [ ] 3.1 `config/schema.ts`、`config/load.ts` 与配置测试
   - [ ] 3.2 `modules/registry.ts` 与九个模块 `index.ts`

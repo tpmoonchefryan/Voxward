@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:29efe5676405320e83378661",
+  "workRevision": 3,
+  "sourceDigest": "3ec8dcf6a73e6f489bf10f4aa23781591741888f1e47fef7cb039701ac2575c0",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:29efe5676405320e83378661",
+    "workRevision": 3,
+    "sourceDigest": "3ec8dcf6a73e6f489bf10f4aa23781591741888f1e47fef7cb039701ac2575c0",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:29efe5676405320e83378661",
+        "externalKey": "VOXWARD-SUB-002",
+        "kind": "Subtask",
+        "revision": 3,
+        "status": "active",
+        "title": "定义版本化业务契约与九个模块接口",
+        "summary": "packages/contracts 提供带契约版本的频道事件、任务代次、裁决、投递意图、错误类型与九个模块接口，并生成 Kiro Specs 基础材料",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:674c24794f9a1fb626eb2ad1",
+        "scopeDigest": "5ac7e9fc3e31152a9aed1c57d21f7248c086d2720c701f45b2bf8eaaa69b5c79",
+        "relations": {
+          "blockedBy": [
+            "work:136894122fa57b30ec736c73"
+          ],
+          "decidedIn": [],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:674c24794f9a1fb626eb2ad1",
+          "supersedes": []
+        },
+        "fieldSha256": "bc7f30e03d67cdbfda5755ed10d34e4e76b538688d31851214cd1f9ba8e13005",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "8669359af2da3f6d9c1872f60b2d95da584a64a2196167246550568c143b13fa",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "86d304a161bae5d5bfdc71d742f9ee623a1f0782486f468f720f8c8a6ef3b2a8",
+    "design.md": "b864242c8ba8cc20447577883d1995c036cb7c553ffc359297630afa8e2ee9cc",
+    "tasks.md": "29bee0e830f914fe2831e40e953a8e6895c6e2bdd278c3126c313bc19554ff45"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "9ecd7570f9c2becabec2929bb36370d26331c239507476c573c2a343f82eb72b"
+}
