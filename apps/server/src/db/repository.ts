@@ -140,7 +140,8 @@ export const TaskStore = {
       .from(subjects)
       .where(eq(subjects.id, event.subjectId))
       .get();
-    const processingGeneration = subject?.generation ?? 0;
+    if (subject === undefined) throw new Error(`event ${input.eventId} refers to a missing subject`);
+    const processingGeneration = subject.generation;
 
     tx.insert(tasks)
       .values({
@@ -188,7 +189,7 @@ export const TaskStore = {
       .from(channelEvents)
       .where(eq(channelEvents.id, task.eventId))
       .get();
-    if (event === undefined) return rejected("TASK_NOT_FOUND");
+    if (event === undefined) throw new Error(`task ${task.id} refers to a missing event`);
     if (event.eventVersion !== task.eventVersion) return rejected("STALE_EVENT_VERSION");
 
     const subject = tx
@@ -196,9 +197,8 @@ export const TaskStore = {
       .from(subjects)
       .where(eq(subjects.id, event.subjectId))
       .get();
-    if (subject === undefined || subject.generation !== task.processingGeneration) {
-      return rejected("STALE_GENERATION");
-    }
+    if (subject === undefined) throw new Error(`event ${event.id} refers to a missing subject`);
+    if (subject.generation !== task.processingGeneration) return rejected("STALE_GENERATION");
 
     const current = tx
       .select({ id: verdicts.id })
