@@ -126,3 +126,44 @@ function compiledOrThrow(input: RuleSetInput): CompiledRuleSet {
   if (!result.ok) throw new ModerationConfigError(result.issues);
   return result.ruleSet;
 }
+
+/* Review routing (S006). The router takes the basic checker from this module and a scoring port from the contracts. */
+export { classifyDeterministicNoise, type DeterministicClass } from "./routing/classification.js";
+export {
+  createInMemoryExceptionQueue,
+  type ExceptionEntry,
+  type ExceptionQueue,
+  type ExceptionResolution,
+  exceptionKeyOf,
+} from "./routing/exception-queue.js";
+export {
+  type BaseChecker,
+  type CompletionDecision,
+  createReviewRouter,
+  type DecisionSource,
+  type ReviewContext,
+  type ReviewRouter,
+  type ReviewRouterDeps,
+  type RouteOutcome,
+  type RoutingFacts,
+  type RoutingOptions,
+  type ScoringPort,
+  type ScoringStatus,
+} from "./routing/router.js";
+export {
+  type CompletionSource,
+  PROCESSING_STATES,
+  type ProcessingState,
+  ProcessingTransitionError,
+  REVIEW_STEPS,
+  type ReviewStep,
+  toStoredTaskStatus,
+} from "./routing/states.js";
+export {
+  planRoute,
+  type PlanInput,
+  type PlanReason,
+  type RoutePlan,
+  type SettlementState,
+  type TaskKind,
+} from "./routing/truth-table.js";
