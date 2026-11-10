@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:352ba5df1e0b354ede1a9af0",
+  "workRevision": 4,
+  "sourceDigest": "2ffa5624ca03977e775036b0ae58d33f5566c6f1f27bf3c9ee2df24cf996f6af",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:352ba5df1e0b354ede1a9af0",
+    "workRevision": 4,
+    "sourceDigest": "2ffa5624ca03977e775036b0ae58d33f5566c6f1f27bf3c9ee2df24cf996f6af",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:352ba5df1e0b354ede1a9af0",
+        "externalKey": "VOXWARD-STORY-008",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现 Kiro 适配与一次性会话清理",
+        "summary": "实现 Kiro 适配与一次性会话清理；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:8980504408e4d156c130a8f9",
+        "scopeDigest": "1df465a3a85adac05aa57bab0278116a737156e534c445d13c6b229ad9ff6ca9",
+        "relations": {
+          "blockedBy": [
+            "work:05e6184a65712b369d65bba7",
+            "work:fd4f81864ddb33703517e12f"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:8980504408e4d156c130a8f9",
+          "supersedes": []
+        },
+        "fieldSha256": "70bc3b3006dab261f468157c115eac526d9f9290e84bbf35dcaa972613f95dda",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "c3d58ea31d31936f871c8ea795407781d85b90c63f7400ac57913d13c585e235",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "31e45215458c0244dd5a1af85e06f486ef03d0e243e68eb64ad27c39dc600551",
+    "design.md": "53adc49e21f733c244db40493ab86d7f799502f898120868a82cfbf39bfcade7",
+    "tasks.md": "83c719cf11ab0c120b0d9aa156e438d1cd6f5960f2067d154e5c6359c8313dfa"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "57d3a3f263fc26057343c5ba99062e4a9d81c004fc1ad76e33a7c9f46fcd1940"
+}

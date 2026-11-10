@@ -7,15 +7,30 @@ export interface InferenceCapabilities extends Versioned {
   readonly supportsCancel: boolean;
 }
 
-/** Only the necessary text and a temporary correlation id cross this boundary. */
-export interface InferenceRequest extends Versioned {
+/**
+ * One message of an inference batch. `correlationId` is the server's internal reference, used only to map the result
+ * back. The adapter gives the model a temporary item id instead and never sends this field (proposal section 8.1).
+ */
+export interface InferenceRequestItem {
   readonly correlationId: string;
   readonly text: string;
 }
 
-export interface InferenceResult extends Versioned {
+/** One AI task. `batchId` names its one-time session, so cancellation and release address the whole batch. */
+export interface InferenceRequest extends Versioned {
+  readonly batchId: string;
+  readonly items: readonly InferenceRequestItem[];
+}
+
+export interface InferenceResultItem {
   readonly correlationId: string;
   readonly classification: InternalClassification;
+}
+
+/** One classification per request item, in request order. */
+export interface InferenceResult extends Versioned {
+  readonly batchId: string;
+  readonly items: readonly InferenceResultItem[];
 }
 
 /**
@@ -25,6 +40,6 @@ export interface InferenceResult extends Versioned {
 export interface InferenceProvider extends VersionedModule<"InferenceProvider"> {
   describe(): InferenceCapabilities;
   infer(request: InferenceRequest): Promise<InferenceResult>;
-  cancel(correlationId: string): Promise<void>;
-  releaseSession(correlationId: string): Promise<void>;
+  cancel(batchId: string): Promise<void>;
+  releaseSession(batchId: string): Promise<void>;
 }
