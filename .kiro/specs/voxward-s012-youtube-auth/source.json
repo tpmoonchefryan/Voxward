@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:c3303265b2af4669b243c34b",
+  "workRevision": 4,
+  "sourceDigest": "e1857618599d763b1bf135d138c4053c35abb448822c2b7ee1c738fd3ac4c2b6",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:c3303265b2af4669b243c34b",
+    "workRevision": 4,
+    "sourceDigest": "e1857618599d763b1bf135d138c4053c35abb448822c2b7ee1c738fd3ac4c2b6",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:c3303265b2af4669b243c34b",
+        "externalKey": "VOXWARD-STORY-012",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现 YouTube 凭据配置与授权状态",
+        "summary": "实现 YouTube 凭据配置与授权状态；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:16305a483e701a8d6d794886",
+        "scopeDigest": "170ea8ad359a51baa2703b3b0bf821215c0bd7ff1f31d09afd99d547a2128aaf",
+        "relations": {
+          "blockedBy": [
+            "work:fd4f81864ddb33703517e12f"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:16305a483e701a8d6d794886",
+          "supersedes": []
+        },
+        "fieldSha256": "01a81f5fa56d64a19b812aa6ba70c7d98ac7847c6df9d144a7795e1304c36d08",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "c645158451b190415993ea40bc002c5592f99464c1ad36222c2f6bd6bd6fadb5",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "c00742a63187e8d7f8bcce887bafaa9ab5078e7ad39f78b20ec85cf1e2b70d46",
+    "design.md": "0b5ce6268fd517f04110d88ce5d9952416a351e8fb78b39b59d4e8a5574ca140",
+    "tasks.md": "ad781d2de9c483941d6c6fa461b8dc4b690e73ca33df466246c766c129655546"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "07bda64462654dbb29ca616216578ebf5152b9df938f053c61891fa2aad91dd3"
+}
