@@ -9,10 +9,13 @@ import {
   type InternalClassification,
 } from "@voxward/contracts";
 import { describeKiroCli } from "./capabilities.js";
+import { requestKiroSessionDeletion, removeRunDirectory } from "./cleanup.js";
 import { buildChatArguments, type RunSettings } from "./command.js";
 import { KiroInferenceError } from "./errors.js";
 import { buildModelInput, type ModelInput } from "./input-builder.js";
+import { signalProcessGroup } from "./process-group.js";
 import { parseBusinessJson, readRunStream } from "./run-stream.js";
+import { openRunSession, type RunSession } from "./session-lifecycle.js";
 
 /** The validator's outcome as this adapter needs it. The composition root binds the moderation module's validator. */
 export type BatchOutputOutcome =
@@ -33,8 +36,11 @@ export interface KiroCliProviderOptions extends RunSettings {
   readonly command: string;
   /** The complete environment of the CLI process. The server environment is never inherited. */
   readonly env: Readonly<Record<string, string>>;
-  /** Directory the CLI runs in. */
-  readonly workingDirectory: string;
+  /**
+   * Parent of the one-time run directories. The deployment creates it with owner-only permissions (deploy/kiro-runtime).
+   * Each batch gets its own directory under it, and the CLI runs inside that directory.
+   */
+  readonly runtimeRoot: string;
   /** Largest batch this deployment accepts. A larger request is refused before any process starts. */
   readonly maxItems: number;
   readonly validateOutput: BatchOutputValidator;
@@ -44,13 +50,17 @@ export interface KiroCliProviderOptions extends RunSettings {
   readonly maxOutputBytes?: number;
   /** Delay between SIGTERM and SIGKILL. Default 2000 ms. */
   readonly killGraceMs?: number;
+  /** Clock for session records. Default: the system clock. */
+  readonly now?: () => Date;
 }
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 const DEFAULT_MAX_OUTPUT_BYTES = 1_048_576;
 const DEFAULT_KILL_GRACE_MS = 2_000;
+/** Limit for the delete command of a saved CLI session, so cleanup cannot hang (自定). */
+const DEFAULT_DELETE_TIMEOUT_MS = 30_000;
 
-type StopReason = "RUN_CANCELLED" | "RUN_TIMEOUT" | "RUN_OUTPUT_TOO_LARGE";
+type StopReason = "RUN_CANCELLED" | "RUN_TIMEOUT" | "RUN_OUTPUT_TOO_LARGE" | "SESSION_UNAVAILABLE";
 
 interface ActiveRun {
   readonly child: ChildProcessWithoutNullStreams;
@@ -58,37 +68,61 @@ interface ActiveRun {
   forceKillTimer: NodeJS.Timeout | undefined;
 }
 
+/**
+ * One batch from acceptance to cleanup. `run` appears once the process exists. `cancelled` records a cancel that arrives
+ * before the process exists, so the batch never starts. `kiroSessionId` holds the id observed in the run stream.
+ */
+interface BatchSlot {
+  run: ActiveRun | undefined;
+  cancelled: boolean;
+  kiroSessionId: string | undefined;
+}
+
 /** One provider per deployment. Batches run in parallel, and each is addressed by its batch id. */
 export function createKiroCliInferenceProvider(options: KiroCliProviderOptions): InferenceProvider {
-  const active = new Map<string, ActiveRun>();
+  const slots = new Map<string, BatchSlot>();
   return {
     moduleName: "InferenceProvider",
     contractVersion: CONTRACT_VERSION,
     describe: describeKiroCli,
-    infer: (request) => inferBatch(request, options, active),
-    cancel: async (batchId) => stopBatch(active, batchId, "RUN_CANCELLED", options),
-    releaseSession: async (batchId) => stopBatch(active, batchId, "RUN_CANCELLED", options),
+    infer: (request) => inferBatch(request, options, slots),
+    cancel: async (batchId) => cancelBatch(slots, batchId, options),
+    releaseSession: async (batchId) => cancelBatch(slots, batchId, options),
   };
 }
 
 async function inferBatch(
   request: InferenceRequest,
   options: KiroCliProviderOptions,
-  active: Map<string, ActiveRun>,
+  slots: Map<string, BatchSlot>,
 ): Promise<InferenceResult> {
-  checkRequest(request, options.maxItems, active);
-  // Everything up to the spawn is synchronous, so a second request with the same batch id sees the claim made by runCli.
-  const model = buildModelInput(request.items);
-  const stdout = await runCli(request.batchId, model, options, active);
-  const items = await decodeResult(request.batchId, request, model, stdout, options.validateOutput);
-  return { contractVersion: CONTRACT_VERSION, batchId: request.batchId, items };
+  checkRequest(request, options.maxItems, slots);
+  // The claim is made synchronously, before the first await, so a second request with the same batch id is refused.
+  const slot: BatchSlot = { run: undefined, cancelled: false, kiroSessionId: undefined };
+  slots.set(request.batchId, slot);
+
+  let session: RunSession | undefined;
+  let outcome = "SUCCEEDED";
+  try {
+    const model = buildModelInput(request.items);
+    session = await openSession(request.batchId, options);
+    const stdout = await runCli(request.batchId, model, session, slot, options);
+    const items = await decodeResult(request.batchId, request, model, stdout, options.validateOutput);
+    return { contractVersion: CONTRACT_VERSION, batchId: request.batchId, items };
+  } catch (error) {
+    outcome = error instanceof KiroInferenceError ? error.code : "UNEXPECTED";
+    throw error;
+  } finally {
+    slots.delete(request.batchId);
+    if (session !== undefined) await finishSession(session, outcome, slot, options);
+  }
 }
 
 /** Refuses a request the adapter cannot map back, before anything is sent. Runtime checks, because callers are not typed. */
-function checkRequest(request: InferenceRequest, maxItems: number, active: ReadonlyMap<string, ActiveRun>): void {
+function checkRequest(request: InferenceRequest, maxItems: number, slots: ReadonlyMap<string, BatchSlot>): void {
   const batchId = typeof request.batchId === "string" ? request.batchId : "";
   const invalid = () => new KiroInferenceError("REQUEST_INVALID", batchId);
-  if (batchId === "" || active.has(batchId)) throw invalid();
+  if (batchId === "" || slots.has(batchId)) throw invalid();
   const items: unknown = request.items;
   if (!Array.isArray(items) || items.length === 0 || items.length > maxItems) throw invalid();
   const correlationIds = new Set<string>();
@@ -101,21 +135,38 @@ function checkRequest(request: InferenceRequest, maxItems: number, active: Reado
   }
 }
 
-/** Runs one headless CLI process with the prompt on stdin. Resolves with its stdout, or rejects with a run error code. */
+async function openSession(batchId: string, options: KiroCliProviderOptions): Promise<RunSession> {
+  try {
+    return await openRunSession(options.runtimeRoot, batchId, (options.now ?? (() => new Date()))());
+  } catch {
+    throw new KiroInferenceError("SESSION_UNAVAILABLE", batchId);
+  }
+}
+
+/**
+ * Runs one headless CLI process inside the batch's run directory, with the prompt on stdin. Resolves with stdout, or rejects
+ * with a run error code.
+ */
 function runCli(
   batchId: string,
   model: ModelInput,
+  session: RunSession,
+  slot: BatchSlot,
   options: KiroCliProviderOptions,
-  active: Map<string, ActiveRun>,
 ): Promise<string> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxOutputBytes = options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
   const killGraceMs = options.killGraceMs ?? DEFAULT_KILL_GRACE_MS;
   return new Promise<string>((resolve, reject) => {
+    if (slot.cancelled) {
+      reject(new KiroInferenceError("RUN_CANCELLED", batchId));
+      return;
+    }
+
     let child: ChildProcessWithoutNullStreams;
     try {
       child = spawn(options.command, buildChatArguments(options), {
-        cwd: options.workingDirectory,
+        cwd: session.directory,
         env: { ...options.env },
         stdio: ["pipe", "pipe", "pipe"],
         detached: true,
@@ -127,7 +178,7 @@ function runCli(
     }
 
     const run: ActiveRun = { child, stopReason: undefined, forceKillTimer: undefined };
-    active.set(batchId, run);
+    slot.run = run;
     const chunks: Buffer[] = [];
     let outputBytes = 0;
     let settled = false;
@@ -137,7 +188,7 @@ function runCli(
       settled = true;
       clearTimeout(timer);
       if (run.forceKillTimer !== undefined) clearTimeout(run.forceKillTimer);
-      if (active.get(batchId) === run) active.delete(batchId);
+      if (slot.run === run) slot.run = undefined;
       if ("error" in outcome) reject(outcome.error);
       else resolve(outcome.stdout);
     };
@@ -147,8 +198,6 @@ function runCli(
     child.stdin.on("error", () => {
       // The CLI may exit before it reads its input. Its exit status decides the outcome, so this error is not separate.
     });
-    child.stdin.end(model.prompt, "utf8");
-
     child.stdout.on("data", (chunk: Buffer) => {
       if (run.stopReason !== undefined) return;
       outputBytes += chunk.length;
@@ -159,7 +208,7 @@ function runCli(
       chunks.push(chunk);
     });
     child.stderr.on("data", () => {
-      // stderr is read so the pipe never fills, and then dropped. It can carry anything, so it is never kept or echoed.
+      // stderr is read so the pipe never fills, then dropped. It can carry anything, so it is never kept or echoed.
     });
 
     child.on("error", () => {
@@ -168,6 +217,8 @@ function runCli(
     });
 
     child.on("close", (code) => {
+      const stdout = Buffer.concat(chunks).toString("utf8");
+      slot.kiroSessionId = readRunStream(stdout).sessionId ?? slot.kiroSessionId;
       if (run.stopReason !== undefined) {
         finish({ error: new KiroInferenceError(run.stopReason, batchId) });
         return;
@@ -176,8 +227,19 @@ function runCli(
         finish({ error: new KiroInferenceError("RUN_FAILED", batchId, { exitCode: code ?? undefined }) });
         return;
       }
-      finish({ stdout: Buffer.concat(chunks).toString("utf8") });
+      finish({ stdout });
     });
+
+    // The process is recorded as running before the prompt is written. If the record cannot be written, the run is stopped.
+    // A spawn that failed has no pid; its error event settles the run, so nothing is recorded or written here.
+    if (child.pid === undefined) return;
+    session.markRunning(child.pid).then(
+      () => {
+        if (settled || run.stopReason !== undefined) return;
+        child.stdin.end(model.prompt, "utf8");
+      },
+      () => stopRun(run, "SESSION_UNAVAILABLE", killGraceMs),
+    );
   });
 }
 
@@ -216,31 +278,48 @@ async function decodeResult(
   });
 }
 
+/**
+ * Records the outcome, asks the CLI to delete its saved session when one was observed, and removes the run directory. It
+ * never throws: the business outcome is already decided, and the directory is removed even if a record write fails.
+ */
+async function finishSession(
+  session: RunSession,
+  outcome: string,
+  slot: BatchSlot,
+  options: KiroCliProviderOptions,
+): Promise<void> {
+  const kiroSessionId = slot.kiroSessionId;
+  if (kiroSessionId !== undefined) await bestEffort(() => session.recordKiroSession(kiroSessionId));
+  await bestEffort(() => session.finish(outcome));
+  await requestKiroSessionDeletion({
+    command: options.command,
+    env: options.env,
+    workingDirectory: session.directory,
+    sessionId: kiroSessionId,
+    timeoutMs: DEFAULT_DELETE_TIMEOUT_MS,
+  });
+  await removeRunDirectory(options.runtimeRoot, session.directory);
+}
+
+async function bestEffort(action: () => Promise<void>): Promise<void> {
+  try {
+    await action();
+  } catch {
+    // A failed record write is not a business failure. The directory is removed next, and the sweep handles a leftover.
+  }
+}
+
+function cancelBatch(slots: ReadonlyMap<string, BatchSlot>, batchId: string, options: KiroCliProviderOptions): void {
+  const slot = slots.get(batchId);
+  if (slot === undefined) return;
+  slot.cancelled = true;
+  if (slot.run !== undefined) stopRun(slot.run, "RUN_CANCELLED", options.killGraceMs ?? DEFAULT_KILL_GRACE_MS);
+}
+
 /** Stops the batch's process group. The first reason wins, so a timeout is not reported as a cancellation. */
 function stopRun(run: ActiveRun, reason: StopReason, killGraceMs: number): void {
   if (run.stopReason !== undefined) return;
   run.stopReason = reason;
-  signalGroup(run.child, "SIGTERM");
-  run.forceKillTimer = setTimeout(() => signalGroup(run.child, "SIGKILL"), killGraceMs);
-}
-
-function stopBatch(
-  active: ReadonlyMap<string, ActiveRun>,
-  batchId: string,
-  reason: StopReason,
-  options: KiroCliProviderOptions,
-): void {
-  const run = active.get(batchId);
-  if (run === undefined) return;
-  stopRun(run, reason, options.killGraceMs ?? DEFAULT_KILL_GRACE_MS);
-}
-
-/** Signals the process group, so tools or helpers the CLI started stop with it. A group that has already exited is fine. */
-function signalGroup(child: ChildProcessWithoutNullStreams, signal: NodeJS.Signals): void {
-  if (child.pid === undefined) return;
-  try {
-    process.kill(-child.pid, signal);
-  } catch {
-    // The group has already exited.
-  }
+  signalProcessGroup(run.child, "SIGTERM");
+  run.forceKillTimer = setTimeout(() => signalProcessGroup(run.child, "SIGKILL"), killGraceMs);
 }

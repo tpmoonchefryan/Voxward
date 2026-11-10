@@ -27,10 +27,10 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 2.4 `apps/server/src/adapters/kiro-cli/`：能力声明、固定参数、输入构造、运行流解析、提供方（不含会话清理）
   - [x] 2.5 假 CLI fixture 与 `apps/server/test/adapters/kiro-cli/` 用例；泄漏扫描范围扩展
   - [x] 2.6 提交 `VOXWARD-SUB-015: ...`
-- [ ] 3. VOXWARD-SUB-016：一次性会话生命周期、清理与独立受限运行环境
-  - [ ] 3.1 `session-lifecycle.ts`、`cleanup.ts`、`orphan-sweep.ts`；提供方接入生命周期
-  - [ ] 3.2 `deploy/kiro-runtime/`：说明与模板，不安装
-  - [ ] 3.3 `docs/security/ai-retention-boundary.md`
-  - [ ] 3.4 `apps/server/test/adapters/kiro-cleanup/`：成功、失败、取消、超时、异常重启、清理证明
-  - [ ] 3.5 提交 `VOXWARD-SUB-016: ...`
+- [x] 3. VOXWARD-SUB-016：一次性会话生命周期、清理与独立受限运行环境
+  - [x] 3.1 `session-lifecycle.ts`、`cleanup.ts`、`orphan-sweep.ts`；提供方接入生命周期
+  - [x] 3.2 `deploy/kiro-runtime/`：说明与模板，不安装
+  - [x] 3.3 `docs/security/ai-retention-boundary.md`
+  - [x] 3.4 `apps/server/test/adapters/kiro-cleanup/`：成功、失败、取消、超时、异常重启、清理证明
+  - [x] 3.5 提交 `VOXWARD-SUB-016: ...`
 - [ ] 4. 自测与证据：`evidence/self-check.md`，随最后一个 commit 提交

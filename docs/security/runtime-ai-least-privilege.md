@@ -8,7 +8,7 @@
 
 | 提案 §9.2 的要求 | 契约条款 | 状态 |
 | --- | --- | --- |
-| Kiro CLI 适配器负责执行推理 | 推理只经 `InferenceProvider` 适配器调用，业务代码不直接调用模型 CLI。 | 仓库内只有合成适配器（`apps/server/src/adapters/synthetic`）。真实 Kiro CLI 适配器未实现，未验证。 |
+| Kiro CLI 适配器负责执行推理 | 推理只经 `InferenceProvider` 适配器调用，业务代码不直接调用模型 CLI。 | 仓库内只有合成适配器（`apps/server/src/adapters/synthetic`）。Kiro CLI 适配器（`apps/server/src/adapters/kiro-cli`，VOXWARD-STORY-008）只用假 CLI 测试，未绑定到运行时配置；真实 Kiro CLI 调用未验证。 |
 | Crew 可承担后台复盘、候选词提取与任务协调 | Crew 只作协调件。截止时间、业务幂等、频道权限与数据清理由 VoxWard 管理。Crew 会话状态不替代业务数据库的最终裁决。 | 未实现。本包不接入 Crew。 |
 | 开发 agent 与运行时 agent 分离 | 运行时 agent 使用独立账号与工作目录，不复用拥有源码、个人资料和治理库权限的开发 agent。 | 部署要求。本仓库不创建账号，未验证。 |
 
