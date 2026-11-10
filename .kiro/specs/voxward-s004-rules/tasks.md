@@ -29,10 +29,10 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 1.6 `index.ts`：`createModerationEngine`、`createModerationChecker`；无规则集或无昵称源时 REVIEW
   - [x] 1.7 `test/moderation-engine/rules/` 与 `moderation-engine.test.ts`：样本、区间映射、预算与上限测试
   - [x] 1.8 全仓自测通过后打勾，commit `VOXWARD-SUB-008: ...`
-- [ ] 2. VOXWARD-SUB-009 昵称检查缓存与本地安全称呼/读音（依赖 SUB-008）
-  - [ ] 2.1 `nickname-cache/cache.ts`：昵称摘要、缓存项、失效规则、LRU 与 TTL
-  - [ ] 2.2 `nickname-cache/safe-alias.ts`：查询端口、进程内实现、读音解析
-  - [ ] 2.3 `index.ts`：接入缓存，缓存只包昵称范围的检查
-  - [ ] 2.4 `test/moderation-engine/nickname-cache/`：失效、到期、只存完整结果、命中仍检查正文与组合、读音
-  - [ ] 2.5 全仓自测通过后打勾，commit `VOXWARD-SUB-009: ...`；`evidence/self-check.md` 随本 commit 提交
-- [ ] 3. 自测命令（工作树根）：`pnpm install --frozen-lockfile`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`；失败在包内修复后复跑，同一失败两次分析无新证据则停止报告
+- [x] 2. VOXWARD-SUB-009 昵称检查缓存与本地安全称呼/读音（依赖 SUB-008）
+  - [x] 2.1 `nickname-cache/cache.ts`：昵称摘要、缓存项、失效规则、LRU 与 TTL
+  - [x] 2.2 `nickname-cache/safe-alias.ts`：查询端口、进程内实现、读音解析
+  - [x] 2.3 `index.ts`：接入缓存，缓存只包昵称范围的检查
+  - [x] 2.4 `test/moderation-engine/nickname-cache/`：失效、到期、只存完整结果、命中仍检查正文与组合、读音
+  - [x] 2.5 全仓自测通过后打勾，commit `VOXWARD-SUB-009: ...`；`evidence/self-check.md` 随本 commit 提交
+- [x] 3. 自测命令（工作树根）：`pnpm install --frozen-lockfile`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`；失败在包内修复后复跑，同一失败两次分析无新证据则停止报告

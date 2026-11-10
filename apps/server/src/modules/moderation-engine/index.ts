@@ -1,6 +1,24 @@
 import { CONTRACT_VERSION, type ChannelEvent, type ModerationEngine, type ModerationResult } from "@voxward/contracts";
-import { type CheckEnvironment, type CheckLimits, DEFAULT_LIMITS, evaluateMessage, type MessageVerdict } from "./rules/engine.js";
-import { compileRuleSet, type CompiledRuleSet, ModerationConfigError, type RuleSetInput } from "./rules/groups.js";
+import {
+  createNicknameVerdictCache,
+  NICKNAME_CACHE_DEFAULTS,
+  withNicknameVerdictCache,
+} from "./nickname-cache/cache.js";
+import {
+  createInProcessSafeAliases,
+  type NicknameReading,
+  resolveNicknameReading,
+  type SafeAliasPort,
+} from "./nickname-cache/safe-alias.js";
+import {
+  type CheckEnvironment,
+  type CheckLimits,
+  DEFAULT_LIMITS,
+  evaluateMessage,
+  type MessageVerdict,
+  type NicknameScopeStrategy,
+} from "./rules/engine.js";
+import { type CompiledRuleSet, compileRuleSet, ModerationConfigError, type RuleSetInput } from "./rules/groups.js";
 import { createTableTransliterator, type Transliterator } from "./rules/transliterate.js";
 
 /**
@@ -18,6 +36,7 @@ export interface ModerationOptions {
   readonly transliterator?: Transliterator;
   readonly nicknames?: NicknameSource;
   readonly limits?: Partial<CheckLimits>;
+  readonly nicknameCache?: { readonly ttlMs?: number; readonly maxEntries?: number };
   readonly now?: () => number;
 }
 
@@ -26,16 +45,34 @@ export interface ModerationChecker {
   check(event: ChannelEvent): Promise<MessageVerdict>;
 }
 
+export interface NicknameReaderOptions {
+  readonly nicknames?: NicknameSource;
+  readonly safeAliases?: SafeAliasPort;
+  readonly transliterator?: Transliterator;
+}
+
+export interface NicknameReader {
+  read(event: ChannelEvent): Promise<NicknameReading>;
+}
+
 const NO_NICKNAMES: NicknameSource = { displayNicknameOf: () => Promise.resolve(null) };
 
 export function createModerationChecker(options: ModerationOptions = {}): ModerationChecker {
   const ruleSet = options.ruleSet === undefined ? null : compiledOrThrow(options.ruleSet);
+  const now = options.now ?? (() => performance.now());
+  const cache = createNicknameVerdictCache({
+    ttlMs: options.nicknameCache?.ttlMs ?? NICKNAME_CACHE_DEFAULTS.ttlMs,
+    maxEntries: options.nicknameCache?.maxEntries ?? NICKNAME_CACHE_DEFAULTS.maxEntries,
+    now,
+  });
   const env: CheckEnvironment = {
     ruleSet,
     transliterator: options.transliterator ?? createTableTransliterator(new Map()),
     limits: { ...DEFAULT_LIMITS, ...options.limits },
-    now: options.now ?? (() => performance.now()),
+    now,
   };
+  const nicknameScope: NicknameScopeStrategy | undefined =
+    ruleSet === null ? undefined : withNicknameVerdictCache(cache, ruleSet.version);
   const nicknames = options.nicknames ?? NO_NICKNAMES;
   return {
     async check(event) {
@@ -43,6 +80,7 @@ export function createModerationChecker(options: ModerationOptions = {}): Modera
       return evaluateMessage(
         { subject: { channelId: event.channelId, senderRef: event.sender.senderRef }, nickname, body: event.body },
         env,
+        nicknameScope,
       );
     },
   };
@@ -62,6 +100,23 @@ export function createModerationEngine(options: ModerationOptions = {}): Moderat
         route: verdict.route,
       };
       return result;
+    },
+  };
+}
+
+/** Reads how a sender's name should be announced: host-confirmed alias first, then a complete local transliteration. */
+export function createNicknameReader(options: NicknameReaderOptions = {}): NicknameReader {
+  const nicknames = options.nicknames ?? NO_NICKNAMES;
+  const safeAliases = options.safeAliases ?? createInProcessSafeAliases();
+  const transliterator = options.transliterator ?? createTableTransliterator(new Map());
+  return {
+    async read(event) {
+      const nickname = await nicknames.displayNicknameOf(event);
+      return resolveNicknameReading(
+        { channelId: event.channelId, senderRef: event.sender.senderRef },
+        nickname,
+        { safeAliases, transliterator },
+      );
     },
   };
 }

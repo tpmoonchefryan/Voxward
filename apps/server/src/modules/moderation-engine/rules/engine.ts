@@ -33,6 +33,11 @@ export interface SubjectRef {
   readonly senderRef: string;
 }
 
+/** Stable key for a subject. JSON keeps the two parts apart whatever characters they contain. */
+export function subjectKey(subject: SubjectRef): string {
+  return JSON.stringify([subject.channelId, subject.senderRef]);
+}
+
 export interface MessageInput {
   readonly subject: SubjectRef;
   /** The display nickname, or null when no local source supplied one. */
@@ -108,7 +113,9 @@ export async function evaluateMessage(
   // A blank nickname is treated as missing, so it cannot pass as a checked nickname.
   const nicknameText = input.nickname === null || input.nickname.trim() === "" ? null : input.nickname;
   const nickname =
-    nicknameText === null ? null : { text: nicknameText, parts: prepareField("nickname", nicknameText, env.transliterator) };
+    nicknameText === null
+      ? null
+      : { text: nicknameText, parts: prepareField("nickname", nicknameText, env.transliterator) };
   const normalizedLength = body.normal.text.length + (nickname?.parts.normal.text.length ?? 0);
   if (normalizedLength > limits.maxNormalizedLength) {
     return withVersion(decideVerdict([], ["NORMALIZED_TOO_LONG"]), ruleSet.version);

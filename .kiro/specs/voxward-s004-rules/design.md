@@ -71,7 +71,8 @@ No design authority is configured for the resolved work context. No authority wa
 
 ```
 apps/server/src/modules/moderation-engine/
-  index.ts                       工厂：createModerationEngine（契约）、createModerationChecker（带明细）
+  index.ts                       工厂：createModerationEngine（契约）、createModerationChecker（带明细）、
+                                 createNicknameReader（读音入口，SUB-009）
   rules/normalize.ts             字符单元切分、NFKC、小写、去零宽与组合标记，映射回原文
   rules/transliterate.ts         读音端口 Transliterator；表驱动的最小实现（自定）
   rules/bounded-regex.ts         受约束正则：准入检查与编译

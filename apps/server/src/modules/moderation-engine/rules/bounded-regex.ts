@@ -28,7 +28,10 @@ interface ShapeCount {
   unbounded: number;
 }
 
-/** Accepts a pattern only when its shape keeps matching cost bounded. The returned regex is global, for `findRegexMatches`. */
+/**
+ * Accepts a pattern only when its shape keeps matching cost bounded.
+ * The returned regex is global, for `findRegexMatches`.
+ */
 export function admitRegex(source: string): RegexAdmission {
   if (source.length > REGEX_LIMITS.maxSourceLength) return { ok: false, rejection: "SOURCE_TOO_LONG" };
   const shapeRejection = checkShape(source);
@@ -61,7 +64,8 @@ export function findRegexMatches(regex: RegExp, text: string): Array<[number, nu
 
 function checkShape(source: string): RegexRejection | null {
   const count: ShapeCount = { depth: 0, quantifiers: 0, unbounded: 0 };
-  // "group" after a closing parenthesis, "atom" after a character, class, escape or anchor, "quantifier" after a quantifier.
+  // Previous token: "group" after a closing parenthesis, "atom" after a character, class, escape or anchor,
+  // "quantifier" after a quantifier.
   let previous: "none" | "atom" | "group" | "quantifier" = "none";
   let index = 0;
   while (index < source.length) {

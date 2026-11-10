@@ -12,7 +12,10 @@ export type GroupAction =
   | { readonly kind: "REVIEW" }
   | { readonly kind: "DEDUCT"; readonly deduction: number };
 
-/** `exact` matches the original text, `normalized` the normalized text, `reading` the local reading, `regex` a bounded pattern. */
+/**
+ * `exact` matches the original text, `normalized` the normalized text, `reading` the local reading,
+ * and `regex` a bounded pattern.
+ */
 export type RuleInput =
   | { readonly id: string; readonly kind: "exact" | "normalized" | "reading"; readonly text: string }
   | { readonly id: string; readonly kind: "regex"; readonly source: string };
