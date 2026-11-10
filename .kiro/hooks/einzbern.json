@@ -1,26 +1,4 @@
 {
   "version": "v1",
-  "hooks": [
-    {
-      "name": "einzbern-prompt-recall",
-      "trigger": "UserPromptSubmit",
-      "action": {
-        "type": "command",
-        "command": "node \".kiro/harness/hook.mjs\" user-prompt-submit"
-      },
-      "timeout": 60,
-      "enabled": true
-    },
-    {
-      "name": "einzbern-read-guard",
-      "trigger": "PreToolUse",
-      "matcher": "read",
-      "action": {
-        "type": "command",
-        "command": "node \".kiro/harness/hook.mjs\" pre-tool-use"
-      },
-      "timeout": 30,
-      "enabled": true
-    }
-  ]
+  "hooks": []
 }

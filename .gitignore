@@ -1,0 +1,16 @@
+# Git worktrees for parallel specs
+.worktrees/
+
+# Device-local host settings
+.claude/settings.local.json
+.codex/
+
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.turbo/
+*.log
+.env
+.env.*
+!.env.example

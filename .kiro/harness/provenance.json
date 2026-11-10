@@ -4,6 +4,10 @@
   "scope": "Voxward project-local Owner exception",
   "sourceRepository": "tpmoonchefryan/einzbern",
   "sourceCommit": "aff02aa48076da6910c1a971a77583d42ce1a84e",
+  "manaSourceRepository": "tpmoonchefryan/mana-orchestrate",
+  "manaSourceCommit": "c9d2b1be7f81adb4487e63e03b2be30ce76d4f76",
+  "manaVersion": "4.5.1",
+  "manaReleaseStatus": "published",
   "renderVersion": "4.4.0",
   "releaseStatus": "unreleased INIT-085 candidate project copy",
   "sourceAgentsSha256": "f69f41487e98eb789e55d506ad81ba29c64c0628afaa6d75896817319097ab75",
@@ -55,7 +59,8 @@
     "Add project overlay to generated Mana Skill",
     "Pin the Kiro-aware hook runtime in project while preserving device registry resolution",
     "Set the project prompt-recall timeout to 60 seconds after observing a 41-second real shared-library recall",
-    "Repair project proposal navigation after the proposal moved to docs/proposal/y3_project_proposal.md"
+    "Repair project proposal navigation after the proposal moved to docs/proposal/y3_project_proposal.md",
+    "Update the project Mana Skill to published 4.5.1 while preserving the VoxWard overlay"
   ],
   "ownerDecision": "minutes:b1b4b07baf65e493a75c31c8#D1",
   "modelRequestsForInstallation": 0,
@@ -112,8 +117,8 @@
     },
     {
       "path": "skills/mana-orchestrate/SKILL.md",
-      "sha256": "f410b9e04e7c7655dd3a14194f23f4ac72d09c6b7a66869d4fded569a6c2ce82",
-      "bytes": 7152
+      "sha256": "d5d3c1659f8e8c20c91f5cbbf469929fb41f03731d9c718dfd942a82ba0bbe81",
+      "bytes": 6715
     },
     {
       "path": "skills/mana-orchestrate/agents/openai.yaml",
@@ -122,13 +127,13 @@
     },
     {
       "path": "skills/mana-orchestrate/references/doctor.md",
-      "sha256": "e117e7a7dc934dbcf4778b40fdb0bc673a539ff963d3f8a0cddaea85e49aad0c",
-      "bytes": 15534
+      "sha256": "93bd529ce31f7df31d0f4c4d506aa9b9bd39cbe055efd072a7cddcaf2cfd2009",
+      "bytes": 16950
     },
     {
       "path": "skills/mana-orchestrate/references/install.md",
-      "sha256": "0cc4640cb7263ac2d06f17bb0a44ee2fb2d222e7112212c0b03f5637042df005",
-      "bytes": 32484
+      "sha256": "f9203938efd6d95c1a36269ef5944968bae6fb12edf0f89ba96592490b5433ad",
+      "bytes": 33900
     },
     {
       "path": "skills/mana-orchestrate/references/kiro-specs.md",
@@ -152,8 +157,13 @@
     },
     {
       "path": "skills/mana-orchestrate/references/update.md",
-      "sha256": "47a173054768032524a32b4249ce17705bfe6ea3915e17d1a9818aea0e0734cc",
-      "bytes": 13069
+      "sha256": "bed33e0b971828b0430bddfffc463a4953848f33c09c601b4d5c24fd2cb81068",
+      "bytes": 14485
+    },
+    {
+      "path": "skills/mana-orchestrate/scripts/create-skill-archive.mjs",
+      "sha256": "d915bf97e2eac373816fe030f93dbbfa20e67076388616bc70b90e0ea6b86aa7",
+      "bytes": 2403
     },
     {
       "path": "skills/mana-orchestrate/scripts/install.mjs",
