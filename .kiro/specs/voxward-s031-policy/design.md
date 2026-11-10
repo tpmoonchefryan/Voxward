@@ -62,7 +62,7 @@ No design authority is configured for the resolved work context. No authority wa
 - 交付范围：VOXWARD-SUB-055 的 deliverables，四份文件位于仓库内 `docs/policy/`。
 - 材料性质：政策与数据处理草案，供 Owner 决定对外用途。它不是提交给平台的表单内容，也不是法律意见。
 - 来源基线：
-  - S-PROPOSAL：`docs/proposal/y3_project_proposal.md`（2026-11-09 对话决策整合版）。完整读取 §1–§5、§7–§16、§19–§20；§6、§17、§18 与本材料无直接对应，未读取。
+  - S-PROPOSAL：`docs/proposal/y3_project_proposal.md`（2026-11-09 对话决策整合版）。完整读取 §1–§5、§7–§16、§19–§20；§6、§17、§18 于材料写作后补读，已在 `status-and-gaps.md` 第 4 节映射。
   - S-STEERING：`.kiro/steering/00-harness.md` 至 `90-subagent-lifecycle.md`，共 10 份，全部读取。
   - S-WORK：实时工单读回（work-show，2026-11-10）。VOXWARD-STORY-031 为 revision 4；VOXWARD-SUB-055 为 revision 3。
   - S-EXT：web_fetch 核对（2026-11-10）。见第 5 节。

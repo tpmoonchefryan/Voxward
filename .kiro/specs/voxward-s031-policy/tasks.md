@@ -28,6 +28,6 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] 6. 写入 `docs/policy/self-hosting-responsibilities.md`：部署方职责、OAuth 与凭据、Cloud 项目、备份与数据请求、未决边界。
 - [x] 7. 写入 `docs/policy/status-and-gaps.md`：申请现状、缺项清单、待 Owner 确认项、提案 §1–§20 映射、来源核对记录、未验证项。
 - [x] 8. 提交材料：`VOXWARD-SUB-055: draft policy materials`，并勾选本段第 4–7 项。
-- [ ] 9. 按 AC001 与各验收行逐条自查，检查外链格式和仓库内路径，运行 `pnpm install && pnpm build && pnpm typecheck && pnpm test`。
-- [ ] 10. 写入 `.kiro/specs/voxward-s031-policy/evidence/self-check.md`，勾选第 9 项，提交 `VOXWARD-SUB-055: add self-check evidence`。
+- [x] 9. 按 AC001 与各验收行逐条自查，检查外链格式和仓库内路径，运行 `pnpm install && pnpm build && pnpm typecheck && pnpm test`。
+- [x] 10. 写入 `.kiro/specs/voxward-s031-policy/evidence/self-check.md`，勾选第 9 项，提交 `VOXWARD-SUB-055: add self-check evidence`。
 - [ ] 11. 完成报告：commit 与文件清单、自查结果、AC001 覆盖、待 Owner 确认项、来源缺口、未验证项。
