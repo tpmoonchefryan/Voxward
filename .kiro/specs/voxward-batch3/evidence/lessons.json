@@ -1,0 +1,110 @@
+[
+ {
+  "subject": "VoxWard 启动会打开 SQLite：默认 databaseFile 的父目录在干净检出上不存在，pnpm dev 直接退出",
+  "summary": "第 3 批起 main.ts 在监听前打开数据库并迁移。默认 databaseFile 是相对 cwd 的 data/voxward.sqlite3，干净检出没有 data/，SQLite 不建目录；better-sqlite3 抛没有 code 的 TypeError，main 只打印 DATABASE_SETUP_FAILED: unexpected error 并退出 1。startup-errors 测试把 VOXWARD_DATABASE_FILE 指到 scratch，掩盖了这一点。",
+  "snippet": "改启动、配置或数据库接线的包，冒烟要在干净检出上用默认配置跑 pnpm dev 与 node apps/server/dist/main.js 并探测 /healthz；测试把数据库指到 scratch 时，至少保留一个默认路径的启动用例。",
+  "body": "第 3 批候选 9b7a7f8：4a68a38（SUB-006）让 apps/server/src/main.ts 启动时 openDatabase 并 runMigrations。apps/server/src/config/schema.ts 的默认 databaseFile 为 data/voxward.sqlite3，按进程 cwd 解析（pnpm dev 时是 apps/server，node apps/server/dist/main.js 时是启动目录）。目录不存在时 better-sqlite3 抛 TypeError: Cannot open database because the directory does not exist，没有 code 字段，describeDatabaseError 退回 unexpected error。实测 pnpm dev 的服务端 Failed、Vite 代理 /healthz 500，打包产物在检出根与 apps/server 下都退出 1；设置 VOXWARD_DATABASE_FILE 到已存在目录后两者都正常。同一提交把 apps/server/test/app/startup-errors.test.ts 改为使用 scratch 数据库，主线程 A12 的五条门禁命令也都不启动服务，所以问题到验收冒烟才出现。修法是在打开前为父目录 mkdir -p，或给 dev 脚本设可写路径，并让报错说出原因。",
+  "tags": [
+   "voxward",
+   "startup",
+   "sqlite",
+   "smoke-test",
+   "config"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/main.ts",
+    "apps/server/src/config/schema.ts",
+    "apps/server/test/app/startup-errors.test.ts",
+    ".kiro/specs/voxward-batch3/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "Fastify 默认日志记录含查询串的 req.url：不从 URL 读令牌不等于令牌不进日志",
+  "summary": "Fastify 默认请求序列化器以 info 级别记录完整 url，默认 404 处理还会把 URL 写进一条日志并放进响应体。VoxWard 的守卫拒绝 URL 里的令牌，但令牌照样进了日志；请求头与请求体默认不记录。",
+  "snippet": "凭据脱敏要落在 Fastify logger 的 serializers.req（去掉或脱敏查询串）与 setNotFoundHandler 上；泄漏扫描要包含把 vws_、vwo_ 放进查询串的负例，同时扫描日志与 404 响应。",
+  "body": "第 3 批候选 9b7a7f8 的打包产物上，GET /channels/channel-1/members?token=<活的 vwo_> 得 401，GET /overlay/channel-1?session=<活的 vws_> 得 404；日志的 incoming request 行记录了完整 url，404 另有 Route GET:/overlay/channel-1?session=… not found，这句也在响应体里。同一令牌放在 Authorization 头时 0 行。apps/server/src/app.ts 用 Fastify({ logger }) 的默认序列化器；apps/server/src/security/redaction.ts 的 redactText 能识别这些形态，但没有接到日志上；S003 设计 §4.6 与 leak-scan 测试只考虑了请求头。下游接入（OBS Browser Source 等）通常只能配置一个 URL，所以这个触发很现实，第 3 批据此把 STORY-003 打回（B2）。",
+  "tags": [
+   "voxward",
+   "fastify",
+   "logging",
+   "credentials",
+   "security"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/app.ts",
+    "apps/server/src/auth/guard.ts",
+    "apps/server/src/security/redaction.ts",
+    "apps/server/test/security/leak-scan.test.ts",
+    ".kiro/specs/voxward-batch3/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "VoxWard 计分端口的幂等只覆盖实际生效的变化，manual 与 identity 幂等键是全局的",
+  "summary": "score_ledger 只记 actualDelta≠0。noise、冷却、钳制、关闭、0 扣分的决策不写行也不留幂等键，同一事件之后再次 applyVerdict 会按当时状态计分。manual:<operationId> 与 identity:<sourceEventRef> 不含频道与主体，重复路径直接返回已有行的主体与 delta，不核对主体。",
+  "snippet": "人工改判按提案 §7.1 走 applyManualCorrection 的补偿，不重放 applyVerdict；operationId 由服务端生成全局唯一值或把键限定到频道与主体，收到 duplicate 时核对 subjectRef。",
+  "body": "第 3 批候选 9b7a7f8，真实 SQLite 探针：先 ALLOW_NOISE（0）再对同一事件 BLOCK 得 −3；分数在下限时 BLOCK 被钳为 0，三次加分后重放同一 BLOCK 得 −3；两种情况账本都等于实际变化，单个事件没有两次生效。另一频道的主体用已用过的 operationId 补偿，返回第一个频道主体的 subjectRef 与 delta，自己没有写入。原因在 apps/server/src/db/scoring-ledger.ts：查重只按 idempotency_key，持久化只在 actualDelta≠0 时写账本。S005 设计 §3「同一事件至多计一次，后续裁决变化也不再计分」只在首次决策改变分数时成立。STORY-014、STORY-011、STORY-026 接线或验证时要按这个边界设计。",
+  "tags": [
+   "voxward",
+   "scoring",
+   "idempotency",
+   "ledger"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/scoring-ledger.ts",
+    "apps/server/src/modules/scoring-engine/index.ts",
+    "apps/server/src/modules/scoring-engine/compensation.ts",
+    ".kiro/specs/voxward-s005-scoring/design.md"
+   ]
+  }
+ },
+ {
+  "subject": "ScoringEngine 入口是 async，不能放进 runShortTransaction；计分端口可作为 savepoint 并入外层事务",
+  "summary": "S001 契约的 applyVerdict 返回 Promise，runShortTransaction 遇到 thenable 会回滚并抛 AsyncTransactionError。ScoringLedgerPort.commitScoreDecision 是同步的，better-sqlite3 在外层事务里把它变成 savepoint，外层失败时账本与新建的主体行一起回滚。",
+  "snippet": "要把裁决、计分与投递意图放进同一事务（提案 §7.2、VW-R-011），接线时给计分提供同步入口，或在模块内同步调用端口并套用例外守卫；不要在事务回调里返回 applyVerdict 的 Promise。",
+  "body": "第 3 批候选 9b7a7f8 的探针：外层 runShortTransaction 中调用端口写入一行扣分后让外层抛错，账本 0 行、主体 0 行；在外层事务回调里调用 applyVerdict 得 AsyncTransactionError，账本仍为 0 行。apps/server/src/db/transaction.ts 用 drizzle 的 transaction(behavior: immediate)，嵌套调用由 better-sqlite3 改用 savepoint；packages/contracts/src/modules/scoring-engine.ts 把 applyVerdict 定为 Promise。例外守卫 withExceptionGuard 与决策函数是 scoring-engine 模块内部的，其它模块按 check-deps 不能导入，所以同步组合路径要由计分模块自己提供。",
+  "tags": [
+   "voxward",
+   "transaction",
+   "scoring",
+   "sqlite"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/transaction.ts",
+    "apps/server/src/db/scoring-ledger.ts",
+    "packages/contracts/src/modules/scoring-engine.ts",
+    "apps/server/src/modules/scoring-engine/ledger.ts"
+   ]
+  }
+ },
+ {
+  "subject": "在 scratch 里做 VoxWard 验收探针而不改检出：check-deps 副本与 web TSX 渲染",
+  "summary": "check-deps 的 ROOT 是脚本所在目录的上一级，并读取 packages/contracts/package.json；把 scripts/check-deps.mjs、根与三个包的 package.json、三个 src 目录复制到 scratch，就能放入临时违规文件做负面对照。用 tsx 直接导入 apps/web 的 TSX 组件时要加 --tsconfig apps/web/tsconfig.json，否则按 classic JSX 编译，报 React is not defined。",
+  "snippet": "负面对照：复制 scripts/check-deps.mjs、package.json×4 与 packages/contracts/src、apps/server/src、apps/web/src 到 scratch 再放违规文件；渲染探针：apps/server/node_modules/.bin/tsx --tsconfig apps/web/tsconfig.json <probe>.mts。",
+  "body": "第 3 批验收在不改检出的前提下完成了全部负面对照：副本基线 94 个文件 0 违规，与检出一致；放入 5 个临时违规文件后逐条报出。只复制 src 时脚本因缺少 packages/contracts/package.json 抛 ENOENT。web 组件 UntrustedText 用 react-jsx 编写，tsx 默认不读 apps/web/tsconfig.json，渲染时报 ReferenceError: React is not defined；加 --tsconfig 后可用 react-dom/server 的 renderToStaticMarkup 测试。探针只按绝对路径导入检出内源码，数据库文件放 scratch，每次执行后 git status --short 为 0 行。",
+  "tags": [
+   "voxward",
+   "acceptance",
+   "check-deps",
+   "tsx",
+   "probes"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "scripts/check-deps.mjs",
+    "apps/web/tsconfig.json",
+    "apps/web/src/components/untrusted-text/UntrustedText.tsx"
+   ]
+  }
+ }
+]
