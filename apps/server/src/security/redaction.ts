@@ -8,7 +8,7 @@ const SECRET_SHAPES: ReadonlyArray<{ readonly label: string; readonly pattern: R
   { label: "bearer", pattern: /Bearer\s+[A-Za-z0-9._~+/=-]{8,}/g },
   { label: "session-token", pattern: /vws_[A-Za-z0-9_-]{20,}/g },
   { label: "downstream-token", pattern: /vwo_[A-Za-z0-9_-]{20,}/g },
-  { label: "scrypt-hash", pattern: /scrypt\$[A-Za-z0-9+/=]{8,}\$[A-Za-z0-9+/=]{8,}/g },
+  { label: "scrypt-hash", pattern: /\$scrypt\$ln=\d+,r=\d+,p=\d+\$[A-Za-z0-9+/]{8,}\$[A-Za-z0-9+/]{8,}/g },
   { label: "google-api-key", pattern: /AIza[0-9A-Za-z_-]{35}/g },
   { label: "oauth-access-token", pattern: /ya29\.[0-9A-Za-z_-]{20,}/g },
   { label: "model-api-key", pattern: /sk-[A-Za-z0-9_-]{20,}/g },

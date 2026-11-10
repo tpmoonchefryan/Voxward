@@ -54,6 +54,14 @@ describe("redaction", () => {
     expect(cleaned).not.toContain("abcdefghijklmnop");
   });
 
+  it("names a stored password hash by its shape, whatever scrypt cost it was made at", () => {
+    const current = "$scrypt$ln=17,r=8,p=1$c2FsdHNhbHRzYWx0c2FsdA$aGFzaGhhc2hoYXNoaGFzaGhhc2hoYXNo";
+    const previous = "$scrypt$ln=14,r=8,p=1$c2FsdHNhbHRzYWx0c2FsdA$aGFzaGhhc2hoYXNoaGFzaGhhc2hoYXNo";
+    expect(findSecretPatterns(current)).toEqual(["scrypt-hash"]);
+    expect(findSecretPatterns(previous)).toEqual(["scrypt-hash"]);
+    expect(redactText(current)).toBe(REDACTED);
+  });
+
   it("replaces values under credential-named keys, at any depth", () => {
     const redacted = redactValue({
       prompt: "hello",
