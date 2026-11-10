@@ -1,9 +1,14 @@
-/** Admission limits for rule patterns. They bound matching cost; see the S004 design, section 5. */
+/**
+ * Admission limits for rule patterns. They bound matching cost; see the S004 design, section 5.
+ * `maxRepeatChoices` caps the product of the repeat counts that the variable bounded quantifiers can take. Every
+ * combination of those counts is one path a failing match may explore, so the product bounds the paths per start.
+ */
 export const REGEX_LIMITS = {
   maxSourceLength: 100,
   maxQuantifiers: 3,
   maxUnboundedQuantifiers: 1,
   maxBoundedRepeat: 8,
+  maxRepeatChoices: 81,
 } as const;
 
 export type RegexRejection =
@@ -13,8 +18,11 @@ export type RegexRejection =
   | "NAMED_GROUP"
   | "LOOKAROUND"
   | "QUANTIFIED_GROUP"
+  | "GROUP_ALTERNATION"
   | "TOO_MANY_QUANTIFIERS"
   | "TOO_MANY_UNBOUNDED_QUANTIFIERS"
+  | "UNBOUNDED_WITH_VARIABLE_REPEAT"
+  | "REPEAT_CHOICES_TOO_MANY"
   | "REPEAT_TOO_LARGE"
   | "MATCHES_EMPTY";
 
@@ -26,6 +34,12 @@ interface ShapeCount {
   depth: number;
   quantifiers: number;
   unbounded: number;
+  /** Bounded quantifiers that can repeat a different number of times, such as `?` or `{0,8}`. */
+  variable: number;
+  /** Product of the choice counts of the variable quantifiers. */
+  choices: number;
+  /** An alternation sits inside a group. Reported after the scan, so an earlier reason (QUANTIFIED_GROUP) wins. */
+  groupAlternation: boolean;
 }
 
 /**
@@ -63,7 +77,14 @@ export function findRegexMatches(regex: RegExp, text: string): Array<[number, nu
 }
 
 function checkShape(source: string): RegexRejection | null {
-  const count: ShapeCount = { depth: 0, quantifiers: 0, unbounded: 0 };
+  const count: ShapeCount = {
+    depth: 0,
+    quantifiers: 0,
+    unbounded: 0,
+    variable: 0,
+    choices: 1,
+    groupAlternation: false,
+  };
   // Previous token: "group" after a closing parenthesis, "atom" after a character, class, escape or anchor,
   // "quantifier" after a quantifier.
   let previous: "none" | "atom" | "group" | "quantifier" = "none";
@@ -107,6 +128,9 @@ function checkShape(source: string): RegexRejection | null {
     }
 
     if (char === "|") {
+      // Inside a group, an alternation multiplies the paths of every later group (3^13 for S1). At top level the
+      // branches only sit side by side, so they add cost linearly.
+      if (count.depth > 0) count.groupAlternation = true;
       index += 1;
       previous = "none";
       continue;
@@ -128,6 +152,13 @@ function checkShape(source: string): RegexRejection | null {
       if (quantifier.unbounded) count.unbounded += 1;
       if (count.quantifiers > REGEX_LIMITS.maxQuantifiers) return "TOO_MANY_QUANTIFIERS";
       if (count.unbounded > REGEX_LIMITS.maxUnboundedQuantifiers) return "TOO_MANY_UNBOUNDED_QUANTIFIERS";
+      if (quantifier.variable) {
+        count.variable += 1;
+        count.choices *= quantifier.choices;
+      }
+      // An unbounded quantifier rescans the rest of the input for every choice of a variable one (S5 and S6).
+      if (count.unbounded > 0 && count.variable > 0) return "UNBOUNDED_WITH_VARIABLE_REPEAT";
+      if (count.choices > REGEX_LIMITS.maxRepeatChoices) return "REPEAT_CHOICES_TOO_MANY";
       index += quantifier.width;
       previous = "quantifier";
       continue;
@@ -136,7 +167,8 @@ function checkShape(source: string): RegexRejection | null {
     index += 1;
     previous = "atom";
   }
-  return count.depth === 0 ? null : "SYNTAX";
+  if (count.depth !== 0) return "SYNTAX";
+  return count.groupAlternation ? "GROUP_ALTERNATION" : null;
 }
 
 function openGroup(source: string, index: number): RegexRejection | null {
@@ -150,13 +182,19 @@ function openGroup(source: string, index: number): RegexRejection | null {
 interface QuantifierShape {
   width: number;
   unbounded: boolean;
+  /** A bounded quantifier that can repeat a different number of times. An exact count such as `{3}` is not variable. */
+  variable: boolean;
+  /** How many repeat counts a bounded quantifier admits. One for an exact count. */
+  choices: number;
   repeatTooLarge: boolean;
 }
 
 function quantifierAt(source: string, index: number): QuantifierShape | null {
   const char = source.charAt(index);
-  if (char === "*" || char === "+") return { width: 1, unbounded: true, repeatTooLarge: false };
-  if (char === "?") return { width: 1, unbounded: false, repeatTooLarge: false };
+  if (char === "*" || char === "+") {
+    return { width: 1, unbounded: true, variable: false, choices: 1, repeatTooLarge: false };
+  }
+  if (char === "?") return { width: 1, unbounded: false, variable: true, choices: 2, repeatTooLarge: false };
   const brace = /^\{(\d+)(,(\d*))?\}/.exec(source.slice(index));
   if (brace === null) return null;
   const min = Number(brace[1]);
@@ -164,9 +202,12 @@ function quantifierAt(source: string, index: number): QuantifierShape | null {
   const max = brace[3] === undefined || brace[3] === "" ? null : Number(brace[3]);
   const unbounded = open && max === null;
   const largest = unbounded ? min : (max ?? min);
+  const choices = unbounded ? 1 : largest - min + 1;
   return {
     width: brace[0].length,
     unbounded,
+    variable: !unbounded && choices > 1,
+    choices,
     repeatTooLarge: largest > REGEX_LIMITS.maxBoundedRepeat,
   };
 }

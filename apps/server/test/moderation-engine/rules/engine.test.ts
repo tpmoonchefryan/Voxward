@@ -162,6 +162,15 @@ describe("messages that cannot be fully checked", () => {
     expect(verdict).toMatchObject({ route: "REVIEW", reasons: ["RULE_BUDGET_EXCEEDED"], hits: [] });
   });
 
+  it("flags an overrun by the last rule, so a slow final match cannot pass as complete", async () => {
+    const single = compiled({
+      version: "v1",
+      groups: [{ id: "explicit", action: { kind: "BLOCK" }, rules: [{ id: "exact-badword", kind: "exact", text: "badword" }] }],
+    });
+    const verdict = await evaluateMessage(input(null, "hello"), environment(single, { now: scriptedClock([0, 0, 25]) }));
+    expect(verdict.reasons).toContain("RULE_BUDGET_EXCEEDED");
+  });
+
   it("routes every message to review when no rule set is published", async () => {
     const verdict = await evaluateMessage(input("Viewer", "badword"), environment(null));
     expect(verdict).toMatchObject({ route: "REVIEW", reasons: ["NO_RULE_SET"], ruleVersion: null });

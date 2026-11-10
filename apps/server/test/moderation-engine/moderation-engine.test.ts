@@ -5,7 +5,7 @@ import { createModerationEngine, type ModerationOptions } from "../../src/module
 import { ModerationConfigError, type RuleSetInput } from "../../src/modules/moderation-engine/rules/groups.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 
-const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic" };
+const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" };
 
 const ruleSet: RuleSetInput = {
   version: "v1",
@@ -27,8 +27,10 @@ function eventWithBody(body: string): ChannelEvent {
 }
 
 function engineWith(options: ModerationOptions) {
+  // The rule budget reads the clock. These cases check the contract output, not timing, so the clock is pinned.
   return createModerationEngine({
     ...options,
+    now: () => 0,
     nicknames: { displayNicknameOf: () => Promise.resolve("Viewer") },
   });
 }
