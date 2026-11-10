@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:c9c3c501eab15d2b2e980f45",
+  "workRevision": 4,
+  "sourceDigest": "29f8c48435f86e1e87fba3a6609cd7325b8e5265199685ea4a8665254fc967ae",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:c9c3c501eab15d2b2e980f45",
+    "workRevision": 4,
+    "sourceDigest": "29f8c48435f86e1e87fba3a6609cd7325b8e5265199685ea4a8665254fc967ae",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:c9c3c501eab15d2b2e980f45",
+        "externalKey": "VOXWARD-STORY-031",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "准备评分用途、隐私和自托管政策草案",
+        "summary": "准备评分用途、隐私和自托管政策草案；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:38f6781a2897f516ae7c2c81",
+        "scopeDigest": "5caeb38503774901b81bc4632dd23b74827512ecdc1daf23e2a8cb305e486329",
+        "relations": {
+          "blockedBy": [
+            "work:674c24794f9a1fb626eb2ad1"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:38f6781a2897f516ae7c2c81",
+          "supersedes": []
+        },
+        "fieldSha256": "6ee9319b813297ba98d681f14f42d4449ba0db7b73bf492718e3310a9cc393db",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "c0c0e51f2c3f66426c23853e14567393730bcf5b61ad39b9e3a72b1ca629c400",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "4bfc8a0aef6a9e1774ab169a11f04f60c97fcab4bc2725e2a207927b452996e6",
+    "design.md": "1b7aab71e0a6e1e0dba71970df013e80e7eca51521c7304538e839aee79c2f4c",
+    "tasks.md": "697c5188de9035f7266bbebc9e4c4ff8287c8b71236eadcd89fb505b3a3c3b3f"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "7b0bbb1fac759e0d5e7eb77068910c64b30345f91d582b388f30e664817a7146"
+}
