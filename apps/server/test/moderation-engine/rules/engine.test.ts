@@ -53,7 +53,7 @@ const moderation = compiled({
       ],
     },
     { id: "soft", action: { kind: "DEDUCT", deduction: 3 }, rules: [{ id: "phone-digits", kind: "regex", source: "[0-9]{4,8}" }] },
-    { id: "sound", action: { kind: "REVIEW" }, rules: [{ id: "sound-shabi", kind: "reading", text: "shabi" }] },
+    { id: "sound", action: { kind: "REVIEW" }, rules: [{ id: "sound-jiayi", kind: "reading", text: "jiayi" }] },
   ],
 });
 
@@ -75,11 +75,11 @@ describe("message checks against the rule set", () => {
   it("routes a homophone match to review only and never applies a deduction for it", async () => {
     const transliterator = createTableTransliterator(
       new Map([
-        ["沙", "sha"],
-        ["比", "bi"],
+        ["甲", "jia"],
+        ["乙", "yi"],
       ]),
     );
-    const verdict = await evaluateMessage(input("Viewer", "沙比"), environment(moderation, { transliterator }));
+    const verdict = await evaluateMessage(input("Viewer", "甲乙"), environment(moderation, { transliterator }));
     expect(verdict.route).toBe("REVIEW");
     expect(verdict.hitCount).toBe(1);
     expect(verdict.deductionsApplied).toBe(0);

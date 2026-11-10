@@ -11,15 +11,15 @@ import { createTableTransliterator } from "../../../src/modules/moderation-engin
 const subject: SubjectRef = { channelId: "channel-1", senderRef: "sender-1" };
 const transliterator = createTableTransliterator(
   new Map([
-    ["沙", "sha"],
-    ["比", "bi"],
+    ["甲", "jia"],
+    ["乙", "yi"],
   ]),
 );
 
 describe("in-process safe alias port", () => {
   it("returns the alias confirmed for the subject and null for anyone else", async () => {
-    const port = createInProcessSafeAliases([{ ...subject, alias: "小沙" }]);
-    expect(await port.lookup(subject)).toBe("小沙");
+    const port = createInProcessSafeAliases([{ ...subject, alias: "小甲" }]);
+    expect(await port.lookup(subject)).toBe("小甲");
     expect(await port.lookup({ channelId: "channel-2", senderRef: "sender-1" })).toBeNull();
   });
 
@@ -38,23 +38,23 @@ describe("in-process safe alias port", () => {
 
 describe("nickname reading", () => {
   it("prefers a host-confirmed alias over the local transliteration", async () => {
-    const reading = await resolveNicknameReading(subject, "沙比", {
-      safeAliases: createInProcessSafeAliases([{ ...subject, alias: "小沙" }]),
+    const reading = await resolveNicknameReading(subject, "甲乙", {
+      safeAliases: createInProcessSafeAliases([{ ...subject, alias: "小甲" }]),
       transliterator,
     });
-    expect(reading).toEqual({ source: "safe-alias", text: "小沙" });
+    expect(reading).toEqual({ source: "safe-alias", text: "小甲" });
   });
 
   it("reads a complete local transliteration when no alias was confirmed", async () => {
-    const reading = await resolveNicknameReading(subject, "沙比", {
+    const reading = await resolveNicknameReading(subject, "甲乙", {
       safeAliases: createInProcessSafeAliases(),
       transliterator,
     });
-    expect(reading).toEqual({ source: "transliteration", text: "shabi" });
+    expect(reading).toEqual({ source: "transliteration", text: "jiayi" });
   });
 
   it("asks for manual confirmation instead of guessing when the transliteration is incomplete", async () => {
-    const reading = await resolveNicknameReading(subject, "沙猫", {
+    const reading = await resolveNicknameReading(subject, "甲丙", {
       safeAliases: createInProcessSafeAliases(),
       transliterator,
     });
@@ -93,17 +93,17 @@ describe("nickname reader through the module entry", () => {
 
   it("reads the nickname from the nickname source and the alias from the alias port", async () => {
     const reader = createNicknameReader({
-      nicknames: { displayNicknameOf: () => Promise.resolve("沙比") },
+      nicknames: { displayNicknameOf: () => Promise.resolve("甲乙") },
       transliterator,
     });
-    expect(await reader.read(event)).toEqual({ source: "transliteration", text: "shabi" });
+    expect(await reader.read(event)).toEqual({ source: "transliteration", text: "jiayi" });
   });
 
   it("uses a confirmed alias even when the nickname source has no nickname", async () => {
     const reader = createNicknameReader({
       nicknames: { displayNicknameOf: () => Promise.resolve(null) },
-      safeAliases: createInProcessSafeAliases([{ ...subject, alias: "小沙" }]),
+      safeAliases: createInProcessSafeAliases([{ ...subject, alias: "小甲" }]),
     });
-    expect(await reader.read(event)).toEqual({ source: "safe-alias", text: "小沙" });
+    expect(await reader.read(event)).toEqual({ source: "safe-alias", text: "小甲" });
   });
 });

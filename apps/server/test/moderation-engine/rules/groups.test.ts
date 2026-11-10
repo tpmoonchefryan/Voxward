@@ -36,7 +36,7 @@ describe("rule set compilation", () => {
           ],
         },
         { id: "soft", action: deduct(2), rules: [{ id: "digits", kind: "regex", source: "[0-9]{4,8}" }] },
-        { id: "sound", action: review, rules: [{ id: "sound-alike", kind: "reading", text: "shabi" }] },
+        { id: "sound", action: review, rules: [{ id: "sound-alike", kind: "reading", text: "jiayi" }] },
       ],
     });
     expect(result.ok).toBe(true);
@@ -46,8 +46,8 @@ describe("rule set compilation", () => {
     const issues = issuesOf({
       version: "v1",
       groups: [
-        { id: "explicit", action: block, rules: [{ id: "sound-block", kind: "reading", text: "shabi" }] },
-        { id: "soft", action: deduct(1), rules: [{ id: "sound-deduct", kind: "reading", text: "shabi" }] },
+        { id: "explicit", action: block, rules: [{ id: "sound-block", kind: "reading", text: "jiayi" }] },
+        { id: "soft", action: deduct(1), rules: [{ id: "sound-deduct", kind: "reading", text: "jiayi" }] },
       ],
     });
     expect(issues).toEqual([
@@ -93,7 +93,7 @@ describe("rule set compilation", () => {
             id: "g",
             action: review,
             rules: [
-              { id: "upper", kind: "reading", text: "Shabi" },
+              { id: "upper", kind: "reading", text: "Jiayi" },
               { id: "zero-width", kind: "normalized", text: "\u200B" },
             ],
           },
