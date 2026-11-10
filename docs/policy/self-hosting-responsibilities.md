@@ -70,5 +70,5 @@
 | Cloud 项目的审核责任与覆盖 | 未确认 | `platform-questions.md` Q4 |
 | 下游输出的限制 | 未确认 | `platform-questions.md` Q5 |
 | AI 提供方的留存与披露 | 未核对 | `platform-questions.md` Q6；`data-processing.md` 第 6 节 |
-| 撤销授权入口与删除时限的对应关系 | 待确认 | `data-processing.md` 第 5.3 节 |
+| 撤销授权入口与删除时限（III.D.2.c、III.E.4.g） | 期限已按全文核对，用户请求删除为 7 日；撤销入口的实现状态未确认 | `data-processing.md` 第 5.3 节 |
 | 部署方的法律角色 | 未确认，本包不认定 | 第 1 节 |

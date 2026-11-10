@@ -31,3 +31,4 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] 9. 按 AC001 与各验收行逐条自查，检查外链格式和仓库内路径，运行 `pnpm install && pnpm build && pnpm typecheck && pnpm test`。
 - [x] 10. 写入 `.kiro/specs/voxward-s031-policy/evidence/self-check.md`，勾选第 9 项，提交 `VOXWARD-SUB-055: add self-check evidence`。
 - [ ] 11. 完成报告：commit 与文件清单、自查结果、AC001 覆盖、待 Owner 确认项、来源缺口、未验证项。
+- [ ] 12. 返工（验收 B3、N7）：按开发者政策全文修正删除期限与核对记录，同步本地段；自查见 `evidence/rework-self-check.md`。
