@@ -25,8 +25,8 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 2.2 `src/ai/validation.ts`，以及 `moderation-result.ts`、`sc-result.ts`、`review-result.ts`
   - [x] 2.3 `src/ai/index.ts` 与 `src/index.ts` 导出
   - [x] 2.4 `packages/contracts/test/ai/`：正例、负例、Q3 类型测试
-- [ ] 3. VOXWARD-SUB-014：批内唯一、区间、生成文本检查与错误定位
-  - [ ] 3.1 `unicode-span.ts`、`errors.ts`、`output-text-check.ts`
-  - [ ] 3.2 `batch-contract.ts` 与模块 `index.ts` 导出
-  - [ ] 3.3 `apps/server/test/inference-provider/validation/`：批校验、码点区间、规则引擎端口
+- [x] 3. VOXWARD-SUB-014：批内唯一、区间、生成文本检查与错误定位
+  - [x] 3.1 `unicode-span.ts`、`errors.ts`、`output-text-check.ts`
+  - [x] 3.2 `batch-contract.ts` 与模块 `index.ts` 导出
+  - [x] 3.3 `apps/server/test/inference-provider/validation/`：批校验、码点区间、规则引擎端口
 - [ ] 4. 自测与证据：`evidence/self-check.md`，随最后一个 commit 提交
