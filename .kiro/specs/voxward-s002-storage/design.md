@@ -142,12 +142,15 @@ No design authority is configured for the resolved work context. No authority wa
 
 计分公式、冷却和钳制属于 ScoringEngine 模块（提案 §9.3），不在 db 层实现（自定）。db 层只提供上述原子操作。
 
+外键或不变量被破坏时（例如任务引用的事件或主体不存在），函数抛出错误，不返回业务结果（自定）。另有 `SubjectStore.create` 与 `TaskStore.create`，用于建立主体和任务。
+
 ## 9. 测试与验收映射
 
 | 测试 | 证明什么 | 对应验收 |
 | --- | --- | --- |
-| `apps/server/test/db/schema.test.ts` | 24 张表的列与索引与数据字典一致；无明文凭据列；正文只在 `technical_log_evidence`；CHECK 与 UNIQUE 生效 | VW-SUB004-AC001 |
-| `apps/server/test/db/migrate.test.ts` | 空库迁移成功；重跑为空操作；重跑后已写入的数据保留 | VW-SUB005-AC001（迁移演练） |
+| `apps/server/test/db/schema.test.ts` | 24 张表的列、可空性、索引与 CHECK 名称与数据字典一致；迁移 SQL 与 schema 一致；无明文凭据列；正文只在 `technical_log_evidence` | VW-SUB004-AC001 |
+| `apps/server/test/db/constraints.test.ts` | 数据库自身拒绝违规数据：CHECK、部分唯一索引、唯一约束、外键、凭据引用格式；删除日志条目时级联删除证据 | VW-SUB004-AC001（唯一约束） |
+| `apps/server/test/db/migrate.test.ts` | 空库迁移成功；重跑为空操作；关闭重开后已写入的数据保留 | VW-SUB005-AC001（迁移演练） |
 | `apps/server/test/db/transaction.test.ts` | WAL 生效；异常时回滚；异步 `work` 被拒绝且回滚；写锁被占用时第二个写者受控失败 | VW-SUB005-AC001（事务回滚） |
 | `apps/server/test/db/repositories.test.ts` | 去重；裁决提交守卫；计分幂等；乐观并发；活动例外唯一 | VW-S002-AC001（唯一约束与事务） |
 | `apps/server/test/db/concurrency.test.ts` | 四个子进程并发写入，无重复且计数正确；子进程在写入后、提交前被 SIGKILL，重开后无半条记录；已提交数据保留 | VW-S002-AC001（并发写入、提交中断、重启） |
@@ -167,9 +170,19 @@ No design authority is configured for the resolved work context. No authority wa
 
 ## 11. 与子单交付清单的偏离
 
-- 本包还改动了以下文件，它们不在 SUB-004、SUB-005 的 deliverables 中：`apps/server/src/config/schema.ts`、`apps/server/src/config/load.ts`、`apps/server/test/config/load.test.ts`、`apps/server/src/main.ts`、`apps/server/test/app/startup-errors.test.ts`、`scripts/check-deps.mjs`、`apps/server/package.json`、`apps/server/tsconfig.json`、`pnpm-workspace.yaml`、`pnpm-lock.yaml`、`.gitignore`。
-- 原因：`databaseFile` 键来自 SUB-005 的依赖「数据库路径经配置加载提供」；Q1、Q2 是批次指定项；其余是依赖与忽略规则的必要改动。
+- 本包还改动或新增了以下文件，它们不在 SUB-004、SUB-005 的 deliverables 中：
+  - 配置与启动：`apps/server/src/config/schema.ts`、`apps/server/src/config/load.ts`、`apps/server/test/config/load.test.ts`、`apps/server/test/app/healthz.test.ts`、`apps/server/test/boundary/synthetic-flow.test.ts`、`apps/server/src/main.ts`、`apps/server/test/app/startup-errors.test.ts`。
+  - 工程与依赖：`apps/server/package.json`、`apps/server/tsconfig.json`、`pnpm-lock.yaml`、`.gitignore`，以及 `scripts/check-deps.mjs`（Q1）。
+  - 数据库辅助：`apps/server/src/db/schema/checks.ts`（CHECK 字面量辅助）、`apps/server/test/db/helpers.ts`、`apps/server/test/db/constraints.test.ts`、`apps/server/test/db/fixtures/*.ts`。
+  - 类型导出：`apps/server/src/db/schema/subjects.ts`、`apps/server/src/db/schema/messages.ts` 中的 `ScoreReasonCode`、`TaskKind`、`VerdictSource` 类型。
+- 原因：`databaseFile` 键来自 SUB-005 的依赖「数据库路径经配置加载提供」；Q1、Q2 是批次指定项；其余是依赖、忽略规则、DDL 辅助与测试所必需。
 - 引擎工单的 deliverables 不由本包回写。
+
+## 12. 来源缺口
+
+- SUB-004、SUB-005 的 `VW-SUB00n-STORY` 验收行要等 Story 把 `VW-S002-R001@1` 分配给子单后才生效。本包不写引擎。
+- 提案没有规定数据库默认路径、`synchronous` 级别、`secret_ref` 格式、各类枚举取值，以及保留期限的执行方式（只有初始建议）。以上均标为「自定」。
+- 提案 §5 的计分参数（上下限、冷却时长）没有给出数值。本包不实现计分计算。
 
 ## 12. 来源缺口
 

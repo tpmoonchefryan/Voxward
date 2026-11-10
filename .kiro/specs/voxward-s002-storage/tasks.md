@@ -20,20 +20,20 @@ A checked task is local progress only. Formal completion still requires the engi
 
 按顺序做。每张子单单独 commit，提交信息含子单编号。Q1、Q2 按批次要求各自单独 commit。
 
-- [ ] 1. 本包 spec：VOXWARD-STORY-002 的 `design.md` 与 `tasks.md` 本地段，提交信息 `VOXWARD-STORY-002: add S002 spec`
-- [ ] 2. Q1：`scripts/check-deps.mjs` 增加 db 分区与规则，提交信息 `VOXWARD-SUB-004: ... (Q1)`
-  - [ ] 2.1 分区 `db`、白名单包 `drizzle-orm`、`better-sqlite3`，组合层可引用 `db`
-  - [ ] 2.2 负面对照：4 个临时违规文件各自报错，删除后 `pnpm check:deps` 为 0 违规
-- [ ] 3. VOXWARD-SUB-004：数据表、索引、初始迁移与数据字典
-  - [ ] 3.1 依赖与构建许可：`drizzle-orm`、`better-sqlite3`、`drizzle-kit`、`@types/better-sqlite3`；`db:generate` 脚本；`drizzle.config.ts`
-  - [ ] 3.2 `apps/server/src/db/schema/*.ts`：24 张表、索引、唯一约束、CHECK
-  - [ ] 3.3 `drizzle-kit generate --name initial` 生成 `apps/server/src/db/migrations/`
-  - [ ] 3.4 `docs/data-dictionary.md` 逐表核对
-- [ ] 4. VOXWARD-SUB-005：WAL 连接、迁移执行与短事务仓储
-  - [ ] 4.1 配置键 `databaseFile` 与环境变量映射，并更新配置测试
-  - [ ] 4.2 `apps/server/src/db/client.ts`、`migrate.ts`、`transaction.ts`、`repository.ts`
-  - [ ] 4.3 `apps/server/test/db/`：schema、迁移、事务、仓储、并发与中断
-- [ ] 5. Q2：`main.ts` 监听失败时输出一行受控错误并以非 0 退出，提交信息 `VOXWARD-SUB-005: ... (Q2)`
-  - [ ] 5.1 捕获 listen 错误，写一行 stderr，退出码 1
-  - [ ] 5.2 `apps/server/test/app/startup-errors.test.ts`
-- [ ] 6. 自测与证据：`.kiro/specs/voxward-s002-storage/evidence/self-check.md` 随最后一个提交
+- [x] 1. 本包 spec：VOXWARD-STORY-002 的 `design.md` 与 `tasks.md` 本地段，提交 `033bfe2`（`VOXWARD-STORY-002: add S002 spec`）
+- [x] 2. Q1：`scripts/check-deps.mjs` 增加 db 分区与规则，提交 `de7189a`
+  - [x] 2.1 分区 `db`、白名单包 `drizzle-orm`、`better-sqlite3`，组合层可引用 `db`
+  - [x] 2.2 负面对照：4 个临时违规文件各自报错，删除后 `pnpm check:deps` 为 0 违规
+- [x] 3. VOXWARD-SUB-004：数据表、索引、初始迁移与数据字典，提交 `468c382`
+  - [x] 3.1 依赖与构建许可：`drizzle-orm`、`better-sqlite3`、`drizzle-kit`、`@types/better-sqlite3`；`db:generate` 脚本；`drizzle.config.ts`
+  - [x] 3.2 `apps/server/src/db/schema/*.ts`：24 张表、索引、唯一约束、CHECK
+  - [x] 3.3 `drizzle-kit generate --name initial` 生成 `apps/server/src/db/migrations/`
+  - [x] 3.4 `docs/data-dictionary.md` 逐表核对
+- [x] 4. VOXWARD-SUB-005：WAL 连接、迁移执行与短事务仓储，提交 `d1847ff`、`29bbec5`
+  - [x] 4.1 配置键 `databaseFile` 与环境变量映射，并更新配置测试
+  - [x] 4.2 `apps/server/src/db/client.ts`、`migrate.ts`、`transaction.ts`、`repository.ts`
+  - [x] 4.3 `apps/server/test/db/`：schema、迁移、事务、仓储、约束、并发与中断
+- [x] 5. Q2：`main.ts` 监听失败时输出一行受控错误并以非 0 退出，提交 `e459879`
+  - [x] 5.1 捕获 listen 错误，写一行 stderr，退出码 1
+  - [x] 5.2 `apps/server/test/app/startup-errors.test.ts`
+- [x] 6. 自测与证据：`.kiro/specs/voxward-s002-storage/evidence/self-check.md`，随本包最后一个提交保存
