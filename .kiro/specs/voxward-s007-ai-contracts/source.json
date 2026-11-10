@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:05e6184a65712b369d65bba7",
+  "workRevision": 4,
+  "sourceDigest": "d3f3a612813e76a764f1f1eb8f9e20f6cbefc85f40394af039555356fb890a98",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:05e6184a65712b369d65bba7",
+    "workRevision": 4,
+    "sourceDigest": "d3f3a612813e76a764f1f1eb8f9e20f6cbefc85f40394af039555356fb890a98",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:05e6184a65712b369d65bba7",
+        "externalKey": "VOXWARD-STORY-007",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "定义并验证三类 AI 业务 JSON",
+        "summary": "定义并验证三类 AI 业务 JSON；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:8980504408e4d156c130a8f9",
+        "scopeDigest": "ce87c043f6dd3c09cf4d656319e724485fe7cf9f463ee4e3618b3e8cb055f9c7",
+        "relations": {
+          "blockedBy": [
+            "work:2a41e3c54fab2b483ad94c08",
+            "work:674c24794f9a1fb626eb2ad1"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:8980504408e4d156c130a8f9",
+          "supersedes": []
+        },
+        "fieldSha256": "20e3e4eff2f716efe7d46cd6cdc93216301bf54c61e9c8e3879f36f428349d91",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "9a0dc1150496eb43ba259e52863032ab30690fd8100eb8b04b03f36b2baf8dff",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "24dd9d40d1099b8e5b0626dd323f81ec90e8a1bbd188aba11fda5ae18417bb5d",
+    "design.md": "9eaea1cbc3fba35155d8dce98c3d6167b85f70c314875bcaf5752ff4b1bc67c7",
+    "tasks.md": "864626e2e204641fbfd8c5be9c5fa66228db4d934aac22658f972f564ae17f11"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "1c39d3518c8ca0c9dc4fd4c180a12430fba161a8a5e6fa3f73cff35557e57f5c"
+}

@@ -15,3 +15,4 @@ export * from "./modules/output-adapter.js";
 export * from "./modules/data-lifecycle-service.js";
 export * from "./modules/audit-store.js";
 export * from "./ports/scoring-ledger.js";
+export * from "./ai/index.js";

@@ -1,5 +1,10 @@
 import { CONTRACT_VERSION, type InferenceProvider } from "@voxward/contracts";
 
+export * from "./validation/batch-contract.js";
+export * from "./validation/errors.js";
+export * from "./validation/output-text-check.js";
+export * from "./validation/unicode-span.js";
+
 /** Placeholder entry for inference. Declares no capabilities and fails every call. */
 export function createInferenceProvider(): InferenceProvider {
   return {
