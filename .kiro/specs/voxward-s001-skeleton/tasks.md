@@ -31,10 +31,10 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 2.3 契约测试
   - [x] 2.4 `kiro-specs.mjs init` 生成 `.kiro/specs/voxward-core-contracts/`，再 `check` 得 SPEC_CURRENT
   - [x] 2.5 自测：contracts 的 typecheck 与 test（VW-SUB002-AC001）
-- [ ] 3. VOXWARD-SUB-003 配置、注册表与边界测试
-  - [ ] 3.1 `config/schema.ts`、`config/load.ts` 与配置测试
-  - [ ] 3.2 `modules/registry.ts` 与九个模块 `index.ts`
-  - [ ] 3.3 `adapters/synthetic/` 三个合成替身
-  - [ ] 3.4 `test/boundary/` 端到端合成流程
-  - [ ] 3.5 `scripts/check-deps.mjs`，接入根脚本 `check:deps`
-  - [ ] 3.6 自测：全仓 build / typecheck / test / check:deps（VW-SUB003-AC001、VW-S001-AC001）
+- [x] 3. VOXWARD-SUB-003 配置、注册表与边界测试
+  - [x] 3.1 `config/schema.ts`、`config/load.ts` 与配置测试
+  - [x] 3.2 `modules/registry.ts` 与九个模块 `index.ts`
+  - [x] 3.3 `adapters/synthetic/` 三个合成替身
+  - [x] 3.4 `test/boundary/` 端到端合成流程
+  - [x] 3.5 `scripts/check-deps.mjs`，接入根脚本 `check:deps`
+  - [x] 3.6 自测：全仓 build / typecheck / test / check:deps（VW-SUB003-AC001、VW-S001-AC001）
