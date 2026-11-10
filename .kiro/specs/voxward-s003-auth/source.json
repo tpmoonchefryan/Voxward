@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:fd4f81864ddb33703517e12f",
+  "workRevision": 4,
+  "sourceDigest": "0667e0dbba313d0427d27db04151a40a179e1623f69af28cf9310b2a883b4bde",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:fd4f81864ddb33703517e12f",
+    "workRevision": 4,
+    "sourceDigest": "0667e0dbba313d0427d27db04151a40a179e1623f69af28cf9310b2a883b4bde",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:fd4f81864ddb33703517e12f",
+        "externalKey": "VOXWARD-STORY-003",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现频道身份、角色权限与凭据隔离",
+        "summary": "实现频道身份、角色权限与凭据隔离；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:4359ebe518ff3530a3338d00",
+        "scopeDigest": "2354af49910756ca42f4543675c3cfc0b866858965c3d47f9b6574111dedec0d",
+        "relations": {
+          "blockedBy": [
+            "work:40166e96c2ab9f8c9746a73a",
+            "work:674c24794f9a1fb626eb2ad1"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:4359ebe518ff3530a3338d00",
+          "supersedes": []
+        },
+        "fieldSha256": "ea3fd65927d0fd7675dd8ff110fa089b786a7de6f0471a871c5452ae1b61c362",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "2555b805ca2184ff9fa63ba0ecc17eaeda380d3b75d1a157be67c9e44c385073",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "1c7b3f5c230eee642f69e552cd6641fab5ab4ff641ba4f358cbd60889a4b9692",
+    "design.md": "4d9d1a7d86d28b6a75ca76a8ef0d4d20ebf9e78605cbbc27fdd7c89eed798f81",
+    "tasks.md": "b0d94e39380776bdc0e24d792f3bf03fc930b7691f6e5aefe20c503fdd34de7b"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "6b0c29df9d04a1d2f3ea932bf195e2faa0eb73faf330dd828582126da71ee5bd"
+}
