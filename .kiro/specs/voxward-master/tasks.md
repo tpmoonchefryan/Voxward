@@ -29,7 +29,7 @@
 - [ ] A9. 派工：每个包派一个**新**子代理。任务里写明 spec 路径、授权、工作树、自测命令、交付格式、停止条件。`include_memory=false` 时，需要的事实都写进任务里
 - [ ] A10. 等完成通知，中途不轮询；子代理有疑问时先自己筛一遍，能按已有授权处理的就自己处理，不转给 Owner
 - [ ] A11. 子代理完成后：`spawn_release` 收掉它；把它的证据复制到能长期保存的位置（scratch 会被清理）
-- [ ] A12. 本批所有包合回 main（只在本地，不推送）；有冲突交给一个集成子代理处理
+- [ ] A12. 本批所有包合回 main（只在本地，不推送）；有冲突交给一个集成子代理处理。**合并后、交给验收前**，主线程要在一个干净检出里跑 `pnpm install --frozen-lockfile && pnpm build && pnpm typecheck && pnpm test && pnpm check:deps`。没有文本冲突也可能有类型冲突（第 2 批的 B1 就是这样）
 - [ ] A13. 独立验收：派一个 main 档子代理，验收人不能是实施人。被打回时记录 rejection 次数，下次派工按 A8 升档
 - [ ] A14. 链写一次：转态和证据通过 work-batch 写入，然后读回；新学到的东西用 knowledge-capture 记下（最多 5 条）
 - [ ] A15. 收工作树和分支；只有全部完成或全部卡住时，才向 Owner 汇报一次
@@ -39,7 +39,7 @@
 | 批 | Story | 包 | 状态 |
 |---|---|---|---|
 | 1 | S001 | P1：SUB-001→002→003 | **done**：main ffa1ddc；验收 47/47 行 satisfied（8890cf9）；工单已转 done；知识卡 4 张 |
-| 2 | S002, S004, S031 | SUB-004→005；SUB-008→009；SUB-055 | 未开始 |
+| 2 | S002, S004, S031 | SUB-004→005；SUB-008→009；SUB-055 | S002 **done**（0a1da29）。S004 被打回（B1 typecheck、B2 正则回溯），S031 被打回（B3 7 日期限写反），都在返工，rejections=1；证据在 `.kiro/specs/voxward-batch2/evidence/` |
 | 3 | S003, S005, S007 | SUB-006；SUB-007；SUB-010→011；SUB-013→014 | 未开始 |
 | 4 | S006, S008, S012, S016 | SUB-012；SUB-015→016；SUB-023；SUB-029→030 | 未开始 |
 | 5 | S009, S013, S017, S018 | SUB-017→018；SUB-024→025；SUB-031→032；SUB-033→034 | 未开始 |
@@ -60,3 +60,9 @@
 | Q3 | 第 1 批验收 N3 | `InferenceRequest` 用 `correlationId` 当唯一编号；但提案 §8.1 要求模型输入只带临时 `itemId`，需要由适配器生成，并记下两者的对应关系 | 第 3 批 S007 / 第 4 批 S008 |
 | Q4 | 第 1 批验收 N5 | 类型级契约断言只在 `pnpm typecheck` 时生效；验收必须同时跑 typecheck 和 test | 每批验收 |
 | Q5 | 第 1 批验收 N6 | `vitest.workspace.ts` 已被标为弃用，以后升级 vitest 时要迁移 | 以后升级时 |
+| Q6 | 第 2 批验收 N1 | 可组合的组合标记（如 U+0301）能绕过归一化规则 | 第 4 批 S006 |
+| Q7 | 第 2 批验收 N2 | 昵称缓存没有按主体失效的接口；删除请求之后，缓存最多还会留 1 小时 TTL | 第 7 批 S019 |
+| Q8 | 第 2 批验收 N3 | 昵称检查有两套存放方式：持久表 `subject_nickname_checks` 和进程内缓存，只能保留一套 | 第 4 批 S006 |
+| Q9 | 第 2 批验收 N4 | esbuild 打包参数在接入 better-sqlite3 后无法运行，迁移目录在打包后也找不到 | 第一个把 db 接进 `main.ts` 的 Story（第 3 批 S003 或 S005） |
+| Q10 | 第 2 批验收 N5/N6 | S002 spec 的「来源缺口」一节重复了两次；SUB-008/009 交付清单写的路径是 `moderation/`，实际是 `moderation-engine/` | 下次修改时一并处理 |
+| Q11 | 第 2 批验收 N8 | 工单链写后，已完成 Story 的 spec 会报 SPEC_STALE，这是正常的；如果还要用当前 spec，用 `refresh --approved-in` 刷新 | 每批 |
