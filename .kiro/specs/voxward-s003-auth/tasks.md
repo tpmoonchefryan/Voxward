@@ -21,24 +21,24 @@ A checked task is local progress only. Formal completion still requires the engi
 提交顺序：spec → SUB-006 → Q9 打包 → SUB-007 → 自测证据（证据随最后一个提交）。
 
 ## 第 0 步：spec
-- [ ] 0.1 `kiro-specs.mjs init` 已生成受管段（SPEC_INITIALIZED，revision 4）。
-- [ ] 0.2 在 design.md 与 tasks.md 的受管段之外追加实施设计和本清单。
-- [ ] 0.3 `kiro-specs.mjs check` 结果为 SPEC_CURRENT。
-- [ ] 0.4 提交 `VOXWARD-STORY-003: add spec`。
+- [x] 0.1 `kiro-specs.mjs init` 已生成受管段（SPEC_INITIALIZED，revision 4）。
+- [x] 0.2 在 design.md 与 tasks.md 的受管段之外追加实施设计和本清单。
+- [x] 0.3 `kiro-specs.mjs check` 结果为 SPEC_CURRENT。
+- [x] 0.4 提交 `VOXWARD-STORY-003: add spec`。
 
 ## SUB-006：登录会话、频道成员角色与服务端鉴权
-- [ ] 6.1 `db/schema/auth.ts` 三张表，迁移 `0001`（`drizzle-kit generate`），更新 `migrate.test.ts` 的表数与迁移数。
-- [ ] 6.2 `permissions.ts`、`session.ts`、`login.ts`、`members.ts`、`downstream-tokens.ts`，以及对应单元测试。
-- [ ] 6.3 `csrf.ts`、`guard.ts`（含握手同源检查、批量全部拒绝、`checkRoomScope`）及测试。
-- [ ] 6.4 `routes.ts`，`app.ts` 注册（只做注册），`main.ts` 打开与迁移数据库。HTTP 测试覆盖 VW-SUB006-AC001 的各场景。
-- [ ] 6.5 `check-deps.mjs` 增加 `auth`、`security` 分区与 composition 的新目标。对 `zz-negative-control.ts` 做负面对照，验证后删除。
-- [ ] 6.6 提交 `VOXWARD-SUB-006: ...`。
+- [x] 6.1 `db/schema/auth.ts` 三张表，迁移 `0001`（`drizzle-kit generate`），更新 `migrate.test.ts` 的表数与迁移数。
+- [x] 6.2 `permissions.ts`、`session.ts`、`login.ts`、`members.ts`、`downstream-tokens.ts`，以及对应单元测试。
+- [x] 6.3 `csrf.ts`、`guard.ts`（含握手同源检查、批量全部拒绝、`checkRoomScope`）及测试。
+- [x] 6.4 `routes.ts`，`app.ts` 注册（只做注册），`main.ts` 打开与迁移数据库。HTTP 测试覆盖 VW-SUB006-AC001 的各场景。
+- [x] 6.5 `check-deps.mjs` 增加 `auth`、`security` 分区与 composition 的新目标。对 `zz-negative-control.ts` 做负面对照，验证后删除。
+- [x] 6.6 提交 `VOXWARD-SUB-006: ...`。
 
 ## Q9：数据库接入后的打包
-- [ ] Q9.1 `build` 脚本对 `better-sqlite3`、`drizzle-orm` 设 external。
-- [ ] Q9.2 `scripts/copy-migrations.mjs` 把迁移复制到 `dist/migrations`。
-- [ ] Q9.3 `pnpm build` 后，用 `node dist/main.js` 实测能打开数据库并监听（记录在证据里）。
-- [ ] Q9.4 提交 `VOXWARD-SUB-006: package the database for the bundled server (Q9)`。
+- [x] Q9.1 `build` 脚本对 `better-sqlite3`、`drizzle-orm` 设 external。
+- [x] Q9.2 `scripts/copy-migrations.mjs` 把迁移复制到 `dist/migrations`。
+- [x] Q9.3 `pnpm build` 后，用 `node dist/main.js` 实测能打开数据库并监听（记录在证据里）。
+- [x] Q9.4 提交 `VOXWARD-SUB-006: package the database for the bundled server (Q9)`。
 
 ## SUB-007：凭据隔离、不可信文本渲染边界与运行时 AI 最小权限契约
 - [ ] 7.1 `security/credential-vault.ts`、`redaction.ts`、`untrusted-text.ts` 及测试（`security/`）。
