@@ -48,5 +48,5 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] 7.5 提交 `VOXWARD-SUB-007: ...`。
 
 ## 自测与证据
-- [ ] 8.1 按顺序运行 `pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`，记录退出码与关键输出到 `evidence/self-check.md`。
-- [ ] 8.2 `evidence/self-check.md` 随最后一个提交一起提交。
+- [x] 8.1 按顺序运行 `pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`，记录退出码与关键输出到 `evidence/self-check.md`。
+- [x] 8.2 `evidence/self-check.md` 随最后一个提交一起提交。
