@@ -65,12 +65,20 @@ describe("downstream verdicts", () => {
     }
   });
 
-  it("creates a versioned verdict that carries the mapped value", () => {
+  it("creates a versioned verdict that carries the mapped value and no penalty hits by default", () => {
     expect(createVerdict("ALLOW_NOISE")).toEqual({
       contractVersion: "1",
       classification: "ALLOW_NOISE",
       downstream: "ALLOW",
+      penaltyHits: [],
     });
+  });
+
+  it("carries the rule penalty hits it was given, without sharing the caller array", () => {
+    const hits = [{ code: "explicit", points: 4 }];
+    const verdict = createVerdict("BLOCK", hits);
+    expect(verdict.penaltyHits).toEqual([{ code: "explicit", points: 4 }]);
+    expect(verdict.penaltyHits).not.toBe(hits);
   });
 });
 

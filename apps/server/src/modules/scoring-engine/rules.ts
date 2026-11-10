@@ -1,13 +1,7 @@
-import type { InternalClassification } from "@voxward/contracts";
+import type { InternalClassification, PenaltyHit } from "@voxward/contracts";
 import type { ScoringConfig } from "./config.js";
 
-/** One applicable penalty rule. `points` is the size of the deduction, not a signed delta. */
-export interface PenaltyHit {
-  readonly code: string;
-  readonly points: number;
-}
-
-/** The code of the single penalty rule that a BLOCK verdict triggers today. */
+/** The code of the base penalty rule that every BLOCK verdict triggers. Its points are `violationPenalty`. */
 export const VERDICT_BLOCK_RULE = "VERDICT_BLOCK";
 
 /**
@@ -31,12 +25,20 @@ export type RuleAction =
   | { readonly kind: "penalty"; readonly requested: number }
   | { readonly kind: "none" };
 
-export function ruleForClassification(classification: InternalClassification, config: ScoringConfig): RuleAction {
+/**
+ * What the rule table says about one classification. A BLOCK applies the largest of its base penalty and the
+ * deductions of the rule groups that hit the message (S006 Q22). Other classifications ignore the hits.
+ */
+export function ruleForClassification(
+  classification: InternalClassification,
+  config: ScoringConfig,
+  penaltyHits: readonly PenaltyHit[],
+): RuleAction {
   switch (classification) {
     case "ALLOW_MEANINGFUL":
       return { kind: "reward", requested: config.complianceReward };
     case "BLOCK": {
-      const points = selectPenalty([{ code: VERDICT_BLOCK_RULE, points: config.violationPenalty }]);
+      const points = selectPenalty([{ code: VERDICT_BLOCK_RULE, points: config.violationPenalty }, ...penaltyHits]);
       return { kind: "penalty", requested: -points };
     }
     case "ALLOW_NOISE":
