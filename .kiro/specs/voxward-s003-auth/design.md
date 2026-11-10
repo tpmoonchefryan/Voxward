@@ -101,7 +101,7 @@ No design authority is configured for the resolved work context. No authority wa
 | 表 | 主要列 | 说明 |
 | --- | --- | --- |
 | `auth_accounts` | `id` PK、`login_name` UNIQUE、`display_name`、`password_hash`、`created_at`、`disabled_at` | 页面账号。`channel_members.account_ref` 存这里的 `id`。 |
-| `auth_sessions` | `token_hash` PK、`account_id` FK、`csrf_token`、`created_at`、`expires_at`、`revoked_at` | 会话。数据库里只存令牌的 SHA-256。 |
+| `auth_sessions` | `token_hash` PK、`account_id` FK、`created_at`、`expires_at`、`revoked_at` | 会话。数据库里只存令牌的 SHA-256。CSRF 令牌由会话令牌派生，不落库。 |
 | `auth_output_tokens` | `id` PK、`channel_id` FK、`scope`（CHECK：`ROOM_READ_ONLY`）、`token_hash` UNIQUE、`created_by_account_id`、`created_at`、`revoked_at` | 下游只读输出凭据。 |
 
 偏离说明见第 9 节：下游凭据没有走 `credential_refs` 与 `output_grants`。
@@ -209,7 +209,8 @@ No design authority is configured for the resolved work context. No authority wa
 - 下游凭据没有使用 `credential_refs` 与 `output_grants`。原因：这两张表要求密钥存放在加密 secret store 中，本包没有该持久化实现。改用 `auth_output_tokens`，只存哈希。待 secret store 落地后再合并。
 - 子单交付清单没有列出数据库表。会话存储需要新表，因此新增迁移 `0001`。
 - `check-deps.mjs` 原有分区不认识 `auth/` 与 `security/`，两个新分区是必要的最小改动。
-- 为运行测试，修改了两处既有测试：`db/migrate.test.ts` 的表数与迁移数，以及 `app/startup-errors.test.ts` 的数据库路径（指向 scratch 目录，不在工作树内产生文件）。
+- 为运行测试，修改了三处既有测试：`db/migrate.test.ts` 的表数与迁移数；`db/schema.test.ts` 的表数、迁移来源（改为读取 `migrations/` 下全部 `.sql` 文件，按文件名排序）、敏感列白名单（仅 `auth_accounts.password_hash`、`auth_sessions.token_hash`、`auth_output_tokens.token_hash` 三列，均为单向摘要，其余凭据形列名仍报错）；`app/startup-errors.test.ts` 的数据库路径（指向 scratch 目录，不在工作树内产生文件）。
+- CSRF 令牌不落库，由会话令牌经 SHA-256 派生（前缀 `csrf:`）。原因：避免在数据库中保存明文凭据列；代价是 CSRF 令牌与会话令牌同生同灭，可接受，因为会话令牌泄露本身已足以冒用会话。（自定）
 - 新增 `vitest.workspace.ts` 中的 `apps/web` 项目，使 `UntrustedText` 有可执行测试。
 
 ## 10. 未验证项

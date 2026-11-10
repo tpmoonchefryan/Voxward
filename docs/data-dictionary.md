@@ -689,3 +689,76 @@
 | `ck_technical_log_evidence_kind` | CHECK | `evidence_kind` 只能取上列四个值。 |
 | `ck_technical_log_evidence_bytes` | CHECK | `payload_bytes` 等于 `payload` 的字节长度。 |
 | `ck_technical_log_evidence_json` | CHECK | `VALIDATED_JSON` 的内容必须是合法 JSON。 |
+
+## 页面账号与会话
+
+### `auth_accounts`
+
+- 用途：VoxWard 页面账号。频道成员授权通过 `channel_members.account_ref` 引用这里的 `id`。
+- 内容分类：无正文。口令只以 scrypt 哈希保存，不保存明文。
+- 保留：账号禁用后保留记录，用于审计。
+
+#### 列
+
+| 列 | 类型 | 可空 | 说明 |
+| --- | --- | --- | --- |
+| `id` | TEXT | 否 | 主键。 |
+| `login_name` | TEXT | 否 | 登录名，唯一。 |
+| `display_name` | TEXT | 否 | 显示名。 |
+| `password_hash` | TEXT | 否 | scrypt 口令哈希，格式为 `scrypt$盐$密钥`。 |
+| `created_at` | TEXT | 否 | 创建时间。 |
+| `disabled_at` | TEXT | 是 | 禁用时间。为空表示可登录。 |
+
+#### 索引与约束
+
+| 名称 | 类别 | 说明 |
+| --- | --- | --- |
+| `auth_accounts_login_name_uq` | 唯一索引 | `login_name` 唯一。 |
+
+### `auth_sessions`
+
+- 用途：页面登录会话。
+- 内容分类：无正文。`token_hash` 是会话令牌的 SHA-256，数据库不保存令牌原文，也不保存 CSRF 令牌（CSRF 令牌由会话令牌派生）。
+- 保留：到期或撤销后保留记录，用于审计。
+
+#### 列
+
+| 列 | 类型 | 可空 | 说明 |
+| --- | --- | --- | --- |
+| `token_hash` | TEXT | 否 | 主键。会话令牌的 SHA-256 十六进制摘要。 |
+| `account_id` | TEXT | 否 | 外键，指向 `auth_accounts.id`。 |
+| `created_at` | TEXT | 否 | 创建时间。 |
+| `expires_at` | TEXT | 否 | 到期时间。 |
+| `revoked_at` | TEXT | 是 | 撤销时间。为空表示未撤销。 |
+
+#### 索引与约束
+
+| 名称 | 类别 | 说明 |
+| --- | --- | --- |
+| `auth_sessions_account_idx` | 索引 | `account_id`。 |
+
+### `auth_output_tokens`
+
+- 用途：下游只读输出凭据，每个令牌绑定一个频道。
+- 内容分类：无正文。`token_hash` 是令牌的 SHA-256，原始令牌只在签发响应中返回一次。
+- 保留：撤销后保留记录，用于审计。
+
+#### 列
+
+| 列 | 类型 | 可空 | 说明 |
+| --- | --- | --- | --- |
+| `id` | TEXT | 否 | 主键。撤销时使用。 |
+| `channel_id` | TEXT | 否 | 外键，指向 `channels.id`。 |
+| `scope` | TEXT | 否 | 取值 `ROOM_READ_ONLY`。 |
+| `token_hash` | TEXT | 否 | 令牌的 SHA-256 十六进制摘要，唯一。 |
+| `created_by_account_id` | TEXT | 否 | 签发人，指向 `auth_accounts.id`。 |
+| `created_at` | TEXT | 否 | 签发时间。 |
+| `revoked_at` | TEXT | 是 | 撤销时间。为空表示有效。 |
+
+#### 索引与约束
+
+| 名称 | 类别 | 说明 |
+| --- | --- | --- |
+| `auth_output_tokens_hash_uq` | 唯一索引 | `token_hash` 唯一。 |
+| `auth_output_tokens_channel_idx` | 索引 | `channel_id`。 |
+| `ck_auth_output_tokens_scope` | CHECK | `scope` 只能取上列一个值。 |

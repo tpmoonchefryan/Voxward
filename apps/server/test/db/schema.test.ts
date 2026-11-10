@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { TASK_STATUSES } from "@voxward/contracts";
 import { is } from "drizzle-orm";
 import { getTableConfig, SQLiteTable } from "drizzle-orm/sqlite-core";
@@ -6,10 +6,14 @@ import { describe, expect, it } from "vitest";
 import * as schema from "../../src/db/schema/index.js";
 
 const DICTIONARY_PATH = new URL("../../../../docs/data-dictionary.md", import.meta.url);
-const MIGRATION_PATH = new URL("../../src/db/migrations/0000_initial.sql", import.meta.url);
+const MIGRATIONS_DIRECTORY = new URL("../../src/db/migrations/", import.meta.url);
 
 const dictionary = parseDictionary(readFileSync(DICTIONARY_PATH, "utf8"));
-const migrationSql = readFileSync(MIGRATION_PATH, "utf8");
+const migrationSql = readdirSync(MIGRATIONS_DIRECTORY)
+  .filter((file) => file.endsWith(".sql"))
+  .sort()
+  .map((file) => readFileSync(new URL(file, MIGRATIONS_DIRECTORY), "utf8"))
+  .join("\n");
 
 // The schema module also exports enumeration arrays, so keep only the table objects.
 const tables = Object.values(schema as Record<string, unknown>).filter((value): value is SQLiteTable =>
@@ -67,8 +71,8 @@ function constraintNames(name: string): string[] {
 }
 
 describe("data dictionary matches the schema", () => {
-  it("documents exactly the 24 schema tables", () => {
-    expect(tables).toHaveLength(24);
+  it("documents exactly the 27 schema tables", () => {
+    expect(tables).toHaveLength(27);
     expect([...dictionary.keys()].sort()).toEqual([...configs.keys()].sort());
   });
 
@@ -108,11 +112,21 @@ describe("generated migration matches the schema", () => {
   });
 });
 
+/**
+ * Digest columns hold a one-way scrypt or SHA-256 value, never the plaintext. They are the only auth-table columns
+ * whose names match the credential pattern below. Any other match is still a failure.
+ */
+const DIGEST_COLUMNS = new Set([
+  "auth_accounts.password_hash",
+  "auth_sessions.token_hash",
+  "auth_output_tokens.token_hash",
+]);
+
 describe("sensitive data placement", () => {
   it("has no plaintext credential column; secret_ref is the only reference", () => {
     const suspicious = /token|password|passwd|api_?key|secret/i;
     const offenders = [...configs].flatMap(([name, config]) =>
-      config.columns.filter((column) => suspicious.test(column.name) && column.name !== "secret_ref").map((column) => `${name}.${column.name}`),
+      config.columns.filter((column) => suspicious.test(column.name) && column.name !== "secret_ref" && !DIGEST_COLUMNS.has(`${name}.${column.name}`)).map((column) => `${name}.${column.name}`),
     );
     expect(offenders).toEqual([]);
   });

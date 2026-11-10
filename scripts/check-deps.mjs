@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Checks the dependency-direction table in .kiro/specs/voxward-s001-skeleton/design.md, section 2,
-// and its db-layer extension in .kiro/specs/voxward-s002-storage/design.md, section 2.
+// its db-layer extension in .kiro/specs/voxward-s002-storage/design.md, section 2, and the auth and security
+// zones in .kiro/specs/voxward-s003-auth/design.md, section 2.
 import { readFileSync, readdirSync } from "node:fs";
 import { builtinModules } from "node:module";
 import { dirname, join, relative, resolve, sep } from "node:path";
@@ -18,8 +19,10 @@ const DATABASE_PACKAGES = ["drizzle-orm", "better-sqlite3"];
 const ALLOWED_TARGETS = {
   contracts: ["contracts"],
   adapter: ["contracts", "adapter", "external", "builtin"],
-  composition: ["contracts", "module", "adapter", "composition", "db", "external", "builtin"],
+  composition: ["contracts", "module", "adapter", "composition", "db", "auth", "security", "external", "builtin"],
   db: ["contracts", "db", "builtin"],
+  auth: ["contracts", "auth", "db", "external", "builtin"],
+  security: ["contracts", "security", "builtin"],
   web: ["web", "contracts", "external"],
 };
 
@@ -47,6 +50,8 @@ function zoneOf(absolutePath) {
   if (moduleMatch !== null) return { kind: "module", name: moduleMatch[1], rel };
   if (rel.startsWith("apps/server/src/adapters/")) return { kind: "adapter", rel };
   if (rel.startsWith("apps/server/src/db/")) return { kind: "db", rel };
+  if (rel.startsWith("apps/server/src/auth/")) return { kind: "auth", rel };
+  if (rel.startsWith("apps/server/src/security/")) return { kind: "security", rel };
   if (rel === "apps/server/src/app.ts" || rel === "apps/server/src/main.ts" || rel.startsWith("apps/server/src/config/")) {
     return { kind: "composition", rel };
   }
