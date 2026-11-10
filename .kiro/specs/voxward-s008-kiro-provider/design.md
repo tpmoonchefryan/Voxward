@@ -210,3 +210,17 @@ export interface InferenceResult extends Versioned { readonly batchId: string; r
 - 不接入 Crew。
 - 不安装 `deploy/kiro-runtime/` 中的任何内容，不创建系统用户，不改本机系统配置。
 - 不推送，不写引擎工单。
+
+## 9. 实施后的补充（与上文不一致之处以本节为准）
+
+- 错误码增加 `SESSION_UNAVAILABLE`：一次性运行目录无法创建，或运行状态无法写入。§4.4 未列出（自定）。
+- 默认值增加：删除已保存 CLI 会话的命令超时 30000 ms；孤儿扫描中，没有进程记录且超过此时长的目录视为未认领，阈值 1 小时（自定）。
+- 运行目录：SUB-015 阶段由调用方给定 `workingDirectory`。SUB-016 改为每批一个 `runtimeRoot/run-*` 目录，原选项被替换。
+- 取消可在会话创建期间生效：批次在第一个 await 之前占用 batchId。取消若在进程启动前到达，批次不启动，返回 `RUN_CANCELLED`。
+- 写入顺序：先在 `session.json` 记录 pid（`running`），成功后才把提示写入 stdin。记录失败则以 `SESSION_UNAVAILABLE` 停止进程。
+- 会话删除结果只用于清理，不进入业务结果。结果码只有 `DELETE_REQUESTED`、`DELETE_FAILED`、`NOT_OBSERVED`。
+- 孤儿扫描：进程仍存活的目录跳过，不强制终止进程；没有记录的目录按目录修改时间判断；符号链接与无标记条目计为 `refused`。
+- 泄漏扫描的范围已扩展到 `apps/server/src/adapters/kiro-cli`（§3）。
+- 假 CLI 夹具在 git 索引中标记可执行位，测试运行时也会 `chmod 0755`。
+- `deploy/kiro-runtime/` 没有 agent 配置模板：Kiro agent 配置的格式待实测。
+- `docs/security/runtime-ai-least-privilege.md` 第 1 节中 Kiro 一行的状态已更新，说明适配器存在、未绑定、真实调用未验证。
