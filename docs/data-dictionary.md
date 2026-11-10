@@ -641,6 +641,10 @@
 | `correlation_id` | TEXT | 否 | 关联 ID。 |
 | `sequence` | INTEGER | 否 | 同一关联 ID 内的顺序，不小于 0。 |
 | `batch_id` | TEXT | 是 | 微批的共享执行标识。 |
+| `task_id` | TEXT | 是 | 外键，指向 `tasks.id`。对应的处理任务。 |
+| `attempt` | INTEGER | 是 | 重试序号，从 1 起。无重试时为空。 |
+| `level` | TEXT | 否 | 日志级别，取值 `INFO`、`WARN`、`ERROR`，默认 `INFO`。 |
+| `data_json` | TEXT | 是 | 有大小限制的阶段数据：合法 JSON，不超过 2000 字节。只含校验状态、失败字段位置等元数据，不含消息正文。 |
 | `stage` | TEXT | 否 | 取值见下方 CHECK 约束（8 个阶段）。 |
 | `status` | TEXT | 否 | 取值 `OK`、`FAILED`、`SKIPPED`、`TIMED_OUT`。 |
 | `error_code` | TEXT | 是 | 错误代码。 |
@@ -658,10 +662,14 @@
 | --- | --- | --- |
 | `technical_logs_chain_sequence_uq` | 唯一索引 | `(channel_id, correlation_id, sequence)` 唯一，支持按顺序展开关联条目。 |
 | `technical_logs_subject_idx` | 索引 | `subject_id`，供数据请求定位。 |
+| `technical_logs_task_idx` | 索引 | `task_id`，供按处理任务定位。 |
 | `technical_logs_expires_idx` | 索引 | `expires_at`，供清理作业使用。 |
 | `ck_technical_logs_stage` | CHECK | `stage` 取值：`INGEST`、`BASE_RULE`、`ROUTE`、`MODEL_CALL`、`JSON_VALIDATE`、`COMMIT`、`DELIVER`、`ERROR`。 |
 | `ck_technical_logs_status` | CHECK | `status` 只能取上列四个值。 |
 | `ck_technical_logs_numbers` | CHECK | `sequence` 不小于 0；`latency_ms` 为空或不小于 0。 |
+| `ck_technical_logs_level` | CHECK | `level` 只能取上列三个值。 |
+| `ck_technical_logs_attempt` | CHECK | `attempt` 为空或不小于 1。 |
+| `ck_technical_logs_data` | CHECK | `data_json` 为空，或为合法 JSON 且字节数不超过 2000。 |
 
 ### `technical_log_evidence`
 

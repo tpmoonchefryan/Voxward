@@ -22,11 +22,11 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ## VOXWARD-SUB-029：写入接口与关联字段
 
-- [ ] 29-a. 契约：枚举、记录类型、`AuditLogPort`；`AuditEntry` 改为判别联合；导出新端口
-- [ ] 29-b. 迁移 `0002_audit_log_fields.sql`（ALTER 写法）与 drizzle-kit 快照；`schema/logs.ts` 从 contracts 取枚举；`docs/data-dictionary.md` 三节更新；`schema.test.ts` 与 `constraints.test.ts` 通过
-- [ ] 29-c. `db/audit-log.ts`：`insertChangeLog`、`insertTechnicalLog`（分配 sequence）、`readChain`、`readChangeLogs`
-- [ ] 29-d. 模块写入路径：校验、注入的脱敏、关联 ID、`recordChange`、`recordTechnical`、`append`；测试 `write/chain.test.ts`、`limits.test.ts`、`redaction.test.ts`
-- [ ] 29-e. 自测（本子单相关的 build、typecheck、test、check:deps）；提交，提交信息含 `VOXWARD-SUB-029`
+- [x] 29-a. 契约：枚举、记录类型、`AuditLogPort`；`AuditEntry` 改为判别联合；导出新端口
+- [x] 29-b. 迁移 `0002_audit_log_fields.sql`（ALTER 写法）与 drizzle-kit 快照；`schema/logs.ts` 从 contracts 取枚举；`docs/data-dictionary.md` 三节更新；`schema.test.ts` 与 `constraints.test.ts` 通过
+- [x] 29-c. `db/audit-log.ts`：`insertChangeLog`、`insertTechnicalLog`（分配 sequence）、`readChain`、`readChangeLogs`
+- [x] 29-d. 模块写入路径：校验、注入的脱敏、关联 ID、`recordChange`、`recordTechnical`、`append`；测试 `write/chain.test.ts`、`limits.test.ts`、`redaction.test.ts`
+- [x] 29-e. 自测（本子单相关的 build、typecheck、test、check:deps）；提交，提交信息含 `VOXWARD-SUB-029`
 
 ## VOXWARD-SUB-030：内容字段权限、长度与主体删除索引
 
