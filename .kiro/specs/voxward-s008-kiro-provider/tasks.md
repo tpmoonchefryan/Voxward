@@ -33,4 +33,4 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 3.3 `docs/security/ai-retention-boundary.md`
   - [x] 3.4 `apps/server/test/adapters/kiro-cleanup/`：成功、失败、取消、超时、异常重启、清理证明
   - [x] 3.5 提交 `VOXWARD-SUB-016: ...`
-- [ ] 4. 自测与证据：`evidence/self-check.md`，随最后一个 commit 提交
+- [x] 4. 自测与证据：`evidence/self-check.md`，随最后一个 commit 提交
