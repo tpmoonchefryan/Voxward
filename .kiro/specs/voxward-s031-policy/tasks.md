@@ -22,12 +22,12 @@ A checked task is local progress only. Formal completion still requires the engi
 
 - [x] 1. 读取实时工单（VOXWARD-STORY-031 revision 4，VOXWARD-SUB-055 revision 3），并读取 steering、提案 §1–§5、§7–§16、§19–§20 与外部条款核对。
 - [x] 2. 运行 `kiro-specs.mjs init`，写入 design.md 与 tasks.md 的受管段之外内容（结构、验收对应表、待 Owner 确认项、不做的事）。提交前运行 `check`。
-- [ ] 3. 提交 spec：`VOXWARD-STORY-031: add S031 spec`。
-- [ ] 4. 写入 `docs/policy/platform-questions.md`：六类平台问题、前置事实与答复形式。
-- [ ] 5. 写入 `docs/policy/data-processing.md`：数据流、角色与授权、评分公式、保留与删除、例外、外部 AI 披露、下游输出。
-- [ ] 6. 写入 `docs/policy/self-hosting-responsibilities.md`：部署方职责、OAuth 与凭据、Cloud 项目、备份与数据请求、未决边界。
-- [ ] 7. 写入 `docs/policy/status-and-gaps.md`：申请现状、缺项清单、待 Owner 确认项、提案 §1–§20 映射、来源核对记录、未验证项。
-- [ ] 8. 提交材料：`VOXWARD-SUB-055: draft policy materials`，并勾选本段第 4–7 项。
+- [x] 3. 提交 spec：`VOXWARD-STORY-031: add S031 spec`。
+- [x] 4. 写入 `docs/policy/platform-questions.md`：六类平台问题、前置事实与答复形式。
+- [x] 5. 写入 `docs/policy/data-processing.md`：数据流、角色与授权、评分公式、保留与删除、例外、外部 AI 披露、下游输出。
+- [x] 6. 写入 `docs/policy/self-hosting-responsibilities.md`：部署方职责、OAuth 与凭据、Cloud 项目、备份与数据请求、未决边界。
+- [x] 7. 写入 `docs/policy/status-and-gaps.md`：申请现状、缺项清单、待 Owner 确认项、提案 §1–§20 映射、来源核对记录、未验证项。
+- [x] 8. 提交材料：`VOXWARD-SUB-055: draft policy materials`，并勾选本段第 4–7 项。
 - [ ] 9. 按 AC001 与各验收行逐条自查，检查外链格式和仓库内路径，运行 `pnpm install && pnpm build && pnpm typecheck && pnpm test`。
 - [ ] 10. 写入 `.kiro/specs/voxward-s031-policy/evidence/self-check.md`，勾选第 9 项，提交 `VOXWARD-SUB-055: add self-check evidence`。
 - [ ] 11. 完成报告：commit 与文件清单、自查结果、AC001 覆盖、待 Owner 确认项、来源缺口、未验证项。
