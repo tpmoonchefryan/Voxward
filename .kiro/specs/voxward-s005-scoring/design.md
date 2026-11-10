@@ -213,3 +213,14 @@ No design authority is configured for the resolved work context. No authority wa
 - 真实平台身份事件与真实 AI 裁决：未涉及，测试全部使用合成数据。
 - 多进程并发只在本机 SQLite WAL 上验证。未做性能测量，不对吞吐作承诺。
 - 注册表接线、端到端流程、保留期限清理、删除编排：未验证。
+
+## 13. SUB-011 实施补充（本地内容）
+
+- 例外守卫：三个计分入口都经 `commitScoring`，在调用方决策之前套用 `withExceptionGuard`。例外主体在这三个入口都得到 `refused`，实时裁决层抛 `ScoringRefusedError`（自定）。
+  - 例外期间的身份事件不记录身份事实（自定）。身份事实在例外解除后不会补记，因此之后的身份差额可能以旧身份为起点。
+  - 实时裁决即使是噪声，对例外主体也抛 `ScoringRefusedError`。调用方应在调用前检查例外，或捕获这个错误后视为未计分。接线 Story 决定采用哪种方式（自定）。
+- 开关关闭：身份事实照常记录，分数不动（自定）。人工补偿在开关关闭时不生效（自定）。
+- 数据库访问：写入使用 S002 已有仓储 `SubjectStore.create`、`SubjectStore.compareAndSetScore`、`ScoreLedgerStore.appendIfNew`。幂等键、身份、例外和分数行的读取是适配器内的只读 drizzle 查询。`repository.ts` 未改（自定）。
+- 身份事实：识别变化时先关闭当前身份行（`effective_to` 设为新身份的生效时间），再插入新行。当前身份是 `effective_to IS NULL` 的行，没有行时为 `UNKNOWN`（自定）。
+- 主体键：直接使用契约中的不透明 `senderRef`。派生规则（例如按频道的 HMAC 标记）未在来源中规定，留给接线 Story（来源缺口）。
+- 原子性：查重、查找或创建主体、读取状态、决策与写入在一个 `runShortTransaction` 中完成。决策抛错则整个事务回滚，主体行也不会留下（测试覆盖）。

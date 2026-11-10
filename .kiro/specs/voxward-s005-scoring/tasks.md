@@ -28,10 +28,10 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 2.3 `engine.ts`、`index.ts`（`createScoringEngine`，`applyVerdict`，未接线占位）
   - [x] 2.4 测试：`clamp`、`rules`、`identity-delta`、`engine`（含配置校验与分量不变量）、`index`（假端口）
   - [x] 2.5 自测：`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps` 退出 0。提交 `VOXWARD-SUB-010: ...`
-- [ ] 3. VOXWARD-SUB-011：账本端口、守卫、身份事件、人工补偿
-  - [ ] 3.1 `apps/server/src/db/scoring-ledger.ts`（端口的数据库实现）
-  - [ ] 3.2 `exception-guard.ts`、`ledger.ts`、`identity-events.ts`、`compensation.ts`，扩展 `index.ts`
-  - [ ] 3.3 测试：`ledger-port`、`identity-events`、`compensation`、`concurrency`（子进程）、`contract-consistency`
-  - [ ] 3.4 自测全部退出 0。提交 `VOXWARD-SUB-011: ...`
+- [x] 3. VOXWARD-SUB-011：账本端口、守卫、身份事件、人工补偿
+  - [x] 3.1 `apps/server/src/db/scoring-ledger.ts`（端口的数据库实现）
+  - [x] 3.2 `exception-guard.ts`、`ledger.ts`、`identity-events.ts`、`compensation.ts`，扩展 `index.ts`
+  - [x] 3.3 测试：`ledger-port`、`identity-events`、`compensation`、`concurrency`（子进程）、`contract-consistency`
+  - [x] 3.4 自测全部退出 0。提交 `VOXWARD-SUB-011: ...`
 - [ ] 4. 证据：`.kiro/specs/voxward-s005-scoring/evidence/self-check.md`，随最后一个提交
 - [ ] 5. 交付报告（模型、commit、改动文件、自测结果、AC001 逐条结果、自定选择、偏离、缺口、未验证项、合并风险）
