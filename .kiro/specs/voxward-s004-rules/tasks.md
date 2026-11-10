@@ -19,16 +19,16 @@ A checked task is local progress only. Formal completion still requires the engi
 
 一个包按顺序做，每张 Subtask 做完单独 commit。spec 是该分支的第一个 commit。
 
-- [ ] 0. 本 spec commit：`VOXWARD-STORY-004: add S004 spec`（含 `kiro-specs.mjs check` 得 SPEC_CURRENT）
-- [ ] 1. VOXWARD-SUB-008 基础规则检测引擎与原文区间映射
-  - [ ] 1.1 `rules/normalize.ts`：字符单元、NFKC、去零宽与组合标记、原文映射
-  - [ ] 1.2 `rules/transliterate.ts`：读音端口与表驱动实现
-  - [ ] 1.3 `rules/bounded-regex.ts`：准入检查与编译
-  - [ ] 1.4 `rules/groups.ts`：规则集类型、编译校验、分组汇总与路由
-  - [ ] 1.5 `rules/span-map.ts`、`rules/engine.ts`：逐范围匹配、预算、消息级判定
-  - [ ] 1.6 `index.ts`：`createModerationEngine`、`createModerationChecker`；无规则集或无昵称源时 REVIEW
-  - [ ] 1.7 `test/moderation-engine/rules/` 与 `moderation-engine.test.ts`：样本、区间映射、预算与上限测试
-  - [ ] 1.8 全仓自测通过后打勾，commit `VOXWARD-SUB-008: ...`
+- [x] 0. 本 spec commit：`VOXWARD-STORY-004: add S004 spec`（含 `kiro-specs.mjs check` 得 SPEC_CURRENT）
+- [x] 1. VOXWARD-SUB-008 基础规则检测引擎与原文区间映射
+  - [x] 1.1 `rules/normalize.ts`：字符单元、NFKC、去零宽与组合标记、原文映射
+  - [x] 1.2 `rules/transliterate.ts`：读音端口与表驱动实现
+  - [x] 1.3 `rules/bounded-regex.ts`：准入检查与编译
+  - [x] 1.4 `rules/groups.ts`：规则集类型、编译校验、分组汇总与路由
+  - [x] 1.5 `rules/span-map.ts`、`rules/engine.ts`：逐范围匹配、预算、消息级判定
+  - [x] 1.6 `index.ts`：`createModerationEngine`、`createModerationChecker`；无规则集或无昵称源时 REVIEW
+  - [x] 1.7 `test/moderation-engine/rules/` 与 `moderation-engine.test.ts`：样本、区间映射、预算与上限测试
+  - [x] 1.8 全仓自测通过后打勾，commit `VOXWARD-SUB-008: ...`
 - [ ] 2. VOXWARD-SUB-009 昵称检查缓存与本地安全称呼/读音（依赖 SUB-008）
   - [ ] 2.1 `nickname-cache/cache.ts`：昵称摘要、缓存项、失效规则、LRU 与 TTL
   - [ ] 2.2 `nickname-cache/safe-alias.ts`：查询端口、进程内实现、读音解析
