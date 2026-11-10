@@ -21,13 +21,13 @@ A checked task is local progress only. Formal completion still requires the engi
 顺序不可变：先 SUB-010，再 SUB-011。每张子单各自提交一个 commit，提交信息含子单编号。
 
 - [x] 0. 初始化 spec（`kiro-specs.mjs init`，`SPEC_INITIALIZED`，工单 rev 4）
-- [ ] 1. 写实施设计与任务（design.md、tasks.md 的本地段）。`kiro-specs.mjs check` 得 `SPEC_CURRENT`。提交 `VOXWARD-STORY-005: add spec`。
+- [x] 1. 写实施设计与任务（design.md、tasks.md 的本地段）。`kiro-specs.mjs check` 得 `SPEC_CURRENT`。提交 `VOXWARD-STORY-005: add spec`。
 - [ ] 2. VOXWARD-SUB-010：计分纯逻辑与引擎入口（假端口测试）
-  - [ ] 2.1 `packages/contracts/src/ports/scoring-ledger.ts` 与导出
-  - [ ] 2.2 `config.ts`、`clamp.ts`、`rules.ts`、`identity-delta.ts`
-  - [ ] 2.3 `engine.ts`、`index.ts`（`createScoringEngine`，`applyVerdict`，未接线占位）
-  - [ ] 2.4 测试：`clamp`、`rules`、`engine`、`identity-delta`、`index`
-  - [ ] 2.5 自测：`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps` 退出 0。提交 `VOXWARD-SUB-010: ...`
+  - [x] 2.1 `packages/contracts/src/ports/scoring-ledger.ts` 与导出
+  - [x] 2.2 `config.ts`、`clamp.ts`、`rules.ts`、`identity-delta.ts`、`errors.ts`
+  - [x] 2.3 `engine.ts`、`index.ts`（`createScoringEngine`，`applyVerdict`，未接线占位）
+  - [x] 2.4 测试：`clamp`、`rules`、`identity-delta`、`engine`（含配置校验与分量不变量）、`index`（假端口）
+  - [x] 2.5 自测：`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps` 退出 0。提交 `VOXWARD-SUB-010: ...`
 - [ ] 3. VOXWARD-SUB-011：账本端口、守卫、身份事件、人工补偿
   - [ ] 3.1 `apps/server/src/db/scoring-ledger.ts`（端口的数据库实现）
   - [ ] 3.2 `exception-guard.ts`、`ledger.ts`、`identity-events.ts`、`compensation.ts`，扩展 `index.ts`

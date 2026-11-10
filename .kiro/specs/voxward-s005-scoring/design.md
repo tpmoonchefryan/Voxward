@@ -67,6 +67,7 @@ No design authority is configured for the resolved work context. No authority wa
 | `packages/contracts/src/ports/scoring-ledger.ts` | SUB-010 | 计分端口：决策类型、主体状态、提交请求与结果 |
 | `apps/server/src/modules/scoring-engine/config.ts` | SUB-010 | 计分配置、占位默认值、校验 |
 | `apps/server/src/modules/scoring-engine/clamp.ts` | SUB-010 | 运行钳制与实际生效变化 |
+| `apps/server/src/modules/scoring-engine/errors.ts` | SUB-010 | 计分错误类型：输入无效、配置无效、例外拒绝 |
 | `apps/server/src/modules/scoring-engine/rules.ts` | SUB-010 | 合规加分、违规扣分、最大适用扣分 |
 | `apps/server/src/modules/scoring-engine/identity-delta.ts` | SUB-010 | 身份基础分差额 |
 | `apps/server/src/modules/scoring-engine/engine.ts` | SUB-010 | 纯函数：裁决与主体状态 → 计分决策 |
@@ -166,7 +167,7 @@ No design authority is configured for the resolved work context. No authority wa
 | --- | --- | --- |
 | `test/scoring-engine/engine/clamp.test.ts` | 上下限边界，部分钳制的实际变化 | SUB-010 AC001 |
 | `test/scoring-engine/engine/rules.test.ts` | 多规则取最大而非累加；扣分为零不写账本 | SUB-010 AC001 |
-| `test/scoring-engine/engine/engine.test.ts` | 冷却边界；噪声与未启用无变化；BLOCK 扣分；故障与无效输入不改分；分量不变量 | SUB-010 AC001 |
+| `test/scoring-engine/engine/engine.test.ts` | 配置校验；冷却边界；噪声与未启用无变化；BLOCK 扣分；故障与无效输入不改分；分量不变量 | SUB-010 AC001 |
 | `test/scoring-engine/engine/identity-delta.test.ts` | 身份差额计算，降级为负，同身份无变化 | SUB-010 AC001 |
 | `test/scoring-engine/engine/index.test.ts` | 同一账号跨频道互不影响（假端口）；未接线占位保留旧文本 | SUB-010 AC001 |
 | `test/scoring-engine/ledger/ledger-port.test.ts` | 真实 SQLite：账本等于实际变化，重复不二次计分，例外拒绝不写，跨频道独立 | SUB-011 AC001 |
@@ -193,7 +194,7 @@ No design authority is configured for the resolved work context. No authority wa
 ## 10. 与子单交付清单的偏离
 
 - 目录：工单写的是 `apps/server/src/modules/scoring/`，实际目录是 `scoring-engine/`，与已有 `index.ts` 桩和 `moderation-engine` 命名一致。测试目录同样使用 `test/scoring-engine/`。
-- 新增文件（不在工单 deliverables 中）：`packages/contracts/src/ports/scoring-ledger.ts`、`config.ts`、`apps/server/src/db/scoring-ledger.ts`、`ledger.ts`。另改 `packages/contracts/src/index.ts` 增加导出。
+- 新增文件（不在工单 deliverables 中）：`packages/contracts/src/ports/scoring-ledger.ts`、`config.ts`、`errors.ts`、`apps/server/src/db/scoring-ledger.ts`、`ledger.ts`，测试辅助 `test/scoring-engine/synthetic.ts` 与 `fake-ledger.ts`。另改 `packages/contracts/src/index.ts` 增加导出。
 - 工单 deliverables 需要由主线程或 Owner 通过引擎更新。本包不写引擎。
 - 工单依赖中的「VOXWARD-SUB-002 的 ScoringEngine 接口」「VOXWARD-SUB-004 的账本表」「VOXWARD-SUB-005 的事务接口」，在本仓库中分别对应 `packages/contracts` 的 `ScoringEngine`、`db/schema/subjects.ts` 的 `score_ledger`、`db/transaction.ts` 的 `runShortTransaction`。
 
