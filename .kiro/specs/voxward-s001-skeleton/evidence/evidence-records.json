@@ -1,0 +1,757 @@
+{
+  "note": "草稿，供主线程链写。targets[].evidence 中每一行都只含引擎 evidence 行允许的八个键，可原样放进对应工单 content.evidence；targets 外层与本说明字段不是引擎格式，写入前去掉。",
+  "candidate": {
+    "codeVersion": "ffa1ddc",
+    "fullSha": "ffa1ddc6f15a8ae8945cd5b511a944dcafa9a891",
+    "note": "引擎按字符串精确比较 evidence.codeVersion 与完成候选（completion.codeVersion 或转态参数），转 done 时须使用同一字符串 ffa1ddc。"
+  },
+  "readFrom": {
+    "command": "einzbern.mjs work-show --external-key <KEY>（2026-11-10，四单并行，退出码均为 0）",
+    "libraryVersion": 20743,
+    "headEventHash": "95d01a7523d70f137c1010633ea5f9f27a7a1c78fc1417d030472770058b6510"
+  },
+  "engineShape": {
+    "source": "~/.einzbern/engine/4.5.1/scripts/einzbern.mjs：validateWorkContent 的 evidence 段（exact 键检查）与 workAcceptanceProblems（完成判定）；规范 specs/work-content-v1.md「Acceptance has its own stable id/version…」段",
+    "requiredKeys": [
+      "acceptanceId",
+      "acceptanceVersion",
+      "requirement",
+      "codeVersion",
+      "locator",
+      "actual",
+      "outcome",
+      "kind"
+    ],
+    "optionalKeys": [
+      "meaningDigest（64 位十六进制；省略时引擎为新证据计算）"
+    ],
+    "requirementKeys": [
+      "workId",
+      "requirementId",
+      "version"
+    ],
+    "outcome": [
+      "satisfied",
+      "failed",
+      "unverified"
+    ],
+    "kind": [
+      "machine",
+      "source-behavior-review",
+      "owner-visual"
+    ],
+    "completionRule": "每行验收在候选 codeVersion 上至少一条 outcome=satisfied，locator 与 actual 非空，actual 不能只是 pass/ok/success；同候选存在 failed 或 unverified 即阻断 done。",
+    "shapeCheck": "生成脚本按上述源码重写了相同检查（精确键、requirement 三键、正整数版本、非空字符串、outcome/kind 枚举、actual 非裸 pass/ok/success）并逐行通过，同时确认每个 locator 锚点都存在于 acceptance.md。没有调用引擎本身校验，也没有写入引擎。"
+  },
+  "fieldMapping": [
+    {
+      "requested": "requirementRef",
+      "engine": "requirement",
+      "note": "派工给的键名在引擎中不存在，exact 检查会拒绝 requirementRef。"
+    },
+    {
+      "requested": "result",
+      "engine": "outcome",
+      "note": "同上，取值 satisfied/failed/unverified 不变。"
+    },
+    {
+      "requested": "kind: \"machine\"（全部行）",
+      "engine": "kind 按依据类型填写",
+      "note": "AC001、STORY、PARENT 与 INHERIT-001/011/012 共 23 行以机器执行为主要依据，填 machine；INHERIT-003/004/005/009/014/017 共 24 行的 method 是对照接口、数据字段与文档，依据是源码审查，填 source-behavior-review。完成判定不检查 kind；若主线程坚持全部写 machine，只改该字段即可。"
+    }
+  ],
+  "counts": {
+    "total": 47,
+    "satisfied": 47,
+    "failed": 0,
+    "unverified": 0
+  },
+  "targets": [
+    {
+      "externalKey": "VOXWARD-STORY-001",
+      "workId": "work:674c24794f9a1fb626eb2ad1",
+      "revision": 4,
+      "evidence": [
+        {
+          "acceptanceId": "VW-S001-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:674c24794f9a1fb626eb2ad1",
+            "requirementId": "VW-S001-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-ac001",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0），合并 SUB-001 3c94ba6、SUB-002 4ea44a6、SUB-003 14dd8ed：pnpm build、pnpm typecheck、pnpm test（41/41）、pnpm check:deps 均退出 0。服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。契约测试 16 项与边界测试 3 项通过，依赖方向审查见子单行。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S001-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4359ebe518ff3530a3338d00",
+            "requirementId": "VW-E001-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-parent",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0），复用本单同候选证据：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。EPIC-001 的其余判据不由本单证明。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S001-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-inherit-001",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。对 VW-R-001 的贡献：pnpm、TypeScript、Fastify、React、Vite 工程就位，按 §9 建立九个版本化模块契约，模块化单体只有一个业务进程。本单未触及：SQLite WAL、Drizzle、浏览器多人协作、频道评分、审核与精翻、人工处理、受控输出，由 INIT VW-AC-001 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S001-INHERIT-003",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-003",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-inherit-003",
+          "actual": "候选 ffa1ddc 源码审查与契约测试：ModerationEngine.moderate(ChannelEvent) 返回 PASS/BLOCK/REVIEW 内部路由；下游裁决只有 ALLOW/BLOCK，ALLOW_MEANINGFUL 与 ALLOW_NOISE 映射为 ALLOW、BLOCK 映射为 BLOCK（契约测试通过）。只定签名与占位，不改变 ModerationEngine 或其它模块职责。本单未触及：昵称、正文与组合检查，精确、归一化、读音/转写与有界正则，白名单与噪声，选择性 AI、付费文本安全审核与例外队列；实施由 EPIC-001 后续 Story、完整验证由 EPIC-006、完整判据由 INIT VW-AC-003 承载，这些责任单目前没有可引用的实际结果。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S001-INHERIT-004",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-004",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-inherit-004",
+          "actual": "候选 ffa1ddc 源码审查：ScoringEngine.applyVerdict(ChannelEvent, Verdict) 返回 ScoreChange{subjectRef, delta, idempotencyKey}，输入是裁决而非模型分值，带幂等键；ChannelEvent 带 platform 与 channelId；没有跨频道或公开分值接口。只定签名，不改变职责。本单未触及：钳制、actualDelta、冷却、多规则最大扣分、幂等结算、身份变化、noise 不变、故障不扣分、分值不公开；由 EPIC-001 实施、EPIC-006 验证，INIT VW-AC-004 承载。ScoreChange 未显式带频道范围，记为非阻断建议。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S001-INHERIT-005",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-005",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-inherit-005",
+          "actual": "候选 ffa1ddc 源码审查：本单未触及昵称缓存（主体、昵称哈希、规则版本、期限失效）、安全称呼与读音、后台复盘 UNSETTLED_FAST_PASS、跨条临时别名与候选词人工确认。S001 只提供 TaskCoordinator（enqueue、statusOf）与 InferenceProvider 签名，没有新增缓存或复盘队列，不改变上述职责。实施由 EPIC-001、EPIC-002，完整验证由 EPIC-006，判据由 INIT VW-AC-005 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S001-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-inherit-009",
+          "actual": "候选 ffa1ddc 源码审查：触及 InferenceRequest{contractVersion, correlationId, text}、InferenceProvider.cancel/releaseSession 与无状态合成推理替身。请求不含平台用户 ID、昵称、账本或凭据字段；src 无文件写入，没有新增会话、提示或工具轨迹副本；DataLifecycleService 注释明示不承诺删除提供方历史，没有「Archive 或清理等于删除」的表述。本单未触及真实 AI 会话与 Kiro/Crew 内容清理，运行时验证由 EPIC-002 与 EPIC-006 的责任单承接。correlationId 与提案 §8.1 临时 itemId 的关系记为非阻断建议。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S001-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-inherit-011",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。遵守 VW-R-011：单一业务进程；本单没有新增数据库、队列或日志存储，src 无文件写入；DeliveryIntent 与 TaskRef 只带事件引用，不带正文。本单未触及：SQLite WAL、短事务、Technical Log、Crew 队列，由 INIT 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S001-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-inherit-012",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。遵守 VW-R-012：只注册 GET /healthz，响应只有 {\"status\":\"ok\"}，没有业务路由（/events 404）；默认与实测只绑 127.0.0.1；DecisionService.commit 与 AuditStore.findByCorrelationId 带 actorRef。本单未触及：角色模型、逐次鉴权、HTTPS/WSS、CSRF、转义、可撤销输出凭据、运行时 agent 隔离（S003 及后续）。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S001-INHERIT-014",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-014",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-inherit-014",
+          "actual": "候选 ffa1ddc 源码审查：本单未触及记分例外（频道独立偏好、所有消息先入审核、不走白名单/噪声/高分快通道、例外期间不记分、恢复需明确请求）。S001 没有加入任何快通道或例外旁路；ModerationEngine 与 ScoringEngine 只是签名与占位，不改变职责。实施由 EPIC-001、EPIC-004，完整验证由 EPIC-006，判据由 INIT VW-AC-014 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S001-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-s001-inherit-017",
+          "actual": "候选 ffa1ddc 源码审查：触及 TaskRef.processingGeneration 与 deadlineAt、STALE_GENERATION{taskId, expected, actual}、含 DISCARDED 的 TaskStatus、DeliveryIntent.validUntil、VoxwardError 联合、DataLifecycleService.requestDeletion（注释说明不能删除提供方控制的历史）。本单没有创建数据库、缓存、队列、日志文件或备份，src 无写入；合成输出只在进程内存记录意图引用；Fastify 请求日志只到 stdout，不含正文。本单未触及删除执行、代次失效、恢复先应用删除记录、WAL 与备份清理，由对应责任单验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-001",
+      "workId": "work:136894122fa57b30ec736c73",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB001-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:136894122fa57b30ec736c73",
+            "requirementId": "VW-SUB001-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-ac001",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：pnpm install --frozen-lockfile 退出 0（157 包，锁文件未变）；pnpm build 0（server dist/main.js 8.3kb，web vite 39 模块）；pnpm typecheck 0（3 包）；pnpm test 0（5 文件 41 项）。pnpm dev：127.0.0.1:3000/healthz 200 {\"status\":\"ok\"}，127.0.0.1:5173/ 200 含 #root，Vite 代理 /healthz 200，4 个页面模块 200；只监听 127.0.0.1；业务端口只有 1 个 node 进程（tsx 运行 src/main.ts），vite 仅为前端开发服务器；停止后无残留进程与监听。九个模块在 apps/server/src/modules/，经 registry 组合。交付清单中的 apps/web/src/App.tsx 不存在，路由由 main.tsx 与 routes.tsx 完成，不影响本行。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB001-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:674c24794f9a1fb626eb2ad1",
+            "requirementId": "VW-S001-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-story",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0），复用 VW-SUB001-AC001 的同次执行：安装、构建、类型检查、测试退出 0；Fastify（127.0.0.1:3000/healthz 200）与 Vite（127.0.0.1:5173 200）可启动；业务端口只有 1 个 node 进程。本行只证明 SUB-001 承担的基础工程部分；VW-S001-AC001 另行判定为 satisfied。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB001-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4359ebe518ff3530a3338d00",
+            "requirementId": "VW-E001-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-parent",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）（已集成 SUB-001..003），复用同候选证据：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-001 的贡献是可启动的工程骨架与 /healthz。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB001-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-inherit-001",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-001 贡献 pnpm workspace、TypeScript 基础配置、Fastify 入口与 React/Vite 壳（install/build/typecheck/dev 冒烟），没有引入 VW-R-001 之外的技术栈。其余部分本单未触及，由 INIT VW-AC-001 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB001-INHERIT-003",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-003",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-inherit-003",
+          "actual": "候选 ffa1ddc 源码审查：SUB-001（3c94ba6）只交付工程骨架与 /healthz，本单未触及审核规则与裁决，不改变任何模块职责。完整行为由 EPIC-001 实施、EPIC-006 验证，INIT VW-AC-003 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB001-INHERIT-004",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-004",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-inherit-004",
+          "actual": "候选 ffa1ddc 源码审查：SUB-001 本单未触及评分，不改变 ScoringEngine 职责。完整行为由 EPIC-001 实施、EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB001-INHERIT-005",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-005",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-inherit-005",
+          "actual": "候选 ffa1ddc 源码审查：SUB-001 本单未触及昵称缓存与后台复盘，不改变相关职责。由 EPIC-001、EPIC-002 实施，EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB001-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-inherit-009",
+          "actual": "候选 ffa1ddc 源码审查与 dev 冒烟日志：SUB-001 本单未触及 AI 输入、会话或提示；Fastify 请求日志只写到 stdout（方法、URL、Host、对端地址与状态码），不含正文。运行时验证由对应责任单承接。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB001-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-inherit-011",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-001 只建立单进程服务骨架，没有存储。SQLite WAL 等本单未触及，由 INIT 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB001-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-inherit-012",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-001 的 Fastify 与 Vite 只绑 127.0.0.1（vite.config.ts host 127.0.0.1、strictPort），只注册 /healthz。鉴权等本单未触及，由 INIT 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB001-INHERIT-014",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-014",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-inherit-014",
+          "actual": "候选 ffa1ddc 源码审查：SUB-001 本单未触及记分例外，不改变相关职责。由 EPIC-001、EPIC-004 实施，EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB001-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub001-inherit-017",
+          "actual": "候选 ffa1ddc 源码审查：SUB-001 本单未触及数据生命周期；产物只有 git 忽略的 dist/。运行行为由对应责任单验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-002",
+      "workId": "work:29efe5676405320e83378661",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB002-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:29efe5676405320e83378661",
+            "requirementId": "VW-SUB002-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-ac001",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：pnpm typecheck 0；contracts 测试 16/16（pnpm test 与 --filter 单独运行均退出 0）。除 Versioned 本身外 25 个导出 interface 全部 extends Versioned/VersionedModule，VoxwardError = Versioned & 联合；类型级 expectTypeOf 断言由 tsc 强制（临时反例 tsc 退出 2：TS2345、TS2344，删除后 0）。DOWNSTREAM_VERDICTS 为 [ALLOW, BLOCK]，DeliveryIntent.verdict 类型为 \"ALLOW\"|\"BLOCK\"，三种内部分类映射只产出 ALLOW/BLOCK。contracts 只有包内相对导入、无 dependencies；check:deps 0 违规，反例中 contracts 引用 node:fs、zod、apps/server 均被报出。九个接口职责与不承担项逐项对照提案 §9.3（第 371-385 行）无冲突，部分职责尚未建模为方法。kiro-specs check：voxward-s001-skeleton（workRevision 4）与 voxward-core-contracts（workRevision 3）均 SPEC_CURRENT，退出 0。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB002-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:674c24794f9a1fb626eb2ad1",
+            "requirementId": "VW-S001-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-story",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0），复用 VW-SUB002-AC001 的同次执行：契约全部记录带 contractVersion（tsc 强制，反例退出 2）；只有包内导入、零运行时依赖；下游裁决只有 ALLOW/BLOCK；两份 Spec 均 SPEC_CURRENT；§9.3 九个接口逐项无冲突。本行只证明 SUB-002 承担的契约与 Spec 部分。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB002-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4359ebe518ff3530a3338d00",
+            "requirementId": "VW-E001-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-parent",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）（已集成 SUB-001..003），复用同候选证据：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-002 的贡献是零依赖的版本化契约，业务层只经它通信。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB002-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-inherit-001",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-002 贡献九个版本化接口与业务类型（typecheck、契约测试 16/16、tsc 反例）。其余部分本单未触及，由 INIT VW-AC-001 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB002-INHERIT-003",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-003",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-inherit-003",
+          "actual": "候选 ffa1ddc 源码审查与契约测试：SUB-002 交付 ModerationEngine 签名与只有 ALLOW/BLOCK 的下游裁决契约，不改变其它模块职责。审核规则本单未触及，由 EPIC-001 实施、EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB002-INHERIT-004",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-004",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-inherit-004",
+          "actual": "候选 ffa1ddc 源码审查：SUB-002 交付 ScoringEngine 签名（输入为 Verdict，输出带幂等键），不接受模型写分。评分规则本单未触及，由 EPIC-001 实施、EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB002-INHERIT-005",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-005",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-inherit-005",
+          "actual": "候选 ffa1ddc 源码审查：SUB-002 只交付 TaskCoordinator 与 InferenceProvider 签名，本单未触及缓存与复盘行为。由 EPIC-001、EPIC-002 实施，EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB002-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-inherit-009",
+          "actual": "候选 ffa1ddc 源码审查：InferenceRequest 只有正文与关联编号两项业务字段，契约不含会话、提示或工具轨迹类型。真实 AI 会话本单未触及，运行时验证由 EPIC-002 与 EPIC-006 承接。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB002-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-inherit-011",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-002 契约中 DeliveryIntent.eventRef 与 TaskRef 不含正文，没有存储实现。SQLite WAL 等本单未触及，由 INIT 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB002-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-inherit-012",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-002 的裁决提交与日志查询签名带 actorRef，没有公开或下游日志检索接口。鉴权实现本单未触及，由 INIT 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB002-INHERIT-014",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-014",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-inherit-014",
+          "actual": "候选 ffa1ddc 源码审查：SUB-002 契约没有快通道或例外旁路字段；本单未触及例外行为。由 EPIC-001、EPIC-004 实施，EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB002-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub002-inherit-017",
+          "actual": "候选 ffa1ddc 源码审查：SUB-002 契约为代次、到期与失败状态提供 processingGeneration、deadlineAt、validUntil、STALE_GENERATION 与 DISCARDED；运行行为本单未触及，由对应责任单验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-003",
+      "workId": "work:ecdf694558a85f97b08bc27d",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB003-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:ecdf694558a85f97b08bc27d",
+            "requirementId": "VW-SUB003-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-ac001",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：注册表在 adapters=synthetic 下绑定合成 PlatformSource/InferenceProvider/OutputAdapter；pnpm dev 与 node dist/main.js 均可启动（/healthz 200，只绑 127.0.0.1，SIGTERM 退出 0）；边界用例走通合成事件、合成推理、DeliveryIntent、合成输出。九个模块 index.ts 只导入 @voxward/contracts；check:deps 38 文件 0 违规，临时违规文件中模块导入 fastify/zod（含 type-only、类型位置 import()、多行 re-export）、跨模块导入、模块引用 adapters 均报出（退出 1），清理后 0。env -i 下 node dist/main.js 与 tsx src/main.ts 各 9 例：缺 adapters、未知 VOXWARD_* 键、配置文件未知键、非法值、坏 JSON、文件不可读均退出 1，stderr 一行（如 CONFIG_UNKNOWN_KEY: VOXWARD_API_KEY），植入的密钥样式取值命中 0 次，无监听。合成替身单独运行 10/10。build、typecheck 退出 0。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB003-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:674c24794f9a1fb626eb2ad1",
+            "requirementId": "VW-S001-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-story",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0），复用 VW-SUB003-AC001 的同次执行：合成替身绑定后 pnpm dev 与 node dist/main.js 可启动；模块只导入 @voxward/contracts，check:deps 0 违规且反例可报出；18 例配置失败均退出 1、一行受控报错、不回显取值；替身单独测试 10/10。本行只证明 SUB-003 承担的配置校验与边界测试部分。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB003-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4359ebe518ff3530a3338d00",
+            "requirementId": "VW-E001-R001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-parent",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）（已集成 SUB-001..003），复用同候选证据：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-003 的贡献是配置校验、注册表、合成替身、边界测试与依赖方向检查。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB003-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-inherit-001",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-003 贡献配置校验、注册表、合成替身与边界测试。其余部分本单未触及，由 INIT VW-AC-001 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB003-INHERIT-003",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-003",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-inherit-003",
+          "actual": "候选 ffa1ddc 源码审查：ModerationEngine 占位对所有调用以 MODULE_NOT_IMPLEMENTED 拒绝；合成推理固定返回 ALLOW_MEANINGFUL 只是测试替身，不构成审核策略。审核规则本单未触及，由 EPIC-001 实施、EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB003-INHERIT-004",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-004",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-inherit-004",
+          "actual": "候选 ffa1ddc 源码审查与边界测试：ScoringEngine 占位拒绝调用，边界用例断言 MODULE_NOT_IMPLEMENTED: ScoringEngine.applyVerdict（通过）。评分规则本单未触及，由 EPIC-001 实施、EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB003-INHERIT-005",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-005",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-inherit-005",
+          "actual": "候选 ffa1ddc 源码审查：TaskCoordinator 为拒绝调用的占位，合成推理无状态；本单未触及缓存与复盘行为。由 EPIC-001、EPIC-002 实施，EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB003-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-inherit-009",
+          "actual": "候选 ffa1ddc 源码审查：合成推理不发起外部调用、不保存状态，cancel 与 releaseSession 为空操作；没有新增持久化。真实 AI 会话本单未触及，运行时验证由 EPIC-002 与 EPIC-006 承接。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB003-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-inherit-011",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-003 注册表全为合成或占位实现，合成输出只在进程内存记录投递意图（只含引用），没有持久化。SQLite WAL 等本单未触及，由 INIT 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB003-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-inherit-012",
+          "actual": "候选 ffa1ddc 干净检出（Node v24.16.0、pnpm 12.18.0）：服务可启动（pnpm dev：127.0.0.1:3000/healthz 200、Vite 127.0.0.1:5173 200；node dist/main.js /healthz 200，SIGTERM 退出 0）；业务层不导入供应商原始对象（九个模块只导入 @voxward/contracts，pnpm check:deps 38 文件 0 违规，13 个临时违规文件全部报出后清理复跑为 0）；未知配置与缺必需项在实际启动中退出 1、stderr 一行受控报错且植入取值命中 0 次（18 例）；合成替身单独运行 10/10。SUB-003 配置默认 host 为 127.0.0.1，配置错误不回显取值。鉴权实现本单未触及，由 INIT 全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB003-INHERIT-014",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-014",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-inherit-014",
+          "actual": "候选 ffa1ddc 源码审查：SUB-003 注册表与合成替身不含快通道；本单未触及例外行为。由 EPIC-001、EPIC-004 实施，EPIC-006 验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB003-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "ffa1ddc",
+          "locator": ".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md#vw-sub003-inherit-017",
+          "actual": "候选 ffa1ddc 源码审查：SUB-003 没有持久化，合成状态只在进程内存；运行行为本单未触及，由对应责任单验证。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        }
+      ]
+    }
+  ]
+}

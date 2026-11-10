@@ -1,0 +1,57 @@
+[
+  {
+    "subject": "Einzbern 4.5.1 工单验收证据行的真实字段",
+    "summary": "work content 的 evidence 行只接受 acceptanceId、acceptanceVersion、requirement{workId, requirementId, version}、codeVersion、locator、actual、outcome、kind 八个键，可选 meaningDigest；多一个键即被拒。字段名是 requirement 与 outcome，不是 requirementRef 与 result。",
+    "snippet": "evidence 行 = {acceptanceId, acceptanceVersion, requirement:{workId, requirementId, version}, codeVersion, locator, actual, outcome: satisfied|failed|unverified, kind: machine|source-behavior-review|owner-visual}；done 要求每行验收在候选 codeVersion 上至少一条 satisfied，且同候选没有 failed/unverified。",
+    "body": "来源：~/.einzbern/engine/4.5.1/scripts/einzbern.mjs 的 validateWorkContent（evidence 行用 exact 精确键检查）与 workAcceptanceProblems（完成判定）。完成判定对每条 acceptance 取 acceptanceId、acceptanceVersion、requirement 与 codeVersion 都匹配、且 meaningDigest 属于当前兼容摘要的证据；至少一条 outcome=satisfied，locator 与 actual 非空，actual 不能只是 pass/ok/success；同一候选上存在 failed 或 unverified 会报 evidence:unresolved 并阻断 done。codeVersion 按字符串精确比较，所以转 done 时使用的候选字符串要与证据一致（第 1 批用 ffa1ddc）。新提交的证据省略 meaningDigest 时由引擎计算。evidence 是 content（tcrn.work-content.v1）的一个字段，随完整 content 写入。2026-11-10 第 1 批验收按此形状起草了 47 条证据。",
+    "tags": ["einzbern", "evidence", "work-content"],
+    "sources": {
+      "projectId": "project:f824c7861e6888255132af42",
+      "references": [".kiro/specs/voxward-s001-skeleton/evidence/acceptance.md"]
+    }
+  },
+  {
+    "subject": "VoxWard check-deps 的扫描范围与模块区限制",
+    "summary": "scripts/check-deps.mjs 只扫描 packages/contracts/src、apps/server/src、apps/web/src 下的 .ts/.tsx，只匹配带引号的 import/export from、import \"x\" 与 import(\"x\")。.mts/.cts/.js 文件、模板字符串动态导入与 require 不会被发现。模块区只允许 @voxward/contracts 与本模块文件，外部包和 node: 内置模块一律算违规。",
+    "snippet": "check-deps 盲区：非 .ts/.tsx 文件、import(`x`)、require(\"x\")。modules/* 不能导入任何外部包或 node: 内置模块；apps/server/src 下未归区的新文件会报 not assigned to a zone。",
+    "body": "2026-11-10 第 1 批验收在候选 ffa1ddc 上临时放入 13 个违规文件：模块导入 fastify（值导入、type-only、类型位置 import()）、模块多行 re-export zod、跨模块导入、模块引用 adapters、adapter 引用模块、contracts 引用 node:fs/zod/apps/server、web 引用 apps/server 与 @voxward/server、未归区文件，共报出 13 处（退出码 1）。模块内 .mts 文件没有被扫描（扫描数 50 = 38 + 12），模块内 import(`fastify`) 没有报出。删除后恢复 38 个文件 0 违规。区划：registry.ts、app.ts、main.ts 与 config/ 是组合根，可导入各层；adapters 可导入 contracts、外部包与内置模块。S002 引入 SQLite/Drizzle 时，数据库访问若放在 modules 会被判违规，需要先决定放在 adapter 还是扩展区划，并同步更新 design.md §2。",
+    "tags": ["check-deps", "dependency-direction", "voxward"],
+    "sources": {
+      "projectId": "project:f824c7861e6888255132af42",
+      "references": [".kiro/specs/voxward-s001-skeleton/design.md", "scripts/check-deps.mjs"]
+    }
+  },
+  {
+    "subject": "contracts 的类型级断言只由 pnpm typecheck 强制",
+    "summary": "packages/contracts/test/contracts.test.ts 中检查 contractVersion 与 ALLOW/BLOCK 的 expectTypeOf 断言在 vitest run 中总是通过，只有 pnpm typecheck（tsc 覆盖 test/）会报错。去掉 typecheck 门禁会让契约形状回归漏检。",
+    "snippet": "改契约后必须跑 pnpm typecheck；pnpm test 不检查类型级断言。",
+    "body": "2026-11-10 第 1 批验收在候选 ffa1ddc 上加入临时测试文件：对不含 contractVersion 的记录断言 toHaveProperty(\"contractVersion\")，并把 DeliveryIntent[\"verdict\"] 断言为含 REVIEW。tsc -p packages/contracts/tsconfig.json 退出码 2（TS2345、TS2344），删除后退出码 0。vitest 3.2.7 未开启 typecheck 模式，测试文件注释也写明这些用例的运行时主体为空。contracts 与 server 的 tsconfig include 都含 test/，所以根脚本 pnpm typecheck 会覆盖它们。",
+    "tags": ["contracts", "testing", "typecheck"],
+    "sources": {
+      "projectId": "project:f824c7861e6888255132af42",
+      "references": ["packages/contracts/test/contracts.test.ts", "packages/contracts/tsconfig.json"]
+    }
+  },
+  {
+    "subject": "VoxWard 服务配置的接入点与失败语义",
+    "summary": "服务只接受 VOXWARD_HOST、VOXWARD_PORT、VOXWARD_ADAPTERS 与 VOXWARD_CONFIG_FILE；其它 VOXWARD_* 变量或配置文件中的未知键令启动以 CONFIG_UNKNOWN_KEY 退出 1。adapters 必填，目前只有 synthetic。新增配置项要同时改 config/schema.ts 与 config/load.ts 的 ENV_KEYS。listen 失败没有受控处理。",
+    "snippet": "新配置项 = schema.ts 加键 + load.ts ENV_KEYS 加映射；node dist/main.js 需要 VOXWARD_ADAPTERS=synthetic；坏主机名或端口占用会打印堆栈退出 1。",
+    "body": "2026-11-10 第 1 批验收在候选 ffa1ddc 上用 env -i 分别运行 node dist/main.js 与 tsx src/main.ts 各 9 例：缺 adapters 报 CONFIG_INVALID: adapters (required key is missing)；VOXWARD_PROT、VOXWARD_API_KEY 报 CONFIG_UNKNOWN_KEY 加变量名；配置文件未知键报 CONFIG_UNKNOWN_KEY 加键名；非法取值、越界端口、非数字端口、坏 JSON、不可读文件报 CONFIG_INVALID 加键与原因。全部退出码 1，stderr 一行，植入的密钥样式取值命中 0 次。端口字符串只在全为数字时转成数字。环境变量覆盖配置文件。VOXWARD_HOST=not-a-host.invalid 通过 schema，listen 时抛出未捕获的 getaddrinfo ENOTFOUND 并打印堆栈。apps/server 的 start 脚本不设 VOXWARD_ADAPTERS，直接运行会以 CONFIG_INVALID 退出；dev 脚本设了 synthetic。",
+    "tags": ["config", "server", "voxward"],
+    "sources": {
+      "projectId": "project:f824c7861e6888255132af42",
+      "references": ["apps/server/src/config/load.ts", "apps/server/src/config/schema.ts", "apps/server/src/main.ts"]
+    }
+  },
+  {
+    "subject": "推理请求只带 correlationId，模型输入需要另生成临时 itemId",
+    "summary": "S001 契约的 InferenceRequest 只有 correlationId 与 text，边界测试直接传入事件的 correlationId。提案 §12.2 中 correlationId 是同一消息全程沿用的日志关联 ID；§8.1 要求模型输入只带临时 itemId；§10 由 Technical Log 保存 itemId 映射。推理适配器不能把 correlationId 当作模型可见编号。",
+    "snippet": "Kiro/推理适配器为每次任务生成 itemId（批内唯一，≤64 字符）并记录 itemId→correlationId 映射；correlationId 只用于本地关联与 cancel/releaseSession。",
+    "body": "依据：packages/contracts/src/modules/inference-provider.ts 的 InferenceRequest{contractVersion, correlationId, text}，其注释称 correlationId 为 temporary；docs/proposal/y3_project_proposal.md 第 267 行（§8.1 发送内容限定为任务说明、规则摘要、临时 itemId、必要正文与有限上下文）、第 293-295 行（VoxWardModerationBatchV1 的 itemId）、第 400 行（Technical Log 保存临时 itemId 映射）、第 474 行起（§12.2 correlationId 全程沿用、由服务端生成）。S001 没有真实推理适配器，当前没有数据发往模型。EPIC-002 实现 Kiro 适配器与批量 JSON 契约时需要处理这层映射；如果在契约里显式加入 itemId，按契约版本变更处理。",
+    "tags": ["ai-input", "contracts", "privacy"],
+    "sources": {
+      "projectId": "project:f824c7861e6888255132af42",
+      "references": ["docs/proposal/y3_project_proposal.md", "packages/contracts/src/modules/inference-provider.ts"]
+    }
+  }
+]
