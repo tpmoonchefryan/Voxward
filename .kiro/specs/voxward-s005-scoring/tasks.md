@@ -33,5 +33,5 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 3.2 `exception-guard.ts`、`ledger.ts`、`identity-events.ts`、`compensation.ts`，扩展 `index.ts`
   - [x] 3.3 测试：`ledger-port`、`identity-events`、`compensation`、`concurrency`（子进程）、`contract-consistency`
   - [x] 3.4 自测全部退出 0。提交 `VOXWARD-SUB-011: ...`
-- [ ] 4. 证据：`.kiro/specs/voxward-s005-scoring/evidence/self-check.md`，随最后一个提交
+- [x] 4. 证据：`.kiro/specs/voxward-s005-scoring/evidence/self-check.md`，随最后一个提交
 - [ ] 5. 交付报告（模型、commit、改动文件、自测结果、AC001 逐条结果、自定选择、偏离、缺口、未验证项、合并风险）
