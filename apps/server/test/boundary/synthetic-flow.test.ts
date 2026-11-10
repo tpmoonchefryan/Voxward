@@ -17,10 +17,12 @@ describe("synthetic boundary flow through the registry", () => {
 
     const result = await registry.inferenceProvider.infer({
       contractVersion: CONTRACT_VERSION,
-      correlationId: event.correlationId,
-      text: event.body,
+      batchId: "batch-synthetic-1",
+      items: [{ correlationId: event.correlationId, text: event.body }],
     });
-    const verdict = createVerdict(result.classification);
+    const [classified] = result.items;
+    if (classified === undefined) throw new Error("synthetic inference returned no item");
+    const verdict = createVerdict(classified.classification);
 
     // DecisionService is a placeholder in S001, so the intent is assembled here from contract types.
     const intent: DeliveryIntent = {

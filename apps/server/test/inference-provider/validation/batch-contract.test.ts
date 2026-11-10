@@ -213,3 +213,48 @@ describe("review batches", () => {
     expect((await validateReviewBatch(output, input, { maxItems: 10, generatedText: alwaysRejects })).ok).toBe(true);
   });
 });
+
+describe("bounded output and error list (Q24)", () => {
+  it("rejects an answer with more items than the batch sent, before any item is checked", async () => {
+    const extra = { itemId: "b-3", verdict: "ALLOW_MEANINGFUL", reasonCodes: ["NONE"] };
+    const result = await validateModerationBatch({ items: [allowedItem, blockedItem, extra] }, input, options);
+    expect(errorsOf(result)).toEqual([{ code: "OUTPUT_TOO_MANY_ITEMS", path: "/items" }]);
+  });
+
+  it("accepts an item id of 64 code points and rejects an empty one or one of 65", async () => {
+    // Each emoji is one code point but two UTF-16 units, so the limit is checked in code points.
+    const atLimit = "😀".repeat(64);
+    const overLimit = "😀".repeat(65);
+    const atLimitInput: AiBatchInput = { items: [{ itemId: atLimit, text: "hello" }] };
+    const atLimitOutput = { items: [{ itemId: atLimit, verdict: "ALLOW_MEANINGFUL", reasonCodes: ["NONE"] }] };
+    expect((await validateModerationBatch(atLimitOutput, atLimitInput, options)).ok).toBe(true);
+
+    const overInput: AiBatchInput = { items: [{ itemId: overLimit, text: "hello" }] };
+    expect(errorsOf(await validateModerationBatch(atLimitOutput, overInput, options))).toEqual([
+      { code: "INPUT_ITEM_ID_LENGTH_INVALID", path: "/items/0/itemId" },
+    ]);
+
+    const emptyInput: AiBatchInput = { items: [{ itemId: "", text: "hello" }] };
+    expect(errorsOf(await validateModerationBatch(atLimitOutput, emptyInput, options))).toEqual([
+      { code: "INPUT_ITEM_ID_LENGTH_INVALID", path: "/items/0/itemId" },
+    ]);
+  });
+
+  it("caps the error list at 50 entries and ends it with a truncation marker", async () => {
+    const big: AiBatchInput = {
+      items: Array.from({ length: 60 }, (_, index) => ({ itemId: `n-${index}`, text: "hello" })),
+    };
+    const output = {
+      items: big.items.map((item) => ({ itemId: item.itemId, verdict: "NOPE", reasonCodes: ["NONE"] })),
+    };
+    const errors = errorsOf(await validateModerationBatch(output, big, { maxItems: 100 }));
+    expect(errors).toHaveLength(50);
+    expect(errors[0]).toEqual({ code: "ENUM_INVALID", path: "/items/0/verdict", itemId: "n-0" });
+    expect(errors[49]).toEqual({ code: "ERRORS_TRUNCATED", path: "/" });
+  });
+
+  it("leaves a short error list unmarked", async () => {
+    const errors = errorsOf(await validateModerationBatch({ items: [allowedItem] }, input, options));
+    expect(errors.some((error) => error.code === "ERRORS_TRUNCATED")).toBe(false);
+  });
+});

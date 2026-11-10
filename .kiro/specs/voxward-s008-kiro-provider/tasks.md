@@ -20,13 +20,13 @@ A checked task is local progress only. Formal completion still requires the engi
 按顺序做。每张子单单独 commit，提交信息含子单编号。证据写入 `.kiro/specs/voxward-s008-kiro-provider/evidence/self-check.md`，随最后一个 commit 提交。本段的勾选只是本地进度，不改变正式工单状态或完成证据。
 
 - [x] 1. 本包 spec：`design.md` 与本段，提交 `VOXWARD-STORY-008: add spec`
-- [ ] 2. VOXWARD-SUB-015：Kiro CLI InferenceProvider 适配与受限输入（含 Q3、Q24）
-  - [ ] 2.1 契约改为批次形状，`batchId` 贯穿 `infer`、`cancel`、`releaseSession`；类型测试
-  - [ ] 2.2 批校验：输出条数先于逐条校验截断，错误列表截断，itemId 码点检查（Q24）；测试
-  - [ ] 2.3 合成适配器与两个跨模块测试同步到新形状
-  - [ ] 2.4 `apps/server/src/adapters/kiro-cli/`：能力声明、固定参数、输入构造、运行流解析、提供方（不含会话清理）
-  - [ ] 2.5 假 CLI fixture 与 `apps/server/test/adapters/kiro-cli/` 用例；泄漏扫描范围扩展
-  - [ ] 2.6 提交 `VOXWARD-SUB-015: ...`
+- [x] 2. VOXWARD-SUB-015：Kiro CLI InferenceProvider 适配与受限输入（含 Q3、Q24）
+  - [x] 2.1 契约改为批次形状，`batchId` 贯穿 `infer`、`cancel`、`releaseSession`；类型测试
+  - [x] 2.2 批校验：输出条数先于逐条校验截断，错误列表截断，itemId 码点检查（Q24）；测试
+  - [x] 2.3 合成适配器与两个跨模块测试同步到新形状
+  - [x] 2.4 `apps/server/src/adapters/kiro-cli/`：能力声明、固定参数、输入构造、运行流解析、提供方（不含会话清理）
+  - [x] 2.5 假 CLI fixture 与 `apps/server/test/adapters/kiro-cli/` 用例；泄漏扫描范围扩展
+  - [x] 2.6 提交 `VOXWARD-SUB-015: ...`
 - [ ] 3. VOXWARD-SUB-016：一次性会话生命周期、清理与独立受限运行环境
   - [ ] 3.1 `session-lifecycle.ts`、`cleanup.ts`、`orphan-sweep.ts`；提供方接入生命周期
   - [ ] 3.2 `deploy/kiro-runtime/`：说明与模板，不安装

@@ -40,13 +40,23 @@ describe("synthetic platform source", () => {
 });
 
 describe("synthetic inference provider", () => {
-  it("returns a fixed legal classification for the request's correlation id", async () => {
+  it("returns a fixed legal classification for each item, keyed by its correlation id", async () => {
     const result = await createSyntheticInferenceProvider().infer({
       contractVersion: CONTRACT_VERSION,
-      correlationId: "corr-42",
-      text: "anything",
+      batchId: "batch-42",
+      items: [
+        { correlationId: "corr-42", text: "anything" },
+        { correlationId: "corr-43", text: "anything else" },
+      ],
     });
-    expect(result).toEqual({ contractVersion: "1", correlationId: "corr-42", classification: "ALLOW_MEANINGFUL" });
+    expect(result).toEqual({
+      contractVersion: "1",
+      batchId: "batch-42",
+      items: [
+        { correlationId: "corr-42", classification: "ALLOW_MEANINGFUL" },
+        { correlationId: "corr-43", classification: "ALLOW_MEANINGFUL" },
+      ],
+    });
   });
 
   it("declares its capabilities", () => {

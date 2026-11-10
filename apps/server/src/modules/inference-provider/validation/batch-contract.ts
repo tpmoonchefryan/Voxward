@@ -1,4 +1,6 @@
 import {
+  AI_ITEM_ID_MAX_LENGTH,
+  codePointLength,
   isPlainObject,
   MODERATION_BATCH_SCHEMA,
   type AiBatchInput,
@@ -14,7 +16,7 @@ import {
   validateReviewBatchResult,
   validateScBatchResult,
 } from "@voxward/contracts";
-import type { BatchValidationError } from "./errors.js";
+import { type BatchValidationError, MAX_REPORTED_BATCH_ERRORS } from "./errors.js";
 import { checkGeneratedTextFields, type GeneratedTextChecker, type GeneratedTextField } from "./output-text-check.js";
 import { isSpanWithinText } from "./unicode-span.js";
 
@@ -98,6 +100,11 @@ async function validateAiBatch<Item extends ModerationItemResult>(
   const inputErrors = checkInput(input, options.maxItems);
   if (inputErrors.length > 0) return rejected(kind.schema, inputErrors);
 
+  // Bounded before any per-item work: the model may not return more items than the batch sent.
+  if (outputItemCount(output) > input.items.length) {
+    return rejected(kind.schema, [{ code: "OUTPUT_TOO_MANY_ITEMS", path: "/items" }]);
+  }
+
   const sources = new Map(input.items.map((item) => [item.itemId, item] as const));
   const read = kind.read(output);
   if (!read.ok) return rejected(kind.schema, read.issues.map((issue) => locate(issue, output, sources)));
@@ -133,16 +140,35 @@ async function validateAiBatch<Item extends ModerationItemResult>(
 }
 
 function rejected<Item>(schema: AiSchemaRef, errors: readonly BatchValidationError[]): AiBatchValidation<Item> {
-  return { ok: false, schema, errors };
+  return { ok: false, schema, errors: capErrors(errors) };
 }
 
-/** Input errors point into the request. A batch needs at least one item, at most `maxItems`, and unique item ids. */
+/** Keeps the first errors. When there were more, the last entry is an `ERRORS_TRUNCATED` marker, so the list stays bounded. */
+function capErrors(errors: readonly BatchValidationError[]): BatchValidationError[] {
+  if (errors.length <= MAX_REPORTED_BATCH_ERRORS) return [...errors];
+  return [...errors.slice(0, MAX_REPORTED_BATCH_ERRORS - 1), { code: "ERRORS_TRUNCATED", path: "/" }];
+}
+
+/** Entries in the output's `items` array. An output without that array counts as zero, and the schema reports it. */
+function outputItemCount(output: unknown): number {
+  if (!isPlainObject(output) || !Array.isArray(output.items)) return 0;
+  return output.items.length;
+}
+
+/**
+ * Input errors point into the request. A batch needs at least one item and at most `maxItems`. Each item id is unique and
+ * 1 to 64 code points long, the same limit the schema puts on an item id in a model's answer.
+ */
 function checkInput(input: AiBatchInput, maxItems: number): BatchValidationError[] {
   if (input.items.length === 0) return [{ code: "BATCH_EMPTY", path: "/items" }];
   if (input.items.length > maxItems) return [{ code: "BATCH_TOO_LARGE", path: "/items" }];
   const seen = new Set<string>();
   const errors: BatchValidationError[] = [];
   input.items.forEach((item, index) => {
+    const length = codePointLength(item.itemId);
+    if (length < 1 || length > AI_ITEM_ID_MAX_LENGTH) {
+      errors.push({ code: "INPUT_ITEM_ID_LENGTH_INVALID", path: `/items/${index}/itemId` });
+    }
     if (seen.has(item.itemId)) {
       errors.push({ code: "INPUT_ITEM_ID_DUPLICATE", path: `/items/${index}/itemId`, itemId: item.itemId });
     }

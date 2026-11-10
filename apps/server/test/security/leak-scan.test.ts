@@ -167,10 +167,11 @@ describe("credential leak scan", () => {
     expect(findSecretPatterns(modelInput)).toEqual([]);
   });
 
-  it("finds no credential-shaped text in the frontend source or the synthetic demo adapters", () => {
+  it("finds no credential-shaped text in the frontend source, the synthetic demo adapters or the Kiro CLI adapter", () => {
     const files = [
       ...listSourceFiles(join(REPO_ROOT, "apps/web/src")),
       ...listSourceFiles(join(SERVER_ROOT, "src/adapters/synthetic")),
+      ...listSourceFiles(join(SERVER_ROOT, "src/adapters/kiro-cli")),
     ];
     expect(files.length).toBeGreaterThan(0);
     const hits = files.flatMap((file) => findSecretPatterns(readFileSync(file, "utf8")).map((kind) => `${file}: ${kind}`));
