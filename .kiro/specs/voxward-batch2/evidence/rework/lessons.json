@@ -1,0 +1,45 @@
+[
+ {
+  "subject": "用结构准入封堵正则回溯：禁分组内分支、禁无界与变长有界同现、限变长选择数乘积",
+  "summary": "超线性/指数回溯来自路径相乘：分组内分支（(a|a|a) 连写 N 次=3^N 路径）、多个变长有界量词选择数相乘、以及无界量词对每种变长选择重新扫描输入。只禁捕获组或嵌套量词不够。可用静态准入三条封死：分组内不得有分支（含非捕获 (?:a|b)，顶层 a|b 仍放行）、无界量词(*、+、{n,})不得与变长有界量词(?、{m,n} 且 m<n)同现、变长有界量词的选择数乘积设上限（VoxWard 取 81）。单个无界量词独自最坏只是二次，在有界输入内耗时很小，不必禁。",
+  "snippet": "设计有界正则准入时，按『路径数=分组分支积×变长选择积×无界重扫』封堵：禁分组内分支、禁无界+变长同现、限选择积乘积；单个无界量词可留。顶层分支与字符类不影响这三条。",
+  "body": "VoxWard 第 2 批 B2：bounded-regex.ts 的 checkShape 原只禁捕获组、嵌套量词、反向引用、多无界量词，仍放行 (a|a|a)×13+a* 等 94 字符模式，50 字符消息稳态阻塞 1.6 s。acb37d1(f40da50) 增三项拒绝码 GROUP_ALTERNATION、UNBOUNDED_WITH_VARIABLE_REPEAT、REPEAT_CHOICES_TOO_MANY(乘积>81)。复验：S1–S6 及 10 种新构造回溯形状(重叠字符类、exact+无界、量词套量词、顶层可选、无界+变长、选择积162、转义括号、宽并集类单无界、近界重叠)无一绕过，admitted 最坏在正文500/归一化1000上限内 ≤6.7 ms。81 的取值依据：三个{0,8}(729选择积)加20字符类 n=1000 约7–8 ms，81加同类约0.3–1 ms；a*a{0,8} 比 a{0,8}a* 慢(约16 ms vs 5 ms)，故禁无界与变长同现。",
+  "tags": ["regex", "redos", "admission", "moderation", "security"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/moderation-engine/rules/bounded-regex.ts",
+    "apps/server/test/moderation-engine/rules/regex-cost.test.ts",
+    ".kiro/specs/voxward-s004-rules/design.md"
+   ]
+  }
+ },
+ {
+  "subject": "复验已修的 ReDoS：旧危险形状与新绕过形状都要撞准入，计时只对 admitted 最坏形状且用归一化长度上限",
+  "summary": "ReDoS 修复后旧形状已在准入被拒，无法再复现耗时，只确认拒绝还不够。复验分两步：(1) 把上轮每个危险形状加一批上轮未出现、针对新规则的绕过形状(重叠字符类、exact+无界、量词套量词、无界+变长、选择积超限、转义元字符)过 admitRegex，确认全部被拒或虽 admitted 但便宜；(2) 只对 admitted 的最坏合法形状计时，输入取真实上限——正则匹配跑在归一化文本上，长度上限是 maxNormalizedLength(1000) 而非正文上限(500)，每次换新源串分冷启/稳态。",
+  "snippet": "验已修 ReDoS：旧形状+新绕过形状都过 admitRegex 确认被拒；只给 admitted 最坏形状计时，输入用归一化长度上限(正则跑在归一化文本上)，每次新源串分冷启/稳态。",
+  "body": "VoxWard 第 2 批 B2 复验：S1–S6 与 E31–E34 同族全撞准入拒绝码；另构造 10 种新形状均未绕过。计时发现正则在 engine.ts 的 copyFor 里对 regex 规则用 parts.normal，即归一化文本，长度可达 maxNormalizedLength=1000>正文500，故最坏形状(81选择积+16字符类，93字符)对1000单位直测 findRegexMatches 稳态0.33 ms、冷启0.47 ms；101字符的 a*[a-z]×20 被 SOURCE_TOO_LONG 拒。还需查修复附带的『最后一条规则后再检查预算』：脚本时钟 before=0、after=25 得 route=REVIEW、RULE_BUDGET_EXCEEDED。检测能力(E30)要经改动后的入口端到端确认未退化。",
+  "tags": ["redos", "acceptance", "recheck", "regex", "performance"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/moderation-engine/rules/engine.ts",
+    "apps/server/test/moderation-engine/rules/regex-cost.test.ts",
+    ".kiro/specs/voxward-batch2/evidence/rework/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "返工后工单 revision 抬升：先看 contentImpact 再决定能否复用旧验收结论",
+  "summary": "一轮链写会把证据写进工单、使其 revision +1，下一轮 work-show 读到的 revision 高于旧证据记录的，但这不代表验收判据变了。复用旧结论前读 contentImpact：changedMeaning=false、changedAcceptance=[]、sameDigest(current==previous MeaningDigest) 同时成立，才说明 expected/method/requirement 未变、只是链写导致的 revision 抬升；再机械比对新旧验收行逐字一致(引擎会多出 meaningDigest 字段，忽略即可)。满足即可在新候选上重盖 codeVersion 复用，不必重跑未受改动影响的检查。",
+  "snippet": "返工后 work-show 的 revision 比旧证据高时，先读 contentImpact(changedMeaning=false、changedAcceptance=[]、sameDigest) 确认判据未变、只是链写抬升，再复用旧结论重盖 codeVersion。",
+  "body": "VoxWard 第 2 批返工：STORY-004/031 rev 4→5、SUB-008/009/055 rev 3→4，皆因上轮链写写入 evidence。五单 contentImpact 均 changedMeaning=false、changedAcceptance=[]、current==previousMeaningDigest。机械比对 54 行新旧验收行：expected/method/requirement/version 逐字一致，差异只在 scenario 的继承后缀与引擎新增的 meaningDigest。因此未受 B1/B2/B3 改动影响的行可复用 0a1da29 结论、在 acb37d1 重盖 codeVersion，不重跑。区别于 kiro-specs check 的 SPEC_STALE(那是 spec 侧链写后摘要变化)——这里看的是工单侧 contentImpact。",
+  "tags": ["einzbern", "acceptance", "evidence-reuse", "revision", "contentImpact"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    ".kiro/specs/voxward-batch2/evidence/rework/evidence-records.json"
+   ]
+  }
+ }
+]
