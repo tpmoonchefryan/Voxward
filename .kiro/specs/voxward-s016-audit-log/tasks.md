@@ -30,10 +30,10 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ## VOXWARD-SUB-030：内容字段权限、长度与主体删除索引
 
-- [ ] 30-a. `content-policy.ts`：证据能力映射、读取裁剪、保留期限常量
-- [ ] 30-b. `deletion-index.ts`：`locateSubject`、`removeSubject`；`db/audit-log.ts` 的 `locateSubjectLogs`、`removeSubjectLogs`；`invalidation.ts`
-- [ ] 30-c. 测试 `deletion-index/subject-removal.test.ts`、`field-permission.test.ts`、`test/db/audit-log.test.ts`
-- [ ] 30-d. 提交，提交信息含 `VOXWARD-SUB-030`
+- [x] 30-a. `content-policy.ts`：证据能力映射、读取裁剪、保留期限常量
+- [x] 30-b. `deletion-index.ts`：`locateSubject`、`removeSubject`；`db/audit-log.ts` 的 `locateSubjectLogs`、`removeSubjectLogs`；`invalidation.ts`
+- [x] 30-c. 测试 `deletion-index/subject-removal.test.ts`、`field-permission.test.ts`、`test/db/audit-log.test.ts`
+- [x] 30-d. 提交，提交信息含 `VOXWARD-SUB-030`
 
 ## 收尾
 

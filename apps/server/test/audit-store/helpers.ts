@@ -4,7 +4,7 @@ import type { VoxwardDatabase } from "../../src/db/client.js";
 import { channels } from "../../src/db/schema/index.js";
 import { ChannelEventStore, SubjectStore, TaskStore } from "../../src/db/repository.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
-import { createAuditStore, type AuditService } from "../../src/modules/audit-store/index.js";
+import { createAuditStore, type AuditAccess, type AuditService } from "../../src/modules/audit-store/index.js";
 import { redactText } from "../../src/security/redaction.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
 
@@ -13,6 +13,12 @@ export const NOW = new Date("2026-11-10T10:00:00.000Z");
 export const CHANNEL_ID = "channel-audit";
 export const SUBJECT_A = "subject-a";
 export const SUBJECT_B = "subject-b";
+
+/** A reader who holds every capability in the test channel. Permission tests build narrower readers themselves. */
+export const FULL_ACCESS: AuditAccess = {
+  channelsFor: () => [CHANNEL_ID],
+  capabilitiesFor: () => new Set(["logs.view", "message.original", "subject.evidence"]),
+};
 
 export interface Fixture {
   readonly database: VoxwardDatabase;
@@ -48,6 +54,7 @@ export function openFixture(prefix: string): Fixture {
     port,
     sanitize: redactText,
     newId: () => `id-${++counter}`,
+    access: FULL_ACCESS,
     clock: () => NOW,
   });
   return {
@@ -112,5 +119,5 @@ export function recordingPort(): AuditLogPort & { readonly calls: string[] } {
 /** A module on top of a recording port, with the same clock, sanitizer and id counter as the fixture. */
 export function serviceOn(port: AuditLogPort): AuditService {
   let counter = 0;
-  return createAuditStore({ port, sanitize: redactText, newId: () => `probe-${++counter}`, clock: () => NOW });
+  return createAuditStore({ port, sanitize: redactText, newId: () => `probe-${++counter}`, access: FULL_ACCESS, clock: () => NOW });
 }

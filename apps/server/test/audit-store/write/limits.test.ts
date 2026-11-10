@@ -2,7 +2,7 @@ import type { TechnicalLogEntry } from "@voxward/contracts";
 import { describe, expect, it } from "vitest";
 import { AuditInputError, createAuditStore } from "../../../src/modules/audit-store/index.js";
 import { redactText } from "../../../src/security/redaction.js";
-import { CHANNEL_ID, NOW, SUBJECT_A, recordingPort } from "../helpers.js";
+import { CHANNEL_ID, FULL_ACCESS, NOW, SUBJECT_A, recordingPort } from "../helpers.js";
 
 /*
  * Length limits (proposal §12.2 and the S016 length rule). Every refusal here must happen before the port is called.
@@ -36,7 +36,13 @@ function entry(overrides: Partial<TechnicalLogEntry>): TechnicalLogEntry {
 function probe() {
   const port = recordingPort();
   let counter = 0;
-  const service = createAuditStore({ port, sanitize: redactText, newId: () => `limit-${++counter}`, clock: () => NOW });
+  const service = createAuditStore({
+    port,
+    sanitize: redactText,
+    newId: () => `limit-${++counter}`,
+    access: FULL_ACCESS,
+    clock: () => NOW,
+  });
   return { port, service };
 }
 
