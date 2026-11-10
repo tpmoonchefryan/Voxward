@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:4c1238d3c3d98f2cc2f7d756",
+  "workRevision": 4,
+  "sourceDigest": "cd4c9fa17111b306e7b19316552166ff99015adae56fc4b3469371496f1ec61b",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:4c1238d3c3d98f2cc2f7d756",
+    "workRevision": 4,
+    "sourceDigest": "cd4c9fa17111b306e7b19316552166ff99015adae56fc4b3469371496f1ec61b",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:4c1238d3c3d98f2cc2f7d756",
+        "externalKey": "VOXWARD-STORY-016",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现 Change Log 与 Technical Log 数据层",
+        "summary": "实现 Change Log 与 Technical Log 数据层；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:18aaac72724b30c2ee9be8b6",
+        "scopeDigest": "55e6c27bc0225ed7e014aff7c1e9e7987aa0ef320756847e6567d3cdb34c7cba",
+        "relations": {
+          "blockedBy": [
+            "work:40166e96c2ab9f8c9746a73a",
+            "work:fd4f81864ddb33703517e12f"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:18aaac72724b30c2ee9be8b6",
+          "supersedes": []
+        },
+        "fieldSha256": "94ef67324ba7f7be0bc5ca5d1d14d8d606fdb8deb08894869f18695071b9ec2b",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "73de83f9f6453d9216eaf6a1b875b2f15b74da55612d28a0d1309b94a1d8a954",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "7b8d39e22b8289a33b3675f5150a7eaba6f335370b5b6f425ce935f05a6045aa",
+    "design.md": "4dcba343a43aa90596f2a4dcd246a213ee76f664df539b40ad3ee9020e9eb3aa",
+    "tasks.md": "b18e8097a6193f523b9c4e3965572d50b3fde24a0856e887e129b290d1f06e92"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "0543f3c52de8a3a1476a8a6ad52151f8084f175c05fa03595deb68d7ff946f78"
+}

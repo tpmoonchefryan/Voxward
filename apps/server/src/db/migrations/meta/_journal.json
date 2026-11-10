@@ -15,6 +15,13 @@
       "when": 1794338430942,
       "tag": "0001_auth_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794348831376,
+      "tag": "0002_audit_log_fields",
+      "breakpoints": true
     }
   ]
 }

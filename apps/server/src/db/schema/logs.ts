@@ -1,37 +1,19 @@
+import {
+  ACTOR_KINDS,
+  CHANGE_KINDS,
+  CHANGE_OUTCOMES,
+  EVIDENCE_KINDS,
+  TECHNICAL_DATA_MAX_BYTES,
+  TECHNICAL_LEVELS,
+  TECHNICAL_STAGES,
+  TECHNICAL_STATUSES,
+} from "@voxward/contracts";
 import { sql } from "drizzle-orm";
 import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { inList } from "./checks.js";
 import { channels } from "./channels.js";
+import { tasks } from "./messages.js";
 import { subjects } from "./subjects.js";
-
-export const ACTOR_KINDS = ["ACCOUNT", "SYSTEM", "DEPLOYMENT_ADMIN"] as const;
-export const CHANGE_KINDS = [
-  "CONFIG_CHANGED",
-  "MEMBER_GRANTED",
-  "MEMBER_REVOKED",
-  "CREDENTIAL_CHANGED",
-  "OUTPUT_GRANT_CHANGED",
-  "LIST_CHANGED",
-  "TERM_CHANGED",
-  "RULE_VERSION_PUBLISHED",
-  "MANUAL_VERDICT",
-  "SCORE_CHANGED",
-  "SCORE_EXCEPTION_CHANGED",
-  "DATA_REQUEST_CHANGED",
-] as const;
-export const CHANGE_OUTCOMES = ["SUCCEEDED", "FAILED", "PARTIAL"] as const;
-export const TECHNICAL_STAGES = [
-  "INGEST",
-  "BASE_RULE",
-  "ROUTE",
-  "MODEL_CALL",
-  "JSON_VALIDATE",
-  "COMMIT",
-  "DELIVER",
-  "ERROR",
-] as const;
-export const TECHNICAL_STATUSES = ["OK", "FAILED", "SKIPPED", "TIMED_OUT"] as const;
-export const EVIDENCE_KINDS = ["MESSAGE_TEXT", "TRANSLATION", "ITEM_ID_MAP", "VALIDATED_JSON"] as const;
 
 /**
  * Change Log. Records what changed, by whom, and the outcome. It never stores deleted original values or
@@ -76,6 +58,10 @@ export const technicalLogs = sqliteTable(
     correlationId: text("correlation_id").notNull(),
     sequence: integer("sequence").notNull(),
     batchId: text("batch_id"),
+    taskId: text("task_id").references(() => tasks.id),
+    attempt: integer("attempt"),
+    level: text("level").notNull().default("INFO"),
+    dataJson: text("data_json"),
     stage: text("stage").notNull(),
     status: text("status").notNull(),
     errorCode: text("error_code"),
@@ -90,10 +76,19 @@ export const technicalLogs = sqliteTable(
   (t) => [
     uniqueIndex("technical_logs_chain_sequence_uq").on(t.channelId, t.correlationId, t.sequence),
     index("technical_logs_subject_idx").on(t.subjectId),
+    index("technical_logs_task_idx").on(t.taskId),
     index("technical_logs_expires_idx").on(t.expiresAt),
     check("ck_technical_logs_stage", inList("stage", TECHNICAL_STAGES)),
     check("ck_technical_logs_status", inList("status", TECHNICAL_STATUSES)),
+    check("ck_technical_logs_level", inList("level", TECHNICAL_LEVELS)),
     check("ck_technical_logs_numbers", sql.raw("sequence >= 0 AND (latency_ms IS NULL OR latency_ms >= 0)")),
+    check("ck_technical_logs_attempt", sql.raw("attempt IS NULL OR attempt >= 1")),
+    check(
+      "ck_technical_logs_data",
+      sql.raw(
+        `data_json IS NULL OR (json_valid(data_json) AND length(CAST(data_json AS BLOB)) <= ${TECHNICAL_DATA_MAX_BYTES})`,
+      ),
+    ),
   ],
 );
 

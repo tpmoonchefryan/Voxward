@@ -1,10 +1,17 @@
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { openDatabase, type VoxwardDatabase } from "../../src/db/client.js";
-import { runMigrations } from "../../src/db/migrate.js";
-import { seedChannelAndSubject, countRows, migratedDatabase, removeDirectory, scratchDirectory } from "./helpers.js";
+import { runMigrations, DEFAULT_MIGRATIONS_FOLDER } from "../../src/db/migrate.js";
+import { seedChannelAndSubject, countRows, migratedDatabase, removeDirectory, scratchDirectory, T0 } from "./helpers.js";
 
 const SCHEMA_TABLE_COUNT = 27;
+
+/** Number of migrations in the journal. Read from the journal so a new migration does not break this test. */
+const JOURNAL_ENTRIES: readonly { readonly tag: string }[] = JSON.parse(
+  readFileSync(join(DEFAULT_MIGRATIONS_FOLDER, "meta", "_journal.json"), "utf8"),
+).entries;
+const MIGRATION_COUNT = JOURNAL_ENTRIES.length;
 
 describe("migrations", () => {
   let directory: string;
@@ -36,7 +43,7 @@ describe("migrations", () => {
     runMigrations(database);
     runMigrations(database);
 
-    expect(countRows(database, "__drizzle_migrations")).toBe(2);
+    expect(countRows(database, "__drizzle_migrations")).toBe(MIGRATION_COUNT);
     expect(countRows(database, "channels")).toBe(before);
     expect(seed.channelId).toBe("channel-1");
   });
@@ -53,6 +60,44 @@ describe("migrations", () => {
 
     expect(countRows(database, "channels")).toBe(1);
     expect(countRows(database, "subjects")).toBe(1);
-    expect(countRows(database, "__drizzle_migrations")).toBe(2);
+    expect(countRows(database, "__drizzle_migrations")).toBe(MIGRATION_COUNT);
+  });
+
+  it("keeps existing evidence rows when the audit-log fields migration runs on a database that already has logs", () => {
+    // Apply only the migrations before 0002, write a log with evidence, then apply the rest.
+    const earlier = join(directory, "earlier");
+    mkdirSync(join(earlier, "meta"), { recursive: true });
+    const earlierEntries = JOURNAL_ENTRIES.slice(0, JOURNAL_ENTRIES.findIndex((entry) => entry.tag.startsWith("0002_")));
+    for (const entry of earlierEntries) copyFileSync(join(DEFAULT_MIGRATIONS_FOLDER, `${entry.tag}.sql`), join(earlier, `${entry.tag}.sql`));
+    writeFileSync(join(earlier, "meta", "_journal.json"), JSON.stringify({ ...journalHeader(), entries: earlierEntries.map((entry, idx) => ({ ...entry, idx })) }));
+
+    database = openDatabase({ filePath: join(directory, "upgrade.sqlite3") });
+    runMigrations(database, earlier);
+    const seed = seedChannelAndSubject(database);
+    database.sqlite
+      .prepare("insert into technical_logs (id, channel_id, correlation_id, sequence, stage, status, created_at, expires_at) values ('log-old', ?, 'corr-old', 0, 'INGEST', 'OK', ?, ?)")
+      .run(seed.channelId, T0, T0);
+    database.sqlite
+      .prepare("insert into technical_log_evidence (id, log_id, evidence_kind, payload, payload_bytes, expires_at) values ('ev-old', 'log-old', 'MESSAGE_TEXT', 'hello', 5, ?)")
+      .run(T0);
+
+    runMigrations(database);
+
+    expect(countRows(database, "technical_log_evidence")).toBe(1);
+    const row = database.sqlite.prepare("select level, task_id, attempt, data_json from technical_logs where id = 'log-old'").get() as {
+      level: string;
+      task_id: string | null;
+      attempt: number | null;
+      data_json: string | null;
+    };
+    expect(row).toEqual({ level: "INFO", task_id: null, attempt: null, data_json: null });
   });
 });
+
+function journalHeader(): { version: string; dialect: string } {
+  const journal = JSON.parse(readFileSync(join(DEFAULT_MIGRATIONS_FOLDER, "meta", "_journal.json"), "utf8")) as {
+    version: string;
+    dialect: string;
+  };
+  return { version: journal.version, dialect: journal.dialect };
+}

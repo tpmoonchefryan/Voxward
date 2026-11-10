@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { VoxwardDatabase } from "../../src/db/client.js";
-import { ChannelEventStore } from "../../src/db/repository.js";
+import { ChannelEventStore, TaskStore } from "../../src/db/repository.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, seedChannelAndSubject, T0, type Seed } from "./helpers.js";
 
@@ -181,5 +181,56 @@ describe("referential integrity", () => {
         [eventId, T0, T0],
       ),
     ).toMatch(/FOREIGN KEY constraint failed/);
+  });
+});
+
+describe("audit log fields", () => {
+  function insertLog(id: string, overrides: Record<string, unknown> = {}): string | undefined {
+    const row = {
+      id,
+      channel_id: seed.channelId,
+      correlation_id: "corr-1",
+      sequence: 0,
+      stage: "INGEST",
+      status: "OK",
+      created_at: T0,
+      expires_at: T0,
+      ...overrides,
+    };
+    const columns = Object.keys(row);
+    return errorOf(
+      `insert into technical_logs (${columns.join(", ")}) values (${columns.map(() => "?").join(", ")})`,
+      Object.values(row),
+    );
+  }
+
+  it("accepts a log row with a level, a task, an attempt and structured data", () => {
+    runShortTransaction(database, (tx) =>
+      TaskStore.create(tx, { id: "task-1", eventId, kind: "REALTIME_REVIEW", deadlineAt: T0, createdAt: T0 }),
+    );
+    expect(
+      insertLog("log-ok", { level: "WARN", task_id: "task-1", attempt: 2, data_json: '{"validation":"FAILED"}' }),
+    ).toBeUndefined();
+  });
+
+  it("rejects a level outside the three values", () => {
+    expect(insertLog("log-level", { level: "DEBUG" })).toMatch(/CHECK constraint failed: ck_technical_logs_level/);
+  });
+
+  it("rejects an attempt below 1", () => {
+    expect(insertLog("log-attempt", { attempt: 0 })).toMatch(/CHECK constraint failed: ck_technical_logs_attempt/);
+  });
+
+  it("rejects structured data that is not JSON", () => {
+    expect(insertLog("log-json", { data_json: "not json" })).toMatch(/CHECK constraint failed: ck_technical_logs_data/);
+  });
+
+  it("rejects structured data over 2000 bytes", () => {
+    const tooLarge = JSON.stringify("x".repeat(2000));
+    expect(insertLog("log-size", { data_json: tooLarge })).toMatch(/CHECK constraint failed: ck_technical_logs_data/);
+  });
+
+  it("rejects a task reference that has no task row", () => {
+    expect(insertLog("log-task", { task_id: "task-missing" })).toMatch(/FOREIGN KEY constraint failed/);
   });
 });
