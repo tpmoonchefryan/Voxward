@@ -10,7 +10,6 @@ export const SCORE_REASON_CODES = [
   "IDENTITY_BASE_CHANGE",
   "MANUAL_CORRECTION",
 ] as const;
-export const NICKNAME_CHECK_RESULTS = ["PASS", "BLOCK", "NEEDS_REVIEW"] as const;
 
 export type ScoreReasonCode = (typeof SCORE_REASON_CODES)[number];
 
@@ -98,28 +97,6 @@ export const scoreLedger = sqliteTable(
     uniqueIndex("score_ledger_idempotency_uq").on(t.idempotencyKey),
     index("score_ledger_subject_idx").on(t.subjectId, t.createdAt),
     check("ck_score_ledger_reason", inList("reason_code", SCORE_REASON_CODES)),
-  ],
-);
-
-/** Cached nickname check. The row holds only a SHA-256 hex digest of the nickname, never the nickname. */
-export const subjectNicknameChecks = sqliteTable(
-  "subject_nickname_checks",
-  {
-    id: text("id").primaryKey(),
-    subjectId: text("subject_id")
-      .notNull()
-      .references(() => subjects.id),
-    nicknameHash: text("nickname_hash").notNull(),
-    ruleVersion: integer("rule_version").notNull(),
-    result: text("result").notNull(),
-    checkedAt: text("checked_at").notNull(),
-    expiresAt: text("expires_at").notNull(),
-    invalidatedAt: text("invalidated_at"),
-  },
-  (t) => [
-    uniqueIndex("subject_nickname_checks_uq").on(t.subjectId, t.nicknameHash, t.ruleVersion),
-    check("ck_subject_nickname_checks_hash", sql.raw("length(nickname_hash) = 64")),
-    check("ck_subject_nickname_checks_result", inList("result", NICKNAME_CHECK_RESULTS)),
   ],
 );
 

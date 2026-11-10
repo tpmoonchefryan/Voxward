@@ -4,7 +4,7 @@ import { openDatabase, type VoxwardDatabase } from "../../src/db/client.js";
 import { runMigrations } from "../../src/db/migrate.js";
 import { seedChannelAndSubject, countRows, migratedDatabase, removeDirectory, scratchDirectory } from "./helpers.js";
 
-const SCHEMA_TABLE_COUNT = 27;
+const SCHEMA_TABLE_COUNT = 26;
 
 describe("migrations", () => {
   let directory: string;
@@ -20,7 +20,7 @@ describe("migrations", () => {
     removeDirectory(directory);
   });
 
-  it("creates all 27 schema tables on an empty file", () => {
+  it("creates all 26 schema tables on an empty file", () => {
     database = migratedDatabase(directory);
     const names = database.sqlite
       .prepare("select name from sqlite_master where type = 'table' and name not like 'sqlite_%' and name <> '__drizzle_migrations' order by name")
@@ -36,7 +36,7 @@ describe("migrations", () => {
     runMigrations(database);
     runMigrations(database);
 
-    expect(countRows(database, "__drizzle_migrations")).toBe(2);
+    expect(countRows(database, "__drizzle_migrations")).toBe(3);
     expect(countRows(database, "channels")).toBe(before);
     expect(seed.channelId).toBe("channel-1");
   });
@@ -53,6 +53,6 @@ describe("migrations", () => {
 
     expect(countRows(database, "channels")).toBe(1);
     expect(countRows(database, "subjects")).toBe(1);
-    expect(countRows(database, "__drizzle_migrations")).toBe(2);
+    expect(countRows(database, "__drizzle_migrations")).toBe(3);
   });
 });

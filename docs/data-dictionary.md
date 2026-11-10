@@ -1,6 +1,6 @@
 # 数据字典（VoxWard SQLite）
 
-范围：`apps/server/src/db/schema/` 中的 27 张表。其中 24 张由初始迁移 `apps/server/src/db/migrations/0000_initial.sql` 创建，页面账号与会话的 3 张由迁移 `apps/server/src/db/migrations/0001_auth_sessions.sql` 创建。`apps/server/test/db/schema.test.ts` 会核对本文件：每张表的列名、可空性、索引与 CHECK 名称必须与 schema 一致。
+范围：`apps/server/src/db/schema/` 中的 26 张表。其中 24 张由初始迁移 `apps/server/src/db/migrations/0000_initial.sql` 创建，页面账号与会话的 3 张由迁移 `apps/server/src/db/migrations/0001_auth_sessions.sql` 创建。迁移 `apps/server/src/db/migrations/0002_drop_subject_nickname_checks.sql` 删除了初始迁移创建的 `subject_nickname_checks`：昵称检查只保留进程内缓存（S006 Q8）。`apps/server/test/db/schema.test.ts` 会核对本文件：每张表的列名、可空性、索引与 CHECK 名称必须与 schema 一致。
 
 约定：
 
@@ -235,33 +235,6 @@
 | `score_ledger_idempotency_uq` | 唯一索引 | `idempotency_key` 唯一。 |
 | `score_ledger_subject_idx` | 索引 | `(subject_id, created_at)`。 |
 | `ck_score_ledger_reason` | CHECK | `reason_code` 只能取上列四个值。 |
-
-### `subject_nickname_checks`
-
-- 用途：昵称检查结果的缓存。缓存只减少重复检查，不替代正文检查（提案 §5.3）。
-- 内容分类：只保存 SHA-256 十六进制摘要，不保存昵称原文。
-- 保留：到 `expires_at` 失效，改名或规则变化时失效。
-
-#### 列
-
-| 列 | 类型 | 可空 | 说明 |
-| --- | --- | --- | --- |
-| `id` | TEXT | 否 | 主键。 |
-| `subject_id` | TEXT | 否 | 外键，指向 `subjects.id`。 |
-| `nickname_hash` | TEXT | 否 | 昵称摘要，长度 64。 |
-| `rule_version` | INTEGER | 否 | 检查时使用的规则版本。 |
-| `result` | TEXT | 否 | 取值 `PASS`、`BLOCK`、`NEEDS_REVIEW`。 |
-| `checked_at` | TEXT | 否 | 检查时间。 |
-| `expires_at` | TEXT | 否 | 到期时间。 |
-| `invalidated_at` | TEXT | 是 | 提前失效的时间。 |
-
-#### 索引与约束
-
-| 名称 | 类别 | 说明 |
-| --- | --- | --- |
-| `subject_nickname_checks_uq` | 唯一索引 | `(subject_id, nickname_hash, rule_version)` 唯一。 |
-| `ck_subject_nickname_checks_hash` | CHECK | `nickname_hash` 长度为 64。 |
-| `ck_subject_nickname_checks_result` | CHECK | `result` 只能取上列三个值。 |
 
 ### `subject_nickname_changes`
 
