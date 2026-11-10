@@ -27,8 +27,10 @@ function eventWithBody(body: string): ChannelEvent {
 }
 
 function engineWith(options: ModerationOptions) {
+  // The rule budget reads the clock. These cases check the contract output, not timing, so the clock is pinned.
   return createModerationEngine({
     ...options,
+    now: () => 0,
     nicknames: { displayNicknameOf: () => Promise.resolve("Viewer") },
   });
 }

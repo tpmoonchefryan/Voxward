@@ -151,6 +151,8 @@ function startBudget(now: () => number, budgetMs: number): Budget {
 /**
  * Runs every rule over one scope. Each rule occurrence becomes a hit. In the combined scope only matches that cross
  * the nickname and body boundary count, because matches inside one field are already counted by that field's scope.
+ * The budget is checked before each rule and once more after the last one, because a synchronous match cannot be
+ * interrupted: an overrun by the last rule is reported after the fact, not passed as a complete scope.
  */
 function checkScope(scope: HitScope, parts: FieldParts, ruleSet: CompiledRuleSet, budget: Budget): ScopeCheck {
   const hits: RuleHit[] = [];
@@ -163,7 +165,7 @@ function checkScope(scope: HitScope, parts: FieldParts, ruleSet: CompiledRuleSet
       hits.push({ ruleId: rule.id, groupId: rule.groupId, action: rule.action, scope, spans });
     }
   }
-  return { scope, hits, complete: true };
+  return { scope, hits, complete: !budget.exceeded() };
 }
 
 function copyFor(kind: CompiledRule["matcher"]["kind"], parts: FieldParts): MappedText {
