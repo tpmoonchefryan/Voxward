@@ -21,7 +21,7 @@
 - [ ] A1. 读引擎实时状态：本批 Story 和 Subtask 的 status、revision、blockedBy 是否都已满足
 - [ ] A2. 确认 Owner 授权已经覆盖本批；把授权（minutes 编号和原话）写进派工任务里
 - [ ] A3. 按本文件末尾的批次表定本批的包：有依赖或改同一批文件的放进同一个包
-- [ ] A4. **每个 Story 都要先写 spec**：在该包的工作树里运行 `kiro-specs.mjs init`，补写 design.md 和 tasks.md（写在受管段外），再 `check` 得到 SPEC_CURRENT
+- [ ] A4. **每个 Story 都要先写 spec**：在该包的工作树里运行 `kiro-specs.mjs init`，补写 design.md 和 tasks.md（写在受管段外），再 `check` 得到 SPEC_CURRENT。第 2 批起，spec 由实施子代理在写代码之前完成，并作为该分支的第一个 commit；之后才能开始写代码。独立验收时也要核对 spec 和实际做出来的东西是否一致
 - [ ] A5. ~~把 spec 给 Owner 看~~：从第 1 批之后跳过（minutes:fd542a49a57a9e6526440dac D2）
 - [ ] A6. 每个包建一个工作树：`git worktree add .worktrees/<name> -b voxward/<name> main`
 - [ ] A7. 把本批的 Story 和 Subtask 转成 ready→active（work-batch），然后读回
@@ -38,7 +38,7 @@
 
 | 批 | Story | 包 | 状态 |
 |---|---|---|---|
-| 1 | S001 | P1：SUB-001→002→003 | A1–A8 已完成；A9 实施中 |
+| 1 | S001 | P1：SUB-001→002→003 | **done**：main ffa1ddc；验收 47/47 行 satisfied（8890cf9）；工单已转 done；知识卡 4 张 |
 | 2 | S002, S004, S031 | SUB-004→005；SUB-008→009；SUB-055 | 未开始 |
 | 3 | S003, S005, S007 | SUB-006；SUB-007；SUB-010→011；SUB-013→014 | 未开始 |
 | 4 | S006, S008, S012, S016 | SUB-012；SUB-015→016；SUB-023；SUB-029→030 | 未开始 |
@@ -50,3 +50,13 @@
 | 10–13 | S029, S030, S032, S033 | SUB-052→053；SUB-054；SUB-056；SUB-057、SUB-058 | 未开始 |
 
 批次表根据 2026-11-10 拆单报告的依赖层整理。开工前仍以 A1 读到的实时 blockedBy 为准。
+
+## 问题清单（只登记范围外的新问题，等到对应批次再处理）
+
+| # | 来源 | 问题 | 归到哪批处理 |
+|---|---|---|---|
+| Q1 | 第 1 批验收 N1 | check-deps 规定模块里不能导入外部包，`apps/server/src/db/` 现在也没有归到任何分区。S002 要先在 check-deps 里给 db 层定好分区和规则，再接 Drizzle 和 SQLite | 第 2 批 S002 |
+| Q2 | 第 1 批验收 N2 | 主机名解析失败或端口被占用时，服务会打印整段堆栈后退出，报错不受控 | 第 2 批 S002 包（也改启动入口，顺带修） |
+| Q3 | 第 1 批验收 N3 | `InferenceRequest` 用 `correlationId` 当唯一编号；但提案 §8.1 要求模型输入只带临时 `itemId`，需要由适配器生成，并记下两者的对应关系 | 第 3 批 S007 / 第 4 批 S008 |
+| Q4 | 第 1 批验收 N5 | 类型级契约断言只在 `pnpm typecheck` 时生效；验收必须同时跑 typecheck 和 test | 每批验收 |
+| Q5 | 第 1 批验收 N6 | `vitest.workspace.ts` 已被标为弃用，以后升级 vitest 时要迁移 | 以后升级时 |
