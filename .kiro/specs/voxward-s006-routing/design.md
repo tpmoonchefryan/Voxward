@@ -162,7 +162,7 @@ No design authority is configured for the resolved work context. No authority wa
 
 ### 4.6 例外队列
 
-- 端口 `ExceptionQueue`：`register(key)` 按 `channelId` 与 `platformMessageId` 幂等，返回 `CREATED` 或 `EXISTING`；`settle(key, resolution)`，`resolution` 取 `BASE_BLOCK`、`MODEL`、`MANUAL`、`DISCARDED`；`openEntries()`。
+- 端口 `ExceptionQueue`：`register(key, correlationId)` 按 `channelId` 与 `platformMessageId` 幂等，返回 `CREATED` 或 `EXISTING`；`settle(key, resolution)`，`resolution` 取 `BASE_BLOCK`、`MODEL`、`MANUAL`、`DISCARDED`，先结算者生效；`entry(key)`；`openEntries()`。（实施时增加 `correlationId` 参数，便于结算后追溯。）
 - 进程内实现 `createInMemoryExceptionQueue()`。来源没有队列表，持久化留到接线（第 9 节）。
 - 凡例外消息，登记发生在任何短路之前（提案 §4.2）。
 
@@ -184,7 +184,7 @@ No design authority is configured for the resolved work context. No authority wa
 
 - `NormalizeOptions = { stripCombiningMarks: boolean }`，默认 `true`（自定：这是绕过路径，安全默认开启）。
 - 开启时，每个单元按 NFKD → 删除 `\p{M}` → NFKC → 小写 → 删除 `\p{M}` 与 `\p{Cf}` 归一化。
-- 规则集可在 `normalization` 字段覆盖。非布尔值在编译时报 `NORMALIZATION_INVALID`。模式文本与正文使用同一选项。
+- 规则集可在 `normalization` 字段覆盖。非布尔值或未知键在编译时报 `NORMALIZATION_INVALID`。模式文本与正文使用同一选项。
 - 行为变化：S004 的规则在默认设置下，含可组合标记的文本会按去除后的形式匹配（例如 `bádword` 匹配 `badword`）。这是 Q6 的修复范围。自测给出修复前后对照。
 
 ### 4.9 Q12：准入提示
@@ -210,9 +210,9 @@ No design authority is configured for the resolved work context. No authority wa
 | `test/moderation-engine/routing/exception-queue.test.ts` | 幂等登记、结算 | VW-SUB012-AC001 |
 | `test/moderation-engine/routing/router.test.ts` | 合成事件经真实基础检查与真实计分引擎（假账本）：BLOCK 扣分取最大；例外拒绝不计分；快速放行不加分；系统失败不计分；人工接管后人工裁决计分；丢弃结算 | VW-SUB012-AC001；VW-S006-AC001 |
 | `test/moderation-engine/rules/normalize.test.ts`、`groups.test.ts`、`engine.test.ts` | Q6：组合标记绕过在默认下被拦截，关闭时保持旧行为；Q12：两类拒绝的提示与无模式原文 | 问题清单 Q6、Q12 |
-| `test/scoring-engine/engine/rules.test.ts`、`index.test.ts`、`engine.test.ts` | Q22：多规则取最大；校验 `penaltyHits` | 问题清单 Q22 |
+| `test/scoring-engine/engine/rules.test.ts`、`index.test.ts` | Q22：多规则取最大；校验 `penaltyHits` | 问题清单 Q22 |
 | `packages/contracts/test/contracts.test.ts` | `createVerdict` 的新字段 | 契约 |
-| `test/db/schema.test.ts`、`test/db/migrate.test.ts` | Q8：表数 26；迁移删除表；字典一致 | 问题清单 Q8 |
+| `test/db/schema.test.ts`、`test/db/migrate.test.ts` | Q8：表数 26；迁移删除表；字典一致；从 0000、0001 升级时保留既有行 | 问题清单 Q8 |
 
 - VW-SUB012-AC001 是主验收行。STORY 的 VW-S006-AC001 由真值表与短路测试承担。PARENT 与 INHERIT 行只记录本包实际触及的部分。
 
