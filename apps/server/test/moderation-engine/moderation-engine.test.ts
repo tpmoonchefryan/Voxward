@@ -5,7 +5,7 @@ import { createModerationEngine, type ModerationOptions } from "../../src/module
 import { ModerationConfigError, type RuleSetInput } from "../../src/modules/moderation-engine/rules/groups.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 
-const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic" };
+const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" };
 
 const ruleSet: RuleSetInput = {
   version: "v1",
