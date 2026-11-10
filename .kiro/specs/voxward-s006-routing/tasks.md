@@ -27,7 +27,7 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 1.3 Q22：`packages/contracts` 的 `Verdict.penaltyHits`；scoring-engine 的 `selectPenalty` 接线与校验；测试
   - [x] 1.4 Q8：删除 `subject_nickname_checks`（`schema/subjects.ts`、drizzle-kit 迁移 0002、`docs/data-dictionary.md`、`schema.test.ts`）
   - [x] 1.5 `routing/classification.ts`、`routing/states.ts`、`routing/exception-queue.ts` 与对应测试
-  - [ ] 1.6 `routing/truth-table.ts` 与真值表测试（96 种组合）
+  - [x] 1.6 `routing/truth-table.ts` 与真值表测试（96 种组合）
   - [ ] 1.7 `routing/router.ts`、`moderation-engine/index.ts` 导出，端到端测试（真实基础检查与假账本的计分引擎）
   - [ ] 1.8 全仓自测后在本段打勾
 - [ ] 2. 自测（工作树根）：`pnpm install --frozen-lockfile`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check` 全部退出 0；不设 `VOXWARD_DATABASE_FILE` 运行 `pnpm dev`，确认 `/healthz` 返回 200 且只绑 127.0.0.1，停止后无残留进程；证据写入 `evidence/self-check.md` 并随最后一个 commit 提交
