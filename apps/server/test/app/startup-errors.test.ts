@@ -1,10 +1,15 @@
 import { spawn } from "node:child_process";
 import { createServer, type AddressInfo, type Server } from "node:net";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
+import { removeDirectory, scratchDirectory } from "../db/helpers.js";
 
 const SERVER_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const RUN_TIMEOUT_MS = 60_000;
+/** Startup opens the configured database before it listens, so each run uses a file outside the worktree. */
+const DATABASE_DIRECTORY = scratchDirectory("startup-errors-");
+afterAll(() => removeDirectory(DATABASE_DIRECTORY));
 
 interface MainRun {
   readonly code: number | null;
@@ -18,7 +23,7 @@ function runMain(settings: Record<string, string>): Promise<MainRun> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ["--import", "tsx", "src/main.ts"], {
       cwd: SERVER_ROOT,
-      env: { ...inherited, VOXWARD_ADAPTERS: "synthetic", ...settings },
+      env: { ...inherited, VOXWARD_ADAPTERS: "synthetic", VOXWARD_DATABASE_FILE: join(DATABASE_DIRECTORY, "startup.sqlite3"), ...settings },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";
