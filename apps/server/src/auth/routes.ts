@@ -37,6 +37,27 @@ class RouteFailure extends Error {
   }
 }
 
+/** Fastify's own refusals of a request body, by Fastify error code. Any other 4xx refusal is INVALID_REQUEST. */
+const FASTIFY_REFUSAL_CODES = new Map<string, string>([
+  ["FST_ERR_CTP_INVALID_JSON_BODY", "INVALID_JSON"],
+  ["FST_ERR_CTP_EMPTY_JSON_BODY", "INVALID_JSON"],
+  ["FST_ERR_CTP_INVALID_MEDIA_TYPE", "UNSUPPORTED_MEDIA_TYPE"],
+  ["FST_ERR_CTP_BODY_TOO_LARGE", "PAYLOAD_TOO_LARGE"],
+]);
+
+function errorCodeOf(error: unknown): string | undefined {
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" ? code : undefined;
+}
+
+/** Returns the status and fixed code for a Fastify error that means the client sent something unacceptable. */
+function fastifyRefusal(error: unknown): { readonly status: number; readonly code: string } | undefined {
+  const statusCode = (error as { statusCode?: unknown }).statusCode;
+  if (typeof statusCode !== "number" || statusCode < 400 || statusCode > 499) return undefined;
+  const code = errorCodeOf(error);
+  return { status: statusCode, code: (code === undefined ? undefined : FASTIFY_REFUSAL_CODES.get(code)) ?? "INVALID_REQUEST" };
+}
+
 const ID = z.string().min(1).max(128);
 const ROLE = z.enum(CHANNEL_ROLES);
 
@@ -112,8 +133,14 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
       const body = error.index === undefined ? { error: error.code } : { error: error.code, index: error.index };
       return reply.code(error.status).send(body);
     }
+    const refusal = fastifyRefusal(error);
+    if (refusal !== undefined) {
+      // A client error is a warning, not a server failure. The body is never logged.
+      request.log.warn({ errorCode: errorCodeOf(error) }, "auth route refused a request");
+      return reply.code(refusal.status).send({ error: refusal.code });
+    }
     // Log only the error code. Messages from the driver can carry values from the request.
-    request.log.error({ errorCode: (error as { code?: unknown }).code }, "auth route failed");
+    request.log.error({ errorCode: errorCodeOf(error) }, "auth route failed");
     return reply.code(500).send({ error: "INTERNAL_ERROR" });
   });
 

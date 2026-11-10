@@ -1,3 +1,4 @@
+import { randomBytes, scryptSync } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { issueOutputToken, resolveOutputToken, revokeOutputToken } from "../../src/auth/downstream-tokens.js";
@@ -12,7 +13,7 @@ import {
   SESSION_COOKIE,
   type Principal,
 } from "../../src/auth/guard.js";
-import { AccountInputError, createAccount, login } from "../../src/auth/login.js";
+import { AccountInputError, createAccount, hashPassword, login, verifyPassword } from "../../src/auth/login.js";
 import { findActiveMembership, grantMembership, listActiveMembers, revokeMembership } from "../../src/auth/members.js";
 import { capabilitiesOf, downstreamAllows, membershipAllows } from "../../src/auth/permissions.js";
 import { createSession, digestSecret, resolveSession, revokeAccountSessions, revokeSession } from "../../src/auth/session.js";
@@ -24,6 +25,11 @@ import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/h
 const PASSWORD = "correct horse battery";
 const NOW = new Date(T0);
 const THIRTEEN_HOURS_LATER = new Date(Date.parse(T0) + 13 * 60 * 60 * 1000);
+
+/** Encodes bytes as the PHC string format writes them: standard base64 without padding. */
+function unpaddedBase64(bytes: Buffer): string {
+  return bytes.toString("base64").replace(/=+$/, "");
+}
 
 function asAccount(accountId: string): Principal {
   return { kind: "account", accountId, displayName: accountId };
@@ -167,8 +173,30 @@ describe("auth modules", () => {
         reason: "INVALID_CREDENTIALS",
       });
       const [row] = database.orm.select({ passwordHash: authAccounts.passwordHash }).from(authAccounts).all();
-      expect(row?.passwordHash.startsWith("scrypt$")).toBe(true);
+      expect(row?.passwordHash.startsWith("$scrypt$ln=17,r=8,p=1$")).toBe(true);
       expect(row?.passwordHash).not.toContain(PASSWORD);
+    });
+  });
+
+  describe("password hashes", () => {
+    it("stores scrypt at the OWASP minimum cost, and writes the cost into the string", async () => {
+      const stored = await hashPassword(PASSWORD);
+      expect(stored).toMatch(/^\$scrypt\$ln=17,r=8,p=1\$[A-Za-z0-9+/]{22}\$[A-Za-z0-9+/]{86}$/);
+      expect(await verifyPassword(PASSWORD, stored)).toBe(true);
+      expect(await verifyPassword("wrong password here", stored)).toBe(false);
+    });
+
+    it("verifies a hash written at the previous cost, so a later cost change strands no stored hash", async () => {
+      const salt = randomBytes(16);
+      const key = scryptSync(PASSWORD, salt, 64, { N: 2 ** 14, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
+      const previous = `$scrypt$ln=14,r=8,p=1$${unpaddedBase64(salt)}$${unpaddedBase64(key)}`;
+      expect(await verifyPassword(PASSWORD, previous)).toBe(true);
+      expect(await verifyPassword("wrong password here", previous)).toBe(false);
+    });
+
+    it("refuses a stored cost that needs more memory than the cap, without deriving a key", async () => {
+      const tooCostly = "$scrypt$ln=30,r=8,p=1$c2FsdHNhbHRzYWx0c2FsdA$aGFzaGhhc2hoYXNoaGFzaGhhc2hoYXNo";
+      expect(await verifyPassword(PASSWORD, tooCostly)).toBe(false);
     });
   });
 

@@ -1,6 +1,6 @@
 # 数据字典（VoxWard SQLite）
 
-范围：`apps/server/src/db/schema/` 中的 24 张表，对应初始迁移 `apps/server/src/db/migrations/0000_initial.sql`。`apps/server/test/db/schema.test.ts` 会核对本文件：每张表的列名、可空性、索引与 CHECK 名称必须与 schema 一致。
+范围：`apps/server/src/db/schema/` 中的 27 张表。其中 24 张由初始迁移 `apps/server/src/db/migrations/0000_initial.sql` 创建，页面账号与会话的 3 张由迁移 `apps/server/src/db/migrations/0001_auth_sessions.sql` 创建。`apps/server/test/db/schema.test.ts` 会核对本文件：每张表的列名、可空性、索引与 CHECK 名称必须与 schema 一致。
 
 约定：
 
@@ -705,7 +705,7 @@
 | `id` | TEXT | 否 | 主键。 |
 | `login_name` | TEXT | 否 | 登录名，唯一。 |
 | `display_name` | TEXT | 否 | 显示名。 |
-| `password_hash` | TEXT | 否 | scrypt 口令哈希，格式为 `scrypt$盐$密钥`。 |
+| `password_hash` | TEXT | 否 | scrypt 口令哈希，PHC 字符串 `$scrypt$ln=<log2 N>,r=<r>,p=<p>$盐$密钥`。新哈希为 `ln=17,r=8,p=1`，盐 16 字节，密钥 64 字节，均为无填充标准 base64。 |
 | `created_at` | TEXT | 否 | 创建时间。 |
 | `disabled_at` | TEXT | 是 | 禁用时间。为空表示可登录。 |
 

@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { writeFileSync } from "node:fs";
 import { createServer, type AddressInfo, type Server } from "node:net";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -82,5 +83,15 @@ describe("startup failures", () => {
     } finally {
       await new Promise<void>((resolve) => occupant.close(() => resolve()));
     }
+  }, RUN_TIMEOUT_MS);
+
+  it("prints one controlled line that gives the reason and not the path when the database directory cannot be created", async () => {
+    const blocker = join(DATABASE_DIRECTORY, "not-a-directory");
+    writeFileSync(blocker, "");
+    const run = await runMain({ VOXWARD_DATABASE_FILE: join(blocker, "voxward.sqlite3") });
+
+    expect(run.code).toBe(1);
+    expect(run.stderrLines).toEqual(["DATABASE_SETUP_FAILED: DIRECTORY_UNAVAILABLE"]);
+    expect(run.stderrLines.join("\n")).not.toContain(blocker);
   }, RUN_TIMEOUT_MS);
 });

@@ -1,3 +1,5 @@
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import Database from "better-sqlite3";
 import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema/index.js";
@@ -19,10 +21,12 @@ export interface OpenDatabaseOptions {
 
 export const DEFAULT_BUSY_TIMEOUT_MS = 5000;
 
-export class DatabaseSetupError extends Error {
-  readonly code: "WAL_UNAVAILABLE";
+export type DatabaseSetupCode = "WAL_UNAVAILABLE" | "DIRECTORY_UNAVAILABLE";
 
-  constructor(message: string, code: "WAL_UNAVAILABLE") {
+export class DatabaseSetupError extends Error {
+  readonly code: DatabaseSetupCode;
+
+  constructor(message: string, code: DatabaseSetupCode) {
     super(message);
     this.name = "DatabaseSetupError";
     this.code = code;
@@ -34,6 +38,7 @@ export class DatabaseSetupError extends Error {
  * on a journal mode it did not choose. Foreign keys are enforced on every connection.
  */
 export function openDatabase({ filePath, busyTimeoutMs = DEFAULT_BUSY_TIMEOUT_MS }: OpenDatabaseOptions): VoxwardDatabase {
+  createParentDirectory(filePath);
   const sqlite = new Database(filePath, { timeout: busyTimeoutMs });
   try {
     const journalMode = sqlite.pragma("journal_mode = WAL", { simple: true });
@@ -54,4 +59,17 @@ export function openDatabase({ filePath, busyTimeoutMs = DEFAULT_BUSY_TIMEOUT_MS
     orm: drizzle(sqlite, { schema }),
     close: () => sqlite.close(),
   };
+}
+
+/**
+ * SQLite does not create folders, and the default path is relative (data/voxward.sqlite3). A fresh checkout has no
+ * data folder, so the folder that holds the file is created first. The failure names the step, never the path.
+ */
+function createParentDirectory(filePath: string): void {
+  if (filePath === ":memory:") return;
+  try {
+    mkdirSync(dirname(filePath), { recursive: true });
+  } catch {
+    throw new DatabaseSetupError("the folder that holds the database file cannot be created", "DIRECTORY_UNAVAILABLE");
+  }
 }

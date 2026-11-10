@@ -4,12 +4,15 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import Fastify, { type FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { buildApp } from "../../src/app.js";
 import { createAccount } from "../../src/auth/login.js";
 import { authRoutes } from "../../src/auth/routes.js";
 import { grantMembership } from "../../src/auth/members.js";
+import type { ServerConfig } from "../../src/config/schema.js";
 import type { VoxwardDatabase } from "../../src/db/client.js";
 import { channels } from "../../src/db/schema/index.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
+import { buildRegistry } from "../../src/modules/registry.js";
 import { createCredentialVault } from "../../src/security/credential-vault.js";
 import { findSecretPatterns, redactValue } from "../../src/security/redaction.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
@@ -18,6 +21,11 @@ const PASSWORD = "correct horse battery";
 const NOW = new Date(T0);
 const SERVER_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REPO_ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
+const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" };
+
+function occurrences(text: string, needle: string): number {
+  return text.split(needle).length - 1;
+}
 
 function listSourceFiles(directory: string): string[] {
   return readdirSync(directory).flatMap((entry) => {
@@ -104,6 +112,44 @@ describe("credential leak scan", () => {
     expect(logs).not.toContain(session.sessionToken);
     expect(logs).not.toContain(token);
     expect(findSecretPatterns(logs)).toEqual([]);
+  });
+
+  it("keeps live tokens out of request logs and not-found responses when a token is sent in the query string", async () => {
+    const lines: string[] = [];
+    const app = buildApp({ modules: buildRegistry(config), database, logStream: { write: (line) => void lines.push(line) } });
+    const session = await signIn(app);
+    const headers = { cookie: session.cookie, "x-csrf-token": session.csrf };
+    const issued = await app.inject({ method: "POST", url: "/channels/channel-1/output-tokens", headers });
+    const { token } = issued.json() as { token: string };
+
+    const membersInQuery = await app.inject({ method: "GET", url: `/channels/channel-1/members?token=${token}` });
+    const overlayInQuery = await app.inject({ method: "GET", url: `/overlay/channel-1?session=${session.sessionToken}` });
+    await app.close();
+
+    expect(membersInQuery.statusCode).toBe(401);
+    expect(overlayInQuery.statusCode).toBe(404);
+    const logs = lines.join("");
+    expect(logs).toContain("incoming request");
+    const places = [
+      { label: "request logs", text: logs },
+      { label: "401 response", text: membersInQuery.body },
+      { label: "404 response", text: overlayInQuery.body },
+    ];
+    const leaks = places.flatMap(({ label, text }) => [
+      ...(occurrences(text, token) > 0 ? [`${label}: downstream token`] : []),
+      ...(occurrences(text, session.sessionToken) > 0 ? [`${label}: session token`] : []),
+      ...findSecretPatterns(text).map((kind) => `${label}: ${kind}`),
+    ]);
+    expect(leaks).toEqual([]);
+  });
+
+  it("answers an unknown route with a fixed body that does not repeat the requested URL", async () => {
+    const app = buildApp({ modules: buildRegistry(config), database, logger: false });
+    const response = await app.inject({ method: "GET", url: "/overlay/channel-1?session=vws_probe_value_0123456789abcdef" });
+    await app.close();
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({ error: "NOT_FOUND" });
   });
 
   it("redacts a model-input record before it leaves the server", () => {

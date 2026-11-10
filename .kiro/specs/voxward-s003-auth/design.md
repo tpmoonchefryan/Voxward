@@ -62,7 +62,7 @@ No design authority is configured for the resolved work context. No authority wa
 
 | 路径 | 内容 | 所属子单 |
 | --- | --- | --- |
-| `apps/server/src/auth/permissions.ts` | 角色×能力矩阵，`can()` | SUB-006 |
+| `apps/server/src/auth/permissions.ts` | 角色×能力矩阵，`membershipAllows()`、`downstreamAllows()`、`capabilitiesOf()` | SUB-006 |
 | `apps/server/src/auth/session.ts` | 会话创建、解析、撤销；令牌只存 SHA-256 | SUB-006 |
 | `apps/server/src/auth/login.ts` | 本地账号、scrypt 口令、登录 | SUB-006 |
 | `apps/server/src/auth/members.ts` | 频道成员授予与撤销（`channel_members`） | SUB-006 |
@@ -71,7 +71,7 @@ No design authority is configured for the resolved work context. No authority wa
 | `apps/server/src/auth/guard.ts` | 统一鉴权：HTTP、WebSocket 握手、批量操作、可信频道范围 | SUB-006 |
 | `apps/server/src/auth/routes.ts` | Fastify 插件：登录、登出、会话、成员、输出凭据、批量成员 | SUB-006 |
 | `apps/server/src/db/schema/auth.ts` 与迁移 `0001_*` | 三张表：账号、会话、下游输出凭据 | SUB-006 |
-| `apps/server/src/app.ts` | 传入 `database` 时注册 `authRoutes`（只做注册） | SUB-006 |
+| `apps/server/src/app.ts` | 传入 `database` 时注册 `authRoutes`；请求日志去掉查询串；未知路由返回固定 404 | SUB-006；SUB-007（B2） |
 | `apps/server/src/main.ts` | 打开 SQLite、迁移、关闭时释放连接 | SUB-006（Q9） |
 | `apps/server/scripts/copy-migrations.mjs` | 构建后把迁移目录复制到 `dist/migrations` | SUB-006（Q9） |
 | `apps/server/src/security/credential-vault.ts` | AES-256-GCM 凭据保险箱，按用途隔离，只返回元数据 | SUB-007 |
@@ -129,9 +129,9 @@ No design authority is configured for the resolved work context. No authority wa
 
 ### 4.3 登录（`login.ts`）
 
-- 口令：`crypto.scrypt`（N=16384，r=8，p=1，64 字节），盐 16 字节，比较用 `timingSafeEqual`。
+- 口令：`crypto.scrypt`，新哈希取 OWASP 下限 N=2^17、r=8、p=1，密钥 64 字节，盐 16 字节，比较用 `timingSafeEqual`。哈希存为 PHC 字符串 `$scrypt$ln=17,r=8,p=1$<盐>$<密钥>`（标准 base64，无填充）。校验时使用字符串里写入的参数，所以以后调整新哈希的成本不会让旧哈希无法校验。内存上限 512 MiB；存储的成本需要超过 256 MiB 工作内存时直接拒绝，不运行 scrypt。
 - 自定：口令最少 12 个字符。
-- `createAccount(tx, {loginName, displayName, password, now})`；`login(db, {loginName, password, now})` 失败统一返回 `INVALID_CREDENTIALS`，对不存在的账号也执行一次哈希比较，以减少时序差异。
+- `createAccount(database, {loginName, displayName, password, now})`；`login(database, {loginName, password, now})` 失败统一返回 `INVALID_CREDENTIALS`，对不存在的账号也执行一次哈希比较，以减少时序差异。
 
 ### 4.4 成员（`members.ts`）
 
@@ -140,16 +140,16 @@ No design authority is configured for the resolved work context. No authority wa
 
 ### 4.5 下游输出凭据（`downstream-tokens.ts`）
 
-- `issueOutputToken(tx, {channelId, createdBy, now})` 返回 `{id, token}`。原始令牌只在这次返回中出现一次。
+- `issueOutputToken(tx, {channelId, createdByAccountId, now})` 返回 `{id, token}`。原始令牌只在这次返回中出现一次。
 - `revokeOutputToken(tx, {id, channelId, now})`：`channelId` 必须匹配，防止跨频道撤销。
 - `resolveOutputToken(db, token)` 按哈希查找，返回 `{id, channelId, scope}`，已撤销则返回 undefined。
 
 ### 4.6 统一鉴权（`guard.ts`）
 
-- `authenticateRequest(db, {method, headers, now})`：先看 `Authorization: Bearer`（下游令牌），再看 Cookie `vw_session`（账号会话）。不安全方法（POST、PUT、PATCH、DELETE）的账号会话还要校验 `x-csrf-token`。下游令牌一律不允许不安全方法（`DOWNSTREAM_READ_ONLY`）。令牌不接受 URL 参数，避免进入访问日志。
-- `authorizeChannel(db, principal, {channelId, capability, now})`：账号要有该频道的有效成员身份，且角色能力包含所需能力；`logs.view` 还接受 `log_access = 1`。下游只允许 `output.feed` 且频道相符。失败返回 403 `FORBIDDEN`。
-- `authorizeBatch(db, principal, items)`：逐项检查，任一项失败整批拒绝，返回失败项的下标，不做任何写入。
-- `authorizeSocketHandshake(db, {headers, now})`：WebSocket 握手的判定函数。要求 `Origin` 的主机与 `Host` 相同（同源），然后按上面的规则认证。仓库里还没有 WebSocket 传输层，本包只提供判定函数（见第 10 节）。
+- `authenticateRequest(db, {method, headers, now})`：先看 `Authorization: Bearer`（下游令牌），再看 Cookie `vw_session`（账号会话）。不安全方法（POST、PUT、PATCH、DELETE）的账号会话还要校验 `x-csrf-token`。下游令牌一律不允许不安全方法（`DOWNSTREAM_READ_ONLY`）。令牌不接受 URL 参数：查询串里的令牌不参与认证，`auth/routes.test.ts` 对此有用例。应用日志只写方法、不含查询串的路径、主机与对端地址（`app.ts` 的 `serializers.req`），路径仍经 `redactText`。未知路由返回固定体 `{"error": "NOT_FOUND"}`，不回显 URL（`security/leak-scan.test.ts`）。反向代理或平台的访问日志是否记录查询串，本包不负责，见第 10 节。
+- `authorizeChannel(database, principal, {channelId, capability})`：账号要有该频道的有效成员身份，且角色能力包含所需能力；`logs.view` 还接受 `log_access = 1`。下游只允许 `output.feed` 且频道相符。失败返回 403 `FORBIDDEN`。
+- `authorizeBatch(database, principal, items)`：逐项检查，任一项失败整批拒绝，返回失败项的下标，不做任何写入。
+- `authorizeSocketHandshake(database, {method, headers, now})`：WebSocket 握手的判定函数。要求 `Origin` 的主机与 `Host` 相同（同源），然后按上面的规则认证。仓库里还没有 WebSocket 传输层，本包只提供判定函数（见第 10 节）。
 - `trustedChannelForTask(db, taskId)` 从 `tasks` 表读出频道；`checkRoomScope(trustedChannelId, claimedRoomId)` 在请求声称的房间与可信记录不一致时返回 `ROOM_SCOPE_MISMATCH`。自定：本包把一个房间映射为一个 `channels` 行。
 
 ### 4.7 HTTP 路由（`routes.ts`，自定）
@@ -166,18 +166,20 @@ No design authority is configured for the resolved work context. No authority wa
 | `DELETE /channels/:channelId/output-tokens/:tokenId` | `tokens.manage` + CSRF | 撤销，且令牌必须属于该频道 |
 | `POST /members/batch` | 每项 `members.manage` + CSRF | 批量授予，全部通过才写入，同一事务 |
 
+请求体错误（返工 N1）：畸形 JSON 返回 400 `INVALID_JSON`；路由不接受的内容类型（urlencoded、multipart、xml 等）返回 415 `UNSUPPORTED_MEDIA_TYPE`；超过 1 MiB 的请求体返回 413 `PAYLOAD_TOO_LARGE`。其它 Fastify 4xx 返回 400 `INVALID_REQUEST`。这些情况只以 warn 记录错误码，不记录请求体。未预期的异常仍为 500 `INTERNAL_ERROR`，以 error 级记录错误码。
+
 ## 5. 测试与验收对应
 
 | 验收行 | 测试 |
 | --- | --- |
-| VW-SUB006-AC001：房管跨频道请求被拒绝 | `auth/permissions.test.ts`、`auth/routes.test.ts` |
+| VW-SUB006-AC001：房管跨频道请求被拒绝 | `auth/auth.test.ts`（permissions、members）、`auth/routes.test.ts`（"refuses a moderator, and an owner who names another channel in the path"） |
 | VW-SUB006-AC001：下游凭据访问后台被拒绝 | `auth/routes.test.ts`（下游令牌访问成员与令牌接口） |
-| VW-SUB006-AC001：撤销会话生效 | `auth/session.test.ts`、`auth/routes.test.ts`（登出后请求被拒绝） |
-| VW-SUB006-AC001：撤销订阅（输出凭据）生效 | `auth/downstream-tokens.test.ts` |
-| VW-SUB006-AC001：频道范围不取客户端 roomId | `auth/guard.test.ts`（`checkRoomScope`、伪造 roomId 的成员接口请求） |
-| VW-SUB006-AC001：HTTP、WebSocket、批量操作统一鉴权 | `auth/guard.test.ts`（握手同源检查、批量全部拒绝）、`auth/routes.test.ts`（批量接口） |
-| VW-SUB007-AC001：密钥不进入前端响应、日志、模型输入、演示配置 | `security/leak-scan.test.ts` |
-| VW-SUB007-AC001：文本转义渲染，不执行脚本或模板 | `security/untrusted-text.test.ts`、`apps/web/test/untrusted-text.test.tsx` |
+| VW-SUB006-AC001：撤销会话生效 | `auth/auth.test.ts`（sessions and login）、`auth/routes.test.ts`（登出后请求被拒绝） |
+| VW-SUB006-AC001：撤销订阅（输出凭据）生效 | `auth/auth.test.ts`（downstream output tokens）、`auth/routes.test.ts`（"ignores a token passed in the URL, and stops accepting a revoked downstream token"） |
+| VW-SUB006-AC001：频道范围不取客户端 roomId | `auth/auth.test.ts`（guard：`checkRoomScope`）、`auth/routes.test.ts`（伪造频道路径的成员接口请求被拒绝） |
+| VW-SUB006-AC001：HTTP、WebSocket、批量操作统一鉴权 | `auth/auth.test.ts`（guard：握手同源检查、批量全部拒绝）、`auth/routes.test.ts`（批量接口） |
+| VW-SUB007-AC001：密钥不进入前端响应、日志、模型输入、演示配置 | `security/leak-scan.test.ts`（含查询串携带令牌的负例） |
+| VW-SUB007-AC001：文本转义渲染，不执行脚本或模板 | `security/security.test.ts`（untrusted text）、`apps/web/test/untrusted-text.test.tsx` |
 | VW-SUB007-AC001：部署契约逐条对照提案 §9.2 | `docs/security/runtime-ai-least-privilege.md` 的对照表（文档核对，不是可执行测试） |
 | VW-S003-AC001（Story 完整判据，本包承担部分） | 上面两单的测试合并覆盖；跨模块完整验证由 VOXWARD-EPIC-006 承接 |
 
@@ -196,6 +198,7 @@ No design authority is configured for the resolved work context. No authority wa
 - `build` 脚本把 `fastify`、`zod` 之外的 `better-sqlite3` 与 `drizzle-orm` 设为 external。
 - 构建后 `copy-migrations.mjs` 把 `src/db/migrations` 复制到 `dist/migrations`，使 `import.meta.url` 解析的迁移目录在产物里存在。
 - 实测：`node dist/main.js` 能打开数据库、完成迁移并监听。
+- 数据库父目录由 `db/client.ts` 的 `openDatabase` 在打开前创建（返工 B1）。默认路径 `data/voxward.sqlite3` 相对启动时的工作目录，干净检出中没有 `data/` 也能启动。目录无法创建时输出一行 `DATABASE_SETUP_FAILED: DIRECTORY_UNAVAILABLE`，不回显路径。
 - `ServerConfig` 与 config schema 不改，因此测试中的配置写法不变。
 
 ## 8. 来源缺口（自定）
@@ -219,3 +222,5 @@ No design authority is configured for the resolved work context. No authority wa
 - 真实 OAuth、HTTPS 部署、浏览器端到端流程。
 - 登录限速、凭据加密的持久化、保险箱密钥的来源。
 - `better-sqlite3` 原生构建在其它操作系统上的表现，本包只在当前 Linux 环境验证。
+- scrypt 每次哈希或校验约占用 128 MiB 工作内存。并发登录时的峰值内存与耗时未测；登录限速不在本包（S029）。
+- 反向代理或平台的访问日志是否记录查询串，未验证。
