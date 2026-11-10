@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:40166e96c2ab9f8c9746a73a",
+  "workRevision": 4,
+  "sourceDigest": "e498f3f8608b9a41024d54686a3c68cc953dfe51e0fc1bd8192d29b68d369f24",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:40166e96c2ab9f8c9746a73a",
+    "workRevision": 4,
+    "sourceDigest": "e498f3f8608b9a41024d54686a3c68cc953dfe51e0fc1bd8192d29b68d369f24",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:40166e96c2ab9f8c9746a73a",
+        "externalKey": "VOXWARD-STORY-002",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "建立 SQLite 模型、迁移与事务边界",
+        "summary": "建立 SQLite 模型、迁移与事务边界；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:4359ebe518ff3530a3338d00",
+        "scopeDigest": "1a2186c701d1292d98033cfd974b6f7c14b4aec910f138789864a707ab0decdf",
+        "relations": {
+          "blockedBy": [
+            "work:674c24794f9a1fb626eb2ad1"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:4359ebe518ff3530a3338d00",
+          "supersedes": []
+        },
+        "fieldSha256": "3f5a4b724094fa4a5c97d6d4c046ec91239d82548e9fdffb0934a6d36ef3c531",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "bb013772f7c1a1cbdd4890f1360828d5abedf45fb60f74668d1a2629b061e81d",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "3cfeefcae8025b2cbddbfafd45ebc08e7629166356ac1aab00cbdbbe0108f30b",
+    "design.md": "bdd1cdac494463b4055cd86a33fc3cc64e9ceab09ebdcd80663f6ae445d2975b",
+    "tasks.md": "30968482c60bf58b63fb8d689071bcd3d6e9d6cffe5e7694015e82af685282e4"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "b206f4ab4a8afacfaba0aff0e40cd1444553f76ac020ff2453bffe81d310541f"
+}
