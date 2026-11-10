@@ -27,6 +27,7 @@
 - [ ] A7. 把本批的 Story 和 Subtask 转成 ready→active（work-batch），然后读回
 - [ ] A8. 选模型：`execution-policy-resolve --host kiro --category economy --rejections <n>`，返回什么就用什么，不自己挑
 - [ ] A9. 派工：每个包派一个**新**子代理。任务里写明 spec 路径、授权、工作树、自测命令、交付格式、停止条件。`include_memory=false` 时，需要的事实都写进任务里
+- [ ] A9b. 简报用文件下发时，派工前必须先确认生成脚本退出码为 0，而且每份简报文件都存在、内容不为空。第 4 批出过事故：模板里的 `\p{M}` 被当成占位符，生成脚本报错退出，简报没写出来，子代理就被派出去了，只好事后用 steer 补救
 - [ ] A10. 等完成通知，中途不轮询；子代理有疑问时先自己筛一遍，能按已有授权处理的就自己处理，不转给 Owner
 - [ ] A11. 子代理完成后：`spawn_release` 收掉它；把它的证据复制到能长期保存的位置（scratch 会被清理）
 - [ ] A12. 本批所有包合回 main（只在本地，不推送）；有冲突交给一个集成子代理处理。**合并后、交给验收前**，主线程要在一个干净检出里跑 `pnpm install --frozen-lockfile && pnpm build && pnpm typecheck && pnpm test && pnpm check:deps`。没有文本冲突也可能有类型冲突（第 2 批的 B1 就是这样）。跑完再做一步默认配置的启动冒烟：不设任何 `VOXWARD_*` 数据库变量，跑 `pnpm dev`，确认 `/healthz` 返回 200（第 3 批的 B1 就是漏了这一步）
