@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:674c24794f9a1fb626eb2ad1",
+  "workRevision": 4,
+  "sourceDigest": "4ad1f8b4f71506527b7b1a579ba7b5c2d3fd81940a66db1829f2cd191db2aa1c",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:674c24794f9a1fb626eb2ad1",
+    "workRevision": 4,
+    "sourceDigest": "4ad1f8b4f71506527b7b1a579ba7b5c2d3fd81940a66db1829f2cd191db2aa1c",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:674c24794f9a1fb626eb2ad1",
+        "externalKey": "VOXWARD-STORY-001",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "建立工程骨架与版本化业务契约",
+        "summary": "建立工程骨架与版本化业务契约；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:4359ebe518ff3530a3338d00",
+        "scopeDigest": "ccc4d9df62c3a1d79bf9664f6a37304a4afceaadf71fb27cb0d4c160981df0e7",
+        "relations": {
+          "blockedBy": [],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:4359ebe518ff3530a3338d00",
+          "supersedes": []
+        },
+        "fieldSha256": "01a535d7ca0102b5b1941c694851ff72828b81a68b260919f49028cf01ac259c",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "9613b1211ce4f516154a1e30eab28d4cd690e5040ddc9ff5d0e817dd07dd5385",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "0bb14f43806a1b04943031912b67dd92cebc76daf8b666c81a19ed4909a4f638",
+    "design.md": "9390d7488c775487e45efe2d89b3730683d36e30424748a54945d9bd466adf11",
+    "tasks.md": "86c404c24ccdf0b88d4314925a6e584e605598ae6907bb40c1dd0aa49c2331c1"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "d2985a009ee7588855d87ec58e1fc37a2df6dafa09a7feda4c70edd76310cadb"
+}
