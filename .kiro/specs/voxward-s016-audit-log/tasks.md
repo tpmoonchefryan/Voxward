@@ -37,5 +37,5 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ## 收尾
 
-- [ ] 自测全集：`pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`，再做 `pnpm dev` 的 `/healthz` 冒烟
-- [ ] 写入 `evidence/self-check.md`，单独提交
+- [x] 自测全集：`pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`，再做 `pnpm dev` 的 `/healthz` 冒烟
+- [x] 写入 `evidence/self-check.md`，单独提交
