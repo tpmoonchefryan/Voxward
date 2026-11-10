@@ -203,3 +203,16 @@ No design authority is configured for the resolved work context. No authority wa
 - 提案 §12.2 的分页加载、§12.4 的备份与 WAL 清理，来源没有给出实施方式。本包不做。
 - 失效通知接口的形状来源中没有定义（自定）。
 - 问题清单（`tasks.md` 末尾）逐条核对后，没有点名归 S016 的条目。简报中“下面点名的条目”一节为空。
+
+## 11. 实施后的修订（与代码一致；本节覆盖前文的不一致之处）
+
+- `AuditAccess.channelsFor(actorRef)` 返回执行者的全部成员频道（任意角色）。模块自行筛选出具备 `logs.view` 的频道。前文第 4.2、5 节中“只返回获准查看的频道”的说法以此为准。
+- 第 1 节与第 9 节补充：`modules/audit-store/validate.ts`（通用校验函数，新增）。
+- `findByCorrelationId` 在 SUB-029 提交中保持占位拒绝，SUB-030 提交中实现。最终状态已实现。
+- 写入时拒绝服务端字段 `id`、`occurredAt`、`sequence`（抛出 `AuditInputError`，不调用端口）。
+- 证据 payload 为空字符串时按空内容拒绝。
+- 到期的证据在读取时不返回内容，即使读取者具备能力；元数据仍按 30 天保留并返回。
+- `removeSubject` 只在确实删除或改写了日志内容时发布失效事件。重复删除返回空清单，不发布事件。
+- `locateSubjectLogs` 返回证据行 ID 列表，不返回数量。
+- 迁移测试 `test/db/migrate.test.ts` 的迁移条数改为从 `_journal.json` 读取；新增“已有证据行在升级到 0002 后保留”的用例，用于验证第 3.2 节的 ALTER 写法。
+- 未实现，由后续 Story 承接：查看器的列表与条目详情、§12.2 的分页加载（STORY-017）、到期清扫（STORY-020）、组合层接线（`registry.ts` 仍为未接线占位）。
