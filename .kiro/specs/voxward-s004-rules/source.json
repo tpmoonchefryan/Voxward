@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:2a41e3c54fab2b483ad94c08",
+  "workRevision": 4,
+  "sourceDigest": "c507dc39979523ffcc5b7c909341a8d75a03d4f08df0b1b214a8d872d770fa4c",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:2a41e3c54fab2b483ad94c08",
+    "workRevision": 4,
+    "sourceDigest": "c507dc39979523ffcc5b7c909341a8d75a03d4f08df0b1b214a8d872d770fa4c",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:2a41e3c54fab2b483ad94c08",
+        "externalKey": "VOXWARD-STORY-004",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现基础规则与昵称检查缓存",
+        "summary": "实现基础规则与昵称检查缓存；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:4359ebe518ff3530a3338d00",
+        "scopeDigest": "d0313b8094e780e1f9cf3515f616ae64b5a72eb7e8598b36576fb2346a6261fe",
+        "relations": {
+          "blockedBy": [
+            "work:674c24794f9a1fb626eb2ad1"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:4359ebe518ff3530a3338d00",
+          "supersedes": []
+        },
+        "fieldSha256": "107d57b0bfe01fabb0ae2f79edc6435be337faab7293f5aeee603fa6c33b178e",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "a5235898c76a2e4e63b977efe7f42e7051679d8dbdf99df1502e48e100a54d2d",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "a736a316e393356faa16924d886167d3b239edfdff96c63eab98f03810814c6a",
+    "design.md": "aa119a4756264efa1ee009e70e128782cf3cbab81a9027f855c6b62f12ecd6df",
+    "tasks.md": "5103dc26b15832df67c74e20d070105870341ac628c2b63b883cf9f33dca5a2a"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "bb9e70aea4c72d2b4fe35d6b9538fe6c51ea764fd9c04577c1f02d4a817f19dc"
+}
