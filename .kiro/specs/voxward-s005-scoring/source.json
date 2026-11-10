@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:c07537a238d62efa3b9779f6",
+  "workRevision": 4,
+  "sourceDigest": "80d7e41968257f16670313aa84f9abd42376eb8c150c3d489133224958cd887a",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:c07537a238d62efa3b9779f6",
+    "workRevision": 4,
+    "sourceDigest": "80d7e41968257f16670313aa84f9abd42376eb8c150c3d489133224958cd887a",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:c07537a238d62efa3b9779f6",
+        "externalKey": "VOXWARD-STORY-005",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现频道评分、身份差额与幂等账本",
+        "summary": "实现频道评分、身份差额与幂等账本；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:4359ebe518ff3530a3338d00",
+        "scopeDigest": "4ba36db75bde4cd2143f6005917d0a1d63d3a5bdb27c1c9324b01a897dd57673",
+        "relations": {
+          "blockedBy": [
+            "work:40166e96c2ab9f8c9746a73a"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:4359ebe518ff3530a3338d00",
+          "supersedes": []
+        },
+        "fieldSha256": "8f020356cdfb5d6babcfe34ba849ebed9e2c5e4c599bddcec0655a5947917a18",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "2febfd9e044a96c13ebaed1d3f390c82638215499ec957fae9aab6521936b4ac",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "fd0bc493ba89474c724b74f291ce4880f151bc8e8ee792a3141fdc249d581f89",
+    "design.md": "972e7cc255cef77a5067a2f2aaf7f9e87c0652057866043b4803b64961b57e38",
+    "tasks.md": "f93feec89a27c8f47ec24b05e1d900c85c9223fb09209c34af3b018469709c8a"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "0c9cb3a4e6b24b45fef0a1674ef23106f9ba4a9eb5495a6b5352e493b51bb32a"
+}
