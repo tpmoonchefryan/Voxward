@@ -1,0 +1,114 @@
+[
+ {
+  "subject": "Fastify 路由层的 400 FST_ERR_BAD_URL 与 414 FST_ERR_MAX_PARAM_LENGTH 绕过 setNotFoundHandler、错误处理与请求日志，并回显请求目标",
+  "summary": "find-my-way 解码路径失败时，把未拆分的整个请求目标（含查询串）交给 onBadUrl，Fastify 默认直接写 400 体 `'<目标>' is not a valid url component`；路径参数超过 maxParamLength（默认 100）时，414 体写入路径。两者在路由匹配之前生成，不经过 setNotFoundHandler、setErrorHandler 和请求日志序列化器。Fastify 也没有 405，方法不匹配走 404。",
+  "snippet": "要让所有错误体都固定且不回显 URL，除了 setNotFoundHandler 还要配 Fastify({ frameworkErrors })；泄漏扫描加两类负例：路径含 %zz 且查询串带令牌，路径参数超过 100 字符且含令牌。",
+  "body": "第 3 批 S003 返工候选 cd91ba0（Fastify 5.12.8、find-my-way 9.10.0）的打包产物上：GET /overlay/%zz?session=<活的 vws_> 得 400，响应体回显含查询串的整个请求目标；GET /channels/<vwo_ 令牌加 60 个字符>/members 得 414，响应体回显路径。这两种请求不产生任何日志行，所以只扫日志的泄漏测试发现不了。代码位置：fastify.js 的 onBadUrl 与 onMaxParamLength（未设 frameworkErrors 时直接 res.end 固定模板），find-my-way index.js 的 find（safeDecodeURI 抛错时 _onBadUrl(path) 收到的是原始 path）。本轮判为非阻断：令牌只回到发请求的客户端，触发要求非法转义或超长参数；下游 URL 交付（STORY-021/023）落地前应修。",
+  "tags": [
+   "voxward",
+   "fastify",
+   "credentials",
+   "error-handling",
+   "security"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/app.ts",
+    "node_modules/fastify/fastify.js",
+    "node_modules/find-my-way/index.js",
+    ".kiro/specs/voxward-batch3/evidence/rework/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "请求日志对 request.url 做 redactText 只认原样令牌：整段百分号编码的令牌和 Host 头会原样进日志",
+  "summary": "去掉查询串后对未解码的路径做形态脱敏，能挡住原样或按标准编码出现的 vws_、vwo_，挡不住逐字节百分号编码后放进路径的令牌；序列化器里的 host 字段不经过脱敏。",
+  "snippet": "日志记已匹配路由的模板（request.routeOptions.url）而不是原始路径；未匹配的请求只记固定标记，或先安全解码再脱敏；host 也过 redactText。泄漏扫描要把日志 url 解码后再扫一遍，并扫去前缀与 %5F 等形态。",
+  "body": "cd91ba0 打包产物上构造了 37 种途径：查询串里原样、%5F、整段编码的令牌都被丢掉；路径里原样令牌记为 [REDACTED]；/overlay/channel-1%3Fsession%3D<整段编码的 vws_> 与 /channels/<整段编码的 vws_>/members 按编码形态写入日志，解码即活令牌；Host: <vws_>.example 原样写入 host 字段。令牌是 base64url，RFC 3986 §2.3 规定这些字符不应被编码，encodeURIComponent 等常见编码器也不编码，所以本轮判为非阻断。只找原样形态的扫描脚本会漏掉这两种，扫描时要覆盖编码形态。",
+  "tags": [
+   "voxward",
+   "fastify",
+   "logging",
+   "redaction",
+   "credentials"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/app.ts",
+    "apps/server/src/security/redaction.ts",
+    "apps/server/test/security/leak-scan.test.ts",
+    ".kiro/specs/voxward-batch3/evidence/rework/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "scrypt N=2^17、r=8 每次占 128 MiB：并发登录的峰值内存约等于 libuv 线程池大小乘 128 MiB",
+  "summary": "Node 的 crypto.scrypt 在 libuv 线程池里运行，默认 4 个线程。cd91ba0 上 4 个并发的未知账号登录让峰值 RSS 从 284 MiB 升到 795 MiB；8、16 个并发时峰值不再上升，但请求排队，16 个并发最慢 1.27 s。单次 N=2^14 约 33 ms，N=2^17 约 284 ms。maxmem 默认 32 MiB，N=2^17 必须显式放大。",
+  "snippet": "选 scrypt 参数时按「UV_THREADPOOL_SIZE × 128·N·r 字节」估登录峰值内存；内存紧时用 OWASP 列为同级的 N=2^14/p=5 或 N=2^15/p=3；无论哪组都要配登录限速或口令校验并发上限；成本写进 PHC 字符串，以后换参数不影响旧哈希。",
+  "body": "OWASP Password Storage Cheat Sheet 的 scrypt 一节列出 N=2^17/r=8/p=1、2^16/p=2、2^15/p=3、2^14/p=5、2^13/p=10 五组，称为相近的最低防护，差别在内存与并行度。VoxWard 返工选了第一组。不存在的账号也会对占位哈希算一次，以保持时序，所以不需要凭据就能触发这部分内存。/healthz 在并发登录期间最长 5 ms，因为哈希不在主线程。登录限速在 S003 设计里列为不做，归 STORY-029。",
+  "tags": [
+   "voxward",
+   "scrypt",
+   "password-hashing",
+   "performance",
+   "security"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/auth/login.ts",
+    ".kiro/specs/voxward-s003-auth/design.md",
+    "https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html",
+    ".kiro/specs/voxward-batch3/evidence/rework/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "主线程 A12 跑过默认配置的 pnpm dev 后，检出里留下被忽略的 apps/server/data，复验「干净检出」前要先移开",
+  "summary": "默认 databaseFile 是相对启动目录的 data/voxward.sqlite3；pnpm dev 的服务端在 apps/server 下运行，所以会建 apps/server/data/voxward.sqlite3。data/ 在 .gitignore 里，git status --short 看不出来。它在的时候，默认配置冒烟测不到「目录不存在」这条路径。",
+  "snippet": "默认配置冒烟前检查 data/ 与 apps/server/data/（git status --short --ignored）：存在就先移到 scratch；冒烟后把本轮新建的库移走，再把原文件放回。",
+  "body": "第 3 批 S003 复验时，vw-int-b3r 里有主线程 21:03 跑 A12 留下的 apps/server/data/voxward.sqlite3。本轮移开后，pnpm dev（检出根与 apps/server）与打包产物（检出根与 apps/server）四种组合都从没有 data 目录开始，并分别建库：pnpm dev 两种都建在 apps/server/data，node apps/server/dist/main.js 在检出根运行时建在根目录的 data/。打包产物还必须设 VOXWARD_ADAPTERS，它是唯一必填配置键。",
+  "tags": [
+   "voxward",
+   "startup",
+   "smoke-test",
+   "acceptance",
+   "sqlite"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/config/schema.ts",
+    "apps/server/src/config/load.ts",
+    "apps/server/src/db/client.ts",
+    ".gitignore",
+    ".kiro/specs/voxward-master/tasks.md"
+   ]
+  }
+ },
+ {
+  "subject": "在 scratch 副本里对 vitest 用例做变异对照：复制 apps/server、软链 node_modules、补根 tsconfig.base.json；「拒绝某种输入」的用例可能被更早的检查拦住",
+  "summary": "只复制 apps/server 时 vitest 报 TSConfckParseError（extends ../../tsconfig.base.json 找不到）；补上根 tsconfig.base.json 与 package.json 后，可以在副本里撤掉一处修复、只跑相关用例，确认用例真的会失败，检出不受影响。用这个办法发现 S003 的成本上限用例撤掉上限后仍通过。",
+  "snippet": "确认修复有用例守护：cp -r apps/server 到 scratch，删掉副本的 node_modules 与 dist 后软链检出的 node_modules，复制根 tsconfig.base.json 与 package.json，逐个撤掉修复跑 vitest run <文件> -t <名称>，跑完 cmp 确认恢复。写「拒绝某种输入」的用例时，其它字段保持合法，只让被测条件不满足。",
+  "body": "第 3 批 S003 复验：去掉 app.ts 的 serializers.req 或 setNotFoundHandler，leak-scan 的查询串用例报出 4 项泄漏；去掉 db/client.ts 的建目录，默认配置启动用例报 DATABASE_SETUP_FAILED: unexpected error。去掉 login.ts 的存储成本上限后，「refuses a stored cost that needs more memory than the cap」仍通过，因为它的密钥只有 24 字节，先被长度检查拒绝；改用 16 字节盐与 64 字节密钥时，没有上限的 verifyPassword 会抛 ERR_CRYPTO_INVALID_SCRYPT_PARAMS，有上限时返回 false。",
+  "tags": [
+   "voxward",
+   "testing",
+   "vitest",
+   "mutation-testing",
+   "acceptance"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/tsconfig.json",
+    "tsconfig.base.json",
+    "apps/server/test/auth/auth.test.ts",
+    "apps/server/test/security/leak-scan.test.ts",
+    "apps/server/test/app/default-config-startup.test.ts"
+   ]
+  }
+ }
+]
