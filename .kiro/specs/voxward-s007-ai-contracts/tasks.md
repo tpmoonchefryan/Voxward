@@ -29,4 +29,4 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 3.1 `unicode-span.ts`、`errors.ts`、`output-text-check.ts`
   - [x] 3.2 `batch-contract.ts` 与模块 `index.ts` 导出
   - [x] 3.3 `apps/server/test/inference-provider/validation/`：批校验、码点区间、规则引擎端口
-- [ ] 4. 自测与证据：`evidence/self-check.md`，随最后一个 commit 提交
+- [x] 4. 自测与证据：`evidence/self-check.md`，随最后一个 commit 提交
