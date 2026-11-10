@@ -8,3 +8,8 @@ export function createPlatformSource(): PlatformSource {
     fetchAfter: () => Promise.reject(new Error("MODULE_NOT_IMPLEMENTED: PlatformSource.fetchAfter")),
   };
 }
+
+export * from "./youtube/credentials.js";
+export * from "./youtube/oauth.js";
+export * from "./youtube/auth-status.js";
+export * from "./youtube/routes.js";
