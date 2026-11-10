@@ -10,6 +10,9 @@ export const TASK_KINDS = ["REALTIME_REVIEW", "PAID_TEXT_REVIEW", "SETTLEMENT_RE
 export const VERDICT_SOURCES = ["BASE_RULE", "MODEL", "FAST_PASS", "MANUAL"] as const;
 export const DELIVERY_STATUSES = ["PENDING", "SENT", "FAILED", "EXPIRED", "CANCELLED"] as const;
 
+export type TaskKind = (typeof TASK_KINDS)[number];
+export type VerdictSource = (typeof VERDICT_SOURCES)[number];
+
 /**
  * Internal event reference. This table holds no message text (proposal §10). The text lives only in
  * `technical_log_evidence`, which has its own retention.

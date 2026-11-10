@@ -9,6 +9,8 @@ export const serverConfigSchema = z
     host: z.string().min(1).default("127.0.0.1"),
     port: z.number().int().min(1).max(65535).default(3000),
     adapters: z.enum(ADAPTER_SETS),
+    /** SQLite file. The default serves development only; deployments point it at a local persistent volume. */
+    databaseFile: z.string().min(1).default("data/voxward.sqlite3"),
   })
   .strict();
 

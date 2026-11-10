@@ -12,6 +12,8 @@ export const SCORE_REASON_CODES = [
 ] as const;
 export const NICKNAME_CHECK_RESULTS = ["PASS", "BLOCK", "NEEDS_REVIEW"] as const;
 
+export type ScoreReasonCode = (typeof SCORE_REASON_CODES)[number];
+
 /**
  * An audience member inside one channel. `platform_subject_key` is derived by the server and is not the
  * platform user ID. `processing_generation` rises on deletion or regeneration, which stales older tasks.

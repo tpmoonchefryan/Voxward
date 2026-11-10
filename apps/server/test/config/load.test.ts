@@ -16,7 +16,7 @@ describe("loadConfig", () => {
   it("applies defaults when only the required adapter set is given", () => {
     expect(loadConfig({ env: REQUIRED_ONLY, readFile: noFileRead })).toEqual({
       ok: true,
-      config: { host: "127.0.0.1", port: 3000, adapters: "synthetic" },
+      config: { host: "127.0.0.1", port: 3000, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" },
     });
   });
 
@@ -24,8 +24,21 @@ describe("loadConfig", () => {
     const env = { ...REQUIRED_ONLY, VOXWARD_HOST: "127.0.0.2", VOXWARD_PORT: "3100" };
     expect(loadConfig({ env, readFile: noFileRead })).toEqual({
       ok: true,
-      config: { host: "127.0.0.2", port: 3100, adapters: "synthetic" },
+      config: { host: "127.0.0.2", port: 3100, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" },
     });
+  });
+
+  it("reads the database file path from VOXWARD_DATABASE_FILE", () => {
+    const env = { ...REQUIRED_ONLY, VOXWARD_DATABASE_FILE: "/var/lib/voxward/voxward.sqlite3" };
+    expect(loadConfig({ env, readFile: noFileRead })).toEqual({
+      ok: true,
+      config: { host: "127.0.0.1", port: 3000, adapters: "synthetic", databaseFile: "/var/lib/voxward/voxward.sqlite3" },
+    });
+  });
+
+  it("rejects an empty database file path with CONFIG_INVALID", () => {
+    const result = loadConfig({ env: { ...REQUIRED_ONLY, VOXWARD_DATABASE_FILE: "" }, readFile: noFileRead });
+    expect(failureOf(result)).toMatchObject({ code: "CONFIG_INVALID", key: "databaseFile" });
   });
 
   it("reads a configuration file and lets environment values override it", () => {
@@ -40,7 +53,7 @@ describe("loadConfig", () => {
     });
     expect(result).toEqual({
       ok: true,
-      config: { host: "127.0.0.1", port: 4100, adapters: "synthetic" },
+      config: { host: "127.0.0.1", port: 4100, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" },
     });
   });
 

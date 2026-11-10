@@ -3,7 +3,7 @@ import { buildApp } from "../../src/app.js";
 import type { ServerConfig } from "../../src/config/schema.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 
-const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic" };
+const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" };
 
 describe("Fastify application", () => {
   it("answers GET /healthz with 200 and status ok", async () => {
