@@ -61,3 +61,25 @@ describe("span mapping back to the original text", () => {
     expect(spansFor(field, 1, 3)).toEqual([{ field: "body", start: 1, end: 3 }]);
   });
 });
+
+describe("composed combining marks (S006 Q6)", () => {
+  it("removes a mark that composes with its base letter by default", () => {
+    expect(normalizeText("ba\u0301dword")).toBe("badword");
+    expect(normalizeText("b\u00e1dword")).toBe("badword");
+  });
+
+  it("keeps the composed letter when stripping is switched off", () => {
+    const keep = { stripCombiningMarks: false };
+    expect(normalizeText("ba\u0301dword", keep)).toBe("b\u00e1dword");
+  });
+
+  it("maps a stripped letter back to the original span, marks included", () => {
+    const field = normalizeField("body", "x ba\u0301d");
+    expect(field.text).toBe("x bad");
+    expect(spansFor(field, 2, 5)).toEqual([{ field: "body", start: 2, end: 6 }]);
+  });
+
+  it("keeps Hangul syllables composed after stripping", () => {
+    expect(normalizeText("\u1100\u1161\u11a8")).toBe("\uac01");
+  });
+});

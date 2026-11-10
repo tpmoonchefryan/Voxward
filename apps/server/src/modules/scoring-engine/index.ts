@@ -4,6 +4,7 @@ import {
   INTERNAL_CLASSIFICATIONS,
   toDownstreamVerdict,
   type ChannelEvent,
+  type PenaltyHit,
   type ScoreChange,
   type ScoreCommitResult,
   type ScoringEngine,
@@ -52,10 +53,20 @@ export function validateVerdictInput(event: ChannelEvent, verdict: Verdict): voi
   if (verdict.downstream !== toDownstreamVerdict(verdict.classification)) {
     throw new ScoringInputError("downstream");
   }
+  validatePenaltyHits(verdict.penaltyHits);
   requireText(event.channelId, "channelId");
   requireText(event.platformMessageId, "platformMessageId");
   requireText(event.sender.senderRef, "senderRef");
   if (Number.isNaN(Date.parse(event.receivedAt))) throw new ScoringInputError("receivedAt");
+}
+
+/** A hit is a rule code and a non-negative whole-number deduction. Anything else is refused before any storage call. */
+function validatePenaltyHits(hits: readonly PenaltyHit[]): void {
+  if (!Array.isArray(hits)) throw new ScoringInputError("penaltyHits");
+  for (const hit of hits) {
+    if (typeof hit.code !== "string" || hit.code.trim() === "") throw new ScoringInputError("penaltyHits");
+    if (!Number.isSafeInteger(hit.points) || hit.points < 0) throw new ScoringInputError("penaltyHits");
+  }
 }
 
 function validateIdentityTransition(transition: IdentityTransition): void {

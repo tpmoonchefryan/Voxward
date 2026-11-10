@@ -8,7 +8,7 @@ import {
   type RuleHit,
   type Verdict,
 } from "./groups.js";
-import { identityField, joinMapped, type MappedText, type MatchField, normalizeField } from "./normalize.js";
+import { identityField, joinMapped, type MappedText, type MatchField, type NormalizeOptions, normalizeField } from "./normalize.js";
 import { spansFor } from "./span-map.js";
 import type { Transliterator } from "./transliterate.js";
 
@@ -83,10 +83,15 @@ interface Budget {
 }
 
 /** Copies one field into the three matching forms. */
-export function prepareField(field: MatchField, raw: string, transliterator: Transliterator): FieldParts {
+export function prepareField(
+  field: MatchField,
+  raw: string,
+  transliterator: Transliterator,
+  normalization: NormalizeOptions,
+): FieldParts {
   return {
     raw: identityField(field, raw),
-    normal: normalizeField(field, raw),
+    normal: normalizeField(field, raw, normalization),
     reading: transliterator.transliterate(field, raw).mapped,
   };
 }
@@ -109,13 +114,16 @@ export async function evaluateMessage(
     return withVersion(decideVerdict([], ["INPUT_TOO_LONG"]), ruleSet.version);
   }
 
-  const body = prepareField("body", input.body, env.transliterator);
+  const body = prepareField("body", input.body, env.transliterator, ruleSet.normalization);
   // A blank nickname is treated as missing, so it cannot pass as a checked nickname.
   const nicknameText = input.nickname === null || input.nickname.trim() === "" ? null : input.nickname;
   const nickname =
     nicknameText === null
       ? null
-      : { text: nicknameText, parts: prepareField("nickname", nicknameText, env.transliterator) };
+      : {
+          text: nicknameText,
+          parts: prepareField("nickname", nicknameText, env.transliterator, ruleSet.normalization),
+        };
   const normalizedLength = body.normal.text.length + (nickname?.parts.normal.text.length ?? 0);
   if (normalizedLength > limits.maxNormalizedLength) {
     return withVersion(decideVerdict([], ["NORMALIZED_TOO_LONG"]), ruleSet.version);

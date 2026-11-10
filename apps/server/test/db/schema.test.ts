@@ -71,8 +71,8 @@ function constraintNames(name: string): string[] {
 }
 
 describe("data dictionary matches the schema", () => {
-  it("documents exactly the 27 schema tables", () => {
-    expect(tables).toHaveLength(27);
+  it("documents exactly the 26 schema tables", () => {
+    expect(tables).toHaveLength(26);
     expect([...dictionary.keys()].sort()).toEqual([...configs.keys()].sort());
   });
 
@@ -94,7 +94,11 @@ describe("data dictionary matches the schema", () => {
 describe("generated migration matches the schema", () => {
   it("creates every schema table and every named index and CHECK", () => {
     const createdTables = [...migrationSql.matchAll(/^CREATE TABLE `([a-z_]+)`/gm)].map((match) => match[1]);
-    expect([...createdTables].sort()).toEqual([...configs.keys()].sort());
+    const droppedTables = [...migrationSql.matchAll(/^DROP TABLE `([a-z_]+)`/gm)].map((match) => match[1]);
+    // A table that a later migration drops must not stay in the schema (S006 Q8).
+    const survivingTables = createdTables.filter((name) => !droppedTables.includes(name));
+    expect([...survivingTables].sort()).toEqual([...configs.keys()].sort());
+    expect([...droppedTables]).toEqual(["subject_nickname_checks"]);
 
     for (const name of configs.keys()) {
       for (const constraint of constraintNames(name)) {

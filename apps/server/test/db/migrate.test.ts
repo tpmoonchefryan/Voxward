@@ -5,7 +5,7 @@ import { openDatabase, type VoxwardDatabase } from "../../src/db/client.js";
 import { runMigrations, DEFAULT_MIGRATIONS_FOLDER } from "../../src/db/migrate.js";
 import { seedChannelAndSubject, countRows, migratedDatabase, removeDirectory, scratchDirectory, T0 } from "./helpers.js";
 
-const SCHEMA_TABLE_COUNT = 27;
+const SCHEMA_TABLE_COUNT = 26;
 
 /** Number of migrations in the journal. Read from the journal so a new migration does not break this test. */
 const JOURNAL_ENTRIES: readonly { readonly tag: string }[] = JSON.parse(
@@ -27,7 +27,7 @@ describe("migrations", () => {
     removeDirectory(directory);
   });
 
-  it("creates all 27 schema tables on an empty file", () => {
+  it("creates all 26 schema tables on an empty file", () => {
     database = migratedDatabase(directory);
     const names = database.sqlite
       .prepare("select name from sqlite_master where type = 'table' and name not like 'sqlite_%' and name <> '__drizzle_migrations' order by name")
@@ -92,6 +92,35 @@ describe("migrations", () => {
     };
     expect(row).toEqual({ level: "INFO", task_id: null, attempt: null, data_json: null });
   });
+
+  it("upgrades a database made by the migrations up to 0002, keeps its rows, and removes the nickname check table (S006 Q8)", () => {
+    const earlier = join(directory, "earlier-migrations");
+    mkdirSync(join(earlier, "meta"), { recursive: true });
+    // The old database stops at 0002_audit_log_fields. 0003_drop_subject_nickname_checks is the migration under test.
+    const earlierTags = ["0000_initial", "0001_auth_sessions", "0002_audit_log_fields"];
+    for (const tag of earlierTags) {
+      copyFileSync(join(DEFAULT_MIGRATIONS_FOLDER, `${tag}.sql`), join(earlier, `${tag}.sql`));
+    }
+    const journal = JSON.parse(readFileSync(join(DEFAULT_MIGRATIONS_FOLDER, "meta", "_journal.json"), "utf8")) as {
+      entries: unknown[];
+    };
+    writeFileSync(join(earlier, "meta", "_journal.json"), JSON.stringify({ ...journal, entries: journal.entries.slice(0, earlierTags.length) }));
+
+    const filePath = join(directory, "upgrade.sqlite3");
+    const before = openDatabase({ filePath });
+    runMigrations(before, earlier);
+    seedChannelAndSubject(before);
+    expect(tableExists(before, "subject_nickname_checks")).toBe(true);
+    before.close();
+
+    database = openDatabase({ filePath });
+    runMigrations(database);
+
+    expect(tableExists(database, "subject_nickname_checks")).toBe(false);
+    expect(countRows(database, "channels")).toBe(1);
+    expect(countRows(database, "subjects")).toBe(1);
+    expect(countRows(database, "__drizzle_migrations")).toBe(MIGRATION_COUNT);
+  });
 });
 
 function journalHeader(): { version: string; dialect: string } {
@@ -100,4 +129,9 @@ function journalHeader(): { version: string; dialect: string } {
     dialect: string;
   };
   return { version: journal.version, dialect: journal.dialect };
+}
+
+function tableExists(database: VoxwardDatabase, name: string): boolean {
+  const row = database.sqlite.prepare("select count(*) as n from sqlite_master where type = 'table' and name = ?").get(name);
+  return (row as { n: number }).n === 1;
 }

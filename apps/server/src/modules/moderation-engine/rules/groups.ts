@@ -1,6 +1,6 @@
 import type { ModerationRoute } from "@voxward/contracts";
 import { admitRegex, type RegexRejection } from "./bounded-regex.js";
-import { normalizeText } from "./normalize.js";
+import { DEFAULT_NORMALIZE_OPTIONS, type NormalizeOptions, normalizeText } from "./normalize.js";
 import type { FieldSpan } from "./span-map.js";
 
 /**
@@ -30,6 +30,8 @@ export interface GroupInput {
 export interface RuleSetInput {
   readonly version: string;
   readonly groups: readonly GroupInput[];
+  /** Matching-copy options. A missing key takes its default. See `NormalizeOptions`. */
+  readonly normalization?: Partial<NormalizeOptions>;
 }
 
 export type Matcher =
@@ -46,6 +48,7 @@ export interface CompiledRule {
 export interface CompiledRuleSet {
   readonly version: string;
   readonly rules: readonly CompiledRule[];
+  readonly normalization: NormalizeOptions;
 }
 
 export type RuleIssueCode =
@@ -61,12 +64,17 @@ export type RuleIssueCode =
   | "PATTERN_TOO_LONG"
   | "READING_PATTERN_INVALID"
   | "READING_CANNOT_PENALIZE"
+  | "NORMALIZATION_INVALID"
   | `REGEX_${RegexRejection}`;
 
-/** A compile problem. It names a code and a group or rule id, never the pattern text: patterns may contain slurs. */
+/**
+ * A compile problem. It names a code and a group or rule id, never the pattern text: patterns may contain slurs.
+ * `hint` is an optional fixed sentence that says how to rewrite the input. It never contains pattern text.
+ */
 export interface RuleIssue {
   readonly code: RuleIssueCode;
   readonly ref: string;
+  readonly hint?: string;
 }
 
 export type CompileRuleSetResult =
@@ -77,11 +85,24 @@ export class ModerationConfigError extends Error {
   readonly issues: readonly RuleIssue[];
 
   constructor(issues: readonly RuleIssue[]) {
-    super(`RULE_SET_INVALID: ${issues.map((issue) => `${issue.code} at ${issue.ref}`).join(", ")}`);
+    super(`RULE_SET_INVALID: ${issues.map(describeIssue).join(", ")}`);
     this.name = "ModerationConfigError";
     this.issues = issues;
   }
 }
+
+function describeIssue(issue: RuleIssue): string {
+  const base = `${issue.code} at ${issue.ref}`;
+  return issue.hint === undefined ? base : `${base} (hint: ${issue.hint})`;
+}
+
+/** Fixed rewrite hints for regex rejections that a rule author can act on (S006 Q12). */
+const REGEX_HINTS: Partial<Record<RegexRejection, string>> = {
+  GROUP_ALTERNATION: "write the alternatives as top-level branches, such as a|b, or split them into several rules",
+  UNBOUNDED_WITH_VARIABLE_REPEAT:
+    "split the pattern into several rules, or give one of the quantifiers a fixed count",
+};
+
 
 /** Where a hit was found. `combined` hits cross the boundary between the nickname and the body. */
 export type HitScope = "nickname" | "body" | "combined";
@@ -124,6 +145,7 @@ export function compileRuleSet(input: RuleSetInput): CompileRuleSetResult {
   const issues: RuleIssue[] = [];
   if (!SAFE_TOKEN.test(input.version)) issues.push({ code: "VERSION_INVALID", ref: "rule-set" });
   if (input.groups.length === 0) issues.push({ code: "NO_GROUPS", ref: "rule-set" });
+  const normalization = resolveNormalization(input.normalization, issues);
 
   const groupIds = new Set<string>();
   const ruleIds = new Set<string>();
@@ -151,13 +173,27 @@ export function compileRuleSet(input: RuleSetInput): CompileRuleSetResult {
       }
       ruleIds.add(rule.id);
 
-      const compiled = compileRule(rule, group, ruleRef, issues);
+      const compiled = compileRule(rule, group, ruleRef, issues, normalization);
       if (compiled !== null) rules.push(compiled);
     }
   }
 
   if (issues.length > 0) return { ok: false, issues };
-  return { ok: true, ruleSet: { version: input.version, rules } };
+  return { ok: true, ruleSet: { version: input.version, rules, normalization } };
+}
+
+const NORMALIZATION_KEYS: readonly string[] = ["stripCombiningMarks"];
+
+/** Merges the rule set's normalization options onto the defaults. Unknown keys and non-boolean values are refused. */
+function resolveNormalization(input: Partial<NormalizeOptions> | undefined, issues: RuleIssue[]): NormalizeOptions {
+  if (input === undefined) return DEFAULT_NORMALIZE_OPTIONS;
+  const stripCombiningMarks = input.stripCombiningMarks ?? DEFAULT_NORMALIZE_OPTIONS.stripCombiningMarks;
+  const knownKeys = Object.keys(input).every((key) => NORMALIZATION_KEYS.includes(key));
+  if (!knownKeys || typeof stripCombiningMarks !== "boolean") {
+    issues.push({ code: "NORMALIZATION_INVALID", ref: "rule-set" });
+    return DEFAULT_NORMALIZE_OPTIONS;
+  }
+  return { stripCombiningMarks };
 }
 
 /** Routes a message from its hits and review reasons. BLOCK wins. Any other hit or reason routes to REVIEW. */
@@ -195,7 +231,13 @@ function largestDeduction(hits: readonly RuleHit[]): { groupId: string; value: n
   return best;
 }
 
-function compileRule(rule: RuleInput, group: GroupInput, ref: string, issues: RuleIssue[]): CompiledRule | null {
+function compileRule(
+  rule: RuleInput,
+  group: GroupInput,
+  ref: string,
+  issues: RuleIssue[],
+  normalization: NormalizeOptions,
+): CompiledRule | null {
   const before = issues.length;
   if (rule.kind === "reading" && group.action.kind !== "REVIEW") {
     issues.push({ code: "READING_CANNOT_PENALIZE", ref });
@@ -207,10 +249,10 @@ function compileRule(rule: RuleInput, group: GroupInput, ref: string, issues: Ru
     if (admission.ok) {
       matcher = { kind: "regex", regex: admission.regex };
     } else {
-      issues.push({ code: `REGEX_${admission.rejection}`, ref });
+      issues.push(issueOf(`REGEX_${admission.rejection}`, ref, REGEX_HINTS[admission.rejection]));
     }
   } else {
-    const needle = needleOf(rule.kind, rule.text, ref, issues);
+    const needle = needleOf(rule.kind, rule.text, ref, issues, normalization);
     if (needle !== null) matcher = { kind: rule.kind, needle };
   }
 
@@ -218,11 +260,16 @@ function compileRule(rule: RuleInput, group: GroupInput, ref: string, issues: Ru
   return { id: rule.id, groupId: group.id, action: group.action, matcher };
 }
 
+function issueOf(code: RuleIssueCode, ref: string, hint: string | undefined): RuleIssue {
+  return hint === undefined ? { code, ref } : { code, ref, hint };
+}
+
 function needleOf(
   kind: "exact" | "normalized" | "reading",
   text: string,
   ref: string,
   issues: RuleIssue[],
+  normalization: NormalizeOptions,
 ): string | null {
   if (text.length > MAX_PATTERN_LENGTH) {
     issues.push({ code: "PATTERN_TOO_LONG", ref });
@@ -235,7 +282,7 @@ function needleOf(
     }
     return text;
   }
-  const needle = kind === "exact" ? text : normalizeText(text);
+  const needle = kind === "exact" ? text : normalizeText(text, normalization);
   if (needle.length === 0) {
     issues.push({ code: "PATTERN_EMPTY", ref });
     return null;

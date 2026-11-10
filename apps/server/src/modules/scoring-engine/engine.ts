@@ -24,7 +24,7 @@ export function decideVerdictChange(
 ): ScoreDecision {
   if (!config.enabled) return { kind: "no_effect", reason: "SCORING_DISABLED" };
 
-  const action = ruleForClassification(verdict.classification, config);
+  const action = ruleForClassification(verdict.classification, config, verdict.penaltyHits);
   if (action.kind === "none") return { kind: "no_effect", reason: "NOISE" };
   if (action.kind === "reward" && isRewardCoolingDown(state.lastRewardAt, event.receivedAt, config.rewardCooldownMs)) {
     return { kind: "no_effect", reason: "COOLDOWN" };

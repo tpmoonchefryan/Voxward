@@ -27,14 +27,32 @@ describe("ruleForClassification", () => {
   const config = resolveScoringConfig({ enabled: true, complianceReward: 2, violationPenalty: 4 });
 
   it("maps a meaningful allow to a reward", () => {
-    expect(ruleForClassification("ALLOW_MEANINGFUL", config)).toEqual({ kind: "reward", requested: 2 });
+    expect(ruleForClassification("ALLOW_MEANINGFUL", config, [])).toEqual({ kind: "reward", requested: 2 });
   });
 
   it("maps a block to a penalty with a negative request", () => {
-    expect(ruleForClassification("BLOCK", config)).toEqual({ kind: "penalty", requested: -4 });
+    expect(ruleForClassification("BLOCK", config, [])).toEqual({ kind: "penalty", requested: -4 });
   });
 
   it("maps noise to no action", () => {
-    expect(ruleForClassification("ALLOW_NOISE", config)).toEqual({ kind: "none" });
+    expect(ruleForClassification("ALLOW_NOISE", config, [])).toEqual({ kind: "none" });
+  });
+
+  it("takes the largest of the base penalty and the rule deductions for a block (S006 Q22)", () => {
+    const hits = [
+      { code: "group-a", points: 9 },
+      { code: "group-b", points: 2 },
+    ];
+    expect(ruleForClassification("BLOCK", config, hits)).toEqual({ kind: "penalty", requested: -9 });
+    expect(ruleForClassification("BLOCK", config, [{ code: "group-b", points: 2 }])).toEqual({
+      kind: "penalty",
+      requested: -4,
+    });
+  });
+
+  it("ignores rule deductions for an allow", () => {
+    const hits = [{ code: "group-a", points: 9 }];
+    expect(ruleForClassification("ALLOW_MEANINGFUL", config, hits)).toEqual({ kind: "reward", requested: 2 });
+    expect(ruleForClassification("ALLOW_NOISE", config, hits)).toEqual({ kind: "none" });
   });
 });

@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:685ad243ec946eb7f628c93e",
+  "workRevision": 4,
+  "sourceDigest": "831e7e6ee3fb5d5a41fcca81603c3c1300104bbf004f878b1f2de06a27ab7d15",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:685ad243ec946eb7f628c93e",
+    "workRevision": 4,
+    "sourceDigest": "831e7e6ee3fb5d5a41fcca81603c3c1300104bbf004f878b1f2de06a27ab7d15",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:685ad243ec946eb7f628c93e",
+        "externalKey": "VOXWARD-STORY-006",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现统一审核路由与快速通道",
+        "summary": "实现统一审核路由与快速通道；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:4359ebe518ff3530a3338d00",
+        "scopeDigest": "73947136c3f9472be156006331280c96b0612b1cab74fd80192b035a9eac6c15",
+        "relations": {
+          "blockedBy": [
+            "work:2a41e3c54fab2b483ad94c08",
+            "work:c07537a238d62efa3b9779f6",
+            "work:fd4f81864ddb33703517e12f"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:4359ebe518ff3530a3338d00",
+          "supersedes": []
+        },
+        "fieldSha256": "75b4e6d11c9ec98cf620b2f43509f169d611b828f59cb86786351a3f27840e86",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "f0f9549b64d44ba535fe8e14349ae347663f3561885eeb5fd42160a6bf257b57",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "cc64b94024c4d12f20600c51efbaec00321e2347a18dfe42ee561b5539be3801",
+    "design.md": "9d5a2c32ebe887e32164c0d58693baa02ed1326116d236cfa54d98a6e410494c",
+    "tasks.md": "003623beac9cec853deca8f754cd6784caf19e60dd3b515930713426fff2dda1"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "84eaa040c11809e70c833f2959b20311cca59f0e6a870f3b5db3ddccdf189d7b"
+}

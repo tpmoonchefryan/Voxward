@@ -176,3 +176,30 @@ describe("messages that cannot be fully checked", () => {
     expect(verdict).toMatchObject({ route: "REVIEW", reasons: ["NO_RULE_SET"], ruleVersion: null });
   });
 });
+
+describe("composed combining marks through the checker (S006 Q6)", () => {
+  const stripRules: RuleSetInput = {
+    version: "v2",
+    groups: [{ id: "explicit", action: { kind: "BLOCK" }, rules: [{ id: "norm-badword", kind: "normalized", text: "badword" }] }],
+  };
+
+  it("blocks a composed mark that hides a rule, under the default option", async () => {
+    const verdict = await evaluateMessage(input("Viewer", "ba\u0301dword"), environment(compiled(stripRules)));
+    expect(verdict.route).toBe("BLOCK");
+  });
+
+  it("matches a pattern written with a composed letter against the stripped text", async () => {
+    const pattern: RuleSetInput = {
+      version: "v2",
+      groups: [{ id: "explicit", action: { kind: "BLOCK" }, rules: [{ id: "norm-accented", kind: "normalized", text: "b\u00e1dword" }] }],
+    };
+    const verdict = await evaluateMessage(input("Viewer", "badword"), environment(compiled(pattern)));
+    expect(verdict.route).toBe("BLOCK");
+  });
+
+  it("lets the same text through when the rule set turns stripping off", async () => {
+    const off = compiled({ ...stripRules, normalization: { stripCombiningMarks: false } });
+    const verdict = await evaluateMessage(input("Viewer", "ba\u0301dword"), environment(off));
+    expect(verdict.route).toBe("PASS");
+  });
+});

@@ -123,3 +123,46 @@ describe("createScoringEngine.applyVerdict", () => {
     );
   });
 });
+
+describe("createScoringEngine.applyVerdict with rule penalty hits (S006 Q22)", () => {
+  it("applies the largest hit on the actual path, not the base penalty alone", async () => {
+    const ledger = new FakeLedger();
+    const engine = createScoringEngine({ ledger, config: ENABLED });
+    const change = await engine.applyVerdict(
+      makeEvent({ messageId: "msg-hit" }),
+      createVerdict("BLOCK", [
+        { code: "group-a", points: 7 },
+        { code: "group-b", points: 1 },
+      ]),
+    );
+    expect(change.delta).toBe(-7);
+  });
+
+  it("keeps the base penalty when every hit is smaller", async () => {
+    const ledger = new FakeLedger();
+    const engine = createScoringEngine({ ledger, config: ENABLED });
+    const change = await engine.applyVerdict(makeEvent({ messageId: "msg-small" }), createVerdict("BLOCK", [{ code: "g", points: 1 }]));
+    expect(change.delta).toBe(-3);
+  });
+
+  it("refuses a hit with an empty code or a negative or fractional deduction before any storage call", async () => {
+    const ledger = new FakeLedger();
+    const engine = createScoringEngine({ ledger, config: ENABLED });
+    const bad: Array<readonly { code: string; points: number }[]> = [
+      [{ code: "", points: 2 }],
+      [{ code: "g", points: -1 }],
+      [{ code: "g", points: 1.5 }],
+    ];
+    for (const hits of bad) {
+      await expect(engine.applyVerdict(makeEvent(), createVerdict("BLOCK", hits))).rejects.toThrow(ScoringInputError);
+    }
+    expect(ledger.calls).toBe(0);
+  });
+
+  it("refuses a verdict that carries no penalty list at all", async () => {
+    const ledger = new FakeLedger();
+    const engine = createScoringEngine({ ledger, config: ENABLED });
+    const legacy = { contractVersion: "1", classification: "BLOCK", downstream: "BLOCK" } as unknown as Verdict;
+    await expect(engine.applyVerdict(makeEvent(), legacy)).rejects.toThrow(ScoringInputError);
+  });
+});

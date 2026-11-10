@@ -3,6 +3,7 @@ import {
   compileRuleSet,
   decideVerdict,
   type GroupAction,
+  ModerationConfigError,
   type RuleHit,
   type RuleIssue,
   type RuleSetInput,
@@ -133,5 +134,63 @@ describe("verdict routing", () => {
 
   it("routes to review when a review reason exists even without hits", () => {
     expect(decideVerdict([], ["NICKNAME_UNAVAILABLE"]).route).toBe("REVIEW");
+  });
+});
+
+describe("regex rejection hints (S006 Q12)", () => {
+  it("names the top-level rewrite for a grouped alternation, and never echoes the pattern", () => {
+    const issues = issuesOf({
+      version: "v1",
+      groups: [{ id: "g", action: block, rules: [{ id: "alt", kind: "regex", source: "(ab|cd)e" }] }],
+    });
+    expect(issues).toEqual([
+      {
+        code: "REGEX_GROUP_ALTERNATION",
+        ref: "alt",
+        hint: "write the alternatives as top-level branches, such as a|b, or split them into several rules",
+      },
+    ]);
+    expect(JSON.stringify(issues)).not.toContain("(ab|cd)e");
+  });
+
+  it("gives a split-or-fix hint for an unbounded quantifier combined with a variable one", () => {
+    const issues = issuesOf({
+      version: "v1",
+      groups: [{ id: "g", action: block, rules: [{ id: "mixed", kind: "regex", source: "a+b?c" }] }],
+    });
+    expect(issues).toEqual([
+      {
+        code: "REGEX_UNBOUNDED_WITH_VARIABLE_REPEAT",
+        ref: "mixed",
+        hint: "split the pattern into several rules, or give one of the quantifiers a fixed count",
+      },
+    ]);
+  });
+
+  it("puts the hint into the thrown configuration error, next to the code and the rule id", () => {
+    const result = compileRuleSet({
+      version: "v1",
+      groups: [{ id: "g", action: block, rules: [{ id: "alt", kind: "regex", source: "(ab|cd)e" }] }],
+    });
+    if (result.ok) throw new Error("expected a refusal");
+    const error = new ModerationConfigError(result.issues);
+    expect(error.message).toContain("REGEX_GROUP_ALTERNATION at alt (hint: write the alternatives as top-level branches");
+    expect(error.message).not.toContain("(ab|cd)e");
+  });
+});
+
+describe("normalization options in a rule set (S006 Q6)", () => {
+  it("defaults to stripping composed marks and records the value on the compiled set", () => {
+    const result = compileRuleSet({ version: "v1", groups: [{ id: "g", action: block, rules: [{ id: "r", kind: "exact", text: "x" }] }] });
+    if (!result.ok) throw new Error("rule set should compile");
+    expect(result.ruleSet.normalization).toEqual({ stripCombiningMarks: true });
+  });
+
+  it("refuses a non-boolean value and an unknown key, naming only the code", () => {
+    const base = { version: "v1", groups: [{ id: "g", action: block, rules: [{ id: "r", kind: "exact" as const, text: "x" }] }] };
+    const notBoolean = issuesOf({ ...base, normalization: { stripCombiningMarks: "yes" as unknown as boolean } });
+    const unknownKey = issuesOf({ ...base, normalization: { stripMarks: true } as unknown as { stripCombiningMarks: boolean } });
+    expect(notBoolean).toEqual([{ code: "NORMALIZATION_INVALID", ref: "rule-set" }]);
+    expect(unknownKey).toEqual([{ code: "NORMALIZATION_INVALID", ref: "rule-set" }]);
   });
 });
