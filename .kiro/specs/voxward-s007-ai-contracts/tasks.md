@@ -20,11 +20,11 @@ A checked task is local progress only. Formal completion still requires the engi
 按顺序做。每张子单单独 commit，提交信息含子单编号。Q3 放在 SUB-013 的 commit 中。
 
 - [x] 1. 本包 spec：`design.md` 与 `tasks.md` 本地段，提交 `VOXWARD-STORY-007: add spec`
-- [ ] 2. VOXWARD-SUB-013：普通审核、SC 与复盘的版本化 Schema
-  - [ ] 2.1 `packages/contracts/src/ai/batch.ts`：Q3 的 itemId 与映射类型
-  - [ ] 2.2 `src/ai/validation.ts`，以及 `moderation-result.ts`、`sc-result.ts`、`review-result.ts`
-  - [ ] 2.3 `src/ai/index.ts` 与 `src/index.ts` 导出
-  - [ ] 2.4 `packages/contracts/test/ai/`：正例、负例、Q3 类型测试
+- [x] 2. VOXWARD-SUB-013：普通审核、SC 与复盘的版本化 Schema
+  - [x] 2.1 `packages/contracts/src/ai/batch.ts`：Q3 的 itemId 与映射类型
+  - [x] 2.2 `src/ai/validation.ts`，以及 `moderation-result.ts`、`sc-result.ts`、`review-result.ts`
+  - [x] 2.3 `src/ai/index.ts` 与 `src/index.ts` 导出
+  - [x] 2.4 `packages/contracts/test/ai/`：正例、负例、Q3 类型测试
 - [ ] 3. VOXWARD-SUB-014：批内唯一、区间、生成文本检查与错误定位
   - [ ] 3.1 `unicode-span.ts`、`errors.ts`、`output-text-check.ts`
   - [ ] 3.2 `batch-contract.ts` 与模块 `index.ts` 导出
