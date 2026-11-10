@@ -1,0 +1,105 @@
+[
+  {
+    "subject": "VoxWard 并行分支合并后先跑 typecheck：没有文本冲突也会有类型冲突",
+    "summary": "一个分支把 ServerConfig 的字段变成必需（zod 的 default 让推断出的输出类型要求该字段），另一个分支新写的测试按旧形状写配置字面量。两个分支各自 typecheck 为 0，合并没有文本冲突，合并后 pnpm typecheck 失败；vitest run 不查类型，pnpm test 仍然全绿。",
+    "snippet": "集成多个实施分支后，交给验收前至少跑 pnpm typecheck && pnpm test；给 ServerConfig 加必需字段的包要搜索所有配置字面量，包括其它并行分支新增的测试。",
+    "body": "第 2 批候选 0a1da29：SUB-005（d1847ff）在 apps/server/src/config/schema.ts 加了 databaseFile: z.string().min(1).default(...)，并改了 healthz 与 synthetic-flow 两个测试；SUB-008（0cae0e5）在 voxward/s004-rules 分支上新建 apps/server/test/moderation-engine/moderation-engine.test.ts，配置字面量没有 databaseFile。三个分支依次合并，git 没有报冲突，合并后没有跑检查。干净检出上 pnpm typecheck 退出 1（TS2741，第 8 行），pnpm test 212/212 通过。修法是在字面量里补字段，或用 serverConfigSchema.parse 生成配置。这与第 1 批问题清单 Q4（类型级断言只由 typecheck 强制）是同一类风险：只看测试结果会漏掉。",
+    "tags": [
+      "voxward",
+      "batch-integration",
+      "typecheck",
+      "vitest",
+      "zod"
+    ],
+    "sources": {
+      "projectId": "project:f824c7861e6888255132af42",
+      "references": [
+        "apps/server/src/config/schema.ts",
+        "apps/server/test/moderation-engine/moderation-engine.test.ts",
+        ".kiro/specs/voxward-batch2/evidence/acceptance.md"
+      ]
+    }
+  },
+  {
+    "subject": "测 V8 正则最坏耗时：每次用新源串，并分开记录首次与稳态；重叠分支本身就能超线性回溯",
+    "summary": "V8 按「源串加 flags」缓存已编译的正则并共享分层状态：同一源串第一次执行走解释器，之后走机器码，输入约 1000 字符时直接编译。用同一源串连续测量会把后面的首次成本藏起来。准入规则只禁嵌套量词、量词分组、反向引用和多个无界量词还不够：分组里的重叠分支连写多次，再接一个无界量词，94 字符的模式在 50 字符输入上稳态 1.65 s。",
+    "snippet": "测正则耗时时，每次测量换一个输入里没有的尾字符生成新源串，每个源串至少跑两次；准入要同时限制分支重叠（分支数之积）或改用可中断、线性时间的执行方式。",
+    "body": "Node v24.16.0（V8 13.6）。apps/server/src/modules/moderation-engine/rules/bounded-regex.ts 的 admitRegex 接受 (a|a|a) 连写 13 次再接 a*0（94 字符）：findRegexMatches 在 40 个 a 上首次 6493 ms、之后 969 ms；经 createModerationChecker 检查 50 个 a 的正文，首次 11397 ms、稳态 1665 ms，10 ms 定时器期间只触发 1 次。非捕获的 (?:a|a|a) 连写 10 次加 a*0 在 200 字符上首次 9299 ms、稳态 1161 ms；(\\w|a) 连写 12 次加 \\w*! 为 1125 ms 与 111 ms。没有量词的 (?:a|a|a|a) 连写 9 次在 500 字符上首次 892 ms，之后 1.5 ms；同样的源串在 1000 字符上首次只要 3 ms，因为长输入直接编译机器码。rules/engine.ts 的 20 ms 预算只在每条规则开始前检查，同步匹配无法中断。",
+    "tags": [
+      "regex",
+      "redos",
+      "v8",
+      "performance",
+      "moderation"
+    ],
+    "sources": {
+      "projectId": "project:f824c7861e6888255132af42",
+      "references": [
+        "apps/server/src/modules/moderation-engine/rules/bounded-regex.ts",
+        "apps/server/src/modules/moderation-engine/rules/engine.ts",
+        ".kiro/specs/voxward-batch2/evidence/acceptance.md"
+      ]
+    }
+  },
+  {
+    "subject": "kiro-specs check 在工单链写后会报 SPEC_STALE",
+    "summary": "kiro-specs.mjs 的 sourceDigest 包含工单 revision、status、title、summary、content（含 evidence）与上下文记录。工单写入证据或转 done 后摘要必然变化，check 返回 SPEC_STALE；这不说明 spec 内容有误。没有 source.json 的目录返回 SPEC_OWNERSHIP_MISSING。",
+    "snippet": "SPEC_CURRENT 只在链写前有判断意义；已 done 的 Story 报 SPEC_STALE 属预期，要刷新须用 refresh --approved-in minutes:<id>#D<n>。",
+    "body": "依据 .kiro/skills/mana-orchestrate/scripts/kiro-specs.mjs 第 271–324 行（formal.work 含 revision 与 status，fieldSha256 覆盖 fields、scope、content）与 checkSpec（只比较 manifest.sourceDigest 与当前摘要）。2026-11-10 第 2 批验收时：voxward-s001-skeleton 因 STORY-001 从 rev 4、active 变为 rev 6、done 而 STALE；voxward-core-contracts 因 SUB-002 从 rev 3 变为 rev 5、done 而 STALE；voxward-master 只有本地清单 tasks.md，返回 SPEC_OWNERSHIP_MISSING。本批三份 spec 当时为 SPEC_CURRENT（rev 4），链写后同样会变为 STALE。check 不写文件，前后 spec 文件 sha256 不变。",
+    "tags": [
+      "einzbern",
+      "kiro-specs",
+      "spec",
+      "chain-write"
+    ],
+    "sources": {
+      "projectId": "project:f824c7861e6888255132af42",
+      "references": [
+        ".kiro/skills/mana-orchestrate/scripts/kiro-specs.mjs",
+        ".kiro/specs/voxward-s001-skeleton/source.json",
+        ".kiro/specs/voxward-core-contracts/source.json"
+      ]
+    }
+  },
+  {
+    "subject": "YouTube 开发者政策要用 web_fetch full 读全文；删除请求 7 日期限在 III.E.4.g",
+    "summary": "developer-policies 页面用 web_fetch 的 selective 或 truncated 模式只返回前 8000 字符（到第 II 节），读不到第 III 节的具体条款。全文中：III.E.4.g 要求用户请求删除后尽快且在 7 个日历日内删除存储数据，并说明这不影响 YouTube 上的数据；III.D.2.c 是撤销授权的 7 日（经应用）与 30 日（经 Google 安全设置）；III.E.4.c、d 是 30 日存储上限；III.E.4.h 禁止派生数据与指标；III.I.15 禁止提供转出 API 数据的 API 服务；III.L 是派生指标附加政策的适用范围。",
+    "snippet": "核对平台政策用 web_fetch mode=full 并记下页面的 Last updated；只读到片段时标「未核对」，不要下与原文相反的结论。",
+    "body": "2026-11-10 读取 https://developers.google.com/youtube/terms/developer-policies，页面 Last updated 2026-11-06 UTC。提案 docs/proposal/y3_project_proposal.md §11.3 的「最迟七个日历日」对应 III.E.4.g，引用正确；§15.1 引用的 III.E.4.h、§15.2 第 5 问引用的 III.I.15 也都存在。第 2 批材料只读了片段，把 7 日写成仅适用于撤销授权，验收打回（B3）。E.4.g 里的 user 是否包括直播间发言观众，政策没有直接说明，可以列为待平台确认，但不能据此否定 7 日期限。",
+    "tags": [
+      "youtube",
+      "policy",
+      "web-fetch",
+      "data-deletion"
+    ],
+    "sources": {
+      "projectId": "project:f824c7861e6888255132af42",
+      "references": [
+        "docs/proposal/y3_project_proposal.md",
+        "docs/policy/data-processing.md",
+        "docs/policy/status-and-gaps.md"
+      ]
+    }
+  },
+  {
+    "subject": "VoxWard server 的打包参数在接入数据库后不能运行",
+    "summary": "apps/server 的 build 用 esbuild --bundle --format=esm，只外置 fastify 与 zod。入口一旦导入 src/db/**，better-sqlite3 被打进 ESM 包，运行时报 Dynamic require of \"fs\" is not supported。DEFAULT_MIGRATIONS_FOLDER 按 import.meta.url 解析，打包后指向不存在的 dist/migrations。",
+    "snippet": "把数据库接入 main.ts 时，同时外置 better-sqlite3 与 drizzle-orm，迁移目录随产物发布或显式传入，并用 node dist/main.js 实测打开数据库。",
+    "body": "2026-11-10 在候选 0a1da29 上，用 apps/server/package.json 的 build 参数打包一个导入 src/db/client.ts 与 src/db/migrate.ts 的临时入口：打包成功（227.6kb），运行退出 1，错误位于 better-sqlite3 的 lib/database.js。当前 main.ts 不导入 db，dist/main.js 中 better-sqlite3 与 drizzle 出现 0 次，所以现在没有影响。better-sqlite3 13.0.3 自带 prebuilds，pnpm 的 allowBuilds 只放行 esbuild 也能在 Node v24 下加载，不需要 node-gyp。",
+    "tags": [
+      "esbuild",
+      "better-sqlite3",
+      "drizzle",
+      "build",
+      "deployment"
+    ],
+    "sources": {
+      "projectId": "project:f824c7861e6888255132af42",
+      "references": [
+        "apps/server/package.json",
+        "apps/server/src/db/migrate.ts",
+        "apps/server/src/db/client.ts"
+      ]
+    }
+  }
+]

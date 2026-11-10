@@ -1,0 +1,1374 @@
+{
+  "note": "草稿，供主线程链写。targets[].evidence 中每一行只含引擎 evidence 行允许的八个键，可原样放进对应工单 content.evidence；targets 外层与说明字段不是引擎格式，写入前去掉。被打回的 Story 及其子单写出了实际 outcome：同一候选上的 failed 行会阻断该工单转 done，修复后须在新候选上重新取证。",
+  "candidate": {
+    "codeVersion": "0a1da29",
+    "fullSha": "0a1da291114dbb34a531c49409ae83d5ab9432de",
+    "note": "引擎按字符串精确比较 evidence.codeVersion 与完成候选，转 done 时须使用同一字符串 0a1da29。STORY-002 组 35 行全部 satisfied，可直接以 0a1da29 链写；若改用修复后的新候选，须先确认 S002 相关文件与依赖未变，再按复用重新取证。"
+  },
+  "readFrom": {
+    "command": "einzbern.mjs work-show --external-key <KEY>（2026-11-10，8 单 xargs -P 5 并行，退出码均为 0）",
+    "libraryVersion": 20805,
+    "headEventHash": "f300f2db2bb8a558c423f83e1beaf5d48e1029ae5aadb2f1ad78e3ea65ddcb14"
+  },
+  "shapeCheck": "生成脚本对每一行检查：键名与顺序精确为八个、requirement 三键、正整数版本、outcome 与 kind 枚举、actual 非空且不是裸 pass/ok/success、locator 锚点存在于 acceptance.md。没有调用引擎校验，也没有写入引擎。",
+  "counts": {
+    "total": 89,
+    "satisfied": 72,
+    "failed": 17,
+    "unverified": 0,
+    "byTarget": {
+      "VOXWARD-STORY-002": {
+        "total": 11,
+        "satisfied": 11,
+        "failed": 0,
+        "unverified": 0
+      },
+      "VOXWARD-SUB-004": {
+        "total": 12,
+        "satisfied": 12,
+        "failed": 0,
+        "unverified": 0
+      },
+      "VOXWARD-SUB-005": {
+        "total": 12,
+        "satisfied": 12,
+        "failed": 0,
+        "unverified": 0
+      },
+      "VOXWARD-STORY-004": {
+        "total": 11,
+        "satisfied": 6,
+        "failed": 5,
+        "unverified": 0
+      },
+      "VOXWARD-SUB-008": {
+        "total": 12,
+        "satisfied": 6,
+        "failed": 6,
+        "unverified": 0
+      },
+      "VOXWARD-SUB-009": {
+        "total": 12,
+        "satisfied": 8,
+        "failed": 4,
+        "unverified": 0
+      },
+      "VOXWARD-STORY-031": {
+        "total": 9,
+        "satisfied": 8,
+        "failed": 1,
+        "unverified": 0
+      },
+      "VOXWARD-SUB-055": {
+        "total": 10,
+        "satisfied": 9,
+        "failed": 1,
+        "unverified": 0
+      }
+    }
+  },
+  "targets": [
+    {
+      "externalKey": "VOXWARD-STORY-002",
+      "workId": "work:40166e96c2ab9f8c9746a73a",
+      "revision": 4,
+      "evidence": [
+        {
+          "acceptanceId": "VW-S002-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:40166e96c2ab9f8c9746a73a",
+            "requirementId": "VW-S002-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-ac001",
+          "actual": "候选 0a1da29 干净检出（Node v24.16.0、pnpm 12.18.0），安装、构建、测试、check:deps 退出 0（E02、E03、E05、E06）。唯一约束与事务：6 个进程写入同样 40 条平台消息，得 created 40、duplicate 200、failed 0，库内 40 行（E21），实施方 4 进程×25 条用例通过（E05）；写事务以 BEGIN IMMEDIATE 开始即持有写锁，第二个写者 53 ms 后得 SQLITE_BUSY，读者照常读到已提交行（E20）。网络/模型不占事务：事务内返回 Promise 或传入 async 函数都抛 AsyncTransactionError 并回滚，行数 2→2（E20）。迁移与恢复：空文件迁移得 24 张表，连续重跑及重开后 schema 摘要 08c187c4b9396fb9 不变、迁移记录 1 行；重开后重放同样 25 条消息为 0 新增、25 重复；计分幂等键重开后为 duplicate；提高处理代次后旧任务提交被拒 STALE_GENERATION、裁决 0 行（E20）；提交前被 SIGKILL 的写入进程不留半条记录，已提交行保留（E05）。正文存储职责：只有 technical_log_evidence.payload 保存消息内容，channel_events、tasks、verdicts、deliveries 没有正文列；数据字典与实库 24 表、195 列、87 个索引与 CHECK 零差异（E20），drizzle-kit generate 报告 No schema changes（E24）。业务服务重启以写入进程被杀后由新进程重开同一文件验证；main.ts 按 S002 设计 §3、§10 尚未接入数据库，服务级重启随接线 Story 验证。本批 pnpm typecheck 退出 1，唯一错误在 S004 的测试文件（B1），S002 的 db 源码与测试 0 个类型错误（E04）。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S002-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4359ebe518ff3530a3338d00",
+            "requirementId": "VW-E001-R002",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-parent",
+          "actual": "复用 VW-S002-AC001 的同次执行（E05、E20、E21、E24）。唯一约束与事务：6 个进程写入同样 40 条平台消息，得 created 40、duplicate 200、failed 0，库内 40 行（E21），实施方 4 进程×25 条用例通过（E05）；写事务以 BEGIN IMMEDIATE 开始即持有写锁，第二个写者 53 ms 后得 SQLITE_BUSY，读者照常读到已提交行（E20）。网络/模型不占事务：事务内返回 Promise 或传入 async 函数都抛 AsyncTransactionError 并回滚，行数 2→2（E20）。迁移与恢复：空文件迁移得 24 张表，连续重跑及重开后 schema 摘要 08c187c4b9396fb9 不变、迁移记录 1 行；重开后重放同样 25 条消息为 0 新增、25 重复；计分幂等键重开后为 duplicate；提高处理代次后旧任务提交被拒 STALE_GENERATION、裁决 0 行（E20）；提交前被 SIGKILL 的写入进程不留半条记录，已提交行保留（E05）。正文存储职责：只有 technical_log_evidence.payload 保存消息内容，channel_events、tasks、verdicts、deliveries 没有正文列；数据字典与实库 24 表、195 列、87 个索引与 CHECK 零差异（E20），drizzle-kit generate 报告 No schema changes（E24）。S002 的贡献是 SQLite WAL 数据层、初始迁移与短事务仓储。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S002-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-inherit-001",
+          "actual": "候选 0a1da29：expected 前半与 VW-S002-AC001 的同次执行一致（E05、E20、E21、E24）。VW-R-001 部分：栈为 SQLite WAL（better-sqlite3 13.0.3）与 Drizzle（drizzle-orm 0.45.4、drizzle-kit 0.31.11），版本以 pnpm-lock.yaml 为准；check-deps 给 db 层单独分区，模块不能导入 db 层或数据库包（E23 报出模块导入 db、drizzle-orm、better-sqlite3），全仓 58 个文件 0 违规（E06）；数据库是服务器本地文件，databaseFile 默认 data/voxward.sqlite3，部署指向本机持久卷。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S002-INHERIT-003",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-003",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-inherit-003",
+          "actual": "候选 0a1da29 源码审查：S002 只交付数据层，不实现基础检查；rule_versions（版本化 JSON）与 rule_terms（match_kind 限 EXACT、NORMALIZED、CROSS_LANGUAGE_PHONETIC、CONSTRAINED_REGEX）只提供存储，与提案 §4.3 的四类能力对应；check-deps 禁止审核模块导入 db（E23），ModerationEngine 的职责不变。基础检查的实现与验证由 STORY-004（本批 §2）与 EPIC-006 承接，本单未触及。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S002-INHERIT-004",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-004",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-inherit-004",
+          "actual": "候选 0a1da29：db 层只提供原子操作——计分账本 idempotency_key 唯一，重开后同键追加为 duplicate；subject_scores 按 version 做比较交换；主体按频道唯一（subjects_channel_key_uq），分值不跨频道（E20、E05）。钳制、actualDelta、冷却与多规则最大扣分属于 ScoringEngine（S002 设计 §8），本单未触及，由 STORY-005 与 EPIC-006 承接。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S002-INHERIT-005",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-005",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-inherit-005",
+          "actual": "候选 0a1da29 源码审查：subject_nickname_checks 以主体、昵称 SHA-256（CHECK 长度 64，不存昵称原文）、规则版本唯一，并带 expires_at 与 invalidated_at，可以表达提案 §5.3 的失效条件；读音、安全称呼与复盘逻辑本单未触及（读音与缓存由 STORY-004 实现，复盘由 STORY-011 承接）。S004 选择进程内缓存、不使用该表，取舍见 judgment N3。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S002-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-inherit-009",
+          "actual": "候选 0a1da29 源码审查：Technical Log 受控内容只有 MESSAGE_TEXT、TRANSLATION、ITEM_ID_MAP、VALIDATED_JSON 四类（CHECK 固定），VALIDATED_JSON 有 json_valid 约束；24 张表中没有保存完整会话、提示实例或工具轨迹的列（E20 列扫描）；本单不调用 AI，也不声称应用清理等于提供方删除。AI 输入与清理的运行时验证由 EPIC-002 与 EPIC-006 承接。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S002-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-inherit-011",
+          "actual": "候选 0a1da29：expected 前半见 VW-S002-AC001 的同次执行（E20、E21）。VW-R-011 部分：SQLite 以 WAL 运行在服务器本地文件；所有写入经 runShortTransaction 的 IMMEDIATE 短事务；读者在写事务进行时照常读取（E20）；正文只存于 technical_log_evidence；裁决 CHECK 保证内部 BLOCK 对应下游 BLOCK、其余为 ALLOW。队列与 Crew 尚未实现，本单未触及。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S002-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-inherit-012",
+          "actual": "候选 0a1da29：channel_members 的角色 CHECK 限 CHANNEL_OWNER、MODERATOR、DATA_ADMIN，另有 log_access 标志与每频道每账号一条有效授权的部分唯一索引；output_grants 的 scope 限 ROOM_READ_ONLY，每个输出端独占一条凭据引用并带 revoked_at，可撤销；凭据只存 secretref 引用，明文形式被 CHECK 拒绝（E20）；源码、测试与数据字典中没有生产凭据；本单不新增 HTTP 接口（E07 中 /events 为 404）。HTTP/WebSocket 逐次鉴权与待审文本处理由 STORY-003 等承接，本单未触及。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S002-INHERIT-014",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-014",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-inherit-014",
+          "actual": "候选 0a1da29：score_exceptions 是独立表，不依附 list_entries 黑白名单，purpose_code 只能为 SCORING_EXCEPTION_PREFERENCE；每频道每主体至多一条活动例外（部分唯一索引），ScoreExceptionStore.ensureActive 重复调用返回 existing（E05）；行内只有频道、主体、来源请求、目的与时间，不存分数或昵称。例外的审核路径与恢复流程由 STORY-006、STORY-019 与 EPIC-006 承接，本单未触及。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S002-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s002-inherit-017",
+          "actual": "候选 0a1da29：expected 前半见 VW-S002-AC001 的同次执行（E20、E21）。VW-R-017 部分：subjects.processing_generation 配合 bumpGeneration，旧代次任务的裁决提交被拒 STALE_GENERATION（E20）；两类日志、证据与昵称检查都有 expires_at；data_requests 与 data_request_items 逐个目标记录 PENDING、DONE、FAILED，部分失败可续；删除日志条目时证据级联删除（E05 constraints）。清理作业、WAL 与备份处理由 STORY-020 承接，本单未触及。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-004",
+      "workId": "work:2b203d01a32c3d05f404deb6",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB004-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:2b203d01a32c3d05f404deb6",
+            "requirementId": "VW-SUB004-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-ac001",
+          "actual": "候选 0a1da29：迁移生成——drizzle-kit generate 对当前 schema 报告 No schema changes（E24），已提交的 0000_initial.sql 含 24 个 CREATE TABLE、38 个索引；schema 类型检查——tsc 的唯一错误在 S004 的 apps/server/test/moderation-engine/moderation-engine.test.ts:8（B1），apps/server/src/db/** 与 apps/server/test/db/** 0 个错误（E04）；数据字典逐表核对——24 张表的列名、类型、可空性及 87 个索引与 CHECK 名称与实库零差异（E20）。数据组覆盖提案 §10 的七组：频道与权限 5 表、主体与评分 6 表、规则与名单 4 表、消息与任务状态 4 表、数据请求 2 表、Change Log 1 表、Technical Log 2 表；唯一约束包括频道内平台消息去重、账本幂等键、每个事件至多一条当前裁决、每个频道主体至多一条活动例外、任务按事件/类型/版本唯一。凭据只存受控引用：credential_refs.secret_ref 的 CHECK 拒绝 ya29.*、sk-live-*、AIzaSy* 及格式不符的 secretref，接受 secretref:prod_youtube_oauth_01（E20）。正文只在 technical_log_evidence.payload，消息与任务状态表没有正文列（E20）。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB004-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:40166e96c2ab9f8c9746a73a",
+            "requirementId": "VW-S002-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-story",
+          "actual": "复用 VW-SUB004-AC001 的同次执行（E04、E20、E24）：各数据组的表、索引与唯一约束齐备，数据字典与实库零差异；凭据列只存 secretref 引用，明文形式被 CHECK 拒绝；正文只在 technical_log_evidence.payload。本行只证明 SUB-004 承担的数据表、索引与凭据引用部分；VW-S002-AC001 另行判定为 satisfied。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB004-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4359ebe518ff3530a3338d00",
+            "requirementId": "VW-E001-R002",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-parent",
+          "actual": "复用同候选证据（E05、E20、E21、E24）。唯一约束与事务：6 个进程写入同样 40 条平台消息，得 created 40、duplicate 200、failed 0，库内 40 行（E21），实施方 4 进程×25 条用例通过（E05）；写事务以 BEGIN IMMEDIATE 开始即持有写锁，第二个写者 53 ms 后得 SQLITE_BUSY，读者照常读到已提交行（E20）。网络/模型不占事务：事务内返回 Promise 或传入 async 函数都抛 AsyncTransactionError 并回滚，行数 2→2（E20）。迁移与恢复：空文件迁移得 24 张表，连续重跑及重开后 schema 摘要 08c187c4b9396fb9 不变、迁移记录 1 行；重开后重放同样 25 条消息为 0 新增、25 重复；计分幂等键重开后为 duplicate；提高处理代次后旧任务提交被拒 STALE_GENERATION、裁决 0 行（E20）；提交前被 SIGKILL 的写入进程不留半条记录，已提交行保留（E05）。正文存储职责：只有 technical_log_evidence.payload 保存消息内容，channel_events、tasks、verdicts、deliveries 没有正文列；数据字典与实库 24 表、195 列、87 个索引与 CHECK 零差异（E20），drizzle-kit generate 报告 No schema changes（E24）。SUB-004 的贡献是 24 张表的 schema、初始迁移与数据字典。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB004-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-inherit-001",
+          "actual": "候选 0a1da29：expected 前半与 VW-S002-AC001 的同次执行一致（E05、E20、E21、E24）。VW-R-001 部分：栈为 SQLite WAL（better-sqlite3 13.0.3）与 Drizzle（drizzle-orm 0.45.4、drizzle-kit 0.31.11），版本以 pnpm-lock.yaml 为准；check-deps 给 db 层单独分区，模块不能导入 db 层或数据库包（E23 报出模块导入 db、drizzle-orm、better-sqlite3），全仓 58 个文件 0 违规（E06）；数据库是服务器本地文件，databaseFile 默认 data/voxward.sqlite3，部署指向本机持久卷。SUB-004 承担其中的表、索引与约束定义，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB004-INHERIT-003",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-003",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-inherit-003",
+          "actual": "候选 0a1da29 源码审查：S002 只交付数据层，不实现基础检查；rule_versions（版本化 JSON）与 rule_terms（match_kind 限 EXACT、NORMALIZED、CROSS_LANGUAGE_PHONETIC、CONSTRAINED_REGEX）只提供存储，与提案 §4.3 的四类能力对应；check-deps 禁止审核模块导入 db（E23），ModerationEngine 的职责不变。基础检查的实现与验证由 STORY-004（本批 §2）与 EPIC-006 承接，本单未触及。SUB-004 承担其中的表、索引与约束定义，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB004-INHERIT-004",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-004",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-inherit-004",
+          "actual": "候选 0a1da29：db 层只提供原子操作——计分账本 idempotency_key 唯一，重开后同键追加为 duplicate；subject_scores 按 version 做比较交换；主体按频道唯一（subjects_channel_key_uq），分值不跨频道（E20、E05）。钳制、actualDelta、冷却与多规则最大扣分属于 ScoringEngine（S002 设计 §8），本单未触及，由 STORY-005 与 EPIC-006 承接。SUB-004 承担其中的表、索引与约束定义，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB004-INHERIT-005",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-005",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-inherit-005",
+          "actual": "候选 0a1da29 源码审查：subject_nickname_checks 以主体、昵称 SHA-256（CHECK 长度 64，不存昵称原文）、规则版本唯一，并带 expires_at 与 invalidated_at，可以表达提案 §5.3 的失效条件；读音、安全称呼与复盘逻辑本单未触及（读音与缓存由 STORY-004 实现，复盘由 STORY-011 承接）。S004 选择进程内缓存、不使用该表，取舍见 judgment N3。SUB-004 承担其中的表、索引与约束定义，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB004-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-inherit-009",
+          "actual": "候选 0a1da29 源码审查：Technical Log 受控内容只有 MESSAGE_TEXT、TRANSLATION、ITEM_ID_MAP、VALIDATED_JSON 四类（CHECK 固定），VALIDATED_JSON 有 json_valid 约束；24 张表中没有保存完整会话、提示实例或工具轨迹的列（E20 列扫描）；本单不调用 AI，也不声称应用清理等于提供方删除。AI 输入与清理的运行时验证由 EPIC-002 与 EPIC-006 承接。SUB-004 承担其中的表、索引与约束定义，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB004-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-inherit-011",
+          "actual": "候选 0a1da29：expected 前半见 VW-S002-AC001 的同次执行（E20、E21）。VW-R-011 部分：SQLite 以 WAL 运行在服务器本地文件；所有写入经 runShortTransaction 的 IMMEDIATE 短事务；读者在写事务进行时照常读取（E20）；正文只存于 technical_log_evidence；裁决 CHECK 保证内部 BLOCK 对应下游 BLOCK、其余为 ALLOW。队列与 Crew 尚未实现，本单未触及。SUB-004 承担其中的表、索引与约束定义，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB004-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-inherit-012",
+          "actual": "候选 0a1da29：channel_members 的角色 CHECK 限 CHANNEL_OWNER、MODERATOR、DATA_ADMIN，另有 log_access 标志与每频道每账号一条有效授权的部分唯一索引；output_grants 的 scope 限 ROOM_READ_ONLY，每个输出端独占一条凭据引用并带 revoked_at，可撤销；凭据只存 secretref 引用，明文形式被 CHECK 拒绝（E20）；源码、测试与数据字典中没有生产凭据；本单不新增 HTTP 接口（E07 中 /events 为 404）。HTTP/WebSocket 逐次鉴权与待审文本处理由 STORY-003 等承接，本单未触及。SUB-004 承担其中的表、索引与约束定义，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB004-INHERIT-014",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-014",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-inherit-014",
+          "actual": "候选 0a1da29：score_exceptions 是独立表，不依附 list_entries 黑白名单，purpose_code 只能为 SCORING_EXCEPTION_PREFERENCE；每频道每主体至多一条活动例外（部分唯一索引），ScoreExceptionStore.ensureActive 重复调用返回 existing（E05）；行内只有频道、主体、来源请求、目的与时间，不存分数或昵称。例外的审核路径与恢复流程由 STORY-006、STORY-019 与 EPIC-006 承接，本单未触及。SUB-004 承担其中的表、索引与约束定义，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB004-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub004-inherit-017",
+          "actual": "候选 0a1da29：expected 前半见 VW-S002-AC001 的同次执行（E20、E21）。VW-R-017 部分：subjects.processing_generation 配合 bumpGeneration，旧代次任务的裁决提交被拒 STALE_GENERATION（E20）；两类日志、证据与昵称检查都有 expires_at；data_requests 与 data_request_items 逐个目标记录 PENDING、DONE、FAILED，部分失败可续；删除日志条目时证据级联删除（E05 constraints）。清理作业、WAL 与备份处理由 STORY-020 承接，本单未触及。SUB-004 承担其中的表、索引与约束定义，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-005",
+      "workId": "work:629a76e37d006b8a0c087e02",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB005-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:629a76e37d006b8a0c087e02",
+            "requirementId": "VW-SUB005-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-ac001",
+          "actual": "候选 0a1da29 干净检出（Node v24.16.0、pnpm 12.18.0），安装、构建、测试、check:deps 退出 0（E02、E03、E05、E06）。唯一约束与事务：6 个进程写入同样 40 条平台消息，得 created 40、duplicate 200、failed 0，库内 40 行（E21），实施方 4 进程×25 条用例通过（E05）；写事务以 BEGIN IMMEDIATE 开始即持有写锁，第二个写者 53 ms 后得 SQLITE_BUSY，读者照常读到已提交行（E20）。网络/模型不占事务：事务内返回 Promise 或传入 async 函数都抛 AsyncTransactionError 并回滚，行数 2→2（E20）。迁移与恢复：空文件迁移得 24 张表，连续重跑及重开后 schema 摘要 08c187c4b9396fb9 不变、迁移记录 1 行；重开后重放同样 25 条消息为 0 新增、25 重复；计分幂等键重开后为 duplicate；提高处理代次后旧任务提交被拒 STALE_GENERATION、裁决 0 行（E20）；提交前被 SIGKILL 的写入进程不留半条记录，已提交行保留（E05）。WAL：journal_mode=wal，写入后出现 -wal 与 -shm 文件；:memory: 无法启用 WAL 时 openDatabase 抛 DatabaseSetupError WAL_UNAVAILABLE，不降级；synchronous=2（FULL）、foreign_keys=1（E20）。业务服务重启以写入进程被杀后由新进程重开同一文件验证；main.ts 按 S002 设计 §3、§10 尚未接入数据库，服务级重启随接线 Story 验证。同包的 Q2 已修复：listen 失败时两个入口都只输出一行 LISTEN_FAILED 报错并退出 1（E22）。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB005-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:40166e96c2ab9f8c9746a73a",
+            "requirementId": "VW-S002-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-story",
+          "actual": "复用 VW-SUB005-AC001 的同次执行（E05、E20、E21）：唯一约束与 IMMEDIATE 短事务保持一致，异步 work 被拒并回滚，迁移重跑与重开后重放不产生重复事实。本行只证明 SUB-005 承担的「迁移及事务接口」部分；VW-S002-AC001 另行判定为 satisfied。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB005-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4359ebe518ff3530a3338d00",
+            "requirementId": "VW-E001-R002",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-parent",
+          "actual": "复用同候选证据（E05、E20、E21、E24）。唯一约束与事务：6 个进程写入同样 40 条平台消息，得 created 40、duplicate 200、failed 0，库内 40 行（E21），实施方 4 进程×25 条用例通过（E05）；写事务以 BEGIN IMMEDIATE 开始即持有写锁，第二个写者 53 ms 后得 SQLITE_BUSY，读者照常读到已提交行（E20）。网络/模型不占事务：事务内返回 Promise 或传入 async 函数都抛 AsyncTransactionError 并回滚，行数 2→2（E20）。迁移与恢复：空文件迁移得 24 张表，连续重跑及重开后 schema 摘要 08c187c4b9396fb9 不变、迁移记录 1 行；重开后重放同样 25 条消息为 0 新增、25 重复；计分幂等键重开后为 duplicate；提高处理代次后旧任务提交被拒 STALE_GENERATION、裁决 0 行（E20）；提交前被 SIGKILL 的写入进程不留半条记录，已提交行保留（E05）。正文存储职责：只有 technical_log_evidence.payload 保存消息内容，channel_events、tasks、verdicts、deliveries 没有正文列；数据字典与实库 24 表、195 列、87 个索引与 CHECK 零差异（E20），drizzle-kit generate 报告 No schema changes（E24）。SUB-005 的贡献是 WAL 连接、迁移执行器与短事务仓储接口。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB005-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-inherit-001",
+          "actual": "候选 0a1da29：expected 前半与 VW-S002-AC001 的同次执行一致（E05、E20、E21、E24）。VW-R-001 部分：栈为 SQLite WAL（better-sqlite3 13.0.3）与 Drizzle（drizzle-orm 0.45.4、drizzle-kit 0.31.11），版本以 pnpm-lock.yaml 为准；check-deps 给 db 层单独分区，模块不能导入 db 层或数据库包（E23 报出模块导入 db、drizzle-orm、better-sqlite3），全仓 58 个文件 0 违规（E06）；数据库是服务器本地文件，databaseFile 默认 data/voxward.sqlite3，部署指向本机持久卷。SUB-005 承担其中的连接、迁移与事务接口，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB005-INHERIT-003",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-003",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-inherit-003",
+          "actual": "候选 0a1da29 源码审查：S002 只交付数据层，不实现基础检查；rule_versions（版本化 JSON）与 rule_terms（match_kind 限 EXACT、NORMALIZED、CROSS_LANGUAGE_PHONETIC、CONSTRAINED_REGEX）只提供存储，与提案 §4.3 的四类能力对应；check-deps 禁止审核模块导入 db（E23），ModerationEngine 的职责不变。基础检查的实现与验证由 STORY-004（本批 §2）与 EPIC-006 承接，本单未触及。SUB-005 承担其中的连接、迁移与事务接口，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB005-INHERIT-004",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-004",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-inherit-004",
+          "actual": "候选 0a1da29：db 层只提供原子操作——计分账本 idempotency_key 唯一，重开后同键追加为 duplicate；subject_scores 按 version 做比较交换；主体按频道唯一（subjects_channel_key_uq），分值不跨频道（E20、E05）。钳制、actualDelta、冷却与多规则最大扣分属于 ScoringEngine（S002 设计 §8），本单未触及，由 STORY-005 与 EPIC-006 承接。SUB-005 承担其中的连接、迁移与事务接口，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB005-INHERIT-005",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-005",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-inherit-005",
+          "actual": "候选 0a1da29 源码审查：subject_nickname_checks 以主体、昵称 SHA-256（CHECK 长度 64，不存昵称原文）、规则版本唯一，并带 expires_at 与 invalidated_at，可以表达提案 §5.3 的失效条件；读音、安全称呼与复盘逻辑本单未触及（读音与缓存由 STORY-004 实现，复盘由 STORY-011 承接）。S004 选择进程内缓存、不使用该表，取舍见 judgment N3。SUB-005 承担其中的连接、迁移与事务接口，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB005-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-inherit-009",
+          "actual": "候选 0a1da29 源码审查：Technical Log 受控内容只有 MESSAGE_TEXT、TRANSLATION、ITEM_ID_MAP、VALIDATED_JSON 四类（CHECK 固定），VALIDATED_JSON 有 json_valid 约束；24 张表中没有保存完整会话、提示实例或工具轨迹的列（E20 列扫描）；本单不调用 AI，也不声称应用清理等于提供方删除。AI 输入与清理的运行时验证由 EPIC-002 与 EPIC-006 承接。SUB-005 承担其中的连接、迁移与事务接口，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB005-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-inherit-011",
+          "actual": "候选 0a1da29：expected 前半见 VW-S002-AC001 的同次执行（E20、E21）。VW-R-011 部分：SQLite 以 WAL 运行在服务器本地文件；所有写入经 runShortTransaction 的 IMMEDIATE 短事务；读者在写事务进行时照常读取（E20）；正文只存于 technical_log_evidence；裁决 CHECK 保证内部 BLOCK 对应下游 BLOCK、其余为 ALLOW。队列与 Crew 尚未实现，本单未触及。SUB-005 承担其中的连接、迁移与事务接口，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB005-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-inherit-012",
+          "actual": "候选 0a1da29：channel_members 的角色 CHECK 限 CHANNEL_OWNER、MODERATOR、DATA_ADMIN，另有 log_access 标志与每频道每账号一条有效授权的部分唯一索引；output_grants 的 scope 限 ROOM_READ_ONLY，每个输出端独占一条凭据引用并带 revoked_at，可撤销；凭据只存 secretref 引用，明文形式被 CHECK 拒绝（E20）；源码、测试与数据字典中没有生产凭据；本单不新增 HTTP 接口（E07 中 /events 为 404）。HTTP/WebSocket 逐次鉴权与待审文本处理由 STORY-003 等承接，本单未触及。SUB-005 承担其中的连接、迁移与事务接口，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB005-INHERIT-014",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-014",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-inherit-014",
+          "actual": "候选 0a1da29：score_exceptions 是独立表，不依附 list_entries 黑白名单，purpose_code 只能为 SCORING_EXCEPTION_PREFERENCE；每频道每主体至多一条活动例外（部分唯一索引），ScoreExceptionStore.ensureActive 重复调用返回 existing（E05）；行内只有频道、主体、来源请求、目的与时间，不存分数或昵称。例外的审核路径与恢复流程由 STORY-006、STORY-019 与 EPIC-006 承接，本单未触及。SUB-005 承担其中的连接、迁移与事务接口，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB005-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub005-inherit-017",
+          "actual": "候选 0a1da29：expected 前半见 VW-S002-AC001 的同次执行（E20、E21）。VW-R-017 部分：subjects.processing_generation 配合 bumpGeneration，旧代次任务的裁决提交被拒 STALE_GENERATION（E20）；两类日志、证据与昵称检查都有 expires_at；data_requests 与 data_request_items 逐个目标记录 PENDING、DONE、FAILED，部分失败可续；删除日志条目时证据级联删除（E05 constraints）。清理作业、WAL 与备份处理由 STORY-020 承接，本单未触及。SUB-005 承担其中的连接、迁移与事务接口，不改变其它模块职责。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-STORY-004",
+      "workId": "work:2a41e3c54fab2b483ad94c08",
+      "revision": 4,
+      "evidence": [
+        {
+          "acceptanceId": "VW-S004-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:2a41e3c54fab2b483ad94c08",
+            "requirementId": "VW-S004-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-ac001",
+          "actual": "候选 0a1da29（moderation-engine 9 个测试文件 94 项通过，E05；独立探针 E30）：噪声仍检查：正文「wwwwwww badword 8888888」加三个表情为 BLOCK，区间 body[8,15)；模块没有按白名单、噪声或高分跳过检查的分支（白名单路由由 STORY-006 实现）。缓存只节约昵称检查：缓存命中时不再检查昵称，正文命中与跨昵称/正文的组合命中仍被找出；改名、规则版本变化、过期都会重新检查昵称。相似性误报：读音规则只能放在 REVIEW 组，放进 BLOCK 组时编译返回 READING_CANNOT_PENALIZE；「坏的」的读音命中只路由 REVIEW。执行时限不成立（B2，§2.1）：准入接受 94 字符的模式（13 个捕获组 (a|a|a) 加 a*0），经 createModerationChecker 检查正文为 50 个 a 的消息，稳态每条 1665 ms、首条 11397 ms，检查期间 10 ms 定时器只触发 1 次；正文 40 字符时稳态 945 ms（E33）。非捕获的 (?:a|a|a) 写 10 次加 a*0 在 200 字符上稳态 1161 ms，(\\w|a) 写 12 次加 \\w*! 为 111 ms（E34）。20 ms 预算只在每条规则开始前检查，无法中断单条匹配，消息最后才标 RULE_BUDGET_EXCEEDED 并路由 REVIEW。另：本组 SUB-008 新建的测试文件在合并后使 pnpm typecheck 退出 1（B1，E04）。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S004-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4359ebe518ff3530a3338d00",
+            "requirementId": "VW-E001-R004",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-parent",
+          "actual": "复用本单同候选证据（E05、E30、E33、E34）：噪声仍检查：正文「wwwwwww badword 8888888」加三个表情为 BLOCK，区间 body[8,15)；模块没有按白名单、噪声或高分跳过检查的分支（白名单路由由 STORY-006 实现）。缓存只节约昵称检查：缓存命中时不再检查昵称，正文命中与跨昵称/正文的组合命中仍被找出；改名、规则版本变化、过期都会重新检查昵称。相似性误报：读音规则只能放在 REVIEW 组，放进 BLOCK 组时编译返回 READING_CANNOT_PENALIZE；「坏的」的读音命中只路由 REVIEW。执行时限不成立（B2，§2.1）：准入接受 94 字符的模式（13 个捕获组 (a|a|a) 加 a*0），经 createModerationChecker 检查正文为 50 个 a 的消息，稳态每条 1665 ms、首条 11397 ms，检查期间 10 ms 定时器只触发 1 次；正文 40 字符时稳态 945 ms（E33）。非捕获的 (?:a|a|a) 写 10 次加 a*0 在 200 字符上稳态 1161 ms，(\\w|a) 写 12 次加 \\w*! 为 111 ms（E34）。20 ms 预算只在每条规则开始前检查，无法中断单条匹配，消息最后才标 RULE_BUDGET_EXCEEDED 并路由 REVIEW。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S004-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-inherit-001",
+          "actual": "候选 0a1da29：审核模块只导入 @voxward/contracts 与本模块文件（E42 源码 grep），check-deps 58 个文件 0 违规（E06），Q1 对照中模块导入 db 层、drizzle-orm、better-sqlite3 均被报出（E23）；S004 的提交没有改 apps/server/package.json 与 pnpm-lock.yaml，未新增依赖；摘要、计时与编码用全局 crypto.subtle、performance、TextEncoder。createModerationEngine 返回 moduleName ModerationEngine、contractVersion 为字符串 1，结果带回原 correlationId（E30）。没有引入托管、本机代理或供应商对象。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S004-INHERIT-003",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-003",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-inherit-003",
+          "actual": "候选 0a1da29：VW-R-003 的检测能力成立——精确、NFKC 归一化、读音与受约束正则四类规则作用于昵称、正文和两者组合（E30：全角、夹在中间的零宽字符、不可组合的覆盖符、大小写、表情前缀、连字均命中，并映射回原文区间；噪声文本照样检查）。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S004-INHERIT-004",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-004",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-inherit-004",
+          "actual": "候选 0a1da29 源码审查：模块只给出 appliedDeduction（多个 DEDUCT 命中只取最大值一次；E30 中 meh ugh meh 的 hitCount 3、deductionsApplied 1、取 9），不保存也不修改任何分值。钳制、冷却与账本由 ScoringEngine 实现（STORY-005），本单未触及计分。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S004-INHERIT-005",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-005",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-inherit-005",
+          "actual": "候选 0a1da29：VW-R-005 中本 Story 承担的部分成立——昵称缓存以内部主体（频道加 senderRef）、昵称 SHA-256、规则版本与有效期为条件，只缓存完整结果，命中不跳过正文与组合检查；读音先取主播确认的安全称呼，再取完整的本地转写，否则返回 NEEDS_MANUAL_CONFIRMATION，不调用外部服务（E30）。复盘与候选词由 STORY-011 承接。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S004-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-inherit-009",
+          "actual": "候选 0a1da29 源码审查：模块不调用 AI；Transliterator 端口注明实现不得调用外部服务，resolveNicknameReading 只查本地安全称呼端口与本地转写表；不保存会话、提示或工具轨迹。AI 输入范围由 EPIC-002 承接，本单未触及。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S004-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-inherit-011",
+          "actual": "候选 0a1da29 源码审查：模块不写数据库，也不导入 db 层（E06、E23）；进程内缓存只保存昵称摘要、规则版本、到期时间和昵称范围的命中（规则 id 与原文偏移），不保存正文或昵称原文。数据库写入由后续接线 Story 经 S002 的短事务仓储完成，本单未触及。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S004-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-inherit-012",
+          "actual": "候选 0a1da29：规则编译问题只返回代码与组或规则 id，不回显规则文本（ModerationConfigError）；输入超限、规则集缺失、昵称缺失都路由 REVIEW（E30）。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。单进程服务被一条消息阻塞时，同一部署的所有频道一起停顿，频道之间的隔离在可用性上不成立。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S004-INHERIT-014",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-014",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-inherit-014",
+          "actual": "候选 0a1da29 源码审查：模块没有白名单、噪声或高分快通道，也没有记分例外逻辑；每条消息都先经过基础检查，再给出 PASS、REVIEW 或 BLOCK。例外路径由 STORY-006、STORY-019 承接，本单未触及。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S004-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s004-inherit-017",
+          "actual": "候选 0a1da29 源码审查：昵称缓存只在进程内，TTL 1 小时，LRU 上限 10000 项，不落盘，不会在 WAL、备份或日志中留下副本；被预算截断的部分结果不缓存。缓存没有按主体失效的接口，删除请求后条目最多保留到 TTL 到期（judgment N2，交 STORY-019）。删除编排本单未触及。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-008",
+      "workId": "work:74937d5d8ec65e6df57283ff",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB008-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:74937d5d8ec65e6df57283ff",
+            "requirementId": "VW-SUB008-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-ac001",
+          "actual": "候选 0a1da29（rules 与 moderation-engine 测试 67 项通过，E05；独立探针 E30）：噪声仍检查——噪声文本中的 badword 照样 BLOCK，区间 body[8,15)。命中区间准确映射到原文——全角 ｂａｄｗｏｒｄ! 为 body[0,7)，夹有 U+200B、U+200D、U+00AD 的文本为 body[0,10)，开头的零宽字符不计入（body[1,8)），覆盖符 U+0336 为 body[0,8)，表情前缀为 body[2,9)，连字 ﬁne 为 body[0,3)，跨昵称/正文命中为 nickname[0,3) 加 body[0,4)。相似性误报——读音规则只能放 REVIEW 组。执行时限不成立（B2，§2.1）：准入接受 94 字符的模式（13 个捕获组 (a|a|a) 加 a*0），经 createModerationChecker 检查正文为 50 个 a 的消息，稳态每条 1665 ms、首条 11397 ms，检查期间 10 ms 定时器只触发 1 次；正文 40 字符时稳态 945 ms（E33）。非捕获的 (?:a|a|a) 写 10 次加 a*0 在 200 字符上稳态 1161 ms，(\\w|a) 写 12 次加 \\w*! 为 111 ms（E34）。20 ms 预算只在每条规则开始前检查，无法中断单条匹配，消息最后才标 RULE_BUDGET_EXCEEDED 并路由 REVIEW。另：本单新建的 apps/server/test/moderation-engine/moderation-engine.test.ts 在合并后使 pnpm typecheck 退出 1（B1，E04）。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB008-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:2a41e3c54fab2b483ad94c08",
+            "requirementId": "VW-S004-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-story",
+          "actual": "复用 VW-SUB008-AC001 的同次执行（E05、E30、E33、E34）：噪声检查、原文区间映射与读音规则的约束成立；执行时限不成立（B2）：准入接受的 94 字符模式让 50 字符的消息稳态阻塞 1665 ms。本行只证明 SUB-008 承担的部分；VW-S004-AC001 在本候选上同为 failed。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB008-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4359ebe518ff3530a3338d00",
+            "requirementId": "VW-E001-R004",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-parent",
+          "actual": "复用同候选证据（E05、E30、E33、E34）：噪声仍检查：正文「wwwwwww badword 8888888」加三个表情为 BLOCK，区间 body[8,15)；模块没有按白名单、噪声或高分跳过检查的分支（白名单路由由 STORY-006 实现）。缓存只节约昵称检查：缓存命中时不再检查昵称，正文命中与跨昵称/正文的组合命中仍被找出；改名、规则版本变化、过期都会重新检查昵称。相似性误报：读音规则只能放在 REVIEW 组，放进 BLOCK 组时编译返回 READING_CANNOT_PENALIZE；「坏的」的读音命中只路由 REVIEW。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。失败部分在 SUB-008 的正则准入与预算。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB008-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-inherit-001",
+          "actual": "候选 0a1da29：审核模块只导入 @voxward/contracts 与本模块文件（E42 源码 grep），check-deps 58 个文件 0 违规（E06），Q1 对照中模块导入 db 层、drizzle-orm、better-sqlite3 均被报出（E23）；S004 的提交没有改 apps/server/package.json 与 pnpm-lock.yaml，未新增依赖；摘要、计时与编码用全局 crypto.subtle、performance、TextEncoder。createModerationEngine 返回 moduleName ModerationEngine、contractVersion 为字符串 1，结果带回原 correlationId（E30）。没有引入托管、本机代理或供应商对象。SUB-008 承担其中的规则引擎与区间映射。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB008-INHERIT-003",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-003",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-inherit-003",
+          "actual": "候选 0a1da29：VW-R-003 的检测能力成立——精确、NFKC 归一化、读音与受约束正则四类规则作用于昵称、正文和两者组合（E30：全角、夹在中间的零宽字符、不可组合的覆盖符、大小写、表情前缀、连字均命中，并映射回原文区间；噪声文本照样检查）。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。失败部分在本单的正则准入与预算。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB008-INHERIT-004",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-004",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-inherit-004",
+          "actual": "候选 0a1da29 源码审查：模块只给出 appliedDeduction（多个 DEDUCT 命中只取最大值一次；E30 中 meh ugh meh 的 hitCount 3、deductionsApplied 1、取 9），不保存也不修改任何分值。钳制、冷却与账本由 ScoringEngine 实现（STORY-005），本单未触及计分。SUB-008 承担其中的规则引擎与区间映射。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB008-INHERIT-005",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-005",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-inherit-005",
+          "actual": "候选 0a1da29：VW-R-005 中本 Story 承担的部分成立——昵称缓存以内部主体（频道加 senderRef）、昵称 SHA-256、规则版本与有效期为条件，只缓存完整结果，命中不跳过正文与组合检查；读音先取主播确认的安全称呼，再取完整的本地转写，否则返回 NEEDS_MANUAL_CONFIRMATION，不调用外部服务（E30）。复盘与候选词由 STORY-011 承接。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。失败部分在本单的正则准入与预算。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB008-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-inherit-009",
+          "actual": "候选 0a1da29 源码审查：模块不调用 AI；Transliterator 端口注明实现不得调用外部服务，resolveNicknameReading 只查本地安全称呼端口与本地转写表；不保存会话、提示或工具轨迹。AI 输入范围由 EPIC-002 承接，本单未触及。SUB-008 承担其中的规则引擎与区间映射。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB008-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-inherit-011",
+          "actual": "候选 0a1da29 源码审查：模块不写数据库，也不导入 db 层（E06、E23）；进程内缓存只保存昵称摘要、规则版本、到期时间和昵称范围的命中（规则 id 与原文偏移），不保存正文或昵称原文。数据库写入由后续接线 Story 经 S002 的短事务仓储完成，本单未触及。SUB-008 承担其中的规则引擎与区间映射。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB008-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-inherit-012",
+          "actual": "候选 0a1da29：规则编译问题只返回代码与组或规则 id，不回显规则文本（ModerationConfigError）；输入超限、规则集缺失、昵称缺失都路由 REVIEW（E30）。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。单进程服务被一条消息阻塞时，同一部署的所有频道一起停顿，频道之间的隔离在可用性上不成立。失败部分在本单的正则准入与预算。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB008-INHERIT-014",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-014",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-inherit-014",
+          "actual": "候选 0a1da29 源码审查：模块没有白名单、噪声或高分快通道，也没有记分例外逻辑；每条消息都先经过基础检查，再给出 PASS、REVIEW 或 BLOCK。例外路径由 STORY-006、STORY-019 承接，本单未触及。SUB-008 承担其中的规则引擎与区间映射。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB008-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub008-inherit-017",
+          "actual": "候选 0a1da29 源码审查：昵称缓存只在进程内，TTL 1 小时，LRU 上限 10000 项，不落盘，不会在 WAL、备份或日志中留下副本；被预算截断的部分结果不缓存。缓存没有按主体失效的接口，删除请求后条目最多保留到 TTL 到期（judgment N2，交 STORY-019）。删除编排本单未触及。SUB-008 承担其中的规则引擎与区间映射。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-009",
+      "workId": "work:e4a49448ee0fdc7e0b76905b",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB009-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:e4a49448ee0fdc7e0b76905b",
+            "requirementId": "VW-SUB009-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-ac001",
+          "actual": "候选 0a1da29（nickname-cache 3 个测试文件 27 项通过，E05；独立探针 E30）：缓存只节约昵称重复检测——同一主体同一昵称第二次不再检查昵称；此时正文含违规词照样 BLOCK，昵称 bad 加正文 word 的组合命中在缓存命中时仍被找出。改名、规则版本 v1 改为 v2、时钟超过 TTL，三种情况都重新检查昵称；被预算截断的结果不缓存（cache.test）。无法可靠产生读音时：坏人只有部分表项，返回 NEEDS_MANUAL_CONFIRMATION；★★★ 返回 NEEDS_MANUAL_CONFIRMATION；昵称缺失返回 NICKNAME_UNAVAILABLE；有主播确认的称呼时用称呼，转写完整时用转写（E30）。读音不调用外部服务。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB009-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:2a41e3c54fab2b483ad94c08",
+            "requirementId": "VW-S004-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-story",
+          "actual": "复用 VW-SUB009-AC001 的同次执行（E05、E30）：缓存命中只跳过昵称检查，正文与组合检查照常；改名、规则版本变化、过期都使缓存失效；读音无法可靠产生时返回 NEEDS_MANUAL_CONFIRMATION 或 NICKNAME_UNAVAILABLE。本行只证明 SUB-009 承担的缓存与读音部分；VW-S004-AC001 在本候选上为 failed（B2，归属 SUB-008）。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB009-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4359ebe518ff3530a3338d00",
+            "requirementId": "VW-E001-R004",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-parent",
+          "actual": "复用同候选证据（E05、E30、E33）：SUB-009 承担的缓存部分成立——缓存命中不跳过正文与组合检查，改名、规则升级、过期都重新检查。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。失败部分在 SUB-008 的正则准入与预算，不在 SUB-009 的改动内；SUB-008 修复后随 S004 其余行一起复验。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB009-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-inherit-001",
+          "actual": "候选 0a1da29：审核模块只导入 @voxward/contracts 与本模块文件（E42 源码 grep），check-deps 58 个文件 0 违规（E06），Q1 对照中模块导入 db 层、drizzle-orm、better-sqlite3 均被报出（E23）；S004 的提交没有改 apps/server/package.json 与 pnpm-lock.yaml，未新增依赖；摘要、计时与编码用全局 crypto.subtle、performance、TextEncoder。createModerationEngine 返回 moduleName ModerationEngine、contractVersion 为字符串 1，结果带回原 correlationId（E30）。没有引入托管、本机代理或供应商对象。SUB-009 承担其中的昵称缓存与本地读音。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB009-INHERIT-003",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-003",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-inherit-003",
+          "actual": "候选 0a1da29：VW-R-003 的检测能力成立——精确、NFKC 归一化、读音与受约束正则四类规则作用于昵称、正文和两者组合（E30：全角、夹在中间的零宽字符、不可组合的覆盖符、大小写、表情前缀、连字均命中，并映射回原文区间；噪声文本照样检查）。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。本单承担的缓存与读音部分成立；失败部分在 SUB-008 的正则准入与预算，不在 SUB-009 的改动内，SUB-008 修复后随 S004 其余行一起复验。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB009-INHERIT-004",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-004",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-inherit-004",
+          "actual": "候选 0a1da29 源码审查：模块只给出 appliedDeduction（多个 DEDUCT 命中只取最大值一次；E30 中 meh ugh meh 的 hitCount 3、deductionsApplied 1、取 9），不保存也不修改任何分值。钳制、冷却与账本由 ScoringEngine 实现（STORY-005），本单未触及计分。SUB-009 承担其中的昵称缓存与本地读音。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB009-INHERIT-005",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-005",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-inherit-005",
+          "actual": "候选 0a1da29：VW-R-005 中本 Story 承担的部分成立——昵称缓存以内部主体（频道加 senderRef）、昵称 SHA-256、规则版本与有效期为条件，只缓存完整结果，命中不跳过正文与组合检查；读音先取主播确认的安全称呼，再取完整的本地转写，否则返回 NEEDS_MANUAL_CONFIRMATION，不调用外部服务（E30）。复盘与候选词由 STORY-011 承接。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。本单承担的缓存与读音部分成立；失败部分在 SUB-008 的正则准入与预算，不在 SUB-009 的改动内，SUB-008 修复后随 S004 其余行一起复验。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB009-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-inherit-009",
+          "actual": "候选 0a1da29 源码审查：模块不调用 AI；Transliterator 端口注明实现不得调用外部服务，resolveNicknameReading 只查本地安全称呼端口与本地转写表；不保存会话、提示或工具轨迹。AI 输入范围由 EPIC-002 承接，本单未触及。SUB-009 承担其中的昵称缓存与本地读音。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB009-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-inherit-011",
+          "actual": "候选 0a1da29 源码审查：模块不写数据库，也不导入 db 层（E06、E23）；进程内缓存只保存昵称摘要、规则版本、到期时间和昵称范围的命中（规则 id 与原文偏移），不保存正文或昵称原文。数据库写入由后续接线 Story 经 S002 的短事务仓储完成，本单未触及。SUB-009 承担其中的昵称缓存与本地读音。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB009-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-inherit-012",
+          "actual": "候选 0a1da29：规则编译问题只返回代码与组或规则 id，不回显规则文本（ModerationConfigError）；输入超限、规则集缺失、昵称缺失都路由 REVIEW（E30）。同一 expected 的「执行时限有控制」在候选 0a1da29 上不成立（B2，§2.1）：准入接受的 94 字符模式让一条 50 字符的消息在模块入口稳态阻塞 1665 ms、首条 11397 ms（E33），20 ms 预算无法中断。单进程服务被一条消息阻塞时，同一部署的所有频道一起停顿，频道之间的隔离在可用性上不成立。本单承担的缓存与读音部分成立；失败部分在 SUB-008 的正则准入与预算，不在 SUB-009 的改动内，SUB-008 修复后随 S004 其余行一起复验。",
+          "outcome": "failed",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB009-INHERIT-014",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-014",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-inherit-014",
+          "actual": "候选 0a1da29 源码审查：模块没有白名单、噪声或高分快通道，也没有记分例外逻辑；每条消息都先经过基础检查，再给出 PASS、REVIEW 或 BLOCK。例外路径由 STORY-006、STORY-019 承接，本单未触及。SUB-009 承担其中的昵称缓存与本地读音。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB009-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub009-inherit-017",
+          "actual": "候选 0a1da29 源码审查：昵称缓存只在进程内，TTL 1 小时，LRU 上限 10000 项，不落盘，不会在 WAL、备份或日志中留下副本；被预算截断的部分结果不缓存。缓存没有按主体失效的接口，删除请求后条目最多保留到 TTL 到期（judgment N2，交 STORY-019）。删除编排本单未触及。SUB-009 承担其中的昵称缓存与本地读音。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-STORY-031",
+      "workId": "work:c9c3c501eab15d2b2e980f45",
+      "revision": 4,
+      "evidence": [
+        {
+          "acceptanceId": "VW-S031-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:c9c3c501eab15d2b2e980f45",
+            "requirementId": "VW-S031-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s031-ac001",
+          "actual": "候选 0a1da29 材料审查（docs/policy/ 四份，539 行；E40、E41、E42）：不虚构——申请现状逐项照录提案 §15.3（无配额扩展需求、未收到重新审核通知、Cloud 项目编号尚未创建、表单未提交），四份文件中邮箱、绝对路径、密钥样式、9 位以上数字、已批准或已通过审核类表述均为 0 处（E40）。不把内部改名、主播同意或 HMAC 当自动合规——platform-questions.md 第 3 节与 data-processing.md 第 5.4 节明确写出，HMAC 标记是可关联的假名化数据。外部反馈——status-and-gaps.md 第 2 节单列平台答复缺项，platform-questions.md 第 3 节写明反馈未到不阻塞合成数据开发。逐项映射——status-and-gaps.md 第 4 节覆盖提案 §1–§20 与 §20.2 的决策，第 2、3 节与部署检查清单列出需部署或身份信息补齐的项；不提交表单、不接受条款（第 6.2 节）。删除时限一处与政策原文相反（B3），只影响 INHERIT-021 行。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S031-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:38f6781a2897f516ae7c2c81",
+            "requirementId": "VW-E007-R031",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s031-parent",
+          "actual": "复用本单同候选材料证据（E40、E41、E42）。候选 0a1da29 材料审查（docs/policy/ 四份，539 行；E40、E41、E42）：不虚构——申请现状逐项照录提案 §15.3（无配额扩展需求、未收到重新审核通知、Cloud 项目编号尚未创建、表单未提交），四份文件中邮箱、绝对路径、密钥样式、9 位以上数字、已批准或已通过审核类表述均为 0 处（E40）。不把内部改名、主播同意或 HMAC 当自动合规——platform-questions.md 第 3 节与 data-processing.md 第 5.4 节明确写出，HMAC 标记是可关联的假名化数据。外部反馈——status-and-gaps.md 第 2 节单列平台答复缺项，platform-questions.md 第 3 节写明反馈未到不阻塞合成数据开发。逐项映射——status-and-gaps.md 第 4 节覆盖提案 §1–§20 与 §20.2 的决策，第 2、3 节与部署检查清单列出需部署或身份信息补齐的项；不提交表单、不接受条款（第 6.2 节）。删除时限一处与政策原文相反（B3），只影响 INHERIT-021 行。STORY-031 的贡献是政策草案材料。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S031-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s031-inherit-001",
+          "actual": "候选 0a1da29 材料审查：data-processing.md 第 1 节与 self-hosting-responsibilities.md 第 1 节写明远端自托管、不提供官方生产托管、不新开发本机代理、模块按提案 §9.3 的版本化契约划分、栈为 pnpm、TypeScript、Fastify、SQLite WAL、Drizzle ORM、React、Vite；本单只改 docs/policy/，不涉及代码与依赖方向。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S031-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s031-inherit-009",
+          "actual": "候选 0a1da29 材料审查：data-processing.md 第 6 节写明只发送任务说明、规则摘要、临时 itemId、必要正文与有限上下文，不发送平台用户 ID、稳定昵称索引、令牌与账本；临时 ID 是假名化措施，不证明匿名；不长期保存完整提示、对话、思维链与工具轨迹；VoxWard 不留存不等于提供方零留存；Archive、导出或回收区不等于删除。与提案 §8.1、§8.4 一致。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S031-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s031-inherit-011",
+          "actual": "候选 0a1da29 材料审查：data-processing.md 第 1 节写明业务数据在服务器本机卷上的 SQLite，所有写入经单个后端完成，浏览器不直接写数据库，AI 任务只由业务服务经受控接口发起，正文不复制到队列、Crew 或额外日志；与提案 §2.2、§10 一致。材料不涉及事务实现，运行时由 STORY-002 等承接。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S031-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s031-inherit-012",
+          "actual": "候选 0a1da29 材料审查：data-processing.md 第 2 节列出五类角色，服务端对 HTTP、WebSocket、批量操作与后台任务逐次校验频道与角色，不只信任客户端提交的 roomId；第 7 节写明下游使用可撤销的只读凭据，不能读取管理页面；第 6 节写明消息中的命令只作为待审数据；四份文件不含任何凭据（E40）。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S031-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s031-inherit-017",
+          "actual": "候选 0a1da29 材料审查：expected 前半同 VW-S031-AC001。VW-R-017 部分：data-processing.md 第 4 节逐类列出保留建议（7 天内容、30 天元数据标为提案建议，评分期限标为未确认），第 5.2 节写明删除先阻止旧任务，覆盖评分、账本、缓存、两类日志、索引、AI 会话、WAL 与备份，恢复不得复活已删数据，失败如实呈现；与提案 §11.3、§12.3、§12.4 一致。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S031-INHERIT-021",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-021",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s031-inherit-021",
+          "actual": "候选 0a1da29 材料审查：VW-R-021 要求删除与保存期限的材料真实。data-processing.md 第 5.3 节、status-and-gaps.md 第 3 节第 3 项与第 5.3 节第 1 项、platform-questions.md Q3 的缺口、self-hosting-responsibilities.md 第 5 节，把核对结果写成：7 日规定只针对撤销授权，III.E.4 的期限是 30 日，因此不把 7 日写成删除请求的期限，并建议 Owner 考虑修订提案措辞。开发者政策全文（2026-11-06 版，E41）III.E.4.g 规定：用户要求删除存储数据后，须尽快且在 7 个日历日内删除，并须说明删除本地数据不影响 YouTube 上的数据；III.D.2.c 的 7 日（经应用撤销）与 30 日（经 Google 安全设置撤销）是另外两条。提案 §11.3 与 III.E.4.g 一致，材料的结论与原文相反（B3）。其余部分成立：评分用途、告知、保存期限、自托管审核覆盖、受控下游与外部 AI 的材料齐全，Cloud、官网、隐私、演示与身份缺项已列出，未虚构配额扩展或重新审核原因，保留评分核心与真实上线未满足的条件。",
+          "outcome": "failed",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S031-INHERIT-022",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-022",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-s031-inherit-022",
+          "actual": "候选 0a1da29 材料审查：本单没有做演示、英文材料、视频或参赛提交，status-and-gaps.md 第 2 节与第 6.2 节写明这些由 VOXWARD-EPIC-007 承接；公开范围、许可证与条款接受列为待 Owner 决定（第 3 节第 10、13 项），未执行。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-055",
+      "workId": "work:03ed7f149506ee6314265eeb",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB055-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:03ed7f149506ee6314265eeb",
+            "requirementId": "VW-SUB055-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub055-ac001",
+          "actual": "候选 0a1da29 材料审查（docs/policy/ 四份，539 行；E40、E41、E42）：不虚构——申请现状逐项照录提案 §15.3（无配额扩展需求、未收到重新审核通知、Cloud 项目编号尚未创建、表单未提交），四份文件中邮箱、绝对路径、密钥样式、9 位以上数字、已批准或已通过审核类表述均为 0 处（E40）。不把内部改名、主播同意或 HMAC 当自动合规——platform-questions.md 第 3 节与 data-processing.md 第 5.4 节明确写出，HMAC 标记是可关联的假名化数据。外部反馈——status-and-gaps.md 第 2 节单列平台答复缺项，platform-questions.md 第 3 节写明反馈未到不阻塞合成数据开发。逐项映射——status-and-gaps.md 第 4 节覆盖提案 §1–§20 与 §20.2 的决策，第 2、3 节与部署检查清单列出需部署或身份信息补齐的项；不提交表单、不接受条款（第 6.2 节）。删除时限一处与政策原文相反（B3），只影响 INHERIT-021 行。SUB-055 承担 STORY-031 的全部材料。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB055-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:c9c3c501eab15d2b2e980f45",
+            "requirementId": "VW-S031-R001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub055-story",
+          "actual": "复用 VW-SUB055-AC001 的同次审查（E40、E41、E42）：六类平台问题、数据流/角色/授权/评分公式、保留/删除/例外说明、外部 AI 披露、自托管 Cloud/API Client 责任、现状和缺项清单都在 docs/policy/ 四份文件中；不虚构配额、重新审核、Cloud 编号或许可，不把改名、主播同意或 HMAC 当合规，外部反馈单独跟踪且不阻塞合成开发。删除时限一处与政策原文相反（B3），只影响 INHERIT-021 行。本行只证明 SUB-055 承担的部分；VW-S031-AC001 另行判定为 satisfied。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB055-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:38f6781a2897f516ae7c2c81",
+            "requirementId": "VW-E007-R031",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub055-parent",
+          "actual": "复用同候选材料证据（E40、E41、E42）。候选 0a1da29 材料审查（docs/policy/ 四份，539 行；E40、E41、E42）：不虚构——申请现状逐项照录提案 §15.3（无配额扩展需求、未收到重新审核通知、Cloud 项目编号尚未创建、表单未提交），四份文件中邮箱、绝对路径、密钥样式、9 位以上数字、已批准或已通过审核类表述均为 0 处（E40）。不把内部改名、主播同意或 HMAC 当自动合规——platform-questions.md 第 3 节与 data-processing.md 第 5.4 节明确写出，HMAC 标记是可关联的假名化数据。外部反馈——status-and-gaps.md 第 2 节单列平台答复缺项，platform-questions.md 第 3 节写明反馈未到不阻塞合成数据开发。逐项映射——status-and-gaps.md 第 4 节覆盖提案 §1–§20 与 §20.2 的决策，第 2、3 节与部署检查清单列出需部署或身份信息补齐的项；不提交表单、不接受条款（第 6.2 节）。删除时限一处与政策原文相反（B3），只影响 INHERIT-021 行。SUB-055 的贡献是四份政策材料草案。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB055-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub055-inherit-001",
+          "actual": "候选 0a1da29 材料审查：data-processing.md 第 1 节与 self-hosting-responsibilities.md 第 1 节写明远端自托管、不提供官方生产托管、不新开发本机代理、模块按提案 §9.3 的版本化契约划分、栈为 pnpm、TypeScript、Fastify、SQLite WAL、Drizzle ORM、React、Vite；本单只改 docs/policy/，不涉及代码与依赖方向。SUB-055 承担这些材料。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB055-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub055-inherit-009",
+          "actual": "候选 0a1da29 材料审查：data-processing.md 第 6 节写明只发送任务说明、规则摘要、临时 itemId、必要正文与有限上下文，不发送平台用户 ID、稳定昵称索引、令牌与账本；临时 ID 是假名化措施，不证明匿名；不长期保存完整提示、对话、思维链与工具轨迹；VoxWard 不留存不等于提供方零留存；Archive、导出或回收区不等于删除。与提案 §8.1、§8.4 一致。SUB-055 承担这些材料。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB055-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub055-inherit-011",
+          "actual": "候选 0a1da29 材料审查：data-processing.md 第 1 节写明业务数据在服务器本机卷上的 SQLite，所有写入经单个后端完成，浏览器不直接写数据库，AI 任务只由业务服务经受控接口发起，正文不复制到队列、Crew 或额外日志；与提案 §2.2、§10 一致。材料不涉及事务实现，运行时由 STORY-002 等承接。SUB-055 承担这些材料。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB055-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub055-inherit-012",
+          "actual": "候选 0a1da29 材料审查：data-processing.md 第 2 节列出五类角色，服务端对 HTTP、WebSocket、批量操作与后台任务逐次校验频道与角色，不只信任客户端提交的 roomId；第 7 节写明下游使用可撤销的只读凭据，不能读取管理页面；第 6 节写明消息中的命令只作为待审数据；四份文件不含任何凭据（E40）。SUB-055 承担这些材料。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB055-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub055-inherit-017",
+          "actual": "候选 0a1da29 材料审查：expected 前半同 VW-S031-AC001。VW-R-017 部分：data-processing.md 第 4 节逐类列出保留建议（7 天内容、30 天元数据标为提案建议，评分期限标为未确认），第 5.2 节写明删除先阻止旧任务，覆盖评分、账本、缓存、两类日志、索引、AI 会话、WAL 与备份，恢复不得复活已删数据，失败如实呈现；与提案 §11.3、§12.3、§12.4 一致。SUB-055 承担这些材料。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB055-INHERIT-021",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-021",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub055-inherit-021",
+          "actual": "候选 0a1da29 材料审查：VW-R-021 要求删除与保存期限的材料真实。data-processing.md 第 5.3 节、status-and-gaps.md 第 3 节第 3 项与第 5.3 节第 1 项、platform-questions.md Q3 的缺口、self-hosting-responsibilities.md 第 5 节，把核对结果写成：7 日规定只针对撤销授权，III.E.4 的期限是 30 日，因此不把 7 日写成删除请求的期限，并建议 Owner 考虑修订提案措辞。开发者政策全文（2026-11-06 版，E41）III.E.4.g 规定：用户要求删除存储数据后，须尽快且在 7 个日历日内删除，并须说明删除本地数据不影响 YouTube 上的数据；III.D.2.c 的 7 日（经应用撤销）与 30 日（经 Google 安全设置撤销）是另外两条。提案 §11.3 与 III.E.4.g 一致，材料的结论与原文相反（B3）。其余部分成立：评分用途、告知、保存期限、自托管审核覆盖、受控下游与外部 AI 的材料齐全，Cloud、官网、隐私、演示与身份缺项已列出，未虚构配额扩展或重新审核原因，保留评分核心与真实上线未满足的条件。SUB-055 承担这些材料。",
+          "outcome": "failed",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB055-INHERIT-022",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-022",
+            "version": 1
+          },
+          "codeVersion": "0a1da29",
+          "locator": ".kiro/specs/voxward-batch2/evidence/acceptance.md#vw-sub055-inherit-022",
+          "actual": "候选 0a1da29 材料审查：本单没有做演示、英文材料、视频或参赛提交，status-and-gaps.md 第 2 节与第 6.2 节写明这些由 VOXWARD-EPIC-007 承接；公开范围、许可证与条款接受列为待 Owner 决定（第 3 节第 10、13 项），未执行。SUB-055 承担这些材料。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        }
+      ]
+    }
+  ]
+}
