@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Checks the dependency-direction table in .kiro/specs/voxward-s001-skeleton/design.md, section 2.
+// Checks the dependency-direction table in .kiro/specs/voxward-s001-skeleton/design.md, section 2,
+// and its db-layer extension in .kiro/specs/voxward-s002-storage/design.md, section 2.
 import { readFileSync, readdirSync } from "node:fs";
 import { builtinModules } from "node:module";
 import { dirname, join, relative, resolve, sep } from "node:path";
@@ -9,11 +10,16 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SCAN_ROOTS = ["packages/contracts/src", "apps/server/src", "apps/web/src"];
 const CONTRACTS_PACKAGE = "@voxward/contracts";
 
+// Third-party packages the db zone may import. Any other package is a violation for db files.
+const DATABASE_PACKAGES = ["drizzle-orm", "better-sqlite3"];
+
 // Target kinds each source zone may import. Modules are handled separately: same module only.
+// The db zone reaches external packages only through DATABASE_PACKAGES, checked in allowed().
 const ALLOWED_TARGETS = {
   contracts: ["contracts"],
   adapter: ["contracts", "adapter", "external", "builtin"],
-  composition: ["contracts", "module", "adapter", "composition", "external", "builtin"],
+  composition: ["contracts", "module", "adapter", "composition", "db", "external", "builtin"],
+  db: ["contracts", "db", "builtin"],
   web: ["web", "contracts", "external"],
 };
 
@@ -40,6 +46,7 @@ function zoneOf(absolutePath) {
   const moduleMatch = /^apps\/server\/src\/modules\/([^/]+)\//.exec(rel);
   if (moduleMatch !== null) return { kind: "module", name: moduleMatch[1], rel };
   if (rel.startsWith("apps/server/src/adapters/")) return { kind: "adapter", rel };
+  if (rel.startsWith("apps/server/src/db/")) return { kind: "db", rel };
   if (rel === "apps/server/src/app.ts" || rel === "apps/server/src/main.ts" || rel.startsWith("apps/server/src/config/")) {
     return { kind: "composition", rel };
   }
@@ -61,6 +68,9 @@ function allowed(from, target) {
   if (from.kind === "unclassified" || target.kind === "unclassified") return false;
   if (from.kind === "module") {
     return target.kind === "contracts" || (target.kind === "module" && target.name === from.name);
+  }
+  if (from.kind === "db" && target.kind === "external") {
+    return DATABASE_PACKAGES.includes(target.name);
   }
   return (ALLOWED_TARGETS[from.kind] ?? []).includes(target.kind);
 }
