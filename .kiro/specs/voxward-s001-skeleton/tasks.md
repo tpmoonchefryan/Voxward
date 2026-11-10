@@ -19,12 +19,12 @@ A checked task is local progress only. Formal completion still requires the engi
 
 一个包按顺序做，每张 Subtask 做完单独 commit。
 
-- [ ] 1. VOXWARD-SUB-001 工程骨架
-  - [ ] 1.1 根 `package.json`（pnpm@12.18.0）、`pnpm-workspace.yaml`、`tsconfig.base.json`、`vitest.workspace.ts`
-  - [ ] 1.2 `apps/server`：`package.json`、`tsconfig.json`、`src/main.ts`、`src/app.ts`（`/healthz`）
-  - [ ] 1.3 `apps/web`：Vite + React 空壳、`routes.tsx` 自动注册
-  - [ ] 1.4 `packages/contracts`：`package.json`、`tsconfig.json`
-  - [ ] 1.5 自测：`pnpm install`、`pnpm -r build`、`pnpm -r typecheck`、启动冒烟（VW-SUB001-AC001）
+- [x] 1. VOXWARD-SUB-001 工程骨架
+  - [x] 1.1 根 `package.json`（pnpm@12.18.0）、`pnpm-workspace.yaml`、`tsconfig.base.json`、`vitest.workspace.ts`
+  - [x] 1.2 `apps/server`：`package.json`、`tsconfig.json`、`src/main.ts`、`src/app.ts`（`/healthz`）
+  - [x] 1.3 `apps/web`：Vite + React 空壳、`routes.tsx` 自动注册
+  - [x] 1.4 `packages/contracts`：`package.json`、`tsconfig.json`
+  - [x] 1.5 自测：`pnpm install`、`pnpm -r build`、`pnpm -r typecheck`、启动冒烟（VW-SUB001-AC001）
 - [ ] 2. VOXWARD-SUB-002 版本化契约
   - [ ] 2.1 `version.ts`、`events/`、`tasks/`、`decisions/`、`delivery/`、`errors/`
   - [ ] 2.2 `modules/` 九个接口，对照提案 §9.3
