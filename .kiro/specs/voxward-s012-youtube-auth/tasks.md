@@ -20,10 +20,10 @@ A checked task is local progress only. Formal completion still requires the engi
 勾选只表示本地进度，不改变工单状态，也不构成完成证据。
 
 - [x] S1. 写 spec：设计与任务（受管段之外），`kiro-specs.mjs check` 应为 SPEC_CURRENT
-- [ ] S2. 凭据能力区分、部署级客户端配置与回调地址校验：`credentials.ts`（子单 AC：不偷偷提升权限、回调配置错误）
-- [ ] S3. OAuth 客户端与 state 存储：`oauth.ts`（端点、授权参数、授权码交换、刷新、撤销、错误映射）
-- [ ] S4. 状态推导与在线核验映射：`auth-status.ts`（缺失、无效、过期、撤销、权限不足、回调错误）
-- [ ] S5. 路由处理器与持久化装配：`routes.ts`、`index.ts` 导出（授权记录封存、credential_refs 登记、撤销仅在 200 时标记）
-- [ ] S6. 部署指引：`docs/deployment/youtube-credentials.md`（需平台申请的步骤标注未完成）
-- [ ] S7. 测试：`apps/server/test/platform-source/youtube-credentials/`（全部合成数据，不访问网络）
-- [ ] S8. 自测与证据：六项命令、`pnpm dev` 冒烟、`evidence/self-check.md` 随最后一个 commit 提交
+- [x] S2. 凭据能力区分、部署级客户端配置与回调地址校验：`credentials.ts`（子单 AC：不偷偷提升权限、回调配置错误）
+- [x] S3. OAuth 客户端与 state 存储：`oauth.ts`（端点、授权参数、授权码交换、刷新、撤销、错误映射）
+- [x] S4. 状态推导与在线核验映射：`auth-status.ts`（缺失、无效、过期、撤销、权限不足、回调错误）
+- [x] S5. 路由处理器与持久化装配：`routes.ts`、`index.ts` 导出（授权记录封存、credential_refs 登记、撤销仅在 200 时标记）
+- [x] S6. 部署指引：`docs/deployment/youtube-credentials.md`（需平台申请的步骤标注未完成）
+- [x] S7. 测试：`apps/server/test/platform-source/youtube-credentials/`（全部合成数据，不访问网络）
+- [x] S8. 自测与证据：六项命令、`pnpm dev` 冒烟、`evidence/self-check.md` 随最后一个 commit 提交
