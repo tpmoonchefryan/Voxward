@@ -41,11 +41,11 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] Q9.4 提交 `VOXWARD-SUB-006: package the database for the bundled server (Q9)`。
 
 ## SUB-007：凭据隔离、不可信文本渲染边界与运行时 AI 最小权限契约
-- [ ] 7.1 `security/credential-vault.ts`、`redaction.ts`、`untrusted-text.ts` 及测试（`security/`）。
-- [ ] 7.2 `security/leak-scan.test.ts`：扫描认证接口响应、日志样本、模型输入样本与演示配置。
-- [ ] 7.3 `apps/web/src/components/untrusted-text/` 与 `apps/web/test/untrusted-text.test.tsx`，`vitest.workspace.ts` 加入 `apps/web`。
-- [ ] 7.4 `docs/security/runtime-ai-least-privilege.md`，逐条对照提案 §9.2 与 §16。
-- [ ] 7.5 提交 `VOXWARD-SUB-007: ...`。
+- [x] 7.1 `security/credential-vault.ts`、`redaction.ts`、`untrusted-text.ts` 及测试（`security/`）。
+- [x] 7.2 `security/leak-scan.test.ts`：扫描认证接口响应、日志样本、模型输入样本与演示配置。
+- [x] 7.3 `apps/web/src/components/untrusted-text/` 与 `apps/web/test/untrusted-text.test.tsx`，`vitest.workspace.ts` 加入 `apps/web`。
+- [x] 7.4 `docs/security/runtime-ai-least-privilege.md`，逐条对照提案 §9.2 与 §16。
+- [x] 7.5 提交 `VOXWARD-SUB-007: ...`。
 
 ## 自测与证据
 - [ ] 8.1 按顺序运行 `pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`，记录退出码与关键输出到 `evidence/self-check.md`。
