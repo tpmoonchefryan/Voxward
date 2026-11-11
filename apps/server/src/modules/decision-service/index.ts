@@ -17,6 +17,14 @@ export {
   type TermRequest,
 } from "./list-permissions.js";
 export { DEFAULT_DECISION_LIMITS, type DecisionDeps, type DecisionLimits } from "./service.js";
+export {
+  deleteFromPlatform,
+  PLATFORM_DELETE_MAX_ATTEMPTS,
+  type LocalBlockOutcome,
+  type PlatformDeleteDeps,
+  type PlatformDeleteOutcome,
+  type PlatformDeleteRequest,
+} from "./platform-delete.js";
 
 /**
  * Creates the decision module. Without dependencies the module is not wired, and every entry point rejects with the
