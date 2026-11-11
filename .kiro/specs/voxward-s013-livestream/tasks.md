@@ -29,4 +29,4 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] Q20-3 上限处升级再到期的测试与既有期望更新（提交 `VOXWARD-STORY-013 Q20`）
 - [x] VOXWARD-SUB-024：streamList 连接、恢复、结束、去重、补发年龄、退避与配额门（提交 `VOXWARD-SUB-024: ...`）
 - [x] VOXWARD-SUB-025：身份映射、配额监测、版本化业务事件（提交 `VOXWARD-SUB-025: ...`）
-- [ ] 自测：pnpm install、build、typecheck、test、check:deps、kiro-specs check 全部退出 0；启动冒烟；`evidence/self-check.md` 随最后一个提交
+- [x] 自测：pnpm install、build、typecheck、test、check:deps、kiro-specs check 全部退出 0；启动冒烟；`evidence/self-check.md` 随最后一个提交
