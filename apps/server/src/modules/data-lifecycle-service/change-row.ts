@@ -10,6 +10,8 @@ interface RowInput {
   readonly summary: string;
   readonly correlationId: string | null;
   readonly at: Date;
+  /** SUCCEEDED for a complete step, PARTIAL when some storage surfaces failed (S019, SUB-036). */
+  readonly outcome?: "SUCCEEDED" | "PARTIAL";
 }
 
 /**
@@ -25,7 +27,7 @@ function rowOf(deps: DataDeps, input: RowInput): ChangeLogRow {
     actorRef: input.actorRef,
     changeKind: input.changeKind,
     summary: input.summary,
-    outcome: "SUCCEEDED",
+    outcome: input.outcome ?? "SUCCEEDED",
     correlationId: input.correlationId,
     expiresAt: new Date(input.at.getTime() + deps.retentionDays.metadata * DAY_MS).toISOString(),
   };
@@ -34,7 +36,13 @@ function rowOf(deps: DataDeps, input: RowInput): ChangeLogRow {
 /** A data-request event. It has no correlation, because it is not tied to a message chain. */
 export function dataRequestChange(
   deps: DataDeps,
-  input: { readonly channelId: string; readonly actorRef: string; readonly summary: string; readonly at: Date },
+  input: {
+    readonly channelId: string;
+    readonly actorRef: string;
+    readonly summary: string;
+    readonly at: Date;
+    readonly outcome?: "SUCCEEDED" | "PARTIAL";
+  },
 ): ChangeLogRow {
   return rowOf(deps, { ...input, changeKind: "DATA_REQUEST_CHANGED", correlationId: null });
 }

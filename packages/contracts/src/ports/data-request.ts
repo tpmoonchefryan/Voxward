@@ -228,3 +228,32 @@ export interface SubjectCacheHub {
   readonly names: readonly string[];
   forgetSubject(name: string, channelId: string, platformSubjectKey: string, correlationIds: readonly string[]): number;
 }
+
+
+/**
+ * Identifiers that the in-process surfaces need, read before a cleanup run (S019, SUB-036). No content and no score.
+ * `correlationIds` gathers the chains of the subject's events and technical log rows, sorted and without repeats.
+ */
+export interface CleanupFacts {
+  readonly platformSubjectKey: string;
+  readonly correlationIds: readonly string[];
+}
+
+/** One database surface to clean. `at` is the server time that the reset writes into the row. */
+export interface CleanSurfaceInput {
+  readonly channelId: string;
+  readonly subjectId: string;
+  readonly targetKind: DeletionTargetKind;
+  readonly at: string;
+}
+
+/**
+ * Cleaning of the database surfaces of one subject (design §6). Each call is one short transaction and is idempotent:
+ * a surface that is already clean changes nothing. The log surfaces are cleaned through AuditLogPort instead.
+ */
+export interface SubjectCleanupPort {
+  /** Read only. Undefined when the subject does not belong to the channel. */
+  readCleanupFacts(channelId: string, subjectId: string): CleanupFacts | undefined;
+  /** Removes rows of one surface, or resets them. Returns how many rows it removed or reset. */
+  cleanSurface(input: CleanSurfaceInput): number;
+}

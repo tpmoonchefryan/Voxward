@@ -134,3 +134,18 @@ describe("candidate cards: rejection (N5)", () => {
     expect(store.readCard(cardId)?.status).toBe("PENDING_CONFIRMATION");
   });
 });
+
+/* VW-SUB036 Q51: a deletion removes the cards whose source chain belongs to the subject, whatever their status. */
+describe("candidate cards, removal by source chain (Q51)", () => {
+  it("removes the cards of the given chains in the channel, and frees their terms", () => {
+    const { store } = storeWith();
+    store.propose(proposalOf({ term: "phrase-a", sourceCorrelationId: "chain-1" }));
+    store.propose(proposalOf({ term: "phrase-b", sourceCorrelationId: "chain-2" }));
+    store.propose(proposalOf({ term: "phrase-c", sourceCorrelationId: "chain-1", channelId: "channel-other" }));
+
+    expect(store.removeBySourceCorrelations("ch-1", ["chain-1"])).toBe(1);
+    expect(store.listCards("ch-1").map((card) => card.term)).toEqual(["phrase-b"]);
+    expect(store.listCards("channel-other").map((card) => card.term)).toEqual(["phrase-c"]);
+    expect(store.propose(proposalOf({ term: "phrase-a", sourceCorrelationId: "chain-3" }))).not.toBeNull();
+  });
+});

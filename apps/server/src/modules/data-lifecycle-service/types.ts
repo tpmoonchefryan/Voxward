@@ -1,4 +1,4 @@
-import type { AuditLogPort, DataRequestPort, SubjectCacheHub, SubjectReadPort } from "@voxward/contracts";
+import type { AuditLogPort, DataRequestPort, SubjectCacheHub, SubjectCleanupPort, SubjectReadPort } from "@voxward/contracts";
 
 /** The capability that every data-panel route needs. S003 grants it to DATA_ADMIN only (design section 4.1). */
 export const DATA_HANDLE_CAPABILITY = "data.handle";
@@ -13,13 +13,37 @@ export interface DataActor {
   readonly capabilities: ReadonlySet<string>;
 }
 
+/**
+ * Identifiers of log rows that a deletion removed or certified. It has the shape of the audit module's invalidation
+ * event, so the bound bus accepts it. It carries no content and no subject id.
+ */
+export interface DeletedLogsEvent {
+  readonly reason: "DELETED";
+  readonly logIds: readonly string[];
+  readonly correlationIds: readonly string[];
+  readonly changeLogIds: readonly string[];
+}
+
 /** Everything the module needs from its binding. Each port is one short transaction, implemented by the database layer. */
 export interface DataDeps {
   readonly requests: DataRequestPort;
   readonly subjects: SubjectReadPort;
-  readonly logs: Pick<AuditLogPort, "locateSubjectLogs" | "insertChangeLog">;
+  readonly logs: Pick<
+    AuditLogPort,
+    | "locateSubjectLogs"
+    | "insertChangeLog"
+    | "removeSubjectEvidence"
+    | "removeSubjectTechnicalRows"
+    | "certifySubjectChangeLogs"
+  >;
+  /** Database storage surfaces of one subject, cleaned one at a time (S019, SUB-036). */
+  readonly cleanup: SubjectCleanupPort;
   /** In-process surfaces that a deletion must forget (S019, design §5). The binding lists the ones it holds. */
   readonly caches: SubjectCacheHub;
+  /** Publishes the log rows a deletion touched on the bus that the viewer cache listens to (Q35). */
+  readonly publishInvalidation: (event: DeletedLogsEvent) => void;
+  /** The text that replaces the summary of a deleted chain's Change Log rows (the audit module's certificate). */
+  readonly certificateSummary: string;
   /** Identifier source. Required: the module cannot import node:crypto. */
   readonly newId: () => string;
   /** Server clock. Every timestamp the module writes comes from here. */

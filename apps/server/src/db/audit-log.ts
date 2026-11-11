@@ -15,9 +15,9 @@ import type {
   TechnicalStage,
   TechnicalStatus,
 } from "@voxward/contracts";
-import { and, asc, desc, eq, gt, inArray, max, sql, type SQL, type SQLWrapper } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, max, ne, or, sql, type SQL, type SQLWrapper } from "drizzle-orm";
 import type { VoxwardDatabase, VoxwardOrm } from "./client.js";
-import { changeLogs, subjects, technicalLogEvidence, technicalLogs } from "./schema/index.js";
+import { changeLogs, channelEvents, subjects, tasks, technicalLogEvidence, technicalLogs } from "./schema/index.js";
 import { runShortTransaction, type ShortTransaction } from "./transaction.js";
 
 /** A write names a subject that belongs to another channel than the log row. Nothing is written. */
@@ -146,11 +146,47 @@ export function createAuditLogPort(database: VoxwardDatabase): AuditLogPort {
 
     removeSubjectLogs(subjectId, certificateSummary) {
       return runShortTransaction(database, (tx) => {
+        const scope = locateScope(tx, subjectId, certificateSummary);
+        if (scope.logIds.length > 0) {
+          tx.delete(technicalLogEvidence).where(inArray(technicalLogEvidence.logId, [...scope.logIds])).run();
+          tx.delete(technicalLogs).where(inArray(technicalLogs.id, [...scope.logIds])).run();
+        }
+        if (scope.changeLogIds.length > 0) {
+          tx.update(changeLogs)
+            .set({ summary: certificateSummary })
+            .where(inArray(changeLogs.id, [...scope.changeLogIds]))
+            .run();
+        }
+        return scope;
+      });
+    },
+
+    removeSubjectEvidence(subjectId, kind) {
+      return runShortTransaction(database, (tx) => {
+        const scope = locateScope(tx, subjectId);
+        if (scope.logIds.length > 0) {
+          tx.delete(technicalLogEvidence)
+            .where(and(inArray(technicalLogEvidence.logId, [...scope.logIds]), eq(technicalLogEvidence.evidenceKind, kind)))
+            .run();
+        }
+        return { ...scope, changeLogIds: [] };
+      });
+    },
+
+    removeSubjectTechnicalRows(subjectId) {
+      return runShortTransaction(database, (tx) => {
         const scope = locateScope(tx, subjectId);
         if (scope.logIds.length > 0) {
           tx.delete(technicalLogEvidence).where(inArray(technicalLogEvidence.logId, [...scope.logIds])).run();
           tx.delete(technicalLogs).where(inArray(technicalLogs.id, [...scope.logIds])).run();
         }
+        return { ...scope, changeLogIds: [] };
+      });
+    },
+
+    certifySubjectChangeLogs(subjectId, certificateSummary) {
+      return runShortTransaction(database, (tx) => {
+        const scope = locateScope(tx, subjectId, certificateSummary);
         if (scope.changeLogIds.length > 0) {
           tx.update(changeLogs)
             .set({ summary: certificateSummary })
@@ -287,14 +323,28 @@ function attachEvidence(orm: VoxwardOrm, rows: readonly TechnicalLogRecord[]): r
 }
 
 /** Where one subject's controlled content sits. Works on the database or inside a transaction. */
-function locateScope(db: Pick<VoxwardOrm, "select">, subjectId: string): SubjectLogScope {
+function locateScope(db: Pick<VoxwardOrm, "select">, subjectId: string, certificateSummary?: string): SubjectLogScope {
+  const taskIds = db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .innerJoin(channelEvents, eq(tasks.eventId, channelEvents.id))
+    .where(eq(channelEvents.subjectId, subjectId))
+    .all()
+    .map((row) => row.id);
   const logs = db
     .select({ id: technicalLogs.id, correlationId: technicalLogs.correlationId })
     .from(technicalLogs)
-    .where(eq(technicalLogs.subjectId, subjectId))
+    .where(subjectLogRows(subjectId, taskIds))
     .all();
   const logIds = logs.map((log) => log.id);
+  const eventCorrelationIds = db
+    .select({ correlationId: channelEvents.correlationId })
+    .from(channelEvents)
+    .where(eq(channelEvents.subjectId, subjectId))
+    .all()
+    .map((row) => row.correlationId);
   const correlationIds = [...new Set(logs.map((log) => log.correlationId))];
+  const chainIds = [...new Set([...correlationIds, ...eventCorrelationIds])];
   const evidenceIds =
     logIds.length === 0
       ? []
@@ -304,14 +354,39 @@ function locateScope(db: Pick<VoxwardOrm, "select">, subjectId: string): Subject
           .where(inArray(technicalLogEvidence.logId, logIds))
           .all()
           .map((row) => row.id);
-  const changeLogIds =
-    correlationIds.length === 0
+  const changeLogIds = changeLogIdsOn(db, chainIds, subjectId, certificateSummary);
+  return { logIds, correlationIds, evidenceIds, changeLogIds };
+}
+
+/** Technical rows that belong to a subject: its own rows, and the rows of its tasks (S019, SUB-036). */
+function subjectLogRows(subjectId: string, taskIds: readonly string[]): SQL | undefined {
+  const bySubject = eq(technicalLogs.subjectId, subjectId);
+  return taskIds.length === 0 ? bySubject : or(bySubject, inArray(technicalLogs.taskId, [...taskIds]));
+}
+
+/** Change Log rows on the given chains, or on the subject's own `subject:<id>` chain (S014 convention). */
+function changeLogIdsOn(
+  db: Pick<VoxwardOrm, "select">,
+  chainIds: readonly string[],
+  subjectId: string,
+  certificateSummary: string | undefined,
+): string[] {
+  // A row that already holds the certificate has no content left, so a repeat deletion finds nothing new to certify.
+  const notCertified = certificateSummary === undefined ? undefined : ne(changeLogs.summary, certificateSummary);
+  const onChains =
+    chainIds.length === 0
       ? []
       : db
           .select({ id: changeLogs.id })
           .from(changeLogs)
-          .where(inArray(changeLogs.correlationId, correlationIds))
+          .where(and(inArray(changeLogs.correlationId, [...chainIds]), notCertified))
           .all()
           .map((row) => row.id);
-  return { logIds, correlationIds, evidenceIds, changeLogIds };
+  const onSubjectChain = db
+    .select({ id: changeLogs.id })
+    .from(changeLogs)
+    .where(and(eq(changeLogs.correlationId, `subject:${subjectId}`), notCertified))
+    .all()
+    .map((row) => row.id);
+  return [...new Set([...onChains, ...onSubjectChain])];
 }

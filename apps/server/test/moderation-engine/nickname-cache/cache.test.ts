@@ -122,3 +122,18 @@ describe("nickname scope in front of the cache", () => {
     expect(runs).toBe(2);
   });
 });
+
+/* VW-SUB036 Q7: a deletion drops one subject's stored result and no other subject's result. */
+describe("nickname verdict cache, forgetting one subject (Q7)", () => {
+  it("drops the stored result of that subject only, and reports how many it dropped", () => {
+    const cache = createNicknameVerdictCache({ ttlMs: 1000, maxEntries: 10, now: () => 0 });
+    const other: SubjectRef = { channelId: "channel-1", senderRef: "sender-2" };
+    cache.store(subject, "digest-a", "v1", complete);
+    cache.store(other, "digest-a", "v1", complete);
+
+    expect(cache.forget(subject)).toBe(1);
+    expect(cache.lookup(subject, "digest-a", "v1")).toBeUndefined();
+    expect(cache.lookup(other, "digest-a", "v1")).toEqual(complete);
+    expect(cache.forget(subject)).toBe(0);
+  });
+});

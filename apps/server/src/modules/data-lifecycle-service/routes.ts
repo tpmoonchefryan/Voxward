@@ -1,3 +1,4 @@
+import { executeRequest } from "./cleanup-executor.js";
 import { listRequestViews, mayHandleData, FORBIDDEN, recordVerification, registerRequest, requestDetail } from "./requests.js";
 import { subjectPanel } from "./subject-lookup.js";
 import type { DataActor, DataDeps, RouteResponse } from "./types.js";
@@ -17,6 +18,8 @@ export interface DataRoutes {
   getRequest(actor: DataActor, requestId: unknown): RouteResponse;
   createRequest(actor: DataActor, body: unknown): RouteResponse;
   decideVerification(actor: DataActor, requestId: unknown, body: unknown): RouteResponse;
+  /** Starts or resumes a verified request: a deletion is cleaned surface by surface, a RESUME_SCORING lifts the exception. */
+  execute(actor: DataActor, requestId: unknown): RouteResponse;
 }
 
 export function createDataRoutes(deps: DataDeps): DataRoutes {
@@ -53,6 +56,12 @@ export function createDataRoutes(deps: DataDeps): DataRoutes {
       const parsed = parseVerificationBody(body);
       if (id === undefined || !parsed.ok) return BAD_REQUEST;
       return recordVerification(deps, actor, id, parsed.value);
+    },
+
+    execute(actor, requestId) {
+      if (!mayHandleData(actor)) return FORBIDDEN;
+      const id = parseOpaqueId(requestId);
+      return id === undefined ? BAD_REQUEST : executeRequest(deps, actor, id);
     },
   };
 }

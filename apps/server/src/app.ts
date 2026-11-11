@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
-import type { OutputSubscriberRegistry } from "@voxward/contracts";
+import type { OutputSubscriberRegistry, SubjectCacheHub } from "@voxward/contracts";
 import { attachNativeOutput, type ClosedConnection, type NativeOutputTiming } from "./adapters/native-output/socket.js";
 import { dataLifecycleRoutes } from "./auth/data-routes.js";
 import { databaseViewerAccess } from "./auth/log-viewer-access.js";
@@ -10,9 +10,11 @@ import { createAuditLogPort } from "./db/audit-log.js";
 import type { VoxwardDatabase } from "./db/client.js";
 import { createDataRequestPort } from "./db/data-request-store.js";
 import { createApprovedContentPort, createOutputDeliveryPort, createOutputGrantPort } from "./db/output-store.js";
+import { createSubjectCleanupPort } from "./db/subject-cleanup.js";
 import { createSubjectReadPort } from "./db/subject-read.js";
 import { RETENTION_DAYS } from "./modules/audit-store/content-policy.js";
 import {
+  CERTIFICATE_SUMMARY,
   createInvalidationBus,
   createLogViewer,
   createViewerCache,
@@ -38,6 +40,11 @@ export interface AppOptions {
   readonly invalidation?: InvalidationBus;
   /** The native output endpoint and its delivery pump. They start only with a database. */
   readonly nativeOutput?: NativeOutputSettings;
+  /**
+   * The in-process surfaces that a deletion forgets (S019, SUB-036). The binding passes the instances it holds. Omitted,
+   * no surface is held, and a deletion cleans none of them.
+   */
+  readonly subjectCaches?: SubjectCacheHub;
 }
 
 export interface NativeOutputSettings {
@@ -60,8 +67,18 @@ declare module "fastify" {
 }
 
 /** Creates the Fastify instance. Business routes belong to later stories, not to this factory. */
-export function buildApp({ modules, logger = true, logStream, database, invalidation, nativeOutput }: AppOptions): FastifyInstance {
+export function buildApp({
+  modules,
+  logger = true,
+  logStream,
+  database,
+  invalidation,
+  nativeOutput,
+  subjectCaches,
+}: AppOptions): FastifyInstance {
   const app = Fastify({ logger: logger ? loggerOptions(logStream) : false, frameworkErrors: frameworkErrorReply });
+  // One bus for the whole process: the viewer cache and the deletion path both use it (Q35).
+  const bus = invalidation ?? createInvalidationBus();
   app.decorate("modules", modules);
   // Native output consumers of this process. Revoking a grant closes the consumers that the grant opened.
   const outputSubscribers = createSubscriptionRegistry();
@@ -70,7 +87,7 @@ export function buildApp({ modules, logger = true, logStream, database, invalida
   app.get("/healthz", async () => ({ status: "ok" }));
   if (database !== undefined) {
     app.register(authRoutes, { database, onOutputGrantRevoked: (grantId) => outputSubscribers.closeGrant(grantId) });
-    const cache = createViewerCache(invalidation ?? createInvalidationBus());
+    const cache = createViewerCache(bus);
     const viewer = createLogViewer({
       port: createAuditLogPort(database),
       access: databaseViewerAccess(database),
@@ -80,7 +97,8 @@ export function buildApp({ modules, logger = true, logStream, database, invalida
     app.addHook("onClose", async () => {
       cache.dispose();
     });
-    app.register(dataLifecycleRoutes, { database, routes: createDataRoutes(dataDepsFor(database)) });
+    const deps = dataDepsFor(database, bus, subjectCaches ?? NO_SUBJECT_CACHES);
+    app.register(dataLifecycleRoutes, { database, routes: createDataRoutes(deps) });
     startNativeOutput(app, database, outputSubscribers, nativeOutput);
   }
   return app;
@@ -135,17 +153,22 @@ function errorNameOf(error: unknown): string {
   return error instanceof Error ? error.name : "unknown";
 }
 
+/** Holds no in-process surface. A deletion then registers none of them, and the status says so. */
+const NO_SUBJECT_CACHES: SubjectCacheHub = { names: [], forgetSubject: () => 0 };
+
 /** Binds the data module to the database. Each port is one database layer, and the module sees only the ports. */
-function dataDepsFor(database: VoxwardDatabase): DataDeps {
+function dataDepsFor(database: VoxwardDatabase, bus: InvalidationBus, caches: SubjectCacheHub): DataDeps {
   return {
     requests: createDataRequestPort(database),
     subjects: createSubjectReadPort(database),
     logs: createAuditLogPort(database),
+    cleanup: createSubjectCleanupPort(database),
+    caches,
+    publishInvalidation: (event) => bus.publish(event),
+    certificateSummary: CERTIFICATE_SUMMARY,
     newId: () => randomUUID(),
     now: () => new Date(),
     retentionDays: RETENTION_DAYS,
-    // No in-process surface is mounted by this binding yet (S019 design §8). SUB-036 lists the ones it holds.
-    caches: { names: [], forgetSubject: () => 0 },
   };
 }
 

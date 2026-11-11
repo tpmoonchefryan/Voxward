@@ -45,3 +45,33 @@ export function deletionTargets(subjectId: string, cacheNames: readonly string[]
     ...caches,
   ];
 }
+
+
+/**
+ * The cleaning order of the surface kinds (design §6). The executor sorts a request's items by this rank, because the
+ * stored items carry no order and their identifiers are random. The ranks must match the order of `deletionTargets`.
+ */
+const CLEANING_ORDER: readonly DeletionTargetKind[] = [
+  "CHANGE_LOG",
+  "TECHNICAL_LOG_EVIDENCE",
+  "TECHNICAL_LOG",
+  "CANDIDATE_CARD",
+  "SCORE_OUTCOME",
+  "SCORE_LEDGER",
+  "SUBJECT_IDENTITY",
+  "NICKNAME_CHANGE",
+  "SUBJECT_SCORE",
+  "DELIVERY",
+  "VERDICT",
+  "TASK",
+  "CHANNEL_EVENT",
+  "CACHE",
+];
+
+/** A total order over the surfaces of one request. Evidence kinds keep the order of EVIDENCE_SURFACES. */
+export function cleaningRank(target: CleanupTarget): number {
+  const kindRank = CLEANING_ORDER.indexOf(target.targetKind);
+  if (kindRank < 0) return CLEANING_ORDER.length * 10;
+  if (target.targetKind !== "TECHNICAL_LOG_EVIDENCE") return kindRank * 10;
+  return kindRank * 10 + (EVIDENCE_SURFACES as readonly string[]).indexOf(target.targetRef);
+}
