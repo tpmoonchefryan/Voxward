@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:210958ccce508a7abf314287",
+  "workRevision": 4,
+  "sourceDigest": "8ac27e27d8b107ef077c4a1c9dd83f13eb8afe4215c2e7e7540c948b169ec5d3",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:210958ccce508a7abf314287",
+    "workRevision": 4,
+    "sourceDigest": "8ac27e27d8b107ef077c4a1c9dd83f13eb8afe4215c2e7e7540c948b169ec5d3",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:210958ccce508a7abf314287",
+        "externalKey": "VOXWARD-STORY-014",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现人工裁决、冲突提示与计分纠错",
+        "summary": "实现人工裁决、冲突提示与计分纠错；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:16305a483e701a8d6d794886",
+        "scopeDigest": "5e72d59b6858e92e9e196472e6dc92b236fde763d3ad5d6139b45d55249b57e8",
+        "relations": {
+          "blockedBy": [
+            "work:685ad243ec946eb7f628c93e",
+            "work:ac2a8c1b963085361cf086f0",
+            "work:c07537a238d62efa3b9779f6",
+            "work:fd4f81864ddb33703517e12f"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:16305a483e701a8d6d794886",
+          "supersedes": []
+        },
+        "fieldSha256": "2a0d6969c90726be2301302722a49e7e0a5f49dc45740f61d352ce19776fb2b2",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "3a1048c1a6bac741e6d1b170246f44b05df687ec9cadc0ab0e60dae54031ae16",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "3ba127dce3cae89c8a47610e270f8c78d2c30fd537804e49c80ec132f7c16e02",
+    "design.md": "d2de7a8014fedc529dda4fd81beae9cf418d79a078e3f0b44fb41b7d881e7d11",
+    "tasks.md": "bfbc3b2b594f4d437301caee88742852c0fcc82060b90ec8a29851c8e46e2d67"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "5e56c87c0b9fc7825cc24eab5b11b7165cf4e00ebd21d17c254660b7e11986df"
+}
