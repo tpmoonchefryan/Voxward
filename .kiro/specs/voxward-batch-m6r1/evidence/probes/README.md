@@ -1,0 +1,15 @@
+# 第 m6 批第 2 轮（总表第 6 批返工复验：S010、S011、S014）验收探针与原始输出
+
+- 运行方式见 acceptance.md 的「0. 执行记录」。探针只按绝对路径导入检出内的源码与测试夹具，用 `apps/server/node_modules/.bin/tsx` 运行；工作目录要有软链接 `<work>/node_modules/@voxward/contracts` → `<检出>/packages/contracts`。脚本只统计，不以失败退出，看末尾的 `checks N, failures M`。每条 `OK`/`FAIL` 行写的是它检查的契约，`FAIL` 表示候选不满足；`NOTE` 只记录观察。数据全部是合成的。
+- 对照副本：`git -C <检出> archive 40223e2 apps/server/src apps/server/test docs/data-dictionary.md | tar -x -C <work>/old/40223e2`，再 `ln -s <检出>/apps/server/node_modules <work>/old/40223e2/apps/server/node_modules`。把 `<work>/old/40223e2` 当作 `<检出>` 传入。
+- 本轮的探针是上一轮 `.kiro/specs/voxward-batch-m6/evidence/probes/` 的副本加改动。上一轮的原件在新接口上不能直接用（原因见 acceptance.md §1.1），改动只限下列各处，其余逐字相同：
+  - `probe-m6r1-s010.mts`（E50，来自 `probe-m6-s010.mts`）：§A–§C、§E1–§E3 不变。§D 用夹具 `reportingAdapter` 给真实适配器换上一份不含等级的报告、选择不带 reasoning（上一轮传的 `capabilities` 依赖已被删除），并加 D2（CLI 收到的内容不含 correlationId 与翻译字段）。§E4 不再传 `capabilities`，并断言问题码为 `CAPABILITY_NOT_REPORTED`。§F 改为期望通过：F1–F2 是上一轮的复现输入（选择改为不带 reasoning），F3 运行中切换 B→A，F4 不能应用的等级明确失败且不启动进程，F5–F6 门槛读运行端口的报告，F7–F8 精翻开的选择与门槛，F9 不带 selection 的实时路径。对照副本只跑 `parse`（§A、§B）。
+  - `probe-m6r1-s011.mts`（E60，来自 `probe-m6-s011.mts`）：协调器包装器透传 `takeBatch` 的参数并记录请求的车道（上一轮的包装器丢掉参数，修复后仍会让运行器取到实时批次）。§A2 改为期望通过且只接受 QUEUED，另加 PAID 任务；新增 A2b（执行器结算实时与付费任务）、A3 加「消息为 SETTLED」、A4（上限 2 时的共用槽位与后台上限）、A5（上限 1 时后台暂停）、A6 与 A7（观察：跨调用方的派工顺序；两个复盘运行器共用一个协调器）。§F 新增 F8–F10（驳回与 `list.edit`，真实角色矩阵）。§G 改为期望通过，并检查错误码、任务去向（PENDING_REVIEW）、分数、复核记录与候选词提议都为空；BLOCK 条目带一个候选词；新增 G6（合法的乱序输出）。§B–§E 不变。
+  - `probe-m6r1-s011-heap.mts`（E61，来自 `probe-m6-s011-heap.mts`）：要加 `NODE_OPTIONS=--expose-gc`。H1–H3 不变，新增 H4：取消、到期两组的运行器条目在下一次 `runCycle` 后为 0。
+  - `probe-m6r1-s011-order.mts`（E62，本轮新增）：真实协调器与假时钟，上限 4、每批 1 条、每批占槽 1 s，8 条 REALTIME 与 8 条 BACKGROUND 同时排队，比较三种调用顺序（单一调用方 `takeBatch()`、执行器先取、复盘运行器先取）与两种实时截止（2.5 s、10 s）。只输出读数。
+  - `probe-m6r1-s014.mts` 与 `probe-m6r1-s014-race-child.mts`（E70，来自 `probe-m6-s014*.mts`）：§L、§A、§B、§F、§G、§H、§M 不变。§C5 由观察改为检查 Q49 的标记，新增 C5b（不触限时不标记）与 C6（观察：只在重放时触及上限的情形）。§D 改为期望通过（接受契约里的 `intent: null`，并检查新投递行为 EXPIRED），新增 D2（显式补发被到达时限拒绝）、D3（时限内改判放行后的显式补发）、D4（改判为拦截）。§E3 由观察改为检查 `ALREADY_SENT`。
+- S009 回归（E30–E34）：`probe-s009.mts`、`probe-s009-extra.mts`、`probe-s009-order.mts`、`probe-s009-b6.mts` 是第 6 批 `.kiro/specs/voxward-batch6/evidence/probes/` 的原样副本（sha256 见 `logs/s009/probe-sha.txt`），参数同第 6 批；E30、E34 要加 `NODE_OPTIONS=--expose-gc`。
+- `net/preload.mjs` 经 `NODE_OPTIONS=--import` 加载：非回环连接、DNS 与 fetch 一律拒绝；`PROBE_DENY_PORTS` 列出的本机端口（运行前已在监听的端口，见 `logs/e08/deny-ports.txt`）即使走回环也拒绝。`net/selfcheck.mjs` 是它的自检。`shim/` 放在 PATH 最前，替换 `kiro-cli`、`kirocrew`、`kiro`，每次调用都记录并以 97 退出。三者沿用上一轮。
+- `extract-cards.cjs`（E01）：从 9 份 work-show 输出提取验收行，与上一轮的 `cards-m6.json` 逐项比较，写出 `out-src/cards-m6r1.json`。
+- `out-src/` 是生成 acceptance.md 与 evidence-records.json 的片段与脚本：`node out-src/build-out.mjs <out>`，读取同目录的 `cards-m6r1.json`、`rows.mjs`（每行判定与依据）与 `acc-*.md`。脚本做格式自检，有问题时退出 1 且不写文件。
+- `logs/`：`e01/` 为工单读数，`gates/` 为 E02–E06（含逐条退出码与锁文件 sha256），`e07/` 为冒烟，`e08/` 为拦截下的全量测试与汇总后的拦截记录（`net.jsonl`），`e09/` 为负面对照，`e10/` 为三份 spec check 与受管段比较（`managed.txt`），`e11/` 为静态核对，`s009/` 为 E30–E34，`probes/` 为 E50、E60、E61、E62、E70 在候选与对照上的输出。

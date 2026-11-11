@@ -1,0 +1,9 @@
+VOXWARD-STORY-010 5 21044 59a73dbf78a125b05ea83d24938e5ad6fd6a0adbcb3d3f5b42a4758be34dab35 evidence 11 ["5482e5d"] {"failed":4,"satisfied":7}
+VOXWARD-SUB-019 4 21044 59a73dbf78a125b05ea83d24938e5ad6fd6a0adbcb3d3f5b42a4758be34dab35 evidence 12 ["5482e5d"] {"satisfied":9,"failed":3}
+VOXWARD-SUB-020 4 21044 59a73dbf78a125b05ea83d24938e5ad6fd6a0adbcb3d3f5b42a4758be34dab35 evidence 12 ["5482e5d"] {"satisfied":9,"failed":3}
+VOXWARD-STORY-011 5 21044 59a73dbf78a125b05ea83d24938e5ad6fd6a0adbcb3d3f5b42a4758be34dab35 evidence 11 ["5482e5d"] {"satisfied":8,"failed":3}
+VOXWARD-SUB-021 4 21044 59a73dbf78a125b05ea83d24938e5ad6fd6a0adbcb3d3f5b42a4758be34dab35 evidence 12 ["5482e5d"] {"satisfied":9,"failed":3}
+VOXWARD-SUB-022 4 21044 59a73dbf78a125b05ea83d24938e5ad6fd6a0adbcb3d3f5b42a4758be34dab35 evidence 12 ["5482e5d"] {"satisfied":11,"failed":1}
+VOXWARD-STORY-014 5 21044 59a73dbf78a125b05ea83d24938e5ad6fd6a0adbcb3d3f5b42a4758be34dab35 evidence 9 ["5482e5d"] {"failed":3,"satisfied":6}
+VOXWARD-SUB-026 4 21044 59a73dbf78a125b05ea83d24938e5ad6fd6a0adbcb3d3f5b42a4758be34dab35 evidence 10 ["5482e5d"] {"satisfied":8,"failed":2}
+VOXWARD-SUB-027 4 21044 59a73dbf78a125b05ea83d24938e5ad6fd6a0adbcb3d3f5b42a4758be34dab35 evidence 10 ["5482e5d"] {"failed":4,"satisfied":6}

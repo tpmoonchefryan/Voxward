@@ -1,0 +1,44 @@
+== voxward-s010-sc-translation
+design.md
+evidence
+requirements.md
+source.json
+tasks.md
+ 2 files changed, 119 insertions(+), 5 deletions(-)
+  design.md managed 1-53: 5482e5d c776a05a9a6a fff691e c776a05a9a6a same
+  requirements.md managed 1-142: 5482e5d 4f3f58c0ec16 fff691e 4f3f58c0ec16 same
+  tasks.md managed 1-16: 5482e5d 90f546ce922b fff691e 90f546ce922b same
+  source.json whole: same
+== voxward-s011-review
+design.md
+evidence
+requirements.md
+source.json
+tasks.md
+ 2 files changed, 91 insertions(+), 9 deletions(-)
+  design.md managed 1-53: 5482e5d 21ddc90f22e6 fff691e 21ddc90f22e6 same
+  requirements.md managed 1-142: 5482e5d ffaa6f12435f fff691e ffaa6f12435f same
+  tasks.md managed 1-16: 5482e5d c16cee941b5b fff691e c16cee941b5b same
+  source.json whole: same
+== voxward-s014-decision
+design.md
+evidence
+requirements.md
+source.json
+tasks.md
+ 2 files changed, 127 insertions(+), 8 deletions(-)
+  design.md managed 1-53: 5482e5d e6965ced5576 fff691e e6965ced5576 same
+  requirements.md managed 1-135: 5482e5d 713bec25a41b fff691e 713bec25a41b same
+  tasks.md managed 1-16: 5482e5d a1887bc4f560 fff691e a1887bc4f560 same
+  source.json whole: same
+== voxward-s009-scheduler
+design.md
+evidence
+requirements.md
+source.json
+tasks.md
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+  design.md managed 1-53: 5482e5d 9c2574dc092d fff691e 9c2574dc092d same
+  requirements.md managed 1-142: 5482e5d 9f9ef4a0b6ce fff691e 9f9ef4a0b6ce same
+  tasks.md managed 1-16: 5482e5d 81d0e2630b74 fff691e 81d0e2630b74 same
+  source.json whole: same

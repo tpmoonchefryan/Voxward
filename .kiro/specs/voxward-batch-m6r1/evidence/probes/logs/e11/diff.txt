@@ -1,0 +1,60 @@
+== log 5482e5d..fff691e
+fff691e Merge voxward/s014-fix (batch m6 rework1)
+a6fa621 Merge voxward/s011-fix (batch m6 rework1)
+4610a1d Merge voxward/s010-fix (batch m6 rework1)
+c1768f8 VOXWARD-STORY-011 rework1: state what the G1–G4 check shows in the evidence
+269b214 VOXWARD-STORY-011 N5: update the candidate-card comment to list.edit and reject
+c8a3a03 VOXWARD-STORY-011 rework1: spec notes and self-check evidence
+f6e3d6f VOXWARD-SUB-027 N4 Q49, Q53: mark a correction that a later entry at a limit touched; align S014 design; rework1 evidence
+94ee8a0 VOXWARD-SUB-020 B1: S010 design §0, §3.1, §3.3 and rework 1 self-check
+c370928 VOXWARD-STORY-011 N5: reject candidate terms, confirm with list.edit
+df6abcf VOXWARD-SUB-020 B1: run SC safety review with the chosen model and reasoning
+999d423 VOXWARD-SUB-021 B4: keep no message text in the review runner
+0d72f14 VOXWARD-SUB-027 B5: review that releases a message sends nothing; resend refuses SENT
+b2a54a0 VOXWARD-SUB-021 B3: fail the whole review batch on a bad item set
+8ea87fc VOXWARD-SUB-021 B2: take batches by lane
+763bc39 Master: m6 rejected; Q46-Q54; rework briefs
+0f7fcd0 Batch m6 acceptance evidence (S010/S011/S014 rejected B1-B5)
+945f5b4 Master: batch m6 acceptance brief
+== shortstat all
+ 116 files changed, 10598 insertions(+), 119 deletions(-)
+== shortstat outside .kiro
+ 34 files changed, 1161 insertions(+), 93 deletions(-)
+== shortstat 763bc39..fff691e outside .kiro
+ 34 files changed, 1161 insertions(+), 93 deletions(-)
+== code 5482e5d vs 763bc39 (apps packages scripts docs)
+== name-status outside .kiro
+M	apps/server/src/adapters/kiro-cli/errors.ts
+M	apps/server/src/adapters/kiro-cli/provider.ts
+M	apps/server/src/db/decision-store.ts
+M	apps/server/src/modules/decision-service/compensation.ts
+M	apps/server/src/modules/decision-service/routes.ts
+M	apps/server/src/modules/inference-provider/sc-translation/pipeline.ts
+M	apps/server/src/modules/moderation-engine/candidates/routes.ts
+M	apps/server/src/modules/moderation-engine/candidates/store.ts
+M	apps/server/src/modules/moderation-engine/index.ts
+A	apps/server/src/modules/moderation-engine/review/membership.ts
+M	apps/server/src/modules/moderation-engine/review/ports.ts
+M	apps/server/src/modules/moderation-engine/review/runner.ts
+M	apps/server/src/modules/task-coordinator/coordinator.ts
+M	apps/server/src/modules/task-coordinator/crew/adapter.ts
+M	apps/server/src/modules/task-coordinator/index.ts
+A	apps/server/test/adapters/kiro-cli/selection.test.ts
+A	apps/server/test/decision-service/compensation/correction-limits.test.ts
+M	apps/server/test/decision-service/compensation/overturn.test.ts
+M	apps/server/test/decision-service/compensation/resend.test.ts
+M	apps/server/test/inference-provider/sc-translation/fixtures.ts
+M	apps/server/test/inference-provider/sc-translation/pipeline.test.ts
+M	apps/server/test/inference-provider/sc-translation/safety-only.test.ts
+A	apps/server/test/inference-provider/sc-translation/selection.test.ts
+M	apps/server/test/moderation-engine/candidates/routes.test.ts
+M	apps/server/test/moderation-engine/candidates/store.test.ts
+M	apps/server/test/moderation-engine/review/fixtures.ts
+A	apps/server/test/moderation-engine/review/runner-batch-contract.test.ts
+A	apps/server/test/moderation-engine/review/runner-entries.test.ts
+M	apps/server/test/moderation-engine/review/runner.test.ts
+M	apps/server/test/task-coordinator/crew/adapter.test.ts
+A	apps/server/test/task-coordinator/lanes.test.ts
+M	packages/contracts/src/modules/decision-service.ts
+M	packages/contracts/src/modules/inference-provider.ts
+M	packages/contracts/src/ports/decision-store.ts

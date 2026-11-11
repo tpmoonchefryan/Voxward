@@ -1,0 +1,14 @@
+
+## [40223e2] A stream items to ChannelEvent body (Q40; G10 member milestone text)
+OK   A1 textMessageEvent body is messageText :: {"text":"hello","body":"hello"}
+FAIL A2 superChatEvent with a comment: body is superChatDetails.userComment (Q40) :: {"text":null,"body":""}
+OK   A3 superChatEvent without a comment: body is empty, no text invented :: {"text":null,"body":""}
+FAIL A4 memberMilestoneChatEvent with userComment: the viewer's text reaches the body (G10; proposal §4.2 step 3, §1.2) :: {"text":null,"body":""}
+NOTE A5 superStickerEvent body :: {"text":null,"body":""}
+
+## [40223e2] B generated-text rule hits in an SC batch (Q23)
+NOTE B0 validateScBatch result :: {"ok":false,"errors":["GENERATED_TEXT_REJECTED/items/0/translatedText","GENERATED_TEXT_REJECTED/items/1/translatedText"]}
+FAIL B1 a BLOCK item's translation is not checked, a rule hit on i2 is listed for i2 only, the batch stays ok :: [{"code":"GENERATED_TEXT_REJECTED","path":"/items/0/translatedText","itemId":"i1"},{"code":"GENERATED_TEXT_REJECTED","path":"/items/1/translatedText","itemId":"i2"}]
+NOTE B2 without a rule-engine port :: ["GENERATED_TEXT_UNVERIFIED","GENERATED_TEXT_UNVERIFIED","GENERATED_TEXT_UNVERIFIED","GENERATED_TEXT_UNVERIFIED","GENERATED_TEXT_UNVERIFIED","GENERATED_TEXT_UNVERIFIED","GENERATED_TEXT_UNVERIFIED"]
+
+[40223e2] checks 5, failures 3

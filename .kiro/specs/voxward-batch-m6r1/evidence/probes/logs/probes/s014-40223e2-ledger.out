@@ -1,0 +1,9 @@
+
+## [40223e2] L scoring ledger: Q19 ① no-effect record, Q19 ② keys per channel and subject, Q21 port refusal
+FAIL L1 Q19 ① a no-effect verdict replayed after the cooldown does not score :: {"second":0,"replay":2,"score":4,"ledger":[{"k":"event:channel-a:m1","d":2},{"k":"event:channel-a:m2","d":2}]}
+NOTE L1 score_outcomes :: table absent
+FAIL L2 Q19 ② manual correction op-1 applies once per channel and subject (each subject +1, three ledger rows) :: {"scores":[1,null,null],"manualRows":1,"keys":["manual:op-1","manual:op-1","manual:op-1"]}
+FAIL L3 Q19 ② one platform identity reference applies in each channel (both subjects at the member base 10) :: {"scores":[10,null],"first":10,"second":10}
+FAIL L4 Q21 the port refuses a write for an exception subject when the module guard is bypassed :: {"result":{"status":"applied","subjectRef":"excepted-channel-a-viewer-x","actualDelta":5,"ledgerId":"b3d37523-892e-44a8-b4bb-f03a01712cca"},"score":5,"outcomesTable":false}
+
+[40223e2] checks 4, failures 4

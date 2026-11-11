@@ -1,0 +1,4 @@
+second finished first; status: RUNNING (parked while the first is open)
+after the first task's deadline, one pump:
+  first: PENDING_REVIEW DEADLINE_EXCEEDED [ 'ERROR/TIMED_OUT/DEADLINE_EXCEEDED' ]
+  second: DONE commit log data: null

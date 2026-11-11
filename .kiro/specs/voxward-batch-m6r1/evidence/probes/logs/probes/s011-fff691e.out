@@ -1,0 +1,59 @@
+
+## [fff691e] A review lane, and a coordinator shared with the realtime path
+OK   A1 every review enqueue uses the BACKGROUND lane :: {"lanes":["BACKGROUND","BACKGROUND"],"trigger":"STREAM_END"}
+NOTE A2 runBatch() items (first, second) :: {"first":[{"status":"SETTLED","taskId":"id-3","eventId":"ev-b3","classification":"ALLOW_MEANINGFUL","scoring":"APPLIED"}],"takeLanes":[["BACKGROUND"],["BACKGROUND"]]}
+OK   A2 runBatch() on a shared coordinator takes only BACKGROUND: the queued REALTIME and PAID tasks stay QUEUED, the review task settles (contract: 复盘只走 BACKGROUND、让出实时容量) — B2 recheck, expected to pass :: {"realtimeStatus":"QUEUED","paidStatus":"QUEUED","realtimeLog":[]}
+OK   A2b the Crew executor sharing the coordinator settles the PAID and REALTIME tasks through writeVerdict :: {"started":2,"written":["id-2","id-1"],"jobs":[["corr-ch-1-paid-1"],["corr-ch-1-rt-1"]]}
+OK   A3 a review task is settled by the review runner, not by the realtime Crew executor sharing the coordinator — B2 recheck, expected to pass :: {"executorStarted":0,"crewJobs":[],"verdictsWrittenByExecutor":[],"storeState":"SETTLED","reviewRunnerAfter":[{"status":"SETTLED","taskId":"id-1","eventId":"ev-b4","classification":"ALLOW_MEANINGFUL","scoring":"APPLIED"}]}
+OK   A4 limit 2: while one review batch holds the background slot, the realtime batch starts and a second review batch is refused :: {"modelCalls":1,"started":1,"secondReview":null,"crewJobs":[["corr-ch-1-rt-s"]]}
+OK   A5 limit 1: background is paused, the review runner takes nothing (S009 behavior kept) :: null
+NOTE A6 limit 4, 3 REALTIME batches ready: a review caller that takes first holds :: {"backgroundBatches":3,"realtimeStartedAfter":1,"realtimeStillQueued":2}
+NOTE A7 two review runners on one coordinator: what each runBatch settles, and the other runner's message :: {"cycles":[1,1],"runnerA":["ev-w1/SETTLED"],"runnerB":null,"w2State":"UNSETTLED_FAST_PASS"}
+
+## [fff691e] B task-local author aliases
+OK   B1 model input carries no sender reference, channel id or platform message id :: {"items":[{"itemId":"i0","text":"[a-n-1-1] hello one"},{"itemId":"i1","text":"[a-n-1-1] hello two"},{"itemId":"i2","text":"[a-n-1-2] hello three"}]}
+OK   B2 within one task the same author has one alias, another author a different one :: ["a-n-1-1","a-n-1-1","a-n-1-2"]
+OK   B3 model items have only itemId and text
+OK   B4 the same author gets a different alias in the next task :: {"first":"a-n-1-1","next":"a-n-2-1"}
+
+## [fff691e] C unified settlement, real scoring engine and SQLite ledger port
+OK   C1 settled once, one ledger row and score +2; a later applyVerdict for the same event writes nothing (the port returns the first change) :: {"batch":[{"status":"SETTLED","taskId":"id-1","eventId":"ev-d1","classification":"ALLOW_MEANINGFUL","scoring":"APPLIED"}],"rows":[{"k":"event:ch-1:d1","d":2}],"again":{"contractVersion":"1","subjectRef":"2382f212-9b8c-48f1-bd26-2233587bb24a","delta":2,"idempotencyKey":"event:ch-1:d1"},"score":{"current":2,"behavior":2,"identity":0,"version":1,"lastRewardAt":"2026-11-11T06:00:00.000Z"},"resumed":0}
+OK   C2 two writers: one SETTLED, the other NOT_ELIGIBLE, one ledger row :: {"o1":[{"status":"SETTLED","taskId":"id-1","eventId":"ev-d2","classification":"ALLOW_MEANINGFUL","scoring":"APPLIED"}],"o2":[{"status":"NOT_ELIGIBLE","taskId":"id-1","eventId":"ev-d2","reason":"NOT_UNSETTLED"}],"rowsE":[{"k":"event:ch-1:d2","d":2}]}
+OK   C3 manual decision and deletion in between: NOT_ELIGIBLE, no ledger row :: {"items":[{"status":"NOT_ELIGIBLE","taskId":"id-1","eventId":"ev-d3","reason":"MANUALLY_DECIDED"},{"status":"NOT_ELIGIBLE","taskId":"id-2","eventId":"ev-d4","reason":"DELETION_IN_PROGRESS"}],"rows3":[]}
+OK   C4 expired evidence: UNSETTLED_EXPIRED, model not called, no score :: {"cycle":{"trigger":"STREAM_END","enqueued":0,"expired":1,"skipped":[]},"state":"UNSETTLED_EXPIRED"}
+OK   C5 exception subject: scoring REFUSED by the port, no ledger row, outcome recorded :: {"item":{"status":"SETTLED","taskId":"id-1","eventId":"ev-d6","classification":"ALLOW_MEANINGFUL","scoring":"REFUSED"},"outcomes":[{"k":"event:ch-1:d6","o":"REFUSED","r":"EXCEPTION_ACTIVE"}],"retry":{"contractVersion":"1","subjectRef":"excepted-ch-1-viewer-x","delta":0,"idempotencyKey":"event:ch-1:d6"}}
+
+## [fff691e] D BLOCK settlement writes a review record (Q27 front half)
+OK   D1 one review record for the BLOCK item, none for the ALLOW item, no text in it :: [{"id":"rec-1","channelId":"ch-1","eventId":"ev-e1","correlationId":"corr-ch-1-e1","classification":"BLOCK","source":"REVIEW_SETTLEMENT","createdAt":"2026-11-11T06:00:00.000Z","humanState":"OPEN"}]
+
+## [fff691e] E task-coordinator settled-record window (Q38)
+OK   E1 records held stay within the window plus open tasks (10 + 3) :: {"retained":13}
+OK   E2 open tasks are never evicted :: ["QUEUED","QUEUED","QUEUED"]
+OK   E3 a late result for an evicted record is discarded, a late failure is ignored :: {"late":{"status":"discarded","reason":"UNKNOWN_TASK"},"lateFail":{"status":"ignored","reason":"UNKNOWN_TASK"}}
+NOTE E4 statusOf for an evicted record :: TaskNotFoundError
+
+## [fff691e] F candidate cards and confirmation
+OK   F1 a review proposal becomes a PENDING_CONFIRMATION card with its source, and publishes nothing :: {"cards":[{"id":"card-1","channelId":"ch-1","term":"synth-term","note":"synthetic","sourceCorrelationId":"corr-ch-1-f1","sourceTaskId":"id-1","status":"PENDING_CONFIRMATION","createdAt":"2026-11-11T06:00:00.000Z","decidedByRef":null,"decidedAt":null,"ruleVersion":null}],"published":[]}
+OK   F2 DATA_ADMIN (real role matrix) cannot confirm: 403, nothing published :: {"status":403,"body":{"error":"FORBIDDEN"}}
+OK   F3 a moderator of another channel gets 404, nothing published :: {"status":404,"body":{"error":"CANDIDATE_NOT_FOUND"}}
+OK   F4 a moderator confirms: 200, one publish, card keeps source and gets the rule version :: {"status":200,"body":{"status":"CONFIRMED","card":{"id":"card-1","term":"synth-term","note":"synthetic","sourceCorrelationId":"corr-ch-1-f1","status":"CONFIRMED","createdAt":"2026-11-11T06:00:00.000Z","decidedAt":"2026-11-11T06:00:00.000Z","ruleVersion":2}}}
+OK   F5 a second confirmation is 409 and publishes nothing :: {"status":409,"body":{"error":"ALREADY_DECIDED","card":{"id":"card-1","term":"synth-term","note":"synthetic","sourceCorrelationId":"corr-ch-1-f1","status":"CONFIRMED","createdAt":"2026-11-11T06:00:00.000Z","decidedAt":"2026-11-11T06:00:00.000Z","ruleVersion":2}}}
+NOTE F6 card states available :: ["PENDING_CONFIRMATION","CONFIRMED","REJECTED"]
+NOTE F7 routes exposed :: ["listCards","confirm","reject"]
+OK   F8 confirm and reject need list.edit: DATA_ADMIN reject 403; an actor holding review.decide without list.edit gets 403 for both; nothing published :: {"r403":{"status":403,"body":{"error":"FORBIDDEN"}},"r403b":{"status":403,"body":{"error":"FORBIDDEN"}},"r403c":{"status":403,"body":{"error":"FORBIDDEN"}}}
+OK   F9 reject: other channel 404; moderator 200 REJECTED with decider and time; confirming it afterwards 409; the same term is not proposed again; nothing published :: {"r404":{"status":404,"body":{"error":"CANDIDATE_NOT_FOUND"}},"rOk":{"status":200,"body":{"status":"REJECTED","card":{"id":"card2-1","term":"synth-reject","note":"synthetic","sourceCorrelationId":"corr-x","status":"REJECTED","createdAt":"2026-11-11T06:00:00.000Z","decidedAt":"2026-11-11T06:00:00.000Z","ruleVersion":null}}},"rAgain":{"status":409,"body":{"error":"ALREADY_DECIDED","card":{"id":"card2-1","term":"synth-reject","note":"synthetic","sourceCorrelationId":"corr-x","status":"REJECTED","createdAt":"2026-11-11T06:00:00.000Z","decidedAt":"2026-11-11T06:00:00.000Z","ruleVersion":null}}},"reproposed":null,"card":{"id":"card2-1","channelId":"ch-1","term":"synth-reject","note":"synthetic","sourceCorrelationId":"corr-x","sourceTaskId":"task-x","status":"REJECTED","createdAt":"2026-11-11T06:00:00.000Z","decidedByRef":"acct-MODERATOR","decidedAt":"2026-11-11T06:00:00.000Z","ruleVersion":null}}
+NOTE F10 real role matrix: [role, list.edit, review.decide] :: [["CHANNEL_OWNER",true,true],["MODERATOR",true,true],["DATA_ADMIN",false,false]]
+
+## [fff691e] G review output contract: batch item ids complete and unique, whole batch fails (VW-R-008, proposal 8.3)
+NOTE G1 contract validator (inference-provider validateReviewBatch) on the same output :: ["ITEM_ID_DUPLICATE","ITEM_RESULT_MISSING"]
+OK   G1 [i0 BLOCK, i0 ALLOW_MEANINGFUL] for items i0,i1: the whole batch fails (AI_OUTPUT_INVALID, to the manual queue), nothing settles, scores, records or proposes — B3 recheck :: {"items":["FAILED/AI_OUTPUT_INVALID","FAILED/AI_OUTPUT_INVALID"],"statuses":["PENDING_REVIEW","PENDING_REVIEW"],"reviewRecords":0,"proposals":0,"scores":[null,null]}
+NOTE G2 contract validator on the same output :: ["ITEM_RESULT_MISSING"]
+OK   G2 [i0 ALLOW] for items i0,i1: the whole batch fails (AI_OUTPUT_INCOMPLETE), not only the missing item :: {"items":["FAILED/AI_OUTPUT_INCOMPLETE","FAILED/AI_OUTPUT_INCOMPLETE"],"statuses":["PENDING_REVIEW","PENDING_REVIEW"],"reviewRecords":0,"proposals":0,"scores":[null,null]}
+NOTE G3 contract validator on the same output :: ["ITEM_ID_UNKNOWN","ITEM_RESULT_MISSING"]
+OK   G3 [i0 ALLOW, i99 BLOCK] for items i0,i1: an id outside the batch fails the whole batch (AI_OUTPUT_INVALID) :: {"items":["FAILED/AI_OUTPUT_INVALID","FAILED/AI_OUTPUT_INVALID"],"statuses":["PENDING_REVIEW","PENDING_REVIEW"],"reviewRecords":0,"proposals":0,"scores":[null,null]}
+NOTE G4 contract validator on the same output :: ["OUTPUT_TOO_MANY_ITEMS"]
+OK   G4 [i0 BLOCK, i1 ALLOW, i0 ALLOW] for items i0,i1: the whole batch fails (AI_OUTPUT_INVALID) :: {"items":["FAILED/AI_OUTPUT_INVALID","FAILED/AI_OUTPUT_INVALID"],"statuses":["PENDING_REVIEW","PENDING_REVIEW"],"reviewRecords":0,"proposals":0,"scores":[null,null]}
+OK   G6 a complete answer in another order is valid: both settle, BLOCK -3 with a review record, ALLOW +2 :: {"items":["SETTLED/BLOCK","SETTLED/ALLOW_MEANINGFUL"],"statuses":["DONE","DONE"],"reviewRecords":1,"proposals":1,"scores":[-3,2]}
+OK   G5 control: a valid output settles both, BLOCK writes a review record, scores -3 and +2 :: {"items":[{"status":"SETTLED","taskId":"id-1","eventId":"ev-g6a","classification":"BLOCK","scoring":"APPLIED"},{"status":"SETTLED","taskId":"id-2","eventId":"ev-g6b","classification":"ALLOW_MEANINGFUL","scoring":"APPLIED"}],"scores":[-3,2]}
+
+[fff691e] checks 32, failures 0

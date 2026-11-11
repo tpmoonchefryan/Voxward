@@ -1,0 +1,91 @@
+[
+ {
+  "subject": "把按优先级取批的调度器拆给按车道取批的多个调用方，优先级只在一次调用内成立：低车道的调用方先取，就能占住高车道已就绪时的槽位",
+  "summary": "VoxWard S011 返工给 TaskCoordinator.takeBatch 加了 lanes 过滤：S009 的 Crew 执行器只取 PAID 与 REALTIME，复盘运行器只取 BACKGROUND，两者共用槽位与后台余量。过滤发生在比较优先级之前，复盘运行器先调用时不看实时有没有已就绪的批次，只受后台上限 limit − reserve 约束；第 6 批的单一调用方在同样状态下会先给实时。",
+  "snippet": "给共享调度器加按车道过滤时，低车道的调用要在更高车道有已就绪批次时让出（返回 null）。验收时让两个调用方在积压下按两种顺序取批回放，结果必须与单一调用方相同。",
+  "body": "第 m6 批第 2 轮 E60 A6：上限 4、3 个实时批次已就绪，复盘调用方先取得到 3 个槽位，执行器之后只能启动 1 个实时批次。E62：8 条实时与 8 条后台同时排队、每批占槽 1 s、实时截止 2.5 s，单一调用方 8/8 完成、0 条转人工；复盘运行器先取时 2/8 完成、6 条转 PENDING_REVIEW。上一轮给 B2 的修复方向只写了「按车道取批，仍共用同一套槽位与后台余量」，没有写跨调用方的优先级；第 6 批的 S009 探针只用单一调用方，测不出这一点；新增的 lanes.test.ts 把「实时已就绪时复盘仍取到批次」写成了预期。复盘运行器按 runBatch() 返回 null 为止循环时，每结束一批就立刻再取，积压期间实时一直只剩余量那 1 个槽位。",
+  "tags": [
+   "voxward",
+   "scheduling",
+   "task-coordinator",
+   "priority",
+   "acceptance-probes"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/task-coordinator/coordinator.ts",
+    "apps/server/src/modules/task-coordinator/priority.ts",
+    "apps/server/test/task-coordinator/lanes.test.ts",
+    ".kiro/specs/voxward-batch-m6r1/evidence/acceptance.md",
+    ".kiro/specs/voxward-batch-m6r1/evidence/probes/probe-m6r1-s011-order.mts"
+   ]
+  }
+ },
+ {
+  "subject": "接口改动后复用验收探针：包装器要透传新参数，修复后的期望写成唯一状态，复验说明要写清哪些节要换输入",
+  "summary": "上一轮 E60 的协调器包装器写成 takeBatch: () => coordinator.takeBatch()。B2 给 takeBatch 加了 lanes 参数后，包装器把它丢掉，修复后的运行器照样取到实时批次（任务停在 RUNNING），A2 的旧判据「QUEUED 或 RUNNING」因此误判通过。E50 §D 把已删除的 capabilities 依赖传给流水线，修复后直接抛 TypeError，而上一轮判断的复验说明写的是「§C–§E 不变」。",
+  "snippet": "复用探针前先比较被测接口的签名；包装器用 (...args) => target.fn(...args) 透传；修复后的期望写成唯一值（例如 QUEUED），不要写成两种实现都能过的「QUEUED 或 RUNNING」。复验说明列出依赖被删除或改名的探针节，并写明要换成什么输入。",
+  "body": "第 m6 批第 2 轮：S011 实施方先发现了包装器丢参数，另跑了一份透传参数的副本。本轮把 E50、E60、E70 都按新接口改写（E50 §D、§E4 的门槛改读运行端口的报告，§F 改为期望通过；E60 包装器透传参数、A2 只接受 QUEUED；E70 §D 接受契约里的 intent: null），并在 probes/README.md 列出每个副本相对上一轮的改动与原因。另一个探针输入问题也是这样发现的：G 节把 inference-provider 的 validateReviewBatch 对同一输出的结论并列打印，候选词 note 写成 null 时两边都报 NOT_STRING，能立刻看出是探针输入错，不是候选的缺陷。",
+  "tags": [
+   "voxward",
+   "acceptance-probes",
+   "test-doubles",
+   "recheck"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    ".kiro/specs/voxward-batch-m6/evidence/probes/probe-m6-s011.mts",
+    ".kiro/specs/voxward-batch-m6/evidence/probes/probe-m6-s010.mts",
+    ".kiro/specs/voxward-batch-m6r1/evidence/probes/probe-m6r1-s011.mts",
+    ".kiro/specs/voxward-batch-m6r1/evidence/probes/README.md",
+    ".kiro/specs/voxward-s011-review/evidence/rework1-self-check.md"
+   ]
+  }
+ },
+ {
+  "subject": "改判纠分是否精确，不能只看账本里有没有被钳制的条目：去掉原条目后，后续条目可能在重放时才触及上下限",
+  "summary": "VoxWard S014 返工为 Q49 选了「标记，不重算」：同一主体在原条目之后有被钳制的账本条目（requested_delta ≠ actual_delta）或 CLAMPED 的无效果结果时，纠分带 needsManualAdjustment。去掉原条目相当于把其后每一步的运行分数平移，原来没触限的条目平移后可能越过上下限，这种情况账本里看不出来，标记规则漏掉它。",
+  "snippet": "判断纠分要不要人工调整时，按账本倒推原条目之后每一步的运行分数（当前分数减去其后各条的 actual_delta），加上纠分量后任何一步越过上下限也标记。测试序列要包含「原来不触限、重放才触限」的一组。",
+  "body": "第 m6 批第 2 轮 E70 C6：上下限 ±10，BLOCK −3、六次 ALLOW +2（−3 → 9，都没有被钳制）、再 BLOCK −3（9 → 6）；改判第一条为放行，纠 +3、分数 9、不标记。按账本重放：0 → 10，第六次 ALLOW 在上限处无效果，再 −3，分数 7。E70 C5（后续条目实际触底）则正确标记。S014 设计 §7 已把这一缺口登记为已知；提案 §7.1 要求超出可重建范围时走明确的人工调整，不能声称已精确恢复历史。",
+  "tags": [
+   "voxward",
+   "scoring",
+   "overturn",
+   "clamping"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/decision-store.ts",
+    "apps/server/test/decision-service/compensation/correction-limits.test.ts",
+    ".kiro/specs/voxward-s014-decision/design.md",
+    ".kiro/specs/voxward-batch-m6r1/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "VoxWard 的 deliveries 行既是投递意图也是补发凭据：改判放行写一行 EXPIRED 供显式补发引用；SENT 由输出端写，输出端接上之前「已送达不补发」不起作用",
+  "summary": "B5 返工后，改判为放行时为新裁决写一行 EXPIRED、有效期等于改判时刻的投递，不返回投递意图；显式补发可以引用这一行，仍受 10 分钟到达时限、60 s 有效、操作幂等与代次约束。补发拒绝 status 为 SENT 的投递（ALREADY_SENT）。目前没有任何代码把投递标为 SENT，输出适配器 S021 还没实现。",
+  "snippet": "接输出端时：只发送 status=PENDING 且 valid_until 未过的行，发送成功后在同一短事务里比较并改为 SENT；验收覆盖「EXPIRED 行不被发送」与「SENT 后补发被拒」。",
+  "body": "第 m6 批第 2 轮 E70 D1–D3、E3：2 小时前被拦截的消息改判放行后没有可投递的放行，显式补发得 WINDOW_CLOSED；1 分钟前的拦截改判放行后，90 s 时显式补发成功、60 s 有效、同操作 duplicate；探针直接把投递状态改为 SENT 后补发得 ALREADY_SENT、不加行。在 apps/server/src 里 SENT 只出现在 schema 的取值与补发检查中。改判为拦截仍立即写 PENDING 的 BLOCK 投递（有效 5 分钟），用于撤下已显示的内容。",
+  "tags": [
+   "voxward",
+   "delivery",
+   "resend",
+   "output-adapter",
+   "wiring"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/decision-store.ts",
+    "apps/server/src/db/schema/messages.ts",
+    "apps/server/src/modules/decision-service/compensation.ts",
+    "packages/contracts/src/modules/decision-service.ts",
+    ".kiro/specs/voxward-batch-m6r1/evidence/acceptance.md"
+   ]
+  }
+ }
+]

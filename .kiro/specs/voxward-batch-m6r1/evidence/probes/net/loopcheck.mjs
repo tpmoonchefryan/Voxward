@@ -1,0 +1,11 @@
+import net from "node:net";
+const deny = String(process.env.PROBE_DENY_PORTS).split(",").map(Number);
+const target = deny.find((p) => p > 1024) ?? deny[0];
+const tryConnect = (port) => new Promise((resolve) => { const s = net.connect(port, "127.0.0.1", () => { s.destroy(); resolve("CONNECTED"); }); s.on("error", (e) => resolve(`refused:${e.code}`)); s.setTimeout(3000, () => { s.destroy(); resolve("timeout"); }); });
+const server = net.createServer((c) => c.end()).listen(0, "127.0.0.1");
+await new Promise((r) => server.once("listening", r));
+const fresh = server.address().port;
+const out = { preexisting: { port: target, result: await tryConnect(target) }, fresh: { port: fresh, result: await tryConnect(fresh) } };
+server.close();
+console.log(JSON.stringify(out));
+process.exit(out.preexisting.result.startsWith("refused") && out.fresh.result === "CONNECTED" ? 0 : 1);

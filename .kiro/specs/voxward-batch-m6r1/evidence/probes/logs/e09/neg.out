@@ -1,0 +1,6 @@
+apps/server/src/modules/decision-service/zz-negative.ts:1: module decision-service may not import "../../db/client.js" (db)
+apps/server/src/modules/decision-service/zz-negative.ts:2: module decision-service may not import "drizzle-orm" (package drizzle-orm)
+apps/server/src/modules/inference-provider/sc-translation/zz-negative.ts:1: module inference-provider may not import "../../moderation-engine/index.js" (module moderation-engine)
+apps/server/src/modules/moderation-engine/review/zz-negative-ip.ts:1: module moderation-engine may not import "../../inference-provider/index.js" (module inference-provider)
+apps/server/src/modules/moderation-engine/review/zz-negative.ts:1: module moderation-engine may not import "../../task-coordinator/index.js" (module task-coordinator)
+check-deps: 5 violation(s) across 205 files

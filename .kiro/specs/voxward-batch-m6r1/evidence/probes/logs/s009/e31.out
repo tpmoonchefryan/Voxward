@@ -1,0 +1,5 @@
+hung cancel: pump returned / second pump returned / executor.cancelEvent returned: {"pump1":true,"pump2":true,"cancel":true}
+hung cancel: task of ch-c after executor.cancelEvent: DISCARDED CANCELLED
+hung cancel: sessions started in total: 2 ; task of ch-b: RUNNING
+hung cancel: a third pump after ch-b's deadline returned: true ; task of ch-b: PENDING_REVIEW DEADLINE_EXCEEDED
+per-call cost with settled records kept in memory: [{"settled":8,"commitUs":12,"sweepUs":3,"takeUs":111},{"settled":20000,"commitUs":2,"sweepUs":0,"takeUs":1},{"settled":60000,"commitUs":4,"sweepUs":0,"takeUs":1}]
