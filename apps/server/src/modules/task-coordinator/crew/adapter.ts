@@ -16,7 +16,8 @@ export interface CrewJob {
 
 /**
  * How a Crew session ended. `completed` carries the validated items the session returned. The session status is not a
- * verdict: each task takes its verdict only from its own validated item.
+ * verdict: each task takes its verdict only from its own validated item. The items must already have passed S007's
+ * batch validation (VW-R-008). This module only matches them to tasks.
  */
 export type CrewReport =
   | { readonly kind: "completed"; readonly items: readonly InferenceResultItem[] }
@@ -31,7 +32,8 @@ export interface CrewHandle {
 
 /**
  * The part of Kiro Crew this module uses. Real Crew behavior is not verified here. The binding is deployment work
- * (S029), and tests use a replacement.
+ * (S029), and tests use a replacement. Content that Crew keeps after a session ends is cleaned up by the binding, after
+ * `done` or `cancel` (VW-R-009). This port has no cleanup step.
  */
 export interface CrewPort {
   /** Starts one session. Rejects when Crew cannot take the job. */

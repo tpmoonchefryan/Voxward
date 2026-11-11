@@ -18,7 +18,7 @@ import {
  * nothing is deducted, an expired result never comes back as valid output, and no backlog grows without a bound.
  */
 describe("slow request", () => {
-  it("discards the late result of a task whose deadline passed while it ran", async () => {
+  it("sends the late result of a task whose deadline passed while it ran to human review, and writes nothing", async () => {
     const h = harnessWith();
     const ref = await h.coordinator.enqueue(eventOf(), h.clock.at(5000));
     await mustTake(h.coordinator);
@@ -28,7 +28,9 @@ describe("slow request", () => {
       reason: "DEADLINE_EXCEEDED",
     });
     expect(h.facts.applied).toEqual([]);
-    expect(await h.coordinator.statusOf(ref.taskId)).toBe("DISCARDED");
+    expect(await h.coordinator.statusOf(ref.taskId)).toBe("PENDING_REVIEW");
+    expect(await h.coordinator.reasonOf(ref.taskId)).toBe("DEADLINE_EXCEEDED");
+    expect(h.log.forTask(ref.taskId).at(-1)).toMatchObject({ status: "TIMED_OUT", level: "WARN" });
   });
 
   it("sends an overdue task to human review without writing a verdict or a deduction", async () => {
@@ -169,6 +171,23 @@ describe("predecessor timeout", () => {
       status: "discarded",
       reason: "DEADLINE_EXCEEDED",
     });
+    expect(await h.coordinator.statusOf(first.taskId)).toBe("PENDING_REVIEW");
+  });
+
+  it("does not record the gap when the expiry sweep already moved the predecessor to human review", async () => {
+    const h = harnessWith();
+    const first = await h.coordinator.enqueue(eventOf({ platformMessageId: "m1", platformOrder: 1 }), h.clock.at(2000));
+    const second = await h.coordinator.enqueue(
+      eventOf({ platformMessageId: "m2", platformOrder: 2 }),
+      h.clock.at(60_000),
+    );
+    await mustTake(h.coordinator);
+    h.clock.advance(2000);
+    expect(await h.coordinator.sweep()).toBe(1);
+
+    expect(await h.coordinator.commitResult(second.taskId, resultFor(second.taskId))).toEqual({ status: "committed" });
+    expect(h.log.forTask(second.taskId).at(-1)?.data).toBeNull();
+    expect(h.log.forTask(first.taskId).at(-1)).toMatchObject({ status: "TIMED_OUT" });
   });
 
   it("never holds a message of another channel", async () => {

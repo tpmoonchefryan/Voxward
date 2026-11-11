@@ -78,6 +78,18 @@ function validateBounds(bounds: ConcurrencyBounds): void {
 }
 
 /**
+ * Pressure from one read. A reader that throws gives no usable reading, so the host counts as critical and the limit
+ * shrinks to the minimum instead of failing the take (N7).
+ */
+function pressureNow(signal: ResourceSignalPort): HostPressure {
+  try {
+    return pressureOf(signal.read());
+  } catch {
+    return "CRITICAL";
+  }
+}
+
+/**
  * Concurrency limit that follows the host. Each read takes a fresh signal, so a shrink takes effect at the next batch
  * decision. There is no hysteresis (自定).
  */
@@ -85,7 +97,7 @@ export function createDynamicConcurrency(bounds: ConcurrencyBounds, signal: Reso
   validateBounds(bounds);
   return {
     current(): number {
-      return targetConcurrency(pressureOf(signal.read()), bounds);
+      return targetConcurrency(pressureNow(signal), bounds);
     },
   };
 }

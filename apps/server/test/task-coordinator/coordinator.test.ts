@@ -341,3 +341,34 @@ describe("commit order across lanes (B4)", () => {
     });
   });
 });
+
+describe("settled records (N2)", () => {
+  it("keeps a settled task queryable and deduplicated, and schedules only the tasks that are still open", async () => {
+    const h = harnessWith({ limit: 4 });
+    const first = eventOf({ channelId: "ch-0", platformMessageId: "s-0", platformOrder: 0 });
+    let firstTaskId = "";
+    for (let index = 0; index < 300; index += 1) {
+      const event =
+        index === 0 ? first : eventOf({ channelId: `ch-${index % 5}`, platformMessageId: `s-${index}`, platformOrder: index });
+      const ref = await h.coordinator.enqueue(event, h.clock.at(60_000));
+      if (index === 0) firstTaskId = ref.taskId;
+      const batch = await mustTake(h.coordinator);
+      expect(await h.coordinator.commitResult(ref.taskId, resultFor(ref.taskId))).toEqual({ status: "committed" });
+      await h.coordinator.finishBatch(batch.batchId);
+    }
+
+    const again = await h.coordinator.enqueue(first, h.clock.at(60_000));
+    expect(again.taskId).toBe(firstTaskId);
+    expect(await h.coordinator.statusOf(firstTaskId)).toBe("DONE");
+    expect(await h.coordinator.cancelEvent(keyOfEvent(first))).toEqual({ cancelledTaskIds: [] });
+    expect(h.facts.applied).toHaveLength(300);
+
+    const live = await h.coordinator.enqueue(
+      eventOf({ channelId: "ch-0", platformMessageId: "live", platformOrder: 1000 }),
+      h.clock.at(60_000),
+    );
+    const batch = await mustTake(h.coordinator);
+    expect(batch.tasks.map((task) => task.taskId)).toEqual([live.taskId]);
+    expect(await h.coordinator.commitResult(live.taskId, resultFor(live.taskId))).toEqual({ status: "committed" });
+  });
+});
