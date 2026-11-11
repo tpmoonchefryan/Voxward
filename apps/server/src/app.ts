@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
+import type { OutputSubscriberRegistry } from "@voxward/contracts";
+import { attachNativeOutput, type ClosedConnection, type NativeOutputTiming } from "./adapters/native-output/socket.js";
 import { dataLifecycleRoutes } from "./auth/data-routes.js";
 import { databaseViewerAccess } from "./auth/log-viewer-access.js";
 import { logViewerRoutes } from "./auth/log-viewer-routes.js";
@@ -7,6 +9,7 @@ import { authRoutes } from "./auth/routes.js";
 import { createAuditLogPort } from "./db/audit-log.js";
 import type { VoxwardDatabase } from "./db/client.js";
 import { createDataRequestPort } from "./db/data-request-store.js";
+import { createApprovedContentPort, createOutputDeliveryPort, createOutputGrantPort } from "./db/output-store.js";
 import { createSubjectReadPort } from "./db/subject-read.js";
 import { RETENTION_DAYS } from "./modules/audit-store/content-policy.js";
 import {
@@ -16,6 +19,7 @@ import {
   type InvalidationBus,
 } from "./modules/audit-store/index.js";
 import { createDataRoutes, type DataDeps } from "./modules/data-lifecycle-service/index.js";
+import { createDeliveryPump } from "./modules/output-adapter/delivery.js";
 import { createSubscriptionRegistry } from "./modules/output-adapter/subscription.js";
 import type { ModuleRegistry } from "./modules/registry.js";
 import { redactUrlText } from "./security/redaction.js";
@@ -32,7 +36,22 @@ export interface AppOptions {
    * omitted.
    */
   readonly invalidation?: InvalidationBus;
+  /** The native output endpoint and its delivery pump. They start only with a database. */
+  readonly nativeOutput?: NativeOutputSettings;
 }
+
+export interface NativeOutputSettings {
+  readonly timing?: Partial<NativeOutputTiming>;
+  /** Time between two delivery passes, in milliseconds (自定). Tests shorten it. */
+  readonly passIntervalMs?: number;
+  readonly onClosed?: (closed: ClosedConnection) => void;
+}
+
+/** Delivery pump limits (自定, not measured). */
+const DEFAULT_PASS_INTERVAL_MS = 250;
+const DELIVERY_BATCH_LIMIT = 50;
+const DELIVERY_EXPIRE_LIMIT = 500;
+const DELIVERY_MAX_ATTEMPTS = 3;
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -41,7 +60,7 @@ declare module "fastify" {
 }
 
 /** Creates the Fastify instance. Business routes belong to later stories, not to this factory. */
-export function buildApp({ modules, logger = true, logStream, database, invalidation }: AppOptions): FastifyInstance {
+export function buildApp({ modules, logger = true, logStream, database, invalidation, nativeOutput }: AppOptions): FastifyInstance {
   const app = Fastify({ logger: logger ? loggerOptions(logStream) : false, frameworkErrors: frameworkErrorReply });
   app.decorate("modules", modules);
   // Native output consumers of this process. Revoking a grant closes the consumers that the grant opened.
@@ -62,8 +81,58 @@ export function buildApp({ modules, logger = true, logStream, database, invalida
       cache.dispose();
     });
     app.register(dataLifecycleRoutes, { database, routes: createDataRoutes(dataDepsFor(database)) });
+    startNativeOutput(app, database, outputSubscribers, nativeOutput);
   }
   return app;
+}
+
+/**
+ * Starts the native output endpoint on the HTTP server, and the delivery pump that sends approved rows to the consumers
+ * connected to this process. Both stop when the app closes.
+ */
+function startNativeOutput(
+  app: FastifyInstance,
+  database: VoxwardDatabase,
+  subscribers: OutputSubscriberRegistry,
+  settings: NativeOutputSettings | undefined,
+): void {
+  const endpoint = attachNativeOutput(app.server, {
+    grants: createOutputGrantPort(database),
+    subscribers,
+    timing: settings?.timing,
+    log: app.log,
+    onClosed: settings?.onClosed,
+  });
+  const pump = createDeliveryPump({
+    delivery: createOutputDeliveryPort(database),
+    content: createApprovedContentPort(database),
+    subscribers,
+    now: () => new Date(),
+    batchLimit: DELIVERY_BATCH_LIMIT,
+    expireLimit: DELIVERY_EXPIRE_LIMIT,
+    maxAttempts: DELIVERY_MAX_ATTEMPTS,
+  });
+  // A pass that is still running is not overlapped by the next tick.
+  let passing = false;
+  const timer = setInterval(() => {
+    if (passing) return;
+    passing = true;
+    pump
+      .runPass()
+      .catch((error: unknown) => app.log.error({ errorName: errorNameOf(error) }, "delivery pass failed"))
+      .finally(() => {
+        passing = false;
+      });
+  }, settings?.passIntervalMs ?? DEFAULT_PASS_INTERVAL_MS);
+  timer.unref();
+  app.addHook("onClose", async () => {
+    clearInterval(timer);
+    endpoint.close();
+  });
+}
+
+function errorNameOf(error: unknown): string {
+  return error instanceof Error ? error.name : "unknown";
 }
 
 /** Binds the data module to the database. Each port is one database layer, and the module sees only the ports. */
