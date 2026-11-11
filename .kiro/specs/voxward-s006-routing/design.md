@@ -114,13 +114,13 @@ No design authority is configured for the resolved work context. No authority wa
 
 ### 4.3 真值表
 
-`planRoute` 按下表顺序求值，首条命中生效。
+`planRoute` 按下表顺序求值，首条命中生效。顺序与提案 §4.2 流程图一致：记分例外先于付费。N1 返工前，付费行在前，例外∧付费组合走 `PAID_TEXT_REVIEW` 并带例外标记；返工后该组合走 `REALTIME_REVIEW`。两者都是 AI 或人工路径，不构成快速放行。
 
 | 序 | 条件 | 计划 | 初始处理状态 | 说明 |
 | --- | --- | --- | --- | --- |
 | R1 | 基础检查 `BLOCK` | FINAL：来源 `BASE_RULE`，分类 `BLOCK`，结算 `NONE` | `DONE` | 基础拒绝可终结；例外队列项同时结束（`BASE_BLOCK`） |
-| R2 | 付费或会员自定义文本 | REVIEW：任务 `PAID_TEXT_REVIEW` | `QUEUED` | 付费文本审核不可跳过；例外标记照实携带 |
-| R3 | 记分例外 | REVIEW：任务 `REALTIME_REVIEW`，例外 = 是 | `QUEUED` | 每条都审；不走白名单、评分或噪声短路 |
+| R2 | 记分例外 | REVIEW：任务 `REALTIME_REVIEW`，例外 = 是 | `QUEUED` | 每条都审，包括同时是付费文本的消息；不走白名单、评分或噪声短路 |
+| R3 | 付费或会员自定义文本 | REVIEW：任务 `PAID_TEXT_REVIEW`，例外 = 否 | `QUEUED` | 付费文本审核不可跳过 |
 | R4 | 基础检查 `REVIEW` | REVIEW：任务 `REALTIME_REVIEW` | `QUEUED` | 未通过基础检查，不能快速放行 |
 | R5 | 无意义互动（确定性判定为 NOISE） | FINAL：来源 `FAST_PASS`，分类 `ALLOW_NOISE`，结算 `NONE` | `DONE` | 不加分、不扣分 |
 | R6 | 白名单 | FINAL：来源 `FAST_PASS`，分类 `ALLOW_NOISE`，结算 `NONE` | `DONE` | 短路；不冒充模型确认的有意义互动 |
