@@ -17,7 +17,7 @@ export function isRewardCoolingDown(lastRewardAt: string | null, eventTime: stri
  * so the storage port can call it inside its transaction. The caller has already validated the verdict.
  */
 export function decideVerdictChange(
-  event: ChannelEvent,
+  event: Pick<ChannelEvent, "receivedAt" | "correlationId">,
   verdict: Verdict,
   state: ScoreSubjectState,
   config: ScoringConfig,

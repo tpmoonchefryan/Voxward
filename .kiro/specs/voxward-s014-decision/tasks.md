@@ -20,11 +20,11 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ## VOXWARD-SUB-026：DecisionService 人工接管、复核改判与冲突状态
 
-- [ ] 26.1 契约：`DecisionService` 结果类型与 `DecisionStorePort`（packages/contracts）
-- [ ] 26.2 计分端口：导出 `commitInTransaction`；例外端口拒绝（Q21）；无计分幂等记录（迁移 0005，Q19①）；人工补偿与身份键按频道（Q19②）
-- [ ] 26.3 `db/decision-store.ts`：裁决 commit 的单一短事务（任务守卫、裁决、投递意图、计分、Change Log）
-- [ ] 26.4 模块 `service.ts`、`concurrency.ts`、`index.ts`：commit 与冲突结果；权限检查
-- [ ] 26.5 `routes.ts` 纯函数；测试 `commit.test.ts`、`concurrency.test.ts`、`decision-store.test.ts`
+- [x] 26.1 契约：`DecisionService` 结果类型与 `DecisionStorePort`（packages/contracts）
+- [x] 26.2 计分端口：导出 `commitInTransaction`；例外端口拒绝（Q21）；无计分幂等记录（迁移 0005，Q19①）；人工补偿与身份键按频道（Q19②）
+- [x] 26.3 `db/decision-store.ts`：裁决 commit 的单一短事务（任务守卫、裁决、投递意图、计分、Change Log）
+- [x] 26.4 模块 `service.ts`、`concurrency.ts`、`index.ts`：commit 与冲突结果；权限检查
+- [x] 26.5 `routes.ts` 纯函数；测试 `commit.test.ts`、`concurrency.test.ts`、`decision-store.test.ts`
 - [ ] 26.6 SUB-026 自测（build、typecheck、test、check:deps）全部退出 0；提交 `VOXWARD-SUB-026`
 
 ## VOXWARD-SUB-027：计分纠错补偿、名单/词条权限与过期消息补发

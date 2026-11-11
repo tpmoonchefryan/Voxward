@@ -14,8 +14,12 @@ export interface IdentityTransition {
   readonly nextKind: IdentityKind;
 }
 
-export function identityIdempotencyKey(sourceEventRef: string): string {
-  return `identity:${sourceEventRef}`;
+/**
+ * Idempotency key of an identity event. It includes the channel and the subject, so one platform reference is a separate
+ * change in each room and for each viewer (Q19).
+ */
+export function identityIdempotencyKey(channelId: string, subjectKey: string, sourceEventRef: string): string {
+  return `identity:${channelId}:${subjectKey}:${sourceEventRef}`;
 }
 
 /**

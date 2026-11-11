@@ -9,13 +9,15 @@ import {
   type ScoreCommitResult,
   type ScoringEngine,
   type ScoringLedgerPort,
+  type ScoringPlanner,
   type Verdict,
+  type VerdictScoringFacts,
 } from "@voxward/contracts";
 import { resolveScoringConfig, type ScoringConfigOverrides } from "./config.js";
 import { decideVerdictChange } from "./engine.js";
 import { ScoringInputError, ScoringRefusedError } from "./errors.js";
 import { decideIdentityTransition, identityIdempotencyKey, type IdentityTransition } from "./identity-events.js";
-import { decideManualCorrection, manualIdempotencyKey, type ManualCorrection } from "./compensation.js";
+import { decideCorrection, decideManualCorrection, manualIdempotencyKey, type ManualCorrection } from "./compensation.js";
 import { commitScoring } from "./ledger.js";
 
 export { DEFAULT_SCORING_CONFIG, type ScoringConfig, type ScoringConfigOverrides } from "./config.js";
@@ -47,6 +49,19 @@ export function verdictIdempotencyKey(event: ChannelEvent): string {
 
 /** Rejects input that cannot be scored, before any storage call. A failed model output lands here. */
 export function validateVerdictInput(event: ChannelEvent, verdict: Verdict): void {
+  validateVerdictScoring(
+    {
+      channelId: event.channelId,
+      platformMessageId: event.platformMessageId,
+      subjectKey: event.sender.senderRef,
+      receivedAt: event.receivedAt,
+      correlationId: event.correlationId,
+    },
+    verdict,
+  );
+}
+
+function validateVerdictScoring(facts: VerdictScoringFacts, verdict: Verdict): void {
   if (!(INTERNAL_CLASSIFICATIONS as readonly string[]).includes(verdict.classification)) {
     throw new ScoringInputError("classification");
   }
@@ -54,10 +69,10 @@ export function validateVerdictInput(event: ChannelEvent, verdict: Verdict): voi
     throw new ScoringInputError("downstream");
   }
   validatePenaltyHits(verdict.penaltyHits);
-  requireText(event.channelId, "channelId");
-  requireText(event.platformMessageId, "platformMessageId");
-  requireText(event.sender.senderRef, "senderRef");
-  if (Number.isNaN(Date.parse(event.receivedAt))) throw new ScoringInputError("receivedAt");
+  requireText(facts.channelId, "channelId");
+  requireText(facts.platformMessageId, "platformMessageId");
+  requireText(facts.subjectKey, "subjectKey");
+  if (Number.isNaN(Date.parse(facts.receivedAt))) throw new ScoringInputError("receivedAt");
 }
 
 /** A hit is a rule code and a non-negative whole-number deduction. Anything else is refused before any storage call. */
@@ -126,20 +141,21 @@ export function createScoringEngine(options?: ScoringOptions): ScoringService {
 
     async applyIdentityTransition(transition) {
       validateIdentityTransition(transition);
-      const idempotencyKey = identityIdempotencyKey(transition.sourceEventRef);
+      // The channel and subject are part of the reference, so the identity fact's unique index is per room and viewer.
+      const qualifiedRef = identityIdempotencyKey(transition.channelId, transition.subjectKey, transition.sourceEventRef);
       const result = commitScoring(options.ledger, {
         subject: { channelId: transition.channelId, subjectKey: transition.subjectKey },
-        idempotencyKey,
-        identityEventRef: transition.sourceEventRef,
+        idempotencyKey: qualifiedRef,
+        identityEventRef: qualifiedRef,
         committedAt: clock().toISOString(),
-        decide: (state) => decideIdentityTransition(transition, state, config),
+        decide: (state) => decideIdentityTransition({ ...transition, sourceEventRef: qualifiedRef }, state, config),
       });
-      return toScoreChange(result, idempotencyKey);
+      return toScoreChange(result, qualifiedRef);
     },
 
     async applyManualCorrection(correction) {
       validateManualCorrection(correction);
-      const idempotencyKey = manualIdempotencyKey(correction.operationId);
+      const idempotencyKey = manualIdempotencyKey(correction.channelId, correction.subjectKey, correction.operationId);
       const result = commitScoring(options.ledger, {
         subject: { channelId: correction.channelId, subjectKey: correction.subjectKey },
         idempotencyKey,
@@ -147,6 +163,23 @@ export function createScoringEngine(options?: ScoringOptions): ScoringService {
         decide: (state) => decideManualCorrection(correction, state, config),
       });
       return toScoreChange(result, idempotencyKey);
+    },
+  };
+}
+
+/**
+ * Pure scoring plans for a server binding that commits a verdict and its score in one transaction. The verdict plan uses
+ * the same rule table as applyVerdict, so both paths give the same result for the same input.
+ */
+export function createScoringPlanner(overrides?: ScoringConfigOverrides): ScoringPlanner {
+  const config = resolveScoringConfig(overrides);
+  return {
+    planVerdict(facts, verdict) {
+      validateVerdictScoring(facts, verdict);
+      return (state) => decideVerdictChange(facts, verdict, state, config);
+    },
+    planCorrection(delta, correlationId) {
+      return (state) => decideCorrection({ delta, correlationId }, state, config);
     },
   };
 }

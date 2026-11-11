@@ -5,3 +5,4 @@ export * from "./messages.js";
 export * from "./data-requests.js";
 export * from "./logs.js";
 export * from "./auth.js";
+export * from "./score-outcomes.js";

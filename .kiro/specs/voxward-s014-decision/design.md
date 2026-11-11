@@ -147,3 +147,12 @@ apps/server/test/db/decision-store.test.ts            裁决与计分同一事�
 - 提案没有规定补发的时效、改判后的二次计分、名单与裁决冲突的处理方式。以上均标「自定」。
 - 删除索引找不到没有技术日志关联的主体级 Change Log（Q29），本包只保证写入方带关联值，不保证删除索引能找到它们。
 - 生产环境的多进程并发、真实平台回执、真实投递均未验证。
+
+## 8. 实施记录与偏离（SUB-026）
+
+- 契约中 `commit` 的第一个参数是任务标识而不是 `TaskRef`。`TaskRef` 的版本与代次字段由存储层在事务内对照当前值，调用方不需要也不能提供它们。
+- 提交结果类型名为 `CommitOutcome`。`DecisionOutcome` 已被数据请求端口占用（`data-request.ts` 的已决/未找到结果），不改名会造成导出冲突。
+- `concurrency.ts` 放权限判断（`mayDecide`）与冲突结果构造（`conflictOutcome`）；`service.ts` 放 `commitDecision` 的编排。
+- 裁决与计分的组合在 `db/decision-store.ts`：`TaskStore.commitVerdict` 做任务守卫，随后在同一事务内写投递意图、调用 `commitInTransaction` 计分，最后写 Change Log。计划函数由 `createScoringPlanner` 提供，组合层注入。
+- HTTP 绑定与 app 接线未在 SUB-026 内完成。路由纯函数由 `routes.test.ts` 覆盖；绑定见后续提交或报告中的未完成项。
+
