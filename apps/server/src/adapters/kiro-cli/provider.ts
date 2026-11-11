@@ -7,6 +7,8 @@ import {
   type InferenceResult,
   type InferenceResultItem,
   type InternalClassification,
+  type MatchedSpan,
+  type ModerationReasonCode,
 } from "@voxward/contracts";
 import { describeKiroCli } from "./capabilities.js";
 import { markRunDirectoryActive, releaseRunDirectory } from "./active-runs.js";
@@ -18,11 +20,19 @@ import { signalProcessGroup } from "./process-group.js";
 import { parseBusinessJson, readRunStream, createSessionIdScanner } from "./run-stream.js";
 import { openRunSession, type RunSession } from "./session-lifecycle.js";
 
+/** One validated item of the batch output, as the validator reports it. `itemId` is the id the model answered under. */
+export interface ValidatedOutputItem {
+  readonly itemId: string;
+  readonly verdict: InternalClassification;
+  readonly reasonCodes: readonly ModerationReasonCode[];
+  readonly matchedSpan?: MatchedSpan;
+}
+
 /** The validator's outcome as this adapter needs it. The composition root binds the moderation module's validator. */
 export type BatchOutputOutcome =
   | {
       readonly ok: true;
-      readonly items: readonly { readonly itemId: string; readonly verdict: InternalClassification }[];
+      readonly items: readonly ValidatedOutputItem[];
     }
   | { readonly ok: false; readonly errors: readonly { readonly code: string }[] };
 
@@ -277,18 +287,24 @@ async function decodeResult(
     });
   }
 
-  const verdictByItemId = new Map(outcome.items.map((item) => [item.itemId, item.verdict] as const));
+  const validatedByItemId = new Map(outcome.items.map((item) => [item.itemId, item] as const));
   const itemIdByCorrelationId = new Map<string, string>();
   for (const [itemId, correlationId] of model.itemIds) itemIdByCorrelationId.set(correlationId, itemId);
 
-  return request.items.map((item) => {
+  return request.items.map((item): InferenceResultItem => {
     const itemId = itemIdByCorrelationId.get(item.correlationId);
-    const classification = itemId === undefined ? undefined : verdictByItemId.get(itemId);
-    if (classification === undefined) {
+    const validated = itemId === undefined ? undefined : validatedByItemId.get(itemId);
+    if (itemId === undefined || validated === undefined) {
       throw new KiroInferenceError("RUN_OUTPUT_INVALID", batchId, { validationCodes: ["ITEM_RESULT_MISSING"] });
     }
-    return { correlationId: item.correlationId, classification };
+    return resultItemOf(item.correlationId, itemId, validated);
   });
+}
+
+/** The result item the caller stores as evidence. A matched span is present only when the validator found one. */
+function resultItemOf(correlationId: string, itemId: string, validated: ValidatedOutputItem): InferenceResultItem {
+  const result = { correlationId, itemId, classification: validated.verdict, reasonCodes: validated.reasonCodes };
+  return validated.matchedSpan === undefined ? result : { ...result, matchedSpan: validated.matchedSpan };
 }
 
 /**

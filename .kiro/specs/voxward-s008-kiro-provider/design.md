@@ -224,3 +224,4 @@ export interface InferenceResult extends Versioned { readonly batchId: string; r
 - 假 CLI 夹具在 git 索引中标记可执行位，测试运行时也会 `chmod 0755`。
 - `deploy/kiro-runtime/` 没有 agent 配置模板：Kiro agent 配置的格式待实测。
 - `docs/security/runtime-ai-least-privilege.md` 第 1 节中 Kiro 一行的状态已更新，说明适配器存在、未绑定、真实调用未验证。
+- 结果项（N4）：`InferenceResultItem` 增加 `itemId`（模型看到的临时编号，供服务端保存 ITEM_ID_MAP）、`reasonCodes`，以及有命中时的 `matchedSpan`。§4.1 的代码块保留原样，以本条为准。调度接线仍属 S009。

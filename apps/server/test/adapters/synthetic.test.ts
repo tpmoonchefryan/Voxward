@@ -53,8 +53,18 @@ describe("synthetic inference provider", () => {
       contractVersion: "1",
       batchId: "batch-42",
       items: [
-        { correlationId: "corr-42", classification: "ALLOW_MEANINGFUL" },
-        { correlationId: "corr-43", classification: "ALLOW_MEANINGFUL" },
+        {
+          correlationId: "corr-42",
+          itemId: "synthetic-item-1",
+          classification: "ALLOW_MEANINGFUL",
+          reasonCodes: ["NONE"],
+        },
+        {
+          correlationId: "corr-43",
+          itemId: "synthetic-item-2",
+          classification: "ALLOW_MEANINGFUL",
+          reasonCodes: ["NONE"],
+        },
       ],
     });
   });
