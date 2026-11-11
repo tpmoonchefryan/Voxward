@@ -25,18 +25,18 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] 26.3 `db/decision-store.ts`：裁决 commit 的单一短事务（任务守卫、裁决、投递意图、计分、Change Log）
 - [x] 26.4 模块 `service.ts`、`concurrency.ts`、`index.ts`：commit 与冲突结果；权限检查
 - [x] 26.5 `routes.ts` 纯函数；测试 `commit.test.ts`、`concurrency.test.ts`、`decision-store.test.ts`
-- [ ] 26.6 SUB-026 自测（build、typecheck、test、check:deps）全部退出 0；提交 `VOXWARD-SUB-026`
+- [x] 26.6 SUB-026 自测（build、typecheck、test、check:deps）全部退出 0；提交 `VOXWARD-SUB-026`
 
 ## VOXWARD-SUB-027：计分纠错补偿、名单/词条权限与过期消息补发
 
-- [ ] 27.1 `compensation.ts`：复核改判（`overturn`）、按账本实际纠分、代次守卫（删除交叉）
-- [ ] 27.2 `list-permissions.ts`：名单与词条的 `list.edit` 权限，Change Log 摘要不含分数（Q29）
-- [ ] 27.3 `resend.ts`：过期消息显式补发，有效期受限，幂等
-- [ ] 27.4 测试 `overturn.test.ts`、`resend.test.ts`、`list-permissions.test.ts`、`outcomes.test.ts`
-- [ ] 27.5 SUB-027 自测全部退出 0；提交 `VOXWARD-SUB-027`
+- [x] 27.1 `compensation.ts`：复核改判（`overturn`）、按账本实际纠分、代次守卫（删除交叉）
+- [x] 27.2 `list-permissions.ts`：名单与词条的 `list.edit` 权限，Change Log 摘要不含分数（Q29）
+- [x] 27.3 `resend.ts`：过期消息显式补发，有效期受限，幂等
+- [x] 27.4 测试 `overturn.test.ts`、`resend.test.ts`、`list-permissions.test.ts`、`outcomes.test.ts`
+- [x] 27.5 SUB-027 自测全部退出 0；提交 `VOXWARD-SUB-027`
 
 ## 批末
 
-- [ ] 28.1 `pnpm install`、`build`、`typecheck`、`test`、`check:deps`、`kiro-specs.mjs check` 全部退出 0
-- [ ] 28.2 `smoke.sh` 启动冒烟（不设 `VOXWARD_DATABASE_FILE`）通过
-- [ ] 28.3 证据 `evidence/self-check.md` 随最后一个 commit 提交
+- [x] 28.1 `pnpm install`、`build`、`typecheck`、`test`、`check:deps`、`kiro-specs.mjs check` 全部退出 0
+- [x] 28.2 `smoke.sh` 启动冒烟（不设 `VOXWARD_DATABASE_FILE`）通过
+- [x] 28.3 证据 `evidence/self-check.md` 随最后一个 commit 提交

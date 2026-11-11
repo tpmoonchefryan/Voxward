@@ -156,3 +156,14 @@ apps/server/test/db/decision-store.test.ts            裁决与计分同一事�
 - 裁决与计分的组合在 `db/decision-store.ts`：`TaskStore.commitVerdict` 做任务守卫，随后在同一事务内写投递意图、调用 `commitInTransaction` 计分，最后写 Change Log。计划函数由 `createScoringPlanner` 提供，组合层注入。
 - HTTP 绑定与 app 接线未在 SUB-026 内完成。路由纯函数由 `routes.test.ts` 覆盖；绑定见后续提交或报告中的未完成项。
 
+## 9. 实施记录与偏离（SUB-027）
+
+- 数据库绑定集中在 `db/decision-store.ts`，包括裁决、改判、补发、名单与词条。没有另建文件，避免共用的读取辅助函数跨文件循环引用。
+- 改判把新结论的 `task_id` 绑定到原裁决的任务。代次守卫因此统一为「裁决所绑定任务的代次 = 主体当前代次」，删除交叉后改判与补发都被拒绝。
+- 改判的纠分按原账本行 `event:<频道>:<平台消息>` 的 `actual_delta` 取负号，经当前上下限钳制；幂等键 `compensation:<频道>:<平台消息>` 保证每个事件只纠一次。
+- 补发的投递标识由频道与操作标识派生（`resend:<频道>:<操作标识>`），重复请求即为 `duplicate`。改判的投递与裁决标识同理（`overturn:` 与 `overturn-delivery:`）。
+- 名单与词条的 Change Log 不带分数。主体级名单记录的 `correlation_id` 为 `subject:<主体标识>`；词条记录没有主体，关联为空。
+- 例外标记的 Change Log 不在本包实现（例外的写入路径属于 S019）。
+- 补发的有效期与时限由 `DEFAULT_DECISION_LIMITS` 给出（自定：改判投递 5 分钟，补发投递 60 秒，补发时限 10 分钟）。
+- 删除索引对主体级 Change Log 的查找仍是 S019 的工作（Q29）。
+

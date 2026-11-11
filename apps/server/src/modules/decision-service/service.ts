@@ -9,6 +9,22 @@ import {
 } from "@voxward/contracts";
 import { conflictOutcome, mayDecide } from "./concurrency.js";
 
+/** Validity and age limits of reviews and resends. The values are the module's own choices (自定), not product rules. */
+export interface DecisionLimits {
+  /** How long a delivery caused by a review stays valid. */
+  readonly overturnValidityMs: number;
+  /** How long a resent delivery stays valid. */
+  readonly resendValidityMs: number;
+  /** How long after the message arrived a resend is still allowed. */
+  readonly resendMaxAgeMs: number;
+}
+
+export const DEFAULT_DECISION_LIMITS: DecisionLimits = {
+  overturnValidityMs: 5 * 60_000,
+  resendValidityMs: 60_000,
+  resendMaxAgeMs: 10 * 60_000,
+};
+
 export interface DecisionDeps {
   /** Storage port. Each write is one short transaction that checks its guards again. */
   readonly store: DecisionStorePort;
@@ -16,18 +32,14 @@ export interface DecisionDeps {
   readonly newId: () => string;
   /** Wall clock for decision and delivery times. */
   readonly now: () => Date;
+  readonly limits: DecisionLimits;
 }
 
 /**
  * Settles one task. A human takeover and an AI result go through the same path. The store decides whether the task is
  * still open, so a late AI result after a human decision is refused without a score change.
  */
-export function commitDecision(
-  deps: DecisionDeps,
-  taskId: string,
-  verdict: Verdict,
-  origin: CommitOrigin,
-): CommitOutcome {
+export function commitDecision(deps: DecisionDeps, taskId: string, verdict: Verdict, origin: CommitOrigin): CommitOutcome {
   const facts = deps.store.readTask(taskId);
   if (facts === undefined) return conflictOutcome("TASK_NOT_FOUND", null);
   if (origin.kind === "HUMAN" && !mayDecide(origin.actor, facts.channelId)) {

@@ -6,6 +6,7 @@ import { ChannelEventStore, SubjectStore, TaskStore } from "../../src/db/reposit
 import { channels, subjects } from "../../src/db/schema/index.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { createDecisionService } from "../../src/modules/decision-service/index.js";
+import { DEFAULT_DECISION_LIMITS, type DecisionDeps } from "../../src/modules/decision-service/service.js";
 import { createScoringPlanner } from "../../src/modules/scoring-engine/index.js";
 import { ENABLED } from "../scoring-engine/ledger/helpers.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
@@ -79,13 +80,13 @@ export function seedOpenTask(database: VoxwardDatabase, seed: TaskSeed): void {
 }
 
 /**
- * The decision service over a real database. The clock is fixed, and identifiers come from one counter, so the tests
+ * The decision dependencies over a real database. The clock is fixed, and identifiers come from one counter, so the tests
  * can read them back.
  */
-export function decisionService(database: VoxwardDatabase, options: { now?: string } = {}): DecisionService {
+export function decisionDeps(database: VoxwardDatabase, options: { now?: string } = {}): DecisionDeps {
   let sequence = 0;
   const newId = () => `id-${++sequence}`;
-  return createDecisionService({
+  return {
     store: createDecisionStorePort(database, {
       planner: createScoringPlanner(ENABLED),
       newId,
@@ -93,7 +94,12 @@ export function decisionService(database: VoxwardDatabase, options: { now?: stri
     }),
     newId,
     now: () => new Date(options.now ?? DECIDED_AT),
-  });
+    limits: DEFAULT_DECISION_LIMITS,
+  };
+}
+
+export function decisionService(database: VoxwardDatabase, options: { now?: string } = {}): DecisionService {
+  return createDecisionService(decisionDeps(database, options));
 }
 
 export function actor(accountRef: string, capabilities: readonly string[], channelId = "channel-a"): DecisionActor {
