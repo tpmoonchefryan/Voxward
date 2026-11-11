@@ -55,7 +55,7 @@ No design authority is configured for the resolved work context. No authority wa
 
 # S006 实施设计（本地内容，不在受管段内）
 
-来源：VOXWARD-STORY-006 rev 4（VW-S006-R001@1）；VOXWARD-SUB-012 rev 1（VW-SUB012-R001@1，主验收行 VW-SUB012-AC001）；提案 §4.1–§4.4、§5.1、§5.3、§5.4；主工作区 tasks.md 问题清单 Q6、Q8、Q12、Q22；S004 设计（§5、§8）；S005 设计（§5、§9、§11、§13）。
+来源：VOXWARD-STORY-006 rev 4（VW-S006-R001@1）；VOXWARD-SUB-012 rev 1（VW-SUB012-R001@1，主验收行 VW-SUB012-AC001）；提案 §4.1–§4.4、§5.1、§5.3、§5.4；主工作区 tasks.md 问题清单 Q6、Q8、Q12、Q22；第 5a 批判断 B3（`.kiro/specs/voxward-batch5a/evidence/judgment.md`）；S004 设计（§5、§8）；S005 设计（§5、§9、§11、§13）。
 标「自定」的是 Story discretion 内的选择，或来源没有规定的参数。
 
 ## 0. 范围
@@ -73,7 +73,7 @@ No design authority is configured for the resolved work context. No authority wa
 | `apps/server/src/modules/moderation-engine/routing/exception-queue.ts` | 新增 | 例外队列端口与进程内实现 |
 | `apps/server/src/modules/moderation-engine/routing/router.ts` | 新增 | 路由编排、计分接线、审核完成 |
 | `apps/server/src/modules/moderation-engine/index.ts` | 修改 | 导出路由工厂与类型 |
-| `apps/server/src/modules/moderation-engine/rules/normalize.ts`、`groups.ts`、`engine.ts` | 修改 | Q6 归一化选项；Q12 准入提示；规则集携带归一化选项 |
+| `apps/server/src/modules/moderation-engine/rules/normalize.ts`、`groups.ts`、`engine.ts` | 修改 | Q6 归一化选项；Q12 准入提示；规则集携带归一化选项；B3（返工 2）：`normalize.ts` 的单元切分与处理顺序，见 4.11 |
 | `packages/contracts/src/decisions/verdict.ts` | 修改 | Q22：`Verdict.penaltyHits` 与 `PenaltyHit` |
 | `apps/server/src/modules/scoring-engine/rules.ts`、`engine.ts`、`index.ts` | 修改 | Q22：BLOCK 扣分经 `selectPenalty`；输入校验 |
 | `apps/server/src/db/schema/subjects.ts` | 修改 | Q8：删除 `subject_nickname_checks` 定义 |
@@ -81,10 +81,11 @@ No design authority is configured for the resolved work context. No authority wa
 | `docs/data-dictionary.md` | 修改 | Q8：删除该表段落，表数 27 改为 26 |
 | `apps/server/test/db/schema.test.ts` | 修改 | Q8：表数与迁移中的删除语句 |
 | `apps/server/test/moderation-engine/routing/*.test.ts` | 新增 | 路由验收测试 |
-| `apps/server/test/moderation-engine/rules/*.test.ts` | 修改 | Q6、Q12 |
+| `apps/server/test/moderation-engine/rules/*.test.ts` | 修改 | Q6、Q12；B3：`normalize.test.ts`、`transliterate.test.ts` 增补，新增 `sound-marks.test.ts` 与用例表 `sound-mark-cases.ts`；`routing/classification.test.ts` 增补 |
 | `apps/server/test/scoring-engine/engine/*.test.ts` | 修改 | Q22 |
 | `packages/contracts/test/contracts.test.ts` | 修改 | 新字段 |
 | `.kiro/specs/voxward-s006-routing/evidence/self-check.md` | 新增 | 自测证据 |
+| `.kiro/specs/voxward-s006-routing/evidence/rework2-self-check.md`、`rework2-before-after.md`、`rework2-probe.ts`、`rework2-fuzz.mjs`、`rework2-bench.mjs`、`rework2-mutate.py` | 新增 | B3（返工 2）的自测、修复前后的逐输入对照，以及产生这些数字的探针、随机语料比对、耗时与变异检查脚本 |
 
 ## 2. 依赖方向
 
@@ -135,7 +136,7 @@ No design authority is configured for the resolved work context. No authority wa
 
 `classifyDeterministicNoise(body)` 返回 `NOISE` 或 `UNCERTAIN`（自定）：
 
-1. 正文先经 `normalizeText`（NFKC、删除组合标记与格式字符、小写），再按空白切分词元。
+1. 正文先经 `normalizeText`（处理顺序见 4.11：删不可见字符、独立浊点转组合浊点、NFKC、小写、删残余标记），再按空白切分词元。半角与独立浊点因此读作带浊点的假名：`ﾊﾞﾊﾟﾊ` 是三个不同的假名，不会被当成同一字符重复三次（B3 之前读成 `ハハハ`，判为 NOISE）。
 2. 全部词元都属于下列之一时为 `NOISE`：（a）`w` 连续出现不少于 3 次；（b）仅由表情或象形字符（`\p{Extended_Pictographic}`、`\p{Emoji_Component}`）组成；（c）同一字符连续出现不少于 3 次。
 3. 空正文、或含任何其它词元，为 `UNCERTAIN`。
 
@@ -184,10 +185,10 @@ No design authority is configured for the resolved work context. No authority wa
 ### 4.8 Q6：组合标记
 
 - `NormalizeOptions = { stripCombiningMarks: boolean }`，默认 `true`（自定：这是绕过路径，安全默认开启）。
-- 开启时，每个单元按 NFKD → 删除组合附加符号区块中的标记 → NFKC → 小写 → 删除 `\p{M}` 与 `\p{Cf}` 归一化。组合附加符号区块为 U+0300–036F、U+1AB0–1AFF、U+1DC0–1DFF、U+20D0–20FF、U+FE20–FE2F。按区块删除，不按文字或语言启用（自定）。U+3099、U+309A 不在这些区块内，因此 `が`（か + U+3099）经 NFKC 重新组合为 `が`，不会变成 `か`。
+- 开启时，每个单元的处理顺序见 4.11（B3 起，NFKD 之前先删不可见字符、独立浊点先转为组合浊点）。组合附加符号区块为 U+0300–036F、U+1AB0–1AFF、U+1DC0–1DFF、U+20D0–20FF、U+FE20–FE2F。按区块删除，不按文字或语言启用（自定）。U+3099、U+309A 不在这些区块内，因此 `が`（か + U+3099）经 NFKC 重新组合为 `が`，不会变成 `か`。这只在浊点与假名处于同一单元、之间没有会拦住组合的字符时成立。B3 之前，半角浊点 U+FF9E、U+FF9F 与独立浊点 U+309B、U+309C 各自成单元，格式字符夹在假名与组合浊点之间时 NFKC 也在格式字符处停止组合，两种写法的浊点都丢失；4.11 记录修法。
 - 规则集可在 `normalization` 字段覆盖。非布尔值或未知键在编译时报 `NORMALIZATION_INVALID`。
 - 普通归一化规则（`normalized`）的模式与正文使用同一选项。转写表的键校验与读音也使用规则集的同一选项：检查器工厂用规则集的选项构建转写表，两者不一致时报 `NORMALIZATION_MISMATCH`。
-- 正则规则（`regex`）不受该选项影响。模式源串不归一化，正则匹配副本为 NFKC、小写并删除 `\p{M}` 与 `\p{Cf}`、但不去除组合标记的副本（即 S004 第 3 节、第 5 节的副本）。这是 B1 验收允许的两种做法中的第二种（自定）。结果：`ばか`、`café` 命中原文；`café` 也命中分解形式 `cafe` + U+0301。
+- 正则规则（`regex`）不受该选项影响。模式源串不归一化，正则匹配副本为 NFKC、小写并删除 `\p{M}` 与 `\p{Cf}`、但不去除组合标记的副本（即 S004 第 3 节、第 5 节的副本），单元切分与 4.11 的删不可见字符、独立浊点转换两步与归一化副本相同。这是 B1 验收允许的两种做法中的第二种（自定）。结果：`ばか`、`café` 命中原文；`café` 也命中分解形式 `cafe` + U+0301。
 - 残余风险：正则 `badword` 不命中 `ba\u0301dword`。c67db24 因正则也在去除后的副本上匹配而命中。组合标记绕过只在归一化规则上封堵，这与 Q6 的问题描述（归一化规则）一致。若要求正则也封堵，改用第一种做法：正则源串按同一选项归一化，需要单独设计字符类与转义的处理，本包未做。
 - 行为变化：S004 的规则在默认设置下，含可组合标记的文本会按去除后的形式匹配（例如 `bádword` 匹配 `badword`）。这是 Q6 的修复范围。自测给出修复前后对照。
 
@@ -204,6 +205,60 @@ No design authority is configured for the resolved work context. No authority wa
 - `validateVerdictInput` 校验 `penaltyHits`：每项 `code` 非空，`points` 为非负安全整数；否则抛 `ScoringInputError("penaltyHits")`，不调用账本。
 - 允许分类忽略 `penaltyHits`。
 
+### 4.11 匹配副本的归一化（B3）
+
+背景：第 5a 批判断 B3。归一化副本逐单元做 NFKC。半角浊点 U+FF9E、U+FF9F（`\p{Lm}`）与独立浊点 U+309B、U+309C（`\p{Sk}`）自成单元；NFKC 把前两者变成组合浊点，单元里没有可组合的基字，随后被「删除 `\p{M}`」一步去掉。格式字符夹在假名与组合浊点之间时，NFKC 在格式字符处停止组合，浊点同样被删。后果：`ﾊﾞｶ` 的副本是 `ハカ`，归一化与正则的 `バカ` 规则漏拦，`ハカ` 规则误伤，`ｶﾞｶ` 读成 kaka。三条路径（归一化规则、正则、读音）共用同一套切分与归一化，所以三处同时出错。
+
+**单元**（`splitUnits`）：按码点切分。下列字符并入前一个单元：`\p{M}`、`\p{Cf}`、谚文中声与终声字母（U+1160–U+11FF、U+D7B0–U+D7FF），以及 B3 新增的 U+309B、U+309C、U+FF9E、U+FF9F。文本开头没有前一个单元可并入的字符自成一个单元。单元是映射粒度：每个单元对应原文一段连续区间，相邻单元首尾相接，覆盖全文。昵称与正文各自切分，单元不跨字段，所以昵称末尾的假名不会与正文开头的浊点组合。
+
+**处理顺序**（`normalizeUnit`，对每个单元，三条路径相同）：
+
+1. 删除不可见字符：全部 `\p{Cf}`，以及默认可忽略的组合标记（同时属于 `\p{M}` 与 `\p{Default_Ignorable_Code_Point}` 的码点：变体选择符、组合字素连接符 U+034F 等）。NFC 与 NFKC 只在标记与基字之间没有组合类为 0 的字符时才把两者组合，所以这些字符必须在组合之前删掉。
+2. 独立浊点转组合浊点：U+309B → U+3099，U+309C → U+309A。NFKC 会把它们变成「空格 + 组合浊点」，空格会隔开浊点与假名。半角浊点不用单独处理：NFKC 直接把 U+FF9E、U+FF9F 变成 U+3099、U+309A。
+3. NFKC。选项 `stripCombiningMarks` 开启（默认）时先 NFKD，删除组合附加符号区块中的标记（4.8），再 NFKC；关闭时直接 NFKC。
+4. 转小写。
+5. 删除剩下的 `\p{M}` 与 `\p{Cf}`。不能与前一个字符组合的浊点（拉丁字母后的 U+FF9E 等）在这一步消失，不能用来隐藏一个词。
+
+**三条路径一致**：归一化规则的模式（`normalizeText`）与正文副本（`normalizeField`，规则集选项）、正则规则匹配的组合副本（`normalizeField`，`stripCombiningMarks: false`）、转写表的键校验与读音（`createTableTransliterator`）都调用同一个 `splitUnits` 与 `normalizeUnit`，没有第二套实现。三者的单元边界相同；组合副本与归一化副本的差别只有 4.8 的组合附加符号区块。`routing/classification.ts` 的噪声判定也调用 `normalizeText`。
+
+**原文区间**：副本里的命中 `[s, e)` 映射为所有与之相交的单元的原文区间的并集（`spansFor`，未改）。因此：
+
+- 命中包含它覆盖的整个单元：单元内的组合浊点、半角浊点和格式字符都在区间内。
+- 紧跟命中末字符的格式字符属于该字符的单元，在区间内。命中首字符之前的格式字符属于前一个字符的单元（或文本开头的零长单元），不在区间内。
+- 归一化结果为空的单元（孤立浊点、文本开头的格式字符）严格位于命中内部时计入，位于边界时不计入。
+- 区间按 UTF-16 单位计，补充平面字符占两个。
+
+**修法的选择**（自定）：判断列出两种做法：先删 `\p{Cf}`、整段 NFKC，再按码点对应重建单元与区间；或在 `splitUnits` 里把浊点并入前一个单元，并在 NFKC 之前删单元内的格式字符。本包选第二种。理由：区间映射本来按单元记录，三条路径共用切分与归一化函数，改动只在这两处；整段 NFKC 还会把兼容谚文字母（`ㅂㅏ`）折叠成音节，改变判断 N11 记录的行为，超出 B3。验证：`test/moderation-engine/rules/normalize.test.ts` 把逐单元的结果与「先删不可见字符、独立浊点转组合浊点、再整段归一化」的参照在 1344 个构造串上逐一比对，两种选项下都一致；30 万个随机串的比对见 `evidence/rework2-self-check.md`，唯一的不一致是兼容谚文字母，修复前后相同。
+
+**不在本修法内**（各版本行为相同，判断 N11）：兼容谚文字母 `ㅂㅏㅂㅗ` 不折叠成音节；阿拉伯语 tatweel U+0640 不删除；越南语声调与 й、ё 在归一化副本里折叠。正则规则的模式源串不归一化（4.8），所以写成半角的正则源串 `ﾊﾞｶ` 既不命中 `バカ`，也不命中 `ﾊﾞｶ`；需要半角写法时用归一化规则，它的模式与正文走同一套归一化。
+
+**行为变化**：
+
+- 半角、独立浊点和被不可见字符隔开的浊点，现在与全角预组合写法得到同一个副本（下表）。`ハカ` 不再命中 `ﾊﾞｶ`，`カス` 不再命中 `ｶﾞｽ`，`ｶﾞｶ` 读作 gaka。
+- U+309B、U+309C 不再在副本里留下一个空格；拉丁字母后的这类浊点被删除，`ba゛dword` 现在命中 `badword`。
+- 组合副本里，不可见字符不再拦住组合：`cafe` + U+200B + U+0301 的组合副本是 `café`，正则 `café` 命中它（修复前不命中）。
+- 谚文字母之间的格式字符不再拦住音节的组合（`ᄇ` + U+200B + `ᅡ` 的副本是 `바`）。
+- 副本发生变化的文本只限含 U+309B、U+309C、U+FF9E、U+FF9F 或不可见字符的文本；其它文本的副本不变（30 万个随机串验证）。
+
+下表是输入写法、匹配副本和原文区间的例子。「规则 → 原文区间」中的区间 `[起,止)` 是正文里的 UTF-16 偏移；副本和区间取自实测，修复前的结果与全部输入的逐项对照在 `evidence/rework2-before-after.md`。
+
+| 输入写法（正文） | 匹配副本 | 规则 → 原文区间 | 说明 |
+| --- | --- | --- | --- |
+| 半角假名加半角浊点：`ﾊ\uFF9Eｶ` | `バカ` | 归一化 バカ → [0,3) |  |
+| 前后有其它字符：`x ﾊ\uFF9Eｶ y` | `x バカ y` | 归一化 バカ → [2,5) | 命中区间只含 ﾊﾞｶ 的三个单位，前后的 `x `、` y` 不在内 |
+| 假名加独立浊点 U+309B：`ハ\u309Bカ` | `バカ` | 归一化 バカ → [0,3) | 副本里没有空格，修复前是 `ハ カ` |
+| 假名、U+200B、组合浊点：`は\u200B\u3099か` | `ばか` | 归一化 ばか → [0,4) | 格式字符在单元内，区间包含它 |
+| 半角假名、U+2060、半角浊点：`ﾊ\u2060\uFF9Eｶ` | `バカ` | 归一化 バカ → [0,4) |  |
+| 假名、U+FE0F、组合浊点：`は\uFE0F\u3099か` | `ばか` | 归一化 ばか → [0,4) | 变体选择符同属不可见字符 |
+| 拉丁字母后的半角浊点：`ba\uFF9Edword` | `badword` | 归一化 badword → [0,8) | 不能组合的浊点被删除，不能用来隐藏拉丁词 |
+| 谚文字母之间的 U+200B：`\u1107\u200B\u1161\u1107\u1169` | `바보` | 归一化 바보 → [0,5) | 副本是组合好的音节 `바보` |
+| 命中前有补充平面字符：`😀ﾊ\uFF9Eｶ` | `😀バカ` | 归一化 バカ → [2,5) | 区间按 UTF-16 单位计，U+1F600 占两个 |
+| 命中前有格式字符：`あ\u200Bﾊ\uFF9Eｶ` | `あバカ` | 归一化 バカ → [2,5) | U+200B 属于「あ」的单元，不在区间内 |
+| 命中后有格式字符：`ﾊ\uFF9Eｶ\u200Bx` | `バカx` | 归一化 バカ → [0,4) | U+200B 属于「ｶ」的单元，在区间内 |
+| 长音符 ｰ：`ﾊ\uFF9Eｰｶ` | `バーカ` | 归一化 バーカ → [0,4) | 长音符是字母，保留为 `ー` |
+| 文本开头的孤立浊点：`\uFF9Eｶ` | `カ` | 归一化 カ → [1,2) | 自成零长单元，不在区间内 |
+| 拉丁字母、U+200B、组合锐音符：`cafe\u200B\u0301` | `cafe`（归一化）；`café`（正则） | 正则 café → [0,6) | 归一化副本去掉锐音符；正则副本是 `café` |
+
 ## 5. 测试与验收对应
 
 | 测试文件 | 覆盖 | 对应验收 |
@@ -214,6 +269,8 @@ No design authority is configured for the resolved work context. No authority wa
 | `test/moderation-engine/routing/exception-queue.test.ts` | 幂等登记、结算 | VW-SUB012-AC001 |
 | `test/moderation-engine/routing/router.test.ts` | 合成事件经真实基础检查与真实计分引擎（假账本）：BLOCK 扣分取最大；例外拒绝不计分；快速放行不加分；系统失败不计分；人工接管后人工裁决计分；丢弃结算 | VW-SUB012-AC001；VW-S006-AC001 |
 | `test/moderation-engine/rules/normalize.test.ts`、`groups.test.ts`、`engine.test.ts` | Q6：组合标记绕过在默认下被拦截，关闭时保持旧行为；Q12：两类拒绝的提示与无模式原文 | 问题清单 Q6、Q12 |
+| `test/moderation-engine/rules/sound-marks.test.ts`、`sound-mark-cases.ts` | B3：判断 E20 与 E21 的全部输入、B1 对照输入、自补的 37 种组合（全角半角混排、半浊点、长音符、谚文字母与格式字符、越南语叠加声调、补充平面偏移、重复命中、前后格式字符）；五个词（バカ、ブス、デブ、ハゲ、ポンコツ）× 11 种写法 × 归一化与正则规则，加无浊点规则的反向对照；每条断言路由与原文区间。另有 `stripCombiningMarks: false` 的同组输入、昵称与组合范围的字段边界、扣分规则 `カス`、读音 `ｶﾞｶ`、三条路径的单元边界与副本一致 | 判断 B3 复验；VW-S006-INHERIT-003；VW-SUB012-INHERIT-003 |
+| `test/moderation-engine/rules/normalize.test.ts`（B3 部分）、`transliterate.test.ts`（B3 部分）、`routing/classification.test.ts`（B3 部分） | 单元切分；全部 `\p{Cf}` 与不可见标记不拦住组合；逐单元归一化与整段参照在 1344 个构造串上一致；单元映射无缝覆盖；半角、独立浊点的转写与键校验；`ﾊﾞﾊﾟﾊ` 不再判为 NOISE | 判断 B3 复验 |
 | `test/scoring-engine/engine/rules.test.ts`、`index.test.ts` | Q22：多规则取最大；校验 `penaltyHits` | 问题清单 Q22 |
 | `packages/contracts/test/contracts.test.ts` | `createVerdict` 的新字段 | 契约 |
 | `test/db/schema.test.ts`、`test/db/migrate.test.ts` | Q8：表数 26；迁移删除表；字典一致；从 0000–0002 升级时保留既有行 | 问题清单 Q8 |
@@ -233,6 +290,7 @@ No design authority is configured for the resolved work context. No authority wa
 
 - 第 4.3 节 R5–R7 的 `ALLOW_NOISE` 占位分类；第 4.5 节的存储映射。
 - 第 4.8 节归一化默认开启。
+- 第 4.11 节（B3）：在 `splitUnits` 里把半角与独立浊点并入前一个单元，不整段 NFKC；NFKC 之前删除全部 `\p{Cf}` 与默认可忽略的组合标记；U+309B、U+309C 先转为组合浊点；兼容谚文字母等 N11 项保持原样。
 - 第 4.4 节噪声的三类词元与 3 次阈值；空正文不算噪声。
 - 人工裁决与模型裁决一样按分类计分；BLOCK 的扣分包含 `VERDICT_BLOCK` 的基础值。
 - 第 4.7 节计分拒绝的处理方式：调用后识别，不做事前检查。
@@ -260,6 +318,7 @@ No design authority is configured for the resolved work context. No authority wa
 ## 10. 未验证项
 
 - 真实平台消息、真实模型输出、真实白名单与会员身份：未涉及。测试全部使用合成数据。
-- 性能：未测量。噪声判定与归一化的耗时不作声明。
+- 性能：噪声判定的耗时未测量。B3 之后归一化变慢：`normalizeField` 处理 300–500 字符的正文，修复前每次调用 0.04–0.17 ms，修复后 0.06–0.20 ms，约 1.1–2.0 倍（本机，负载约 2；原始数字见 `evidence/rework2-self-check.md`）。归一化发生在规则预算开始之前，不占用 20 ms 的预算。未在真实直播语料上测量。
+- 归一化覆盖的写法：测试与 30 万个随机串覆盖半角与独立浊点、被不可见字符隔开的浊点、谚文字母与格式字符。其它文字的同形异码、谚文填充字符等写法未验证。
 - 装配与端到端：路由器未接入注册表。`pnpm dev` 只验证服务能启动、`/healthz` 返回 200 与绑定地址。
 - 进程重启后的缓存与例外队列：未验证（均为进程内实现）。
