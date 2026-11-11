@@ -1,4 +1,6 @@
+import { StringDecoder } from "node:string_decoder";
 import { isPlainObject } from "@voxward/contracts";
+import { isAcceptedSessionId } from "./command.js";
 
 /**
  * The event shape the reader assumes: an ACP `session/update` notification whose update is an agent text chunk. kiro-cli
@@ -6,9 +8,6 @@ import { isPlainObject } from "@voxward/contracts";
  * and that fails closed.
  */
 const AGENT_TEXT_UPDATE = "agent_message_chunk";
-
-/** Accepted shape of a session id. The id later becomes a command argument, so a leading dash is refused. */
-const SESSION_ID_SHAPE = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/u;
 
 export interface RunStreamSummary {
   /** The agent text in stream order. Undefined when no agent text arrived. */
@@ -44,6 +43,45 @@ export function readRunStream(stdout: string): RunStreamSummary {
   };
 }
 
+/**
+ * Finds the first session id of a run stream while stdout is still arriving. A line can be split between two chunks, and a
+ * multi-byte character can be split too, so the decoder and the unfinished line are kept between calls. The callback runs
+ * once, for the first accepted id, so the caller can persist it before the run ends.
+ */
+export interface SessionIdScanner {
+  push(chunk: Buffer): void;
+  /** Reads the last line when the stream ends without a line break. */
+  end(): void;
+}
+
+export function createSessionIdScanner(onSessionId: (sessionId: string) => void): SessionIdScanner {
+  const decoder = new StringDecoder("utf8");
+  let unfinished = "";
+  let found = false;
+
+  const scanLine = (line: string): void => {
+    if (found || line.trim() === "") return;
+    const event = parseEvent(line);
+    const sessionId = event === undefined ? undefined : sessionIdOf(event);
+    if (sessionId === undefined) return;
+    found = true;
+    onSessionId(sessionId);
+  };
+
+  return {
+    push(chunk) {
+      const lines = (unfinished + decoder.write(chunk)).split("\n");
+      unfinished = lines.pop() ?? "";
+      for (const line of lines) scanLine(line);
+    },
+    end() {
+      const last = unfinished + decoder.end();
+      unfinished = "";
+      scanLine(last);
+    },
+  };
+}
+
 /** The business output must be exactly one JSON document. Prose or a code fence around it is refused, not cut away. */
 export type BusinessJson = { readonly ok: true; readonly value: unknown } | { readonly ok: false };
 
@@ -67,7 +105,7 @@ function parseEvent(line: string): JsonObject | undefined {
 
 function sessionIdOf(event: JsonObject): string | undefined {
   const candidates: unknown[] = [recordOf(event.params)?.sessionId, recordOf(event.result)?.sessionId, event.sessionId];
-  return candidates.find((value): value is string => typeof value === "string" && SESSION_ID_SHAPE.test(value));
+  return candidates.find((value): value is string => typeof value === "string" && isAcceptedSessionId(value));
 }
 
 function agentTextOf(event: JsonObject): string | undefined {

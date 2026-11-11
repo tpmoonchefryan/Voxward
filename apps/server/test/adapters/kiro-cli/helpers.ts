@@ -21,7 +21,7 @@ export function makeFakeExecutable(): void {
 }
 
 export interface FakeCallRecord {
-  readonly kind: "chat" | "started" | "delete-session";
+  readonly kind: "chat" | "started" | "delete-session" | "list-sessions";
   readonly pid: number;
   readonly cwd: string;
   readonly argv: readonly string[];

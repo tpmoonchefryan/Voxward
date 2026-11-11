@@ -1,7 +1,12 @@
 import { existsSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { removeRunDirectory, requestKiroSessionDeletion } from "../../../src/adapters/kiro-cli/cleanup.js";
+import {
+  listKiroSessions,
+  parseSessionListing,
+  removeRunDirectory,
+  requestKiroSessionDeletion,
+} from "../../../src/adapters/kiro-cli/cleanup.js";
 import { RUN_MARKER_FILE } from "../../../src/adapters/kiro-cli/session-lifecycle.js";
 import { createScratch, FAKE_CLI, fakeEnvironment, makeFakeExecutable } from "../kiro-cli/helpers.js";
 
@@ -115,5 +120,60 @@ describe("saved CLI session deletion", () => {
       timeoutMs: 5_000,
     });
     expect(flagShaped).toBe("DELETE_FAILED");
+  });
+});
+
+describe("saved CLI session listing", () => {
+  let scratch: string;
+
+  beforeAll(() => {
+    makeFakeExecutable();
+    scratch = createScratch("kiro-listing-");
+  });
+
+  afterAll(() => {
+    rmSync(scratch, { recursive: true, force: true });
+  });
+
+  it("accepts a JSON array of session ids, or of objects that carry one as sessionId", () => {
+    expect(parseSessionListing('["sess-a-1","sess-b-2"]')).toEqual(["sess-a-1", "sess-b-2"]);
+    expect(parseSessionListing('[{"sessionId":"sess-c-3"}]')).toEqual(["sess-c-3"]);
+    expect(parseSessionListing("[]")).toEqual([]);
+  });
+
+  it("treats anything else as unreadable, so it is never taken for an empty list", () => {
+    expect(parseSessionListing("not json")).toBeUndefined();
+    expect(parseSessionListing('{"sessions":[]}')).toBeUndefined();
+    expect(parseSessionListing('[{"id":"sess-d-4"}]')).toBeUndefined();
+    expect(parseSessionListing('["--cloud"]')).toBeUndefined();
+  });
+
+  it("returns the ids the CLI lists in the run directory, and nothing when the listing fails", async () => {
+    const directory = join(scratch, "run-listing");
+    mkdirSync(directory, { recursive: true });
+    const logPath = join(scratch, "listing.jsonl");
+    const listed = await listKiroSessions({
+      command: FAKE_CLI,
+      env: { ...fakeEnvironment(logPath, "ok"), FAKE_KIRO_LIST: "one" },
+      workingDirectory: directory,
+      timeoutMs: 5_000,
+    });
+    expect(listed).toEqual(["sess-listed-1"]);
+
+    const unreadable = await listKiroSessions({
+      command: FAKE_CLI,
+      env: { ...fakeEnvironment(logPath, "ok"), FAKE_KIRO_LIST: "garbage" },
+      workingDirectory: directory,
+      timeoutMs: 5_000,
+    });
+    expect(unreadable).toBeUndefined();
+
+    const missing = await listKiroSessions({
+      command: join(scratch, "no-such-kiro-cli"),
+      env: {},
+      workingDirectory: directory,
+      timeoutMs: 5_000,
+    });
+    expect(missing).toBeUndefined();
   });
 });

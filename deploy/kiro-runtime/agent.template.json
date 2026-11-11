@@ -1,0 +1,13 @@
+{
+  "name": "voxward-moderation-runtime",
+  "description": "Template only. The runtime agent classifies viewer messages supplied as data. It trusts no tool and loads no MCP server. Format unverified against kiro-cli 3.1.0.",
+  "prompt": null,
+  "mcpServers": {},
+  "tools": [],
+  "toolAliases": {},
+  "allowedTools": [],
+  "resources": [],
+  "hooks": {},
+  "toolsSettings": {},
+  "useLegacyMcpJson": false
+}

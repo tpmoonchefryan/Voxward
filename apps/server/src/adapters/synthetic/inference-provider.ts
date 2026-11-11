@@ -1,6 +1,9 @@
 import { CONTRACT_VERSION, type InferenceProvider, type InferenceResultItem } from "@voxward/contracts";
 
-/** Returns one fixed legal classification for every item. Holds no state, so cancel and release are no-ops. */
+/**
+ * Returns one fixed legal classification for every item. Holds no state, so cancel and release are no-ops. No model reads
+ * the item ids, so each one is only a stable position in the batch.
+ */
 export function createSyntheticInferenceProvider(): InferenceProvider {
   return {
     moduleName: "InferenceProvider",
@@ -14,9 +17,11 @@ export function createSyntheticInferenceProvider(): InferenceProvider {
       return {
         contractVersion: CONTRACT_VERSION,
         batchId: request.batchId,
-        items: request.items.map((item): InferenceResultItem => ({
+        items: request.items.map((item, index): InferenceResultItem => ({
           correlationId: item.correlationId,
+          itemId: `synthetic-item-${index + 1}`,
           classification: "ALLOW_MEANINGFUL",
+          reasonCodes: ["NONE"],
         })),
       };
     },

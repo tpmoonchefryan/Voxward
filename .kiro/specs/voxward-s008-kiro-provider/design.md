@@ -92,7 +92,7 @@ No design authority is configured for the resolved work context. No authority wa
 | `apps/server/src/modules/inference-provider/validation/batch-contract.ts`、`errors.ts` | Q24 | 015 |
 | `apps/server/src/adapters/synthetic/inference-provider.ts` | 同步到新形状 | 015 |
 | `apps/server/src/adapters/kiro-cli/capabilities.ts` | 能力声明、所测版本常量 | 015 |
-| `apps/server/src/adapters/kiro-cli/command.ts` | 固定参数、环境变量白名单 | 015 |
+| `apps/server/src/adapters/kiro-cli/command.ts` | 固定参数、参数形状校验（会话 ID、标志值）。环境变量不在此处过滤：`provider.ts` 与 `cleanup.ts` 把调用方给出的 `env` 完整交给子进程，服务器环境从不被继承（N9，与代码一致）。 | 015 |
 | `apps/server/src/adapters/kiro-cli/input-builder.ts` | 任务说明、itemId 生成、模型输入 | 015 |
 | `apps/server/src/adapters/kiro-cli/run-stream.ts` | 运行流解析、业务 JSON 提取 | 015 |
 | `apps/server/src/adapters/kiro-cli/errors.ts` | 本适配器错误码（只带码，不带正文） | 015 |
@@ -224,3 +224,4 @@ export interface InferenceResult extends Versioned { readonly batchId: string; r
 - 假 CLI 夹具在 git 索引中标记可执行位，测试运行时也会 `chmod 0755`。
 - `deploy/kiro-runtime/` 没有 agent 配置模板：Kiro agent 配置的格式待实测。
 - `docs/security/runtime-ai-least-privilege.md` 第 1 节中 Kiro 一行的状态已更新，说明适配器存在、未绑定、真实调用未验证。
+- 结果项（N4）：`InferenceResultItem` 增加 `itemId`（模型看到的临时编号，供服务端保存 ITEM_ID_MAP）、`reasonCodes`，以及有命中时的 `matchedSpan`。§4.1 的代码块保留原样，以本条为准。调度接线仍属 S009。

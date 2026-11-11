@@ -113,10 +113,12 @@ describe("one-time session lifecycle", () => {
     const started = readCalls(logPath).find((entry) => entry.kind === "started");
     const directory = runDirectoryOf("started");
 
+    // The session id reaches the record as soon as the run stream names it, while the run is still alive.
+    await waitFor(() => JSON.parse(readFileSync(join(directory, "session.json"), "utf8")).kiroSessionId !== null);
     expect(readdirSync(directory).sort()).toEqual([".voxward-session", "session.json"]);
     const text = readFileSync(join(directory, "session.json"), "utf8");
     const record = JSON.parse(text) as { batchId: string; state: string; pid: number; kiroSessionId: string | null };
-    expect(record).toMatchObject({ batchId: "life-metadata", state: "running", kiroSessionId: null });
+    expect(record).toMatchObject({ batchId: "life-metadata", state: "running", kiroSessionId: "sess-fake-1" });
     expect(record.pid).toBe(started?.pid);
     for (const forbidden of ["lifecycle message", "corr-life", "itemId", "items"]) {
       expect(text).not.toContain(forbidden);
@@ -137,5 +139,15 @@ describe("one-time session lifecycle", () => {
   it("sends no delete command when the run named no session", async () => {
     await failureOf(providerFor("fail").infer(requestOf("life-no-session")));
     expect(readCalls(logPath).some((entry) => entry.kind === "delete-session")).toBe(false);
+  });
+
+  it("keeps the run directory when the saved session cannot be deleted, so the orphan sweep can retry it", async () => {
+    const env = { ...fakeEnvironment(logPath, "ok"), FAKE_KIRO_DELETE: "fail" };
+    await providerFor("ok", { env }).infer(requestOf("life-delete-fails"));
+    const directory = runDirectoryOf("chat");
+
+    expect(existsSync(directory)).toBe(true);
+    const record = JSON.parse(readFileSync(join(directory, "session.json"), "utf8")) as Record<string, unknown>;
+    expect(record).toMatchObject({ state: "finished", kiroSessionId: "sess-fake-1" });
   });
 });

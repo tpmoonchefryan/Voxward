@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Fake kiro-cli for tests. It calls no model and uses no account. It reads the prompt from stdin, appends what it
 // received to FAKE_KIRO_LOG, and prints synthetic stream-json events. FAKE_KIRO_MODE selects the behaviour.
+// FAKE_KIRO_LIST selects the output of `--list-sessions` (one, none or garbage) and FAKE_KIRO_DELETE=fail makes
+// `--delete-session` exit with status 3. Both are unverified against the real CLI (design section 7).
 // Node built-ins only. The business output is synthetic: a text containing "badword" is BLOCK, anything else is allowed.
 import { appendFileSync, readFileSync } from "node:fs";
 
@@ -42,9 +44,18 @@ function classify(text) {
   return { verdict: "ALLOW_MEANINGFUL", reasonCodes: ["NONE"] };
 }
 
+function listingOutput(listMode) {
+  if (listMode === "one") return JSON.stringify([{ sessionId: "sess-listed-1" }]);
+  if (listMode === "garbage") return "not a listing";
+  return "[]";
+}
+
 if (argv.includes("--delete-session")) {
   record({ kind: "delete-session", sessionId: argv[argv.indexOf("--delete-session") + 1] });
-  process.exitCode = 0;
+  process.exitCode = process.env.FAKE_KIRO_DELETE === "fail" ? 3 : 0;
+} else if (argv.includes("--list-sessions")) {
+  record({ kind: "list-sessions" });
+  process.stdout.write(listingOutput(process.env.FAKE_KIRO_LIST));
 } else {
   const stdin = readFileSync(0, "utf8");
   record({ kind: "chat", stdin });

@@ -1,4 +1,5 @@
 import { describe, expectTypeOf, it } from "vitest";
+import type { MatchedSpan, ModerationReasonCode } from "../../src/ai/moderation-result.js";
 import type { InternalClassification } from "../../src/decisions/verdict.js";
 import type {
   InferenceProvider,
@@ -19,10 +20,13 @@ describe("inference batch shape (Q3)", () => {
     expectTypeOf<InferenceRequest["items"]>().toEqualTypeOf<readonly InferenceRequestItem[]>();
   });
 
-  it("returns one classification per item, keyed by correlation id", () => {
+  it("returns one classification per item, with the item id and the evidence the caller stores", () => {
     expectTypeOf<InferenceResult["items"][number]>().toEqualTypeOf<{
       readonly correlationId: string;
+      readonly itemId: string;
       readonly classification: InternalClassification;
+      readonly reasonCodes: readonly ModerationReasonCode[];
+      readonly matchedSpan?: MatchedSpan;
     }>();
     expectTypeOf<InferenceResult>().toHaveProperty("batchId");
   });

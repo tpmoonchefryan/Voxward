@@ -33,6 +33,11 @@ export interface RunSettings {
 
 const SESSION_ID_SHAPE = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/u;
 
+/** Whether a value has the shape of a CLI session id. Such an id may become a command argument. */
+export function isAcceptedSessionId(value: string): boolean {
+  return SESSION_ID_SHAPE.test(value);
+}
+
 /**
  * Arguments of one headless run. The instruction is not among them: it arrives on stdin, because argv is visible to
  * other local users. A flag value must not begin with `-`, so a configured value cannot turn into another flag.
@@ -46,8 +51,16 @@ export function buildChatArguments(settings: RunSettings): string[] {
 
 /** Arguments that delete one saved CLI session by id. Only the id shape is accepted (design section 4.5). */
 export function buildDeleteSessionArguments(sessionId: string): string[] {
-  if (!SESSION_ID_SHAPE.test(sessionId)) throw new Error("session id has an unaccepted shape");
+  if (!isAcceptedSessionId(sessionId)) throw new Error("session id has an unaccepted shape");
   return ["chat", "--delete-session", sessionId];
+}
+
+/**
+ * Arguments that list the sessions saved in the current directory. The CLI keeps sessions per directory, so the list
+ * belongs to the run directory it is run in. The JSON output is not verified against kiro-cli 3.1.0 (design section 7).
+ */
+export function buildListSessionsArguments(): string[] {
+  return ["chat", "--list-sessions", "-f", "json"];
 }
 
 function flagValue(value: string): string {

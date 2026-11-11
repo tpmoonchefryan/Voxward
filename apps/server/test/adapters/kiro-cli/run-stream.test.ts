@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseBusinessJson, readRunStream } from "../../../src/adapters/kiro-cli/run-stream.js";
+import {
+  createSessionIdScanner,
+  parseBusinessJson,
+  readRunStream,
+} from "../../../src/adapters/kiro-cli/run-stream.js";
 
 function agentText(text: string, sessionId = "sess-7"): string {
   return JSON.stringify({
@@ -8,6 +12,46 @@ function agentText(text: string, sessionId = "sess-7"): string {
     params: { sessionId, update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text } } },
   });
 }
+
+/** Feeds the stream to a scanner in pieces of the given size, and returns every id it reported. */
+function scanInPieces(stdout: string, pieceBytes: number): string[] {
+  const found: string[] = [];
+  const scanner = createSessionIdScanner((sessionId) => found.push(sessionId));
+  const bytes = Buffer.from(stdout, "utf8");
+  for (let offset = 0; offset < bytes.length; offset += pieceBytes) {
+    scanner.push(bytes.subarray(offset, offset + pieceBytes));
+  }
+  scanner.end();
+  return found;
+}
+
+describe("session id scanner", () => {
+  const stdout = [
+    JSON.stringify({ jsonrpc: "2.0", method: "session/update", params: { update: { sessionUpdate: "tool_call" } } }),
+    agentText("{\"items\":[]}", "sess-live-1"),
+    agentText("later", "sess-live-2"),
+  ].join("\n");
+
+  it("reports the first accepted id once, even when lines arrive split at any byte", () => {
+    for (const pieceBytes of [1, 7, 64, stdout.length]) {
+      expect(scanInPieces(stdout, pieceBytes)).toEqual(["sess-live-1"]);
+    }
+  });
+
+  it("keeps a multi-byte character whole when its bytes arrive in separate chunks", () => {
+    const withText = [agentText("中文 文本", "sess-utf-1")].join("\n");
+    expect(scanInPieces(withText, 3)).toEqual(["sess-utf-1"]);
+  });
+
+  it("reads a last line that ends without a line break", () => {
+    expect(scanInPieces(agentText("only line", "sess-tail-1"), 5)).toEqual(["sess-tail-1"]);
+  });
+
+  it("reports nothing for a stream without an accepted id, and for a flag-shaped id", () => {
+    expect(scanInPieces(JSON.stringify({ params: { sessionId: "--cloud" } }) + "\n", 4)).toEqual([]);
+    expect(scanInPieces("not json\n", 4)).toEqual([]);
+  });
+});
 
 describe("run stream", () => {
   it("joins agent text chunks in stream order and ignores every other event", () => {

@@ -1,3 +1,4 @@
+import type { MatchedSpan, ModerationReasonCode } from "../ai/moderation-result.js";
 import type { InternalClassification } from "../decisions/verdict.js";
 import type { Versioned } from "../version.js";
 import type { VersionedModule } from "./module-contract.js";
@@ -22,9 +23,17 @@ export interface InferenceRequest extends Versioned {
   readonly items: readonly InferenceRequestItem[];
 }
 
+/**
+ * One classification, with what the caller needs to keep the evidence for it: the temporary item id the model saw (so the
+ * server can keep its item-id map), the reason codes, and the matched span when the validator found one. The span is in
+ * Unicode code points, and it is absent when the item has none.
+ */
 export interface InferenceResultItem {
   readonly correlationId: string;
+  readonly itemId: string;
   readonly classification: InternalClassification;
+  readonly reasonCodes: readonly ModerationReasonCode[];
+  readonly matchedSpan?: MatchedSpan;
 }
 
 /** One classification per request item, in request order. */
