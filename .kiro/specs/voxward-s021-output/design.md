@@ -185,6 +185,12 @@ No design authority is configured for the resolved work context. No authority wa
 | 第 6 节：`FAILED` 行的原因码 `CONTENT_UNAVAILABLE` 与失败状态一并记录 | 只把状态置为 `FAILED`，不记录原因码 | `deliveries` 表没有原因列。新增列需要迁移，超出本单。原因记入来源缺口，由后续单处理（自定）。 |
 | 第 8 节：注册表接口未列出 | 端口 `OutputSubscriberRegistry` 另含 `activeChannelIds()`，`OutputSubscriber.close` 接收 `NativeClose` 对象 | 投递泵需要列出有在线消费者的频道；关闭码与原因文本放在同一常量中，避免两处不一致（自定）。 |
 | 第 3 节：`modules/output-adapter` 的 `createOutputAdapter` 为占位 | `deliver` 只唤醒对应频道的投递泵，不写第二份投递记录 | 投递行在决策事务中已经写入，队列即 `deliveries` 表（自定，依据第 6 节）。 |
-| 第 8 节：`app.ts` 装配投递泵与 250 ms 定时器 | 尚未装配 | 泵只通过在线注册表发送，而注册表由 WebSocket 传输填充。传输接入时一并装配，避免无传输时的空转写入（自定）。 |
+| 第 8 节：`app.ts` 装配投递泵与 250 ms 定时器 | 已在 1.7 装配（`app.ts` 的 `startNativeOutput`）：端点挂到 `app.server` 的 `upgrade` 事件，投递泵每 250 ms 运行一轮（`unref`，上一轮未结束时不叠加）；关闭应用时停止计时器并断开连接。 | 传输接入后装配，原因已消失。 |
+| 第 8 节：订阅策略（任务 1.4）写在 `modules/output-adapter/subscription.ts` | 注册表与撤销时的批量关闭仍在 `subscription.ts`；心跳周期、关闭码与协议值在 `packages/contracts/src/output/native-v1.ts`；心跳与超时的时序在 `adapters/native-output/socket.ts`。 | `adapters` 分区不允许导入 `modules`（`scripts/check-deps.mjs`）。判定常量放契约，与 `NATIVE_CLOSE` 同处（自定）。 |
+| 第 5 节：4413「发送积压超过限制」，未规定判定方法 | 两种情况关闭为 4413：发送前套接字已排队字节超过 `maxBufferedBytes`（1 MiB），或单帧在 `sendTimeoutMs`（5 s）内未写入套接字。 | 投递泵逐行等待写入完成，单帧未写入即代表消费者积压；两个阈值均为自定，未经负载测量。 |
+| 第 8 节：关闭连接 | 先发送关闭帧，`closeGraceMs`（1 s，自定）后若对端未完成关闭握手则强制断开。 | 对端无响应时关闭帧可能永远不被读取，需要真实断开（设计要求「真实断开」）。 |
+| 第 6 节：投递泵的在线消费者读取时机 | 发送时读取在线消费者（SUB-040 修正）。无在线消费者时行保持 `PENDING`，不计尝试次数。发送期间有新消费者加入时，该行不标记 `SENT`，下一轮发给全部消费者；已收到的消费者按 `deliveryId` 去重。 | 原实现在轮次开始时读取一次消费者，消费者离开后仍会把行标为 `SENT`；与「`SENT` 表示已交给所有在线连接」不符。 |
+| 第 8 节：`ws` 写回调成功值 | 写回调以真值判定失败；`ws` 与 Node 在成功时传入 `null`。 | 实测确认：以 `undefined` 判定会把每次成功写入都计为失败（自定实现细节）。 |
 
-传输层（`apps/server/src/adapters/native-output/socket.ts`）、`ws` 与 `@types/ws` 依赖、`apps/server/package.json` 的 `--external:ws`、升级端点测试，以及启动冒烟与证据文件，均待依赖安装获准后完成。
+传输层（`apps/server/src/adapters/native-output/socket.ts`）、`ws` 与 `@types/ws` 依赖、`apps/server/package.json` 的 `--external:ws`、端点测试 `test/output-adapter/protocol/socket.test.ts`，均已完成并通过测试。Origin 不做同源判断，凭据是唯一授权依据（自定，见第 4 节）。
+

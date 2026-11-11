@@ -1,10 +1,4 @@
-import type {
-  ApprovedContentPort,
-  OutputDeliveryPort,
-  OutputSubscriber,
-  OutputSubscriberRegistry,
-  SendableDelivery,
-} from "@voxward/contracts";
+import type { ApprovedContentPort, OutputDeliveryPort, OutputSubscriberRegistry, SendableDelivery } from "@voxward/contracts";
 import { frameFor } from "./native-protocol.js";
 import { decideSend } from "./resend.js";
 
@@ -38,10 +32,17 @@ export interface DeliveryPump {
 type MutableReport = { expired: number; sent: number; retried: number; failed: number };
 
 /**
+ * What one send attempt did to its row. RETRY and WAIT end the channel's pass, so the rows behind the row keep their order.
+ * WAIT leaves the row PENDING and counts no attempt.
+ */
+type RowOutcome = "SENT" | "FAILED" | "RETRY" | "WAIT" | "SKIPPED";
+
+/**
  * Sends approved deliveries to connected consumers. Within a channel, rows go out in delivery order, and a row that fails
  * holds back the rows after it until it is sent or marked FAILED. A row is marked SENT only after every consumer connected
- * at that moment accepted the frame. A consumer that already received the frame may receive it again after a failed pass.
- * Consumers deduplicate by delivery identifier, so the protocol does not promise exactly-once display.
+ * at the moment of the send accepted the frame, and only when no consumer joined during the send. A consumer that already
+ * received the frame may receive it again after a failed pass. Consumers deduplicate by delivery identifier, so the protocol
+ * does not promise exactly-once display.
  */
 export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
   let queue: Promise<unknown> = Promise.resolve();
@@ -56,30 +57,28 @@ export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
   }
 
   async function sendChannel(channelId: string, report: MutableReport): Promise<void> {
-    const subscribers = options.subscribers.forChannel(channelId);
-    if (subscribers.length === 0) return;
+    if (options.subscribers.forChannel(channelId).length === 0) return;
 
     const rows = options.delivery.readSendable({ channelId, nowIso: options.now().toISOString(), limit: options.batchLimit });
     for (const row of rows) {
       const nowIso = options.now().toISOString();
       if (decideSend(row, nowIso) !== "SEND") continue;
-      const outcome = await sendRow(channelId, row, subscribers, nowIso);
+      const outcome = await sendRow(channelId, row, nowIso);
       if (outcome === "SENT") report.sent += 1;
       else if (outcome === "FAILED") report.failed += 1;
-      else if (outcome === "HOLD") {
+      else if (outcome === "RETRY") {
         report.retried += 1;
-        break;
-      }
+        return;
+      } else if (outcome === "WAIT") return;
     }
   }
 
-  /** Returns "HOLD" when a consumer failed and the rows after this one must wait. */
-  async function sendRow(
-    channelId: string,
-    row: SendableDelivery,
-    subscribers: readonly OutputSubscriber[],
-    nowIso: string,
-  ): Promise<"SENT" | "FAILED" | "HOLD" | "SKIPPED"> {
+  /** One send attempt for one row, to the consumers connected at the moment of the send. */
+  async function sendRow(channelId: string, row: SendableDelivery, nowIso: string): Promise<RowOutcome> {
+    // Read here, not at the start of the pass: a consumer that left during the pass must not count as a recipient.
+    const targets = options.subscribers.forChannel(channelId);
+    if (targets.length === 0) return "WAIT";
+
     // An ALLOW row without approved content cannot be shown. Marking it FAILED keeps it out of the queue.
     const content =
       row.verdict === "ALLOW" ? options.content.readApproved({ channelId, correlationId: row.correlationId, nowIso }) : undefined;
@@ -88,19 +87,23 @@ export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
       return options.delivery.markFailed({ deliveryId: row.deliveryId, nowIso }) ? "FAILED" : "SKIPPED";
     }
 
-    const results = await Promise.allSettled(subscribers.map((subscriber) => subscriber.send(frame)));
-    if (results.every((result) => result.status === "fulfilled")) {
-      return options.delivery.markSent({ deliveryId: row.deliveryId, nowIso: options.now().toISOString() }) ? "SENT" : "SKIPPED";
+    const results = await Promise.allSettled(targets.map((subscriber) => subscriber.send(frame)));
+    if (results.some((result) => result.status === "rejected")) {
+      const outcome = options.delivery.recordSendFailure({
+        deliveryId: row.deliveryId,
+        nowIso: options.now().toISOString(),
+        maxAttempts: options.maxAttempts,
+      });
+      if (outcome === "FAILED") return "FAILED";
+      return outcome === "RETRY" ? "RETRY" : "SKIPPED";
     }
 
-    const outcome = options.delivery.recordSendFailure({
-      deliveryId: row.deliveryId,
-      nowIso: options.now().toISOString(),
-      maxAttempts: options.maxAttempts,
-    });
-    if (outcome === "FAILED") return "FAILED";
-    if (outcome === "RETRY") return "HOLD";
-    return "SKIPPED";
+    // A consumer that connected during the send did not receive this frame. The row stays PENDING, so the next pass sends it
+    // to every consumer, and the consumers that already have it deduplicate it.
+    const joined = options.subscribers.forChannel(channelId).some((subscriber) => !targets.includes(subscriber));
+    if (joined) return "WAIT";
+
+    return options.delivery.markSent({ deliveryId: row.deliveryId, nowIso: options.now().toISOString() }) ? "SENT" : "SKIPPED";
   }
 
   async function passOver(channelIds: readonly string[]): Promise<PassReport> {

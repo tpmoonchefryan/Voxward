@@ -166,4 +166,47 @@ describe("delivery pump (VW-SUB040-AC001, m6 N2)", () => {
     expect(port.markSent({ deliveryId: "d-i1", nowIso: AFTER_DEADLINE })).toBe(false);
     expect(statusOf(db, "d-i1")).toBe("PENDING");
   });
+
+  it("a row stays PENDING when the last consumer leaves before it, and the rows behind it wait too", async () => {
+    addDeliveryEvent(db, { eventId: "event-j1", subjectKey: "viewer-j1", platformOrder: 1, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-j1" });
+    addDeliveryEvent(db, { eventId: "event-j2", subjectKey: "viewer-j2", platformOrder: 2, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-j2" });
+    addApprovedText(db, "event-j1", "first");
+    addApprovedText(db, "event-j2", "second");
+    const leaving = fakeConsumer("grant-1", { onSend: () => registry.detach(leaving.subscriber) });
+    registry.attach(leaving.subscriber);
+
+    const report = await pumpFor(db, registry, clock).runPass();
+
+    expect(report).toMatchObject({ sent: 1, failed: 0 });
+    expect(idsOf(leaving.frames)).toEqual(["d-j1"]);
+    expect(statusOf(db, "d-j1")).toBe("SENT");
+    expect(statusOf(db, "d-j2")).toBe("PENDING");
+    expect(attemptsOf(db, "d-j2")).toBe(0);
+  });
+
+  it("a consumer that joins during a send does not get a row that is marked SENT without it", async () => {
+    addDeliveryEvent(db, { eventId: "event-k1", subjectKey: "viewer-k1", platformOrder: 1, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-k1" });
+    addApprovedText(db, "event-k1", "joined");
+    const late = fakeConsumer("grant-2");
+    let joinedAlready = false;
+    const early = fakeConsumer("grant-1", {
+      onSend: () => {
+        if (joinedAlready) return;
+        joinedAlready = true;
+        registry.attach(late.subscriber);
+      },
+    });
+    registry.attach(early.subscriber);
+    const pump = pumpFor(db, registry, clock);
+
+    const first = await pump.runPass();
+    expect(first.sent).toBe(0);
+    expect(statusOf(db, "d-k1")).toBe("PENDING");
+    expect(idsOf(late.frames)).toEqual([]);
+
+    const second = await pump.runPass();
+    expect(second.sent).toBe(1);
+    expect(statusOf(db, "d-k1")).toBe("SENT");
+    expect(idsOf(late.frames)).toEqual(["d-k1"]);
+  });
 });
