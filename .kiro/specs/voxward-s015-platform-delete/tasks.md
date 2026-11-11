@@ -18,9 +18,9 @@ A checked task is local progress only. Formal completion still requires the engi
 ## 本地任务清单（不在受管段内；勾选只代表本地进度，不代表正式完成）
 
 - [x] T1 spec：在 design.md 与 tasks.md 受管段之外写入实施设计与任务，`kiro-specs.mjs check` 为 SPEC_CURRENT。（提交：`VOXWARD-STORY-015: add spec`）
-- [ ] T2 VOXWARD-SUB-028：契约端口 `packages/contracts/src/ports/platform-delete.ts` 与 `index.ts` 导出。
-- [ ] T3 VOXWARD-SUB-028：YouTube 删除适配 `youtube/delete-message.ts` 与 `test/platform-source/youtube-delete/delete-message.test.ts`。
-- [ ] T4 VOXWARD-SUB-028：删除编排 `decision-service/platform-delete.ts` 与 `test/decision-service/platform-delete/orchestration.test.ts`（真实 S014 数据库）。
-- [ ] T5 VOXWARD-SUB-028：`platform-source/index.ts` 与 `decision-service/index.ts` 导出。
+- [x] T2 VOXWARD-SUB-028：契约端口 `packages/contracts/src/ports/platform-delete.ts` 与 `index.ts` 导出。
+- [x] T3 VOXWARD-SUB-028：YouTube 删除适配 `youtube/delete-message.ts` 与 `test/platform-source/youtube-delete/delete-message.test.ts`。
+- [x] T4 VOXWARD-SUB-028：删除编排 `decision-service/platform-delete.ts` 与 `test/decision-service/platform-delete/orchestration.test.ts`（真实 S014 数据库）。
+- [x] T5 VOXWARD-SUB-028：`platform-source/index.ts` 与 `decision-service/index.ts` 导出。
 - [ ] T6 自测与证据：`pnpm install`、`build`、`typecheck`、`test`、`check:deps`、`kiro-specs.mjs check`、`smoke.sh`；证据写入 `evidence/self-check.md`。
 - [ ] T7 交付报告：模型、提交、改动文件、自测结果、AC 逐条结果、自定选择、偏离、来源缺口、未验证项、可能的合并冲突。
