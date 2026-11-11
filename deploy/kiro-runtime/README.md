@@ -12,11 +12,21 @@
 | HOME | 只属于该用户的独立目录。Kiro CLI 的设置与登录状态放在这里。 | `KIRO_RUNTIME_HOME`。CLI 实际使用的路径待实测。 | 待实测 |
 | 运行根目录 | `KIRO_RUNTIME_ROOT`，属于运行用户，权限 0700。每批在其下创建一个 `run-*` 目录。 | 已实现：目录由 `mkdtemp` 创建（0700）；删除前校验标记文件；符号链接不跟随。 | 已实现 |
 | 凭据 | `KIRO_API_KEY` 只注入运行用户的进程环境，来源是部署的密钥库。不写入仓库，不进入服务器环境。 | 已实现：适配器只使用调用方给出的 `env`，不继承服务器环境。注入方式待实测。 | 部分已实现 |
-| 工具权限 | 不信任任何工具，即 `--trust-tools=`。不使用 `--trust-all-tools`。 | 已实现：固定参数，禁用参数由测试检查。 | 已实现 |
+| 工具权限 | 不信任任何工具，即 `--trust-tools=`。不使用 `--trust-all-tools`。运行用户的 agent 配置模板 `agent.template.json` 中 `tools` 与 `allowedTools` 为空。 | 已实现：固定参数，禁用参数由测试检查。模板的字段名与格式待实测。 | 已实现（参数）；模板 部署要求 |
 | MCP | 运行用户的 MCP 配置为空，参见 `mcp.json` 模板。 | 配置格式待实测。 | 部署要求 |
 | 沙箱 | 本机 `kiro-cli chat --help` 没有列出 `--sandbox`，因此未使用。 | 待实测。 | 待实测 |
 | 云端会话 | 不使用 `--cloud` 与 `--repo`，避免数据进入云端沙箱。 | 已实现：禁用参数由测试检查。 | 已实现 |
 | 网络 | 只允许访问所选模型服务所需的地址。 | 无。 | 部署要求，未验证 |
+
+### 1.1 服务进程以独立账号启动 CLI（部署要求，待实测）
+
+服务进程与 CLI 分属两个账号。服务账号持有业务数据与服务配置，不持有模型凭据。运行账号持有 `KIRO_API_KEY`，只拥有运行根目录与自己的 HOME。
+
+1. 服务账号（示例名 `voxward`）运行服务进程。它不属于运行账号的用户组，读不到 `KIRO_RUNTIME_HOME` 与 `KIRO_API_KEY`。
+2. 运行账号（示例名 `voxward-kiro`）拥有 `KIRO_RUNTIME_ROOT` 与 `KIRO_RUNTIME_HOME`，权限 0700。
+3. 适配器的 `command` 指向一个包装程序，而不是 kiro-cli 本身。包装程序由 root 拥有、服务账号不可写，只做一件事：以运行账号执行固定路径的 kiro-cli，并原样转发参数。例如 `exec runuser -u voxward-kiro -- /opt/kiro/bin/kiro-cli "$@"`，或 `sudo -n -u voxward-kiro -- …`。服务账号经 sudoers 或等价的系统设置，只被允许执行这个包装程序。本仓库不提供包装程序与 sudoers 规则。
+4. 适配器给 CLI 的环境是完整给定的（已实现：不继承服务环境）。`HOME` 与 `KIRO_API_KEY` 必须穿过包装程序到达 CLI。`sudo` 默认会重置环境变量，因此包装程序要显式保留它们（待实测）。
+5. 这种分账号方式有一个代价（待实测）。运行账号的进程，服务账号既读不到它的 `/proc/<pid>/cwd`，也不能向它的进程组发信号。此时 §3 的孤儿扫描无法终止残留 CLI，只能保留目录并写入 `needs-manual.json`。要让扫描自动终止残留，需要服务账号对该进程组的信号权限，或由运行账号自己的守护单元负责终止。这一点尚未解决。
 
 ## 2. 环境变量模板
 
@@ -36,6 +46,7 @@
 ## 4. 不在本包内做的事
 
 - 不安装 Kiro CLI，不登录，不创建用户，不修改 sudoers、systemd 或防火墙。
+- 不提供包装程序、sudoers 规则或 systemd 单元。
 - 不提供真实凭据或示例凭据。
 - 不运行真实推理。
 
@@ -52,4 +63,5 @@
 
 - `runtime.env.example`：环境变量模板，只有占位值。
 - `mcp.json`：空 MCP 配置模板。
+- `agent.template.json`：运行用户的 agent 配置模板，`tools` 与 `allowedTools` 为空。字段格式待实测，不要不经核对就安装。
 - 留存边界：`docs/security/ai-retention-boundary.md`。
