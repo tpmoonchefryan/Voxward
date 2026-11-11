@@ -6,6 +6,7 @@ import {
   ScoringInputError,
   ScoringRefusedError,
   type IdentityTransition,
+  type ManualCorrection,
   type ScoringConfigOverrides,
 } from "../../../src/modules/scoring-engine/index.js";
 import { createVerdict } from "@voxward/contracts";
@@ -15,6 +16,11 @@ import { ENABLED, identityRows, ledgerRows, scoreOf, seedChannels, seedException
 
 function upgrade(sourceEventRef: string, nextKind: IdentityTransition["nextKind"]): IdentityTransition {
   return { channelId: "channel-a", subjectKey: "viewer-1", sourceEventRef, effectiveFrom: T0, nextKind };
+}
+
+/** Puts the score at a known value through the manual-correction path, which moves the behavior total as well. */
+function correction(operationId: string, delta: number): ManualCorrection {
+  return { channelId: "channel-a", subjectKey: "viewer-1", operationId, operatorRef: "operator-1", delta };
 }
 
 describe("identity events on SQLite", () => {
@@ -93,7 +99,39 @@ describe("identity events on SQLite", () => {
     expect(ledgerRows(database, "channel-a", "viewer-1")).toMatchObject([
       { reason_code: "IDENTITY_BASE_CHANGE", requested_delta: 30, actual_delta: 10 },
     ]);
-    expect(scoreOf(database, "channel-a", "viewer-1")).toMatchObject({ current: 10, identity: 10 });
+    // The base takes the whole requested difference. The score shows only the part that fits under the limit.
+    expect(scoreOf(database, "channel-a", "viewer-1")).toMatchObject({ current: 10, identity: 30 });
+  });
+
+  it("at the upper limit, an upgrade and its later expiry leave the score and the behavior history unchanged", async () => {
+    const engine = scoring();
+    await engine.applyManualCorrection(correction("op-cap", 10));
+    expect(scoreOf(database, "channel-a", "viewer-1")).toMatchObject({ current: 10, behavior: 10, identity: 0 });
+
+    const upgrade_ = await engine.applyIdentityTransition(upgrade("evt-cap-up", "PAID_MEMBER"));
+    expect(upgrade_.delta).toBe(0);
+    expect(scoreOf(database, "channel-a", "viewer-1")).toMatchObject({ current: 10, behavior: 10, identity: 10 });
+
+    const expiry = await engine.applyIdentityTransition(upgrade("evt-cap-down", "UNKNOWN"));
+    expect(expiry.delta).toBe(0);
+    expect(scoreOf(database, "channel-a", "viewer-1")).toMatchObject({ current: 10, behavior: 10, identity: 0 });
+    expect(ledgerRows(database, "channel-a", "viewer-1")).toMatchObject([
+      { reason_code: "MANUAL_CORRECTION", requested_delta: 10, actual_delta: 10 },
+      { reason_code: "IDENTITY_BASE_CHANGE", requested_delta: 10, actual_delta: 0 },
+      { reason_code: "IDENTITY_BASE_CHANGE", requested_delta: -10, actual_delta: 0 },
+    ]);
+  });
+
+  it("at the lower limit, the same round trip is exact in the other direction", async () => {
+    const engine = scoring();
+    await engine.applyManualCorrection(correction("op-floor", -10));
+
+    const upgrade_ = await engine.applyIdentityTransition(upgrade("evt-floor-up", "PAID_MEMBER"));
+    expect(upgrade_.delta).toBe(10);
+    const expiry = await engine.applyIdentityTransition(upgrade("evt-floor-down", "UNKNOWN"));
+    expect(expiry.delta).toBe(-10);
+
+    expect(scoreOf(database, "channel-a", "viewer-1")).toMatchObject({ current: -10, behavior: -10, identity: 0 });
   });
 
   it("refuses an identity event for a subject on the exception list, and records no identity fact", async () => {

@@ -24,9 +24,9 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] Q28-2 回调先查看、校验后消费 state（`routes.ts`）
 - [x] Q28-3 重新授权后撤销旧行并删除旧密文（`credentials.ts`、`credential-vault.ts`）
 - [x] Q28-4 负面用例：他人 state 加主播授权码、缺失或错误 verifier、重新授权后旧凭据不可用（提交 `VOXWARD-STORY-013 Q28`）
-- [ ] Q20-1 身份路径：基准分全额、最终分钳制、行为分不变（`identity-events.ts`、`clamp.ts`）
-- [ ] Q20-2 分数行与账本行在基准分变化时落库（`db/scoring-ledger.ts`）
-- [ ] Q20-3 上限处升级再到期的测试与既有期望更新（提交 `VOXWARD-STORY-013 Q20`）
+- [x] Q20-1 身份路径：基准分全额、最终分钳制、行为分不变（`identity-events.ts`、`clamp.ts`）
+- [x] Q20-2 分数行与账本行在基准分变化时落库（`db/scoring-ledger.ts`）
+- [x] Q20-3 上限处升级再到期的测试与既有期望更新（提交 `VOXWARD-STORY-013 Q20`）
 - [ ] VOXWARD-SUB-024：streamList 连接、恢复、结束、去重、补发年龄、退避与配额门（提交 `VOXWARD-SUB-024: ...`）
 - [ ] VOXWARD-SUB-025：身份映射、配额监测、版本化业务事件（提交 `VOXWARD-SUB-025: ...`）
 - [ ] 自测：pnpm install、build、typecheck、test、check:deps、kiro-specs check 全部退出 0；启动冒烟；`evidence/self-check.md` 随最后一个提交
