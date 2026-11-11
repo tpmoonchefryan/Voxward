@@ -501,7 +501,7 @@
 
 ### `data_requests`
 
-- 用途：观众或操作者发起的数据请求，记录核验、执行和完成状态（提案 §11.2）。
+- 用途：观众或操作者发起的数据请求，记录核验、执行和完成状态（提案 §11.2）。四类请求都在此表登记：访问、更正、删除、停止计分。
 - 内容分类：无正文。`scope_json` 只记录删除范围，不记录被删内容。
 - 保留：完成后保留最小审计记录。
 
@@ -511,10 +511,12 @@
 | --- | --- | --- | --- |
 | `id` | TEXT | 否 | 主键。 |
 | `channel_id` | TEXT | 否 | 外键，指向 `channels.id`。 |
-| `subject_id` | TEXT | 是 | 外键，指向 `subjects.id`。核验前可能为空。 |
+| `subject_id` | TEXT | 是 | 外键，指向 `subjects.id`。主体的稳定引用。 |
+| `request_kind` | TEXT | 否 | 取值 `ACCESS`、`CORRECTION`、`DELETE`、`STOP_SCORING`（提案 §11.2 的四类请求）。 |
 | `request_source` | TEXT | 否 | 取值 `VIEWER_REQUEST`、`OPERATOR_INITIATED`。 |
 | `verification_state` | TEXT | 否 | 取值 `PENDING`、`VERIFIED`、`REJECTED`。 |
-| `mode` | TEXT | 否 | 取值 `DELETE_DATA_ONLY`、`DELETE_AND_EXCEPT`（提案 §11.2 的两个选项）。 |
+| `verification_method` | TEXT | 是 | 取值 `ACCOUNT_OWNERSHIP`（确认账号归属）、`REQUEST_AUTHORIZATION`（确认请求授权）。核验通过时必填。 |
+| `mode` | TEXT | 是 | 取值 `DELETE_DATA_ONLY`、`DELETE_AND_EXCEPT`（提案 §11.2 的两个选项）。只有 `request_kind` 为 `DELETE` 时必填。 |
 | `execution_state` | TEXT | 否 | 取值 `PENDING`、`RUNNING`、`COMPLETED`、`PARTIAL_FAILED`、`CANCELLED`。 |
 | `scope_json` | TEXT | 否 | 删除范围的 JSON，必须通过 `json_valid`。 |
 | `created_at` | TEXT | 否 | 提交时间。 |
@@ -528,9 +530,14 @@
 | 名称 | 类别 | 说明 |
 | --- | --- | --- |
 | `data_requests_channel_state_idx` | 索引 | `(channel_id, execution_state)`。 |
+| `data_requests_subject_idx` | 索引 | `(channel_id, subject_id)`，供面板列出主体的请求。 |
+| `ck_data_requests_kind` | CHECK | `request_kind` 只能取上列四个值。 |
 | `ck_data_requests_source` | CHECK | `request_source` 只能取上列两个值。 |
 | `ck_data_requests_verification` | CHECK | `verification_state` 只能取上列三个值。 |
-| `ck_data_requests_mode` | CHECK | `mode` 只能取上列两个值。 |
+| `ck_data_requests_method` | CHECK | `verification_method` 为空，或只能取上列两个值。 |
+| `ck_data_requests_verified_method` | CHECK | `verification_state` 为 `VERIFIED` 时，`verification_method` 必须有值。 |
+| `ck_data_requests_mode` | CHECK | `mode` 为空，或只能取上列两个值。 |
+| `ck_data_requests_mode_kind` | CHECK | 只有 `request_kind` 为 `DELETE` 时 `mode` 有值。 |
 | `ck_data_requests_execution` | CHECK | `execution_state` 只能取上列五个值。 |
 | `ck_data_requests_scope_json` | CHECK | `scope_json` 必须是合法 JSON。 |
 

@@ -102,6 +102,8 @@ No design authority is configured for the resolved work context. No authority wa
 | `apps/web/src/pages/data/__tests__/` | 前端（新） | 页面与流程测试（与子单交付清单一致） |
 | `apps/server/test/data-lifecycle-service/` | 服务端测试（新） | 模块、路由、权限、迁移测试（子单清单写的是 `test/data-lifecycle/`，本包改为与模块目录同名） |
 | `docs/data-dictionary.md` | 文档 | 同步 `data_requests` 的列与约束 |
+| `apps/web/package.json`、`pnpm-lock.yaml` | 前端依赖（新增） | `@voxward/contracts` 工作区依赖，供页面引用枚举与类型（自定） |
+| `apps/web/vite.config.ts` | 前端 | 增加 `/auth`、`/channels` 的开发代理（自定） |
 
 ## 3. 依赖方向
 
@@ -127,7 +129,7 @@ S002 的表只建模了删除模式，而提案 §11.2 列了四类请求。登�
 - 新索引 `data_requests_subject_idx (channel_id, subject_id)`，供面板列出主体的请求。
 - CHECK 新增 `ck_data_requests_kind`、`ck_data_requests_method`、`ck_data_requests_verified_method`（`verification_state <> 'VERIFIED' OR verification_method IS NOT NULL`）。
 
-SQLite 不能去掉 NOT NULL，所以迁移用「建新表、复制、删旧表、改名」的方式。迁移开头执行 `PRAGMA defer_foreign_keys = ON`，使 `data_request_items` 的外键在提交时检查。S002 没有写入路径，表在现有部署里为空。若存在已核验但没有方式的旧行，复制会因 CHECK 失败，迁移整体回滚。
+SQLite 不能去掉 NOT NULL，所以迁移重建表：旧行先复制到临时表，删除旧表，建新表，回填，最后删除临时表。迁移开头执行 `PRAGMA defer_foreign_keys = ON`，使 `data_request_items` 的外键在提交时检查。不采用「改名」的做法：探测库里带一条条目时，改名会把子表的外键改写到旧表名，删除旧表后外键失效（实测）。S002 没有写入路径，表在现有部署里为空。若存在已核验但没有方式的旧行，回填会因 CHECK 失败，迁移整体回滚。
 
 迁移测试：先迁移到 0003，写入一条删除请求和一条条目，再升级到 0004。两行都必须保留，且 `request_kind` 为 `DELETE`。
 
@@ -193,17 +195,17 @@ SQLite 不能去掉 NOT NULL，所以迁移用「建新表、复制、删旧表�
 
 ## 8. 主体面板视图
 
-字段：`subjectRef`；`currentScore`（无记录时为 `null`）；`identity`（最近一条身份事实的 `kind` 与 `effectiveFrom`，无则 `null`）；`list`（有效名单种类，无则 `null`）；`exception`（是否有效、建立时间）；`ledgerEntryCount`；`retention`（类别与计数）；`requests`（状态列表）；`externalNotice`（固定文字）。
+字段：`subjectRef`；`currentScore`（无记录时为 `null`）；`identity`（最近一条身份事实的 `kind` 与 `effectiveFrom`，无则 `null`）；`list`（有效名单种类，无则 `null`）；`exception`（是否有效、建立时间）；`ledgerEntryCount`；`retention`（类别与计数）；`requests`（状态列表）；`notices`（代码，界面写成固定文字）。
 
-保留类别取自 `AuditLogPort.locateSubjectLogs` 的计数，并附保留天数：技术日志 30 天，证据正文 7 天（来源：S016 `RETENTION_DAYS`，提案 §12.3 只给初始建议）。
+保留类别取自 `AuditLogPort.locateSubjectLogs` 的计数，并附保留天数：技术日志 30 天，证据正文 7 天（来源：S016 `RETENTION_DAYS`，提案 §12.3 只给初始建议）。服务端只返回代码（状态阶段 `stage`、通知 `notices`），界面写成固定文字（自定）。
 
-`externalNotice` 固定为：YouTube 原始内容与平台侧副本不由本实例删除，外部处理状态本实例无法查询（提案 §11.3）。
+`notices` 的代码为 `PROVIDER_COPY_NOT_CONTROLLED`，界面写成：YouTube 原始内容与平台侧副本不由本实例删除，外部处理状态本实例无法查询（提案 §11.3）。
 
 ## 9. 受控材料
 
 - 函数 `buildControlledMaterial(deps, actor, requestId)`，不挂 HTTP。
 - 需要 `data.handle`，请求必须是 `VERIFIED`，否则 409 `REQUEST_NOT_VERIFIED`。
-- 输出字段（自定）：`materialVersion` 固定为 `"1"`；`channelId`；`requestId`；`requestKind`；`mode`；`verificationMethod`；`verifiedAt`；`executionState`；`subjectRef`；`generatedAt`；保留类别计数；固定说明文字。
+- 输出字段（自定）：`materialVersion` 固定为 `"1"`；`channelId`；`requestId`；`requestKind`；`mode`；`verificationMethod`；`verifiedAt`；`executionState`；`subjectRef`；`generatedAt`；保留类别计数；`notices`（代码 `PROVIDER_COPY_NOT_CONTROLLED`）。
 - 不含昵称、评分历史、消息正文、证据内容、日志 ID、Change Log 原文。测试检查这些字段名不在输出中。
 
 ## 10. 不可信文本
@@ -245,6 +247,9 @@ SQLite 不能去掉 NOT NULL，所以迁移用「建新表、复制、删旧表�
 - 模块目录是 `apps/server/src/modules/data-lifecycle-service/`。子单写的是 `data-lifecycle/`，但 S001 注册表与 `packages/contracts` 的模块名都是 `DataLifecycleService`，所以沿用已有目录（与 Q10 的处理方式一致）。
 - 子单清单没有列出的文件：`packages/contracts/src/ports/data-request.ts` 与 `index.ts`；`db/data-request-store.ts`、`db/subject-read.ts`；`db/schema/data-requests.ts`；迁移 0004 与快照；`docs/data-dictionary.md`；`auth/data-routes.ts`；`app.ts`；`types.ts`、`validate.ts`、`change-row.ts`；web 的 `flow.ts`。原因：模块不能引用数据库，必须经端口；登记需要存储类别；HTTP 绑定必须在组合层或鉴权层完成。
 - 子单的 web 测试路径与清单一致（`pages/data/__tests__/`）。服务端测试路径偏离，见第 2 节。
+- `apps/server/test/db/schema.test.ts` 的迁移结构断言改为按顺序回放 `CREATE TABLE` 与 `DROP TABLE`（自定）。旧断言把「被后续迁移 DROP 的表」视为已删除，无法表达表重建。新断言的期望是：被 DROP 的表恰为 `subject_nickname_checks`、`data_requests`、`data_requests_copy`（后两者属于 0004 的重建）。覆盖的目的不变：迁移不能留下不该存在的表，也不能漏掉任何 CHECK 或索引名。
+- `apps/server/test/auth/auth.test.ts`：只为「按正确口令开启会话」这一用例加 30 秒超时。该用例运行 scrypt（OWASP 参数，每次口令哈希耗时数百毫秒），全仓库并行时超过默认 5 秒，单独运行通过。断言未改。
+- `apps/web/package.json` 与 `pnpm-lock.yaml` 增加 `@voxward/contracts` 工作区依赖。分区规则已允许 web 引用 contracts，但未声明依赖时类型无法解析。
 
 ## 14. 来源缺口
 

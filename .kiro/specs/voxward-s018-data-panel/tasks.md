@@ -20,13 +20,13 @@ A checked task is local progress only. Formal completion still requires the engi
 本段只是本地进度清单。勾选不改变正式工单状态，也不构成完成证据。
 
 - [x] 1. 本包 spec：`design.md` 与本文件的本地段，提交 `VOXWARD-STORY-018: add spec`，`kiro-specs.mjs check` 为 SPEC_CURRENT
-- [ ] 2. VOXWARD-SUB-033：数据请求登记、核验状态与主体定位接口，提交 `VOXWARD-SUB-033: ...`
-  - [ ] 2.1 契约 `packages/contracts/src/ports/data-request.ts` 与导出
-  - [ ] 2.2 表重建迁移 0004（`drizzle-kit generate --custom` 生成骨架）、schema、`docs/data-dictionary.md`、迁移测试
-  - [ ] 2.3 `db/data-request-store.ts`、`db/subject-read.ts` 与数据库测试
-  - [ ] 2.4 模块 `requests.ts`、`subject-lookup.ts`、`export-material.ts`、`change-row.ts`、`validate.ts`、`types.ts`、`routes.ts`、`index.ts` 与模块测试
-  - [ ] 2.5 `auth/data-routes.ts`、`app.ts` 绑定，HTTP 权限与 CSRF 测试
-  - [ ] 2.6 `check:deps`、`typecheck`、`test` 通过后提交
+- [x] 2. VOXWARD-SUB-033：数据请求登记、核验状态与主体定位接口，提交 `VOXWARD-SUB-033: ...`
+  - [x] 2.1 契约 `packages/contracts/src/ports/data-request.ts` 与导出
+  - [x] 2.2 表重建迁移 0004（`drizzle-kit generate` 生成快照，SQL 手写）、schema、`docs/data-dictionary.md`、迁移测试
+  - [x] 2.3 `db/data-request-store.ts`、`db/subject-read.ts` 与数据库测试
+  - [x] 2.4 模块 `requests.ts`、`subject-lookup.ts`、`export-material.ts`、`change-row.ts`、`validate.ts`、`types.ts`、`routes.ts`、`index.ts` 与模块测试
+  - [x] 2.5 `auth/data-routes.ts`、`app.ts` 绑定，HTTP 权限与 CSRF 测试
+  - [x] 2.6 `check:deps`、`typecheck`、`test` 通过后提交
 - [ ] 3. VOXWARD-SUB-034：数据面板页面与两种删除入口，提交 `VOXWARD-SUB-034: ...`
   - [ ] 3.1 `api.ts`、`flow.ts` 与测试
   - [ ] 3.2 `DataPanel.tsx`、`RequestStatus.tsx`、`DeleteActions.tsx`、`route.tsx` 与测试，`<bdi>` 隔离

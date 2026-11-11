@@ -93,12 +93,24 @@ describe("data dictionary matches the schema", () => {
 
 describe("generated migration matches the schema", () => {
   it("creates every schema table and every named index and CHECK", () => {
-    const createdTables = [...migrationSql.matchAll(/^CREATE TABLE `([a-z_]+)`/gm)].map((match) => match[1]);
-    const droppedTables = [...migrationSql.matchAll(/^DROP TABLE `([a-z_]+)`/gm)].map((match) => match[1]);
-    // A table that a later migration drops must not stay in the schema (S006 Q8).
-    const survivingTables = createdTables.filter((name) => !droppedTables.includes(name));
-    expect([...survivingTables].sort()).toEqual([...configs.keys()].sort());
-    expect([...droppedTables]).toEqual(["subject_nickname_checks"]);
+    // Replay the statements in order. A table that a migration drops and creates again (a rebuild, migration 0004)
+    // survives. A table dropped and never created again must not stay in the schema (S006 Q8).
+    const events = [...migrationSql.matchAll(/^(CREATE TABLE|DROP TABLE) `([a-z_]+)`/gm)].map(
+      (match) => [match[1] ?? "", match[2] ?? ""] as const,
+    );
+    const surviving = new Set<string>();
+    for (const [kind, name] of events) {
+      if (kind === "CREATE TABLE") surviving.add(name);
+      else surviving.delete(name);
+    }
+    expect([...surviving].sort()).toEqual([...configs.keys()].sort());
+    // Dropped on purpose: the old nickname-checks table, and the rebuild of data_requests (migration 0004) with its
+    // temporary copy.
+    expect(events.filter(([kind]) => kind === "DROP TABLE").map(([, name]) => name)).toEqual([
+      "subject_nickname_checks",
+      "data_requests",
+      "data_requests_copy",
+    ]);
 
     for (const name of configs.keys()) {
       for (const constraint of constraintNames(name)) {
