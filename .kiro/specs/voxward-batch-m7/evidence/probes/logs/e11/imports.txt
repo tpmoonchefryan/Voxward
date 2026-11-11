@@ -1,0 +1,37 @@
+== imports
+-- apps/server/src/modules/decision-service/platform-delete.ts
+from "@voxward/contracts"
+-- apps/server/src/modules/platform-source/youtube/delete-message.ts
+from "./credentials.js"
+from "./quota.js"
+from "@voxward/contracts"
+-- packages/contracts/src/ports/platform-delete.ts
+-- apps/server/src/modules/task-coordinator/coordinator.ts
+from "./deadline.js"
+from "./generation.js"
+from "./micro-batch.js"
+from "./ordering.js"
+from "./priority.js"
+from "./retry.js"
+from "@voxward/contracts"
+-- apps/server/src/modules/moderation-engine/review/ports.ts
+from "@voxward/contracts"
+== risky
+none
+== callers of platform delete entry points in src
+apps/server/src/modules/platform-source/youtube/delete-message.ts:84:export function createYouTubeMessageDelete(deps: MessageDeleteDeps): PlatformDeletePort {
+apps/server/src/modules/platform-source/youtube/delete-message.ts:86:    checkDeletePermission(channelId) {
+apps/server/src/modules/platform-source/youtube/delete-message.ts:89:    async deleteMessage(channelId, platformMessageId) {
+apps/server/src/modules/platform-source/youtube/delete-message.ts:97:    readBack(channelId, platformMessageId) {
+apps/server/src/modules/decision-service/platform-delete.ts:64:export async function deleteFromPlatform(
+apps/server/src/modules/decision-service/platform-delete.ts:114:    const permission = deps.platform.checkDeletePermission(target.channelId);
+apps/server/src/modules/decision-service/platform-delete.ts:119:    const response = await deps.platform.deleteMessage(target.channelId, target.platformMessageId);
+apps/server/src/modules/decision-service/platform-delete.ts:128:    const presence = await deps.platform.readBack(target.channelId, target.platformMessageId);
+apps/server/src/modules/decision-service/index.ts:21:  deleteFromPlatform,
+packages/contracts/src/ports/platform-delete.ts:69:  checkDeletePermission(channelId: string): DeletePermission;
+packages/contracts/src/ports/platform-delete.ts:70:  deleteMessage(channelId: string, platformMessageId: string): Promise<DeleteResponse>;
+packages/contracts/src/ports/platform-delete.ts:71:  readBack(channelId: string, platformMessageId: string): Promise<ReadBackAnswer>;
+== coordinator.ts diff stat
+ apps/server/src/modules/moderation-engine/review/ports.ts |  6 +++++-
+ apps/server/src/modules/task-coordinator/coordinator.ts   | 14 ++++++++++++--
+ 2 files changed, 17 insertions(+), 3 deletions(-)

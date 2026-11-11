@@ -1,0 +1,6 @@
+packages/contracts/src/ports/zz-negative.ts:1: contracts may not import "../../../apps/server/src/modules/platform-source/index.js" (unclassified)
+apps/server/src/modules/decision-service/zz-negative.ts:1: module decision-service may not import "../platform-source/index.js" (module platform-source)
+apps/server/src/modules/moderation-engine/review/zz-negative.ts:1: module moderation-engine may not import "../../task-coordinator/index.js" (module task-coordinator)
+apps/server/src/modules/platform-source/youtube/zz-negative.ts:1: module platform-source may not import "../../decision-service/index.js" (module decision-service)
+check-deps: 4 violation(s) across 208 files
+with-negatives exit 1

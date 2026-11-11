@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:83d8e6716c550b3fa7d657ba",
+  "workRevision": 4,
+  "sourceDigest": "73ea0db5b89089c728b4e2733d78e05d61d4d97c97fc2c84895a6886cb76f561",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:83d8e6716c550b3fa7d657ba",
+    "workRevision": 4,
+    "sourceDigest": "73ea0db5b89089c728b4e2733d78e05d61d4d97c97fc2c84895a6886cb76f561",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:83d8e6716c550b3fa7d657ba",
+        "externalKey": "VOXWARD-STORY-015",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现可选原生聊天室删除",
+        "summary": "实现可选原生聊天室删除；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:16305a483e701a8d6d794886",
+        "scopeDigest": "ed217736dec8a5c4231aa29473feb857334cf4fa633cbc75dbc69da87d6cd176",
+        "relations": {
+          "blockedBy": [
+            "work:210958ccce508a7abf314287",
+            "work:c3303265b2af4669b243c34b"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:16305a483e701a8d6d794886",
+          "supersedes": []
+        },
+        "fieldSha256": "1cd8e8467189685ad532ef14165260469dac58978a33404ed954336c71c01216",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "c8e2e9f9b33ba4708dc0a9f510b75b7ad3e0a64217b3c14e59ea15e75218f6d5",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "8af54c6d609c07b8170bf85c7f5566d51099eb4f616736e16bbf697b7242f8d1",
+    "design.md": "e5bb53b04b812112748b9abf35712d6d3dce27ed3a0a6c05ac8b90d70b5f471e",
+    "tasks.md": "52ee2c49a8ac4beec84813454d03dc3fc3486536586a4982e934b46739b14404"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "02eb824d87d3b99040c7f8f5ef754e56c27e1cdedb0c138a7413ec6581f7f534"
+}

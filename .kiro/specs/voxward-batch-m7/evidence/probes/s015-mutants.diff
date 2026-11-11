@@ -1,0 +1,33 @@
+--- cb822f0/apps/server/src/modules/decision-service/platform-delete.ts
++++ mut-m1/apps/server/src/modules/decision-service/platform-delete.ts
+@@ -111,7 +111,7 @@
+   let unitsSpent = 0;
+   for (;;) {
+     // Checked before every request, because quota or the grant can change between two requests.
+-    const permission = deps.platform.checkDeletePermission(target.channelId);
++    const permission = { ok: true } as const;
+     if (!permission.ok) return finish(deps, target, "FAILED", permission.reason, attempts, unitsSpent);
+ 
+     attempts += 1;
+--- cb822f0/apps/server/src/modules/decision-service/platform-delete.ts
++++ mut-m2/apps/server/src/modules/decision-service/platform-delete.ts
+@@ -125,7 +125,7 @@
+ 
+     // UNKNOWN: the request may or may not have removed the message. A read-back decides, and no request is
+     // repeated blindly.
+-    const presence = await deps.platform.readBack(target.channelId, target.platformMessageId);
++    const presence = "PRESENT" as const;
+     if (presence === "ABSENT") return finish(deps, target, "SUCCEEDED", "VERIFIED_BY_READBACK", attempts, unitsSpent);
+     if (presence === "UNVERIFIABLE") {
+       return finish(deps, target, "UNKNOWN", "VERIFICATION_UNAVAILABLE", attempts, unitsSpent);
+--- cb822f0/apps/server/src/modules/decision-service/platform-delete.ts
++++ mut-m3/apps/server/src/modules/decision-service/platform-delete.ts
+@@ -72,7 +72,7 @@
+     actor: request.actor,
+   });
+   const local = localBlockOf(review);
+-  if (local.status !== "blocked" && local.status !== "already_blocked") return { local, platform: null };
++  if (local.status !== "blocked" && local.status !== "already_blocked" && local.status !== "denied") return { local, platform: null };
+ 
+   // The review succeeded, so the event exists. A missing event here means the store disagrees with itself: fail loudly.
+   const event = deps.store.readEvent(request.eventId);

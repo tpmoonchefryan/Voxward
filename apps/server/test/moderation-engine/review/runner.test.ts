@@ -285,16 +285,21 @@ describe("two writers of one message", () => {
 });
 
 describe("lanes shared with the coordinator (VW-R-006)", () => {
-  it("takes only background tasks, and leaves a queued realtime task to the realtime path", async () => {
+  it("takes nothing while a realtime task is ready, then only its own tasks once the realtime path has taken it", async () => {
     const { h, store, runner } = reviewHarness();
     const realtime = await h.coordinator.enqueueInLane("REALTIME", eventOf({ platformMessageId: "rt-1", platformOrder: 9 }), h.clock.at(60_000));
     store.seed({ eventId: "e-m1", event: messageOf("m1") });
     await runner.runCycle(CHANNEL);
 
+    expect(await runner.runBatch()).toBeNull();
+    expect(await h.coordinator.statusOf(realtime.taskId)).toBe("QUEUED");
+    expect(store.stateOf("e-m1")).toBe("UNSETTLED_FAST_PASS");
+
+    expect((await h.coordinator.takeBatch({ lanes: ["PAID", "REALTIME"] }))?.lane).toBe("REALTIME");
     const outcome = await runner.runBatch();
 
     expect(outcome?.items).toEqual([expect.objectContaining({ status: "SETTLED", eventId: "e-m1" })]);
-    expect(await h.coordinator.statusOf(realtime.taskId)).toBe("QUEUED");
+    expect(await h.coordinator.statusOf(realtime.taskId)).toBe("RUNNING");
     expect(await h.coordinator.reasonOf(realtime.taskId)).toBeNull();
   });
 });

@@ -126,7 +126,11 @@ export interface ReviewBatchLease {
  */
 export interface BackgroundCoordinatorPort {
   enqueueInLane(lane: "BACKGROUND", event: ChannelEvent, deadlineAt: string): Promise<TaskRef>;
-  /** Takes a batch from the BACKGROUND lane only. Realtime and paid work stays with the Crew executor (VW-R-006). */
+  /**
+   * Takes a batch from the BACKGROUND lane only. Realtime and paid work stays with the Crew executor (VW-R-006). The
+   * result is also null while a PAID or REALTIME batch is ready to start, because background work runs in the capacity
+   * those lanes leave (B6).
+   */
   takeBatch(options: { readonly lanes: readonly ["BACKGROUND"] }): Promise<ReviewBatchLease | null>;
   commitResult(
     taskId: string,

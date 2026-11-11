@@ -1,0 +1,21 @@
+## [fff691e] S1 limit 4, one REALTIME task and 8 BACKGROUND tasks queued, one task per batch
+{"order":"single-caller","ticks":"RBBB BBB BB","realtimeDone":1,"realtimeToManualQueue":0,"backgroundDone":8,"lastBackgroundStartTick":2}
+{"order":"crew-first","ticks":"RBBB BBB BB","realtimeDone":1,"realtimeToManualQueue":0,"backgroundDone":8,"lastBackgroundStartTick":2}
+{"order":"review-first","ticks":"BBBR BBB BB","realtimeDone":1,"realtimeToManualQueue":0,"backgroundDone":8,"lastBackgroundStartTick":2}
+NOTE S1 reading: with the review runner taking first, background starts one tick later than with the single caller :: {"single":"RBBB BBB BB","reviewFirst":"BBBR BBB BB"}
+
+## [fff691e] S2 limit 4, a REALTIME trickle (one task per tick for 10 ticks, due in 2.5 s) and 8 BACKGROUND tasks queued at tick 0
+{"order":"single-caller","ticks":"RBBB RBBB RBB R R R R R R R","realtimeDone":10,"realtimeToManualQueue":0,"backgroundDone":8,"lastBackgroundStartTick":2}
+{"order":"crew-first","ticks":"RBBB RBBB RBB R R R R R R R","realtimeDone":10,"realtimeToManualQueue":0,"backgroundDone":8,"lastBackgroundStartTick":2}
+{"order":"review-first","ticks":"BBBR BBBR BBR R R R R R R R","realtimeDone":10,"realtimeToManualQueue":0,"backgroundDone":8,"lastBackgroundStartTick":2}
+OK   S2 every REALTIME task of the trickle is done in all three orders (realtime is not delayed by background) :: {"single-caller":[10,0],"crew-first":[10,0],"review-first":[10,0]}
+NOTE S2 reading: last tick a BACKGROUND batch starts (the trickle lasts ticks 0-9) :: {"single-caller":2,"crew-first":2,"review-first":2}
+
+## [fff691e] P seeded random arrivals, 300 scenarios
+NOTE P scenarios and tasks compared :: {"interactiveTasks":5940,"backgroundTasks":3659}
+OK   P1 the Crew executor first: no PAID or REALTIME task starts later than with the single caller :: {"later":0,"examples":[{"scenario":0,"order":"review-first","options":{"limit":3,"maxBatchItems":1,"maxBatchWaitMs":500,"maxTicks":40},"arrival":20,"lane":"REALTIME","single":9,"other":10},{"scenario":0,"order":"review-first","options":{"limit":3,"maxBatchItems":1,"maxBatchWaitMs":500,"maxTicks":40},"arrival":24,"lane":"REALTIME","single":10,"other":11},{"scenario":0,"order":"review-first","options":{"limit":3,"maxBatchItems":1,"maxBatchWaitMs":500,"maxTicks":40},"arrival":28,"lane":"REALTIME","single":11,"other":12}]}
+FAIL P2 the review runner first: no PAID or REALTIME task starts later than with the single caller :: {"later":1090,"examples":[{"scenario":0,"order":"review-first","options":{"limit":3,"maxBatchItems":1,"maxBatchWaitMs":500,"maxTicks":40},"arrival":20,"lane":"REALTIME","single":9,"other":10},{"scenario":0,"order":"review-first","options":{"limit":3,"maxBatchItems":1,"maxBatchWaitMs":500,"maxTicks":40},"arrival":24,"lane":"REALTIME","single":10,"other":11},{"scenario":0,"order":"review-first","options":{"limit":3,"maxBatchItems":1,"maxBatchWaitMs":500,"maxTicks":40},"arrival":28,"lane":"REALTIME","single":11,"other":12}]}
+FAIL P3 neither order sends a PAID or REALTIME task to the manual queue that the single caller completes :: {"crew-first":0,"review-first":527}
+NOTE P reading: BACKGROUND tasks starting later / earlier than with the single caller :: {"later":{"crew-first":0,"review-first":4},"earlier":{"crew-first":0,"review-first":1076}}
+
+[fff691e] checks 4, failures 2
