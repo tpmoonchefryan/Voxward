@@ -61,7 +61,7 @@ No design authority is configured for the resolved work context. No authority wa
 
 偏离
 - 模块路径：拆单写的 `apps/server/src/modules/inference/` 实际为 `apps/server/src/modules/inference-provider/`，测试 `apps/server/test/inference/` 为 `apps/server/test/inference-provider/`，与同批其它包的映射一致。
-- 契约最小改动（§3.1）：`packages/contracts/src/modules/inference-provider.ts` 的 `InferenceCapabilities` 增加可选字段 `models`。纯增量，`CONTRACT_VERSION` 不变（自定）。
+- 契约最小改动（§3.1）：`packages/contracts/src/modules/inference-provider.ts` 的 `InferenceCapabilities` 增加可选字段 `models`；`InferenceRequest` 增加可选字段 `selection`（B1 返工，见 §3.1、§3.3）。都是纯增量，`CONTRACT_VERSION` 不变（自定）。
 - Q40 的改动落在 `platform-source/youtube/stream-list.ts` 和它的测试替身（brief 允许的范围）。
 
 来源缺口（本包不解决，接线或后续 Story 承接）
@@ -106,6 +106,8 @@ No design authority is configured for the resolved work context. No authority wa
 
 `InferenceModelCapability { modelId: string; reasoningLevels: readonly string[] }`。`InferenceCapabilities` 增加 `models?: readonly InferenceModelCapability[]`。字段缺省或数组为空，表示没有可选模型。`reasoningLevels` 为空，表示该模型没有 reasoning 参数（自定）。
 
+`InferenceRequest` 增加可选字段 `selection?: InferenceSelection`，`InferenceSelection { modelId: string; reasoning: string | null }`。它是一次运行所用的模型与 reasoning。缺省时适配器用构造时的模型，实时审核路径不变（自定，B1）。两处都是纯增量，`CONTRACT_VERSION` 不变。
+
 ### 3.2 模型设置（SUB-019）
 
 - `ModelSelection { modelId: string; reasoning: string | null }`。
@@ -118,9 +120,9 @@ No design authority is configured for the resolved work context. No authority wa
 
 ### 3.3 SC 精翻流水线（SUB-020）
 
-- 运行前先用 capability-check 检查 SC 选择。不通过则整批不运行（`SELECTION_REFUSED`）。
-- 精翻关：调用 S008 端口（`InferenceProvider.infer`）做安全审核。不请求、不发送任何翻译字段，只输出分类和理由，不生成小抄。
-- 精翻开：调用 `ScModelPort` 取得原始业务输出，用 `validateScBatch` 校验（含生成文本检查）。整批结构失败则整批失败（`BATCH_REJECTED`），不输出任何小抄。
+- 运行前用 capability-check 检查 SC 选择，核对的是运行该任务的端口自己的报告：精翻关用 S008 适配器的 `describe()`，精翻开用 `ScModelPort.describe()`。不通过则整批不运行（`SELECTION_REFUSED`），任何模型都不调用。
+- 精翻关：调用 S008 端口（`InferenceProvider.infer`）做安全审核。请求的 `selection` 带上所选模型和 reasoning。适配器用所选模型运行（`--model`），与它构造时的模型无关。适配器不能应用的参数（reasoning，STORY-010 G4）明确失败（`SELECTION_UNSUPPORTED`）：不启动进程，不写结果，不静默丢弃，也不换成别的模型。不请求、不发送任何翻译字段，只输出分类和理由，不生成小抄。
+- 精翻开：调用 `ScModelPort.infer`，入参同样带上所选模型和 reasoning。输出用 `validateScBatch` 校验（含生成文本检查）。整批结构失败则整批失败（`BATCH_REJECTED`），不输出任何小抄。
 - 逐条决定小抄：
   - `BLOCK`：不进精翻，不输出（`VERDICT_BLOCK`）。
   - 生成文本命中规则（REJECTED）：只抑制该条（`GENERATED_TEXT_REJECTED`），整批继续（Q23）。
@@ -128,7 +130,8 @@ No design authority is configured for the resolved work context. No authority wa
   - `ALLOW_MEANINGFUL` 和 `ALLOW_NOISE`：可以出小抄。提案第 112 行与第 150 行把两者都映射为 ALLOW，走同一输出通道。本包不额外排除噪声（自定）。
 - 模型输入只含 `itemId` 和 `text`。pipeline 不接收昵称、平台 ID 或安全称呼。安全称呼只在小抄生成后，由 `addressFor` 按 correlationId 在本地取得。
 - 临时 `itemId` 由注入的 `newItemId` 生成，每批唯一。映射只留在批次内存中。
-- 精翻开和精翻关两种情况都使用 `scTranslation` 槽位的选择（自定：§8.3 把「SC 安全审核与精翻」作为同一个任务）。
+- 精翻开和精翻关两种情况都使用 `scTranslation` 槽位的选择（自定：§8.3 把「SC 安全审核与精翻」作为同一个任务）。同一份选择既用于门槛，也原样交给实际运行的端口，中途不替换。
+- 真实 S008 适配器当前的 `describe()` 不报告模型（G1），所以真实运行仍在门槛被拒（`CAPABILITY_NOT_REPORTED`）。测试给适配器一份模型报告，让运行能到达假 CLI；reasoning 的失败路径用一份错误报告单独验证（`selection.test.ts`）。
 
 ### 3.4 Q23：生成文本命中规则
 
