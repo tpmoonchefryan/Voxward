@@ -17,18 +17,20 @@ import { buildCueSheetItem, type CueSheetItem, isShowableAddressText, type SafeA
 /**
  * The SC model call used when translation is on. It returns the raw business output, which the pipeline validates. The
  * Kiro CLI adapter returns classification fields only, so the production binding waits for an adapter extension
- * (STORY-010 G6).
+ * (STORY-010 G6). `describe()` is the report the SC selection is checked against before such a run.
  */
 export interface ScModelPort {
+  describe(): InferenceCapabilities;
   infer(input: AiBatchInput, call: { readonly batchId: string; readonly selection: ModelSelection }): Promise<unknown>;
 }
 
 export interface ScPipelineDeps {
-  /** The adapter's current capability report (its describe()). The SC selection is checked against it before a run. */
-  readonly capabilities: () => InferenceCapabilities;
-  /** Safety review used when translation is off. In production, the S008 adapter. */
+  /**
+   * Safety review used when translation is off. In production, the S008 adapter. Its own describe() is the report the SC
+   * selection is checked against, so a run is checked against the adapter that performs it.
+   */
   readonly safety: InferenceProvider;
-  /** The SC run used when translation is on. */
+  /** The SC run used when translation is on. Its own describe() is the report the SC selection is checked against. */
   readonly scModel: ScModelPort;
   /** Rule engine port for generated text. Without it every generated text is unverified, and the batch fails. */
   readonly generatedText?: GeneratedTextChecker;
@@ -85,11 +87,13 @@ export type ScRunOutcome =
 
 /**
  * Runs one SC batch.
- * - Translation off: only the safety review runs, through the safety port. No translation field is requested, and no
- *   item gets a cue sheet entry (proposal line 37: turning translation off does not stop the safety review).
- * - Translation on: the SC model returns the classification and the translations. The output is validated as a
- *   whole, then each item is judged for its own cue.
- * A run needs an SC selection that the current report supports. Without one, nothing is sent to any model.
+ * - Translation off: only the safety review runs, through the safety port, with the chosen model and reasoning level. No
+ *   translation field is requested, and no item gets a cue sheet entry (proposal line 37: turning translation off does not
+ *   stop the safety review).
+ * - Translation on: the SC model returns the classification and the translations. The output is validated as a whole, then
+ *   each item is judged for its own cue.
+ * A run needs an SC selection that the report of the port performing the run supports. Without one, nothing is sent to any
+ * model.
  */
 export async function runScBatch(
   request: InferenceRequest,
@@ -105,10 +109,12 @@ export async function runScBatch(
   if (selection === null) {
     return refused(request.batchId, [{ code: "SELECTION_NOT_CONFIGURED", path: "/scTranslation" }]);
   }
-  const issues = checkSelection(selection, "/scTranslation", deps.capabilities());
+  // The selection is checked against the report of the port that runs it, so the check and the run use the same port.
+  const runner = choices.translationEnabled ? deps.scModel : deps.safety;
+  const issues = checkSelection(selection, "/scTranslation", runner.describe());
   if (issues.length > 0) return refused(request.batchId, issues);
 
-  if (!choices.translationEnabled) return safetyOnly(request, deps);
+  if (!choices.translationEnabled) return safetyOnly(request, selection, deps);
   return translate(request, selection, deps);
 }
 
@@ -124,8 +130,16 @@ function refused(batchId: string, issues: readonly SettingsIssue[]): ScRunOutcom
   return { ok: false, batchId, reason: "SELECTION_REFUSED", issues };
 }
 
-async function safetyOnly(request: InferenceRequest, deps: ScPipelineDeps): Promise<ScRunOutcome> {
-  const result = await deps.safety.infer(request);
+async function safetyOnly(
+  request: InferenceRequest,
+  selection: ModelSelection,
+  deps: ScPipelineDeps,
+): Promise<ScRunOutcome> {
+  // The adapter runs this request with the chosen model and reasoning level. It refuses the run when it cannot apply them.
+  const result = await deps.safety.infer({
+    ...request,
+    selection: { modelId: selection.modelId, reasoning: selection.reasoning },
+  });
   const items = result.items.map(
     (item): ScItemOutcome => ({
       correlationId: item.correlationId,

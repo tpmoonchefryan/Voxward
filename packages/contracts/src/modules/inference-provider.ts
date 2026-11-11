@@ -28,10 +28,23 @@ export interface InferenceRequestItem {
   readonly text: string;
 }
 
-/** One AI task. `batchId` names its one-time session, so cancellation and release address the whole batch. */
+/**
+ * The model and reasoning level one run uses, as the model settings chose them. The adapter runs with exactly this model,
+ * or refuses the run. It never substitutes another model. `reasoning` is null when the run takes no reasoning level.
+ */
+export interface InferenceSelection {
+  readonly modelId: string;
+  readonly reasoning: string | null;
+}
+
+/**
+ * One AI task. `batchId` names its one-time session, so cancellation and release address the whole batch. `selection` is
+ * the model of this run. Omitted, the adapter runs with the model it was built with.
+ */
 export interface InferenceRequest extends Versioned {
   readonly batchId: string;
   readonly items: readonly InferenceRequestItem[];
+  readonly selection?: InferenceSelection;
 }
 
 /**
