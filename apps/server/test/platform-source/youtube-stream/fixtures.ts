@@ -22,21 +22,36 @@ export function chatItem(
     readonly kind?: string;
     readonly author?: Readonly<Record<string, unknown>>;
     readonly omitAuthor?: boolean;
+    /** Super Chat comment: a string sets it, null leaves the comment out. Default: a synthetic comment. */
+    readonly superChatComment?: string | null;
   } = {},
 ): Record<string, unknown> {
+  const type = options.type ?? "textMessageEvent";
   const item: Record<string, unknown> = {
     kind: options.kind ?? "youtube#liveChatMessage",
     id,
     snippet: {
-      type: options.type ?? "textMessageEvent",
+      type,
       publishedAt: options.publishedAt ?? NOW_ISO,
-      textMessageDetails: { messageText: `synthetic text ${id}` },
+      ...detailsOf(type, id, options.superChatComment),
     },
   };
   if (options.omitAuthor !== true) {
     item.authorDetails = { channelId: `UC-synthetic-${id}`, displayName: `synthetic viewer ${id}`, ...options.author };
   }
   return item;
+}
+
+/**
+ * The detail object the platform sends with each type, in the shape of the official resource. A Super Chat carries
+ * superChatDetails and no textMessageDetails. Its userComment is present only when the viewer wrote a comment.
+ */
+function detailsOf(type: string, id: string, superChatComment: string | null | undefined): Record<string, unknown> {
+  if (type !== "superChatEvent") return { textMessageDetails: { messageText: `synthetic text ${id}` } };
+  const details: Record<string, unknown> = { amountMicros: "2000000", currency: "JPY", amountDisplayString: "¥2,000" };
+  const comment = superChatComment === undefined ? `synthetic text ${id}` : superChatComment;
+  if (comment !== null) details.userComment = comment;
+  return { superChatDetails: details };
 }
 
 export function minutesBefore(minutes: number): string {

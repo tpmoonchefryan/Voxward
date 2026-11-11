@@ -47,6 +47,21 @@ describe("official item parsing", () => {
     expect(parseStreamItem(item)?.text).toBeNull();
   });
 
+  it("reads a Super Chat comment from superChatDetails.userComment (Q40)", () => {
+    const message = parseStreamItem(chatItem("sc1", { type: "superChatEvent", superChatComment: "synthetic comment" }));
+
+    expect(message?.text).toBe("synthetic comment");
+  });
+
+  it("gives a null text for a Super Chat without a comment, and never reads a text field of another shape (Q40)", () => {
+    expect(parseStreamItem(chatItem("sc2", { type: "superChatEvent", superChatComment: null }))?.text).toBeNull();
+
+    // A Super Chat never carries textMessageDetails. The defect filled the body from it, and tests hid the defect.
+    const misplaced = chatItem("sc3", { type: "superChatEvent", superChatComment: null });
+    (misplaced.snippet as Record<string, unknown>).textMessageDetails = { messageText: "not a Super Chat comment" };
+    expect(parseStreamItem(misplaced)?.text).toBeNull();
+  });
+
   it.each([
     ["a non-official kind", { ...chatItem("m3"), kind: "youtube#liveChatMessageListResponse" }],
     ["a missing id", { ...chatItem("m4"), id: "" }],

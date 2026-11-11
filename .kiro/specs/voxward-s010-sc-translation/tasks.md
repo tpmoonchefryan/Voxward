@@ -20,7 +20,7 @@ A checked task is local progress only. Formal completion still requires the engi
 勾选只表示本地进度。正式状态以 Einzbern 引擎为准。
 
 - [ ] S0. spec：`kiro-specs.mjs init`，本地段写入 design.md 和 tasks.md，`check` 得到 SPEC_CURRENT（commit：`VOXWARD-STORY-010: add spec`）
-- [ ] S1. Q40：Super Chat 正文读 `superChatDetails.userComment`；替身改为真实形状，覆盖有留言和无留言（commit：`VOXWARD-STORY-010 Q40`）
+- [x] S1. Q40：Super Chat 正文读 `superChatDetails.userComment`；替身改为真实形状，覆盖有留言和无留言（commit：`VOXWARD-STORY-010 Q40`）
 - [ ] S2. VOXWARD-SUB-019：契约最小改动；模型设置的类型、存储端口、能力检查、处理函数；测试（commit：`VOXWARD-SUB-019`）
 - [ ] S3. Q23：生成文本命中规则只抑制该条；BLOCK 条目不检查（commit：`VOXWARD-STORY-010 Q23`）
 - [ ] S4. VOXWARD-SUB-020：SC 流水线、小抄结构、精翻关时的安全审核、测试；证据文件随本 commit 提交（commit：`VOXWARD-SUB-020`）

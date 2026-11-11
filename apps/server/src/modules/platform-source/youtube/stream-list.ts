@@ -69,6 +69,23 @@ function flagOf(value: unknown): boolean | undefined {
 }
 
 /**
+ * The viewer's text for one item type. Each type keeps its text in its own detail object: a chat message in
+ * textMessageDetails.messageText, a Super Chat comment in superChatDetails.userComment. A Super Chat without a comment
+ * has no userComment field, which gives null. Other types carry no text the intake reads.
+ */
+function messageTextOf(type: string, snippet: Readonly<Record<string, unknown>>): string | null {
+  if (type === "textMessageEvent") return stringFieldOf(snippet.textMessageDetails, "messageText");
+  if (type === "superChatEvent") return stringFieldOf(snippet.superChatDetails, "userComment");
+  return null;
+}
+
+function stringFieldOf(details: unknown, key: string): string | null {
+  if (!isRecord(details)) return null;
+  const value = details[key];
+  return typeof value === "string" ? value : null;
+}
+
+/**
  * Returns the message, or null when the item is not an official chat message or lacks a field the intake needs. A field
  * that is absent stays absent. It is never filled in with a guess.
  */
@@ -82,13 +99,11 @@ export function parseStreamItem(raw: unknown): StreamMessage | null {
   if (Number.isNaN(publishedAtMs)) return null;
   const { channelId } = authorDetails;
   if (typeof channelId !== "string" || channelId === "") return null;
-  const details = isRecord(snippet.textMessageDetails) ? snippet.textMessageDetails : undefined;
-  const text = typeof details?.messageText === "string" ? details.messageText : null;
   return {
     platformMessageId: id,
     type: snippet.type,
     publishedAtMs,
-    text,
+    text: messageTextOf(snippet.type, snippet),
     authorChannelId: channelId,
     authorFlags: {
       isChatOwner: flagOf(authorDetails.isChatOwner),

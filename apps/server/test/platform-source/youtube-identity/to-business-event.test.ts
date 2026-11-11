@@ -78,6 +78,12 @@ describe("business events from accepted messages", () => {
     expect(toBusinessEvent(acceptedOf(item, 1), depsWith()).message.event.body).toBe("");
   });
 
+  it("gives an empty body for a Super Chat without a comment (Q40)", () => {
+    const item = chatItem("sc-none", { type: "superChatEvent", superChatComment: null });
+
+    expect(toBusinessEvent(acceptedOf(item, 1), depsWith()).message.event.body).toBe("");
+  });
+
   it("emits an identity change for a new certain identity, and none for a missing flag", () => {
     const deps = depsWith();
     const member = toBusinessEvent(acceptedOf(chatItem("m3", { author: { isChatSponsor: true } }), 1), deps);
