@@ -108,7 +108,10 @@ export interface TaskBatch {
   readonly tasks: readonly BatchTask[];
 }
 
-/** The lanes one caller takes from. Omitted, every lane is taken. Dispatch order is always PAID, REALTIME, BACKGROUND. */
+/**
+ * The lanes one caller takes from. Omitted, every lane is taken. Dispatch order is always PAID, REALTIME, BACKGROUND, and it
+ * holds across callers: a call that does not take a lane with a batch ready now gets nothing from the lanes below it (B6).
+ */
 export interface TakeBatchOptions {
   readonly lanes?: readonly TaskLane[];
 }
@@ -139,6 +142,9 @@ export interface TaskCoordinatorService extends TaskCoordinator {
   /**
    * Takes the next batch from the lanes asked for. Each caller names the lanes it serves (VW-R-006): the Crew executor
    * takes PAID and REALTIME, the review runner takes BACKGROUND. The lanes share the slots and the background reserve.
+   * The dispatch order PAID, REALTIME, BACKGROUND holds across callers (B6): when a lane the caller does not serve has a
+   * batch that can start and is ready now, the call returns null instead of taking a lower lane. A lane that is still
+   * inside its micro-batch window does not hold the lower lanes back.
    */
   takeBatch(options?: TakeBatchOptions): Promise<TaskBatch | null>;
   reportFailure(taskId: string, errorCode: string): Promise<FailureOutcome>;
@@ -558,7 +564,7 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
     const limit = currentLimit();
     const wanted: readonly TaskLane[] = options?.lanes ?? TASK_LANES;
     for (const lane of TASK_LANES) {
-      if (!wanted.includes(lane) || !laneMayStart(lane, usage(), limit)) continue;
+      if (!laneMayStart(lane, usage(), limit)) continue;
       const eligible = queuedTasks(lane).filter((task) => task.notBeforeMs <= now);
       const candidates: BatchCandidate[] = eligible.map((task) => ({
         bytes: task.bytes,
@@ -567,6 +573,10 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
       }));
       const decision = decideBatch(candidates, batchLimits, now);
       if (decision.kind === "hold") continue;
+      // This lane has a batch ready and a slot to run it, so it is next in the dispatch order whoever asks. A caller
+      // that does not serve it leaves it to the caller that does: taking a lower lane first would let this work wait
+      // behind the lower one (VW-R-006, B6). A lane still waiting for its window does not hold the lower lanes back.
+      if (!wanted.includes(lane)) return null;
 
       const picked = eligible.slice(0, decision.count);
       const batchId = newId();
