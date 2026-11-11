@@ -1,0 +1,84 @@
+[
+ {
+  "subject": "共用协调器的 takeBatch 不分车道：再接一个只处理某个车道的消费者，它会取走别的车道的批次，把不认识的任务转人工",
+  "summary": "VoxWard S009 的 TaskCoordinator.takeBatch() 按 PAID > REALTIME > BACKGROUND 取第一个能取的车道。S011 的复盘运行器也调用它，对不认识的任务 reportFailure(REVIEW_TASK_UNKNOWN)，这个错误码不可重试，同一协调器里排队的实时任务因此转 PENDING_REVIEW；S009 的 Crew 执行器反过来取走 BACKGROUND 复盘任务，按普通审核提交，复盘结算被绕开。给复盘单独建协调器，又不再与实时共享并发上限。",
+  "snippet": "给共享的优先队列加第二个消费者之前，先查取批接口能不能按车道限定。验收时把所有消费者接到同一个协调器上跑：每个车道各放一条任务，断言每个消费者只碰自己的车道，其它车道任务的状态不变。",
+  "body": "第 m6 批 E60 A2：一条 REALTIME 任务与复盘任务在同一个协调器里，第一次 runBatch() 取到 REALTIME 批次，该任务转 PENDING_REVIEW，技术日志 ERROR/FAILED/REVIEW_TASK_UNKNOWN。E60 A3：Crew 执行器 pump() 启动 1 个会话处理复盘任务并 writeVerdict，复盘存储仍是 UNSETTLED_FAST_PASS。S011 的实施简报禁止改 task-coordinator 内部（Q38 除外），协调器又没有按车道取批的接口，所以实施方在约束内做不出正确接法；修法是协调器提供按车道取批、执行器与复盘运行器各取自己的车道，仍共用槽位与后台余量。",
+  "tags": ["voxward", "task-coordinator", "lanes", "integration", "acceptance-method"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/task-coordinator/coordinator.ts",
+    "apps/server/src/modules/task-coordinator/crew/adapter.ts",
+    "apps/server/src/modules/moderation-engine/review/runner.ts",
+    ".kiro/specs/voxward-batch-m6/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "AI 批结果只做逐条字段校验再按 itemId 建 Map，重复的 itemId 会让后一条覆盖前一条：BLOCK 被同 ID 的 ALLOW 换掉",
+  "summary": "VoxWard S011 的复盘运行器用契约包的 validateReviewBatchResult 校验复盘输出，它只查单条字段；批内 ID 完整唯一、批外 ID 与缺项的检查在 inference-provider 的 validateReviewBatch 里，moderation-engine 按依赖规则不能导入它。运行器随后 new Map(items.map(...))，重复 ID 后者覆盖前者，缺项只让那一条失败。",
+  "snippet": "解析模型的批输出后、建索引之前，断言返回的 itemId 集合与本批输入集合完全相等且没有重复，否则整批受控失败。测试至少用三种输出：[i0 BLOCK, i0 ALLOW]、缺一项、带一个批外 ID，并把同一输出交给已有的整批校验器对照。",
+  "body": "第 m6 批 E60 G：[i0 BLOCK, i0 ALLOW_MEANINGFUL] 时 i0 以 ALLOW_MEANINGFUL 结算并 +2，没有复核记录；[i0 BLOCK, i1 ALLOW, i0 ALLOW] 时两条都 +2；缺项与批外 ID 时其余条目照常结算。同一输出交给 validateReviewBatch 都被整批拒绝，错误码为 ITEM_ID_DUPLICATE、OUTPUT_TOO_MANY_ITEMS、ITEM_RESULT_MISSING、ITEM_ID_UNKNOWN。VW-R-008 与提案 §8.3 要求复盘也按完整批契约验收、缺项或重复项整批受控失败。观众正文与其它条目在同一批里交给模型，重复 ID 的输出也可能被正文诱导出来。",
+  "tags": ["voxward", "ai-contract", "validation", "batch", "security"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/moderation-engine/review/runner.ts",
+    "packages/contracts/src/ai/review-result.ts",
+    "apps/server/src/modules/inference-provider/validation/batch-contract.ts",
+    "docs/proposal/y3_project_proposal.md",
+    ".kiro/specs/voxward-batch-m6/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "门槛只核对所选模型、调用时不带它，就是静默换模型；用固定能力报告配真实适配器的测试照样通过",
+  "summary": "VoxWard S010 的 runScBatch 在精翻关时用所选 SC 模型核对 deps.capabilities()，再调用 deps.safety.infer(request)；InferenceRequest 没有模型字段，S008 Kiro CLI 适配器的 --model 在构造时固定。模块测试把固定报告 REPORT_WITH_MODELS 配上真实适配器（它自己的 describe() 不报告模型），选择没有到达 CLI，测试仍然通过。",
+  "snippet": "验收模型选择时读假 CLI 记录的 argv，断言 --model 就是所选模型；能力门槛用运行它的那个适配器实例的 describe()，不要单独注入一份报告。",
+  "body": "第 m6 批 E50 F：选 synthetic-model-a/high（报告里有），适配器按 synthetic-model-b 构造时 argv 为 --model synthetic-model-b，不带模型构造时没有 --model，两次 runScBatch 都返回 ok。按适配器自己的 describe() 组合时（E50 E4），所有 SC 运行都在门槛被拒（CAPABILITY_NOT_REPORTED），所以生产上暂时不会发生，等适配器开始报告模型就会出现。reasoning 没有 CLI 参数，同样只被核对、不被应用。",
+  "tags": ["voxward", "model-selection", "kiro-cli", "test-doubles"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/inference-provider/sc-translation/pipeline.ts",
+    "apps/server/src/adapters/kiro-cli/command.ts",
+    "apps/server/test/inference-provider/sc-translation/safety-only.test.ts",
+    ".kiro/specs/voxward-batch-m6/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "往 deliveries 写一行就是一次下游投递：改判顺带写一条新的 PENDING 投递，等于绕过显式补发和它的消息年龄限制",
+  "summary": "VoxWard S014 的 overturn 在改判时插入一条有效 5 分钟的放行投递并返回 DeliveryIntent，而显式补发要求操作标识、消息到达 10 分钟内、新投递 60 s。改判一条 2 小时前被拦截的消息，会让它重新投递；同一消息走补发反而得 WINDOW_CLOSED。提案 §7.1 要求误判放行后是否补发由独立的补发操作决定。",
+  "snippet": "验收补发规则时，列出所有插入投递表的代码路径（grep deliveries 的 insert），每条都对照「显式操作、消息年龄、有效期」检查；对改判、恢复、重连等路径各造一条很旧的消息，断言不出现新的可投递行。",
+  "body": "第 m6 批 E70 D：消息 T0 到达、T0+10 s 人工 BLOCK，T0+2 h 改判为放行，库里多出 overturn-delivery:channel-a:op-late，PENDING、ALLOW、有效到改判后 5 分钟；overturn.test.ts 断言 intent.verdict 为 ALLOW，把它当作预期。投递表在数据字典里的含义是「裁决投递到输出端的意图与状态」，DeliveryIntent 是向下游投递的指令。",
+  "tags": ["voxward", "delivery", "resend", "decision-service"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/decision-store.ts",
+    "apps/server/src/modules/decision-service/compensation.ts",
+    "apps/server/src/modules/decision-service/resend.ts",
+    "docs/data-dictionary.md",
+    ".kiro/specs/voxward-batch-m6/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "幂等端口对重复请求返回第一次的 actualDelta：只看返回的 delta 分不清「生效两次」和「重复被挡」，要断言各主体分数与账本行，并在修复前的副本上跑同一检查",
+  "summary": "VoxWard 计分端口遇到已记录的幂等键时返回 duplicate 并带原来的 actualDelta，toScoreChange 再把它作为 delta 返回。验收 Q19② 时第一版检查按返回的 delta 断言，在修复前的 40223e2 副本上也通过；改为断言每个主体的分数与账本行数后，修复前 4 项全部不符、修复后全部符合。",
+  "snippet": "幂等相关的检查断言持久结果（每个主体的分数、账本行数、结果表行），不只断言返回值。每条新检查都在 git archive 导出的修复前副本上跑一次，确认它能区分修复前后，再拿它作验收依据。",
+  "body": "第 m6 批 E70 §L：同一操作标识 op-1 的人工补偿在 channel-a/viewer-2、channel-b/viewer-2、channel-a/viewer-3 上各做一次。修复前键是全局的 manual:op-1，后两次是 duplicate，但返回的 delta 仍是 1；按分数看只有第一个主体是 1，另外两个没有分数行，账本 1 行。身份事件同理：第二个频道返回 delta 10，实际没有生效。对照副本用 git archive 40223e2 导出 apps/server/src 与 test，node_modules 软链到检出。",
+  "tags": ["voxward", "acceptance-method", "idempotency", "scoring"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/scoring-ledger.ts",
+    "apps/server/src/modules/scoring-engine/index.ts",
+    ".kiro/specs/voxward-batch-m6/evidence/probes/probe-m6-s014.mts",
+    ".kiro/specs/voxward-batch-m6/evidence/acceptance.md"
+   ]
+  }
+ }
+]

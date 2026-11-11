@@ -1,0 +1,134 @@
+
+## §1 bounded queue: full lanes, oversized input
+OK   REALTIME cap 3: 10 enqueued -> statuses: ["QUEUED","QUEUED","QUEUED","PENDING_REVIEW","PENDING_REVIEW","PENDING_REVIEW","PENDING_REVIEW","PENDING_REVIEW","PENDING_REVIEW","PENDING_REVIEW"]
+OK   overflow reason: ["QUEUE_FULL"]
+OK   overflow is logged as an ingest failure: [["INGEST","FAILED","ERROR","QUEUE_FULL"]]
+OK   a full REALTIME lane does not refuse PAID: "QUEUED"
+OK   re-enqueue of an existing event returns the same task: "t-1"
+OK   9000-byte body -> PENDING_REVIEW INPUT_TOO_LARGE: ["PENDING_REVIEW","INPUT_TOO_LARGE"]
+OK   nothing was applied: 0
+OK   default REALTIME cap: 205 enqueued -> QUEUED count: 200
+NOTE after one batch of 8 was taken and all 8 were retried: QUEUED in the lane: {"queuedAfterRetry":200,"afterThreeMoreArrivals":200}
+
+## §2 deadlines
+OK   no slot: takeBatch returns nothing: null
+OK   queued task past its deadline -> PENDING_REVIEW DEADLINE_EXCEEDED: ["PENDING_REVIEW","DEADLINE_EXCEEDED"]
+OK   its log entry: [["ERROR","TIMED_OUT","WARN","DEADLINE_EXCEEDED",{"reason":"DEADLINE_EXCEEDED"}]]
+OK   sweep moves the overdue running task: 1
+OK   late result after the sweep: {"status":"discarded","reason":"DEADLINE_EXCEEDED"}
+OK   status stays PENDING_REVIEW, nothing written: ["PENDING_REVIEW",0]
+NOTE F1 late result before any sweep: commit outcome: {"status":"discarded","reason":"DEADLINE_EXCEEDED"}
+NOTE F1 task status after that commit (proposal §6.2: timeout -> human queue): {"status":"PENDING_REVIEW","reason":"DEADLINE_EXCEEDED","log":[["COMMIT","TIMED_OUT"]]}
+OK   F1 timed-out task reaches the human queue whatever the order of sweep and result: "PENDING_REVIEW"
+OK   deadline in the past at enqueue: ["PENDING_REVIEW","DEADLINE_EXCEEDED"]
+OK   unparseable deadline is refused: "TASK_INPUT_INVALID: deadlineAt"
+OK   one item, no wait yet -> hold: null
+OK   after maxBatchWaitMs -> flush: 1
+OK   deadline within margin -> flush at once: 1
+
+## §3 finite retry
+OK   attempt 1: nothing dispatched before notBefore: null
+OK   attempt 2: nothing dispatched before notBefore: null
+OK   attempt 3: nothing dispatched before notBefore: null
+OK   RATE_LIMITED: backoff 1000, 2000, then exhausted after 3 attempts: ["retry+1000","retry+2000","pending_review:RETRY_EXHAUSTED"]
+OK   attempt numbers: [1,2,3]
+OK   retry that would land after the deadline is not scheduled: {"status":"pending_review","reason":"DEADLINE_EXCEEDED"}
+OK   non-retryable error goes to human review: {"status":"pending_review","reason":"INVALID_OUTPUT"}
+OK   malformed error code is refused: "TASK_INPUT_INVALID: errorCode"
+OK   cancelled during backoff: never dispatched again: null
+OK   late failure report after cancel is ignored: {"status":"ignored","reason":"CANCELLED"}
+
+## §4 result commit: transaction check, late and stale results, manual verdicts
+OK   normal commit: {"status":"committed"}
+OK   written once, inside the transaction: [1,0,"BLOCK"]
+OK   duplicate commit: {"status":"discarded","reason":"ALREADY_SETTLED"}
+OK   still one write, verdict unchanged: [1,"BLOCK"]
+OK   evidence logged only with the committed result: [["OK",1]]
+OK   stale: data deleted while running: {"status":"discarded","reason":"DATA_DELETED"}
+OK   stale: data deleted while running: no write, verdict untouched, task DISCARDED, no evidence: [0,true,"DISCARDED",0]
+OK   stale: processing generation moved (deletion invalidation): {"status":"discarded","reason":"GENERATION_CHANGED"}
+OK   stale: processing generation moved (deletion invalidation): no write, verdict untouched, task DISCARDED, no evidence: [0,true,"DISCARDED",0]
+OK   stale: moderator decided while running: {"status":"discarded","reason":"VERSION_SUPERSEDED"}
+OK   stale: moderator decided while running: no write, verdict untouched, task DISCARDED, no evidence: [0,true,"DISCARDED",0]
+OK   stale: verdict already settled by another writer: {"status":"discarded","reason":"ALREADY_SETTLED"}
+OK   stale: verdict already settled by another writer: no write, verdict untouched, task DISCARDED, no evidence: [0,true,"DISCARDED",0]
+OK   result after cancel: {"status":"discarded","reason":"CANCELLED"}
+OK   storage throws during commit: {"status":"failed","reason":"COMMIT_FAILED"}
+OK   -> human review: "PENDING_REVIEW"
+OK   late result after restart: {"status":"discarded","reason":"UNKNOWN_TASK"}
+OK   nothing written: 0
+
+## §5 ordering inside a channel; lanes
+OK   later message waits for the earlier one: {"status":"waiting","waitingOn":"t-1"}
+OK   after the earlier deadline it proceeds: {"status":"committed"}
+OK   and records the unfinished predecessor: {"orderNote":"PREDECESSOR_UNFINISHED:t-1"}
+NOTE the earlier task's status after its late result (same F1 path): [{"status":"discarded","reason":"DEADLINE_EXCEEDED"},"PENDING_REVIEW"]
+NOTE first batch taken: {"lane":"REALTIME","tasks":["t-2"]}
+NOTE F2 real-time result while an older BACKGROUND task of the channel is still queued/running: {"status":"committed"}
+OK   F2 a background re-review does not hold back a real-time commit: {"status":"committed"}
+NOTE F2 real-time task once its own deadline passed: ["DONE",null,"QUEUED"]
+NOTE paid dispatched next: "PAID"
+OK   PAID result while the earlier real-time task of the channel is still running: {"status":"committed"}
+OK   the earlier real-time task is untouched and still running: "RUNNING"
+OK   another channel never waits: {"status":"committed"}
+OK   background alone never takes the reserved slot (limit 4 -> 3 background): ["BACKGROUND","BACKGROUND","BACKGROUND",null,null,null]
+OK   the reserved slot goes to PAID first: "PAID"
+OK   then no slot is left: null
+OK   at limit 1 background pauses: null
+NOTE at limit 2 background runs (design §5 says it pauses at the minimum): "BACKGROUND"
+
+## §6 dynamic concurrency
+OK   limits for NORMAL, TIGHT×2, CRITICAL×2, unusable×3, NORMAL: [4,2,2,1,1,1,1,1,4]
+OK   bounds refused: min 0: true
+OK   bounds refused: max < min: true
+OK   bounds refused: fractional: true
+OK   TIGHT with min 2, max 7 -> 3: 3
+OK   NORMAL: pump starts up to max: 4
+OK   CRITICAL with 3 still open: pump starts none: 0
+OK   CRITICAL with 1 open: still none (limit 1): 0
+OK   CRITICAL with 0 open: exactly one (min 1, no zero barrier): 1
+OK   TIGHT: up to 2 open: 1
+OK   NORMAL again: back to 4: 2
+OK   every start happened below the limit read at that moment: true
+OK   never more than max open: true
+OK   random 400 steps: open sessions never above max 6: 0
+OK   random 400 steps: each start below the limit of its moment: 0
+NOTE random run: {"starts":85,"maxOpen":6}
+
+## §7 Crew executor: unavailable, failed, completed without item, cancel, restart
+OK   Crew refuses the job -> PENDING_REVIEW CREW_UNAVAILABLE, nothing written: ["PENDING_REVIEW","CREW_UNAVAILABLE",0]
+OK   slot was released: next pump starts one: 1
+OK   session lost mid-way -> CREW_UNAVAILABLE: ["PENDING_REVIEW","CREW_UNAVAILABLE"]
+OK   completed session: task with an item commits: ["DONE",[["t-1","BLOCK"]]]
+OK   completed session without an item for a task -> INVALID_OUTPUT, no verdict: ["PENDING_REVIEW","INVALID_OUTPUT"]
+OK   two items for one task -> INVALID_OUTPUT: ["PENDING_REVIEW","INVALID_OUTPUT",0]
+OK   failed with a malformed code -> CREW_FAILED: "CREW_FAILED"
+OK   failed RATE_LIMITED -> retry scheduled: "QUEUED"
+OK   cancel: Crew session cancelled, task DISCARDED CANCELLED: [["crew-1"],"DISCARDED","CANCELLED"]
+OK   cancel released the slot: 1
+OK   nothing written for the cancelled task: 0
+OK   restarted process starts nothing on its own: 0
+OK   old process job items carry only taskId, correlationId and text: ["correlationId","taskId","text"]
+OK   old session's result handed to the new process -> UNKNOWN_TASK: {"status":"discarded","reason":"UNKNOWN_TASK"}
+OK   nothing written by the new process: 0
+OK   deadline: pump sweeps the task and cancels its session: ["PENDING_REVIEW","DEADLINE_EXCEEDED",["crew-1"]]
+OK   the slot is free again: 1
+NOTE F1 via executor: slow session finished 500 ms after the deadline, before the next pump: {"status":"PENDING_REVIEW","reason":"DEADLINE_EXCEEDED","writes":0}
+OK   F1 via executor: the timed-out message goes to the human queue: "PENDING_REVIEW"
+NOTE F3 pump after the deadline with a hanging Crew cancel: returned: true
+NOTE F3 second pump for another channel: returned / its task: {"returned":true,"status":"RUNNING","open":2}
+OK   F3 one hanging Crew cancel does not stop scheduling for other channels: [true,true,"RUNNING"]
+OK   start hangs: task PENDING_REVIEW at its deadline: ["PENDING_REVIEW","DEADLINE_EXCEEDED"]
+OK   start hangs: slot released for the next batch: 1
+NOTE resource port throws: takeBatch: "none"
+OK   resource port throws: takeBatch does not throw: "none"
+OK   resource port throws: limit shrinks to the minimum (1): 1
+
+## §8 growth of the in-memory task records
+NOTE settled tasks kept in memory: heap and one takeBatch: [{"settled":8,"heapMB":9.5,"takeBatchUs":8.275},{"settled":10008,"heapMB":18.3,"takeBatchUs":13.335},{"settled":40008,"heapMB":37.2,"takeBatchUs":29.836},{"settled":80008,"heapMB":60.1,"takeBatchUs":13.916}]
+NOTE heap per settled task (bytes): 663
+
+Technical Log entries emitted: 80153; rejected by the audit store's prepareTechnicalWrite: 0
+OK   every Technical Log entry passes the audit store's write validation: 0
+
+checks 98, failures 0

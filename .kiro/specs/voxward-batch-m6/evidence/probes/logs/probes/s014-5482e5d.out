@@ -1,0 +1,51 @@
+
+## [5482e5d] L scoring ledger: Q19 ① no-effect record, Q19 ② keys per channel and subject, Q21 port refusal
+OK   L1 Q19 ① a no-effect verdict replayed after the cooldown does not score :: {"second":0,"replay":0,"score":2,"ledger":[{"k":"event:channel-a:m1","d":2}]}
+NOTE L1 score_outcomes rows :: [{"k":"event:channel-a:m2","o":"NO_EFFECT","r":"COOLDOWN"}]
+OK   L2 Q19 ② manual correction op-1 applies once per channel and subject (each subject +1, three ledger rows) :: {"scores":[1,1,1],"manualRows":3,"keys":["manual:channel-a:viewer-2:op-1","manual:channel-b:viewer-2:op-1","manual:channel-a:viewer-3:op-1"]}
+OK   L3 Q19 ② one platform identity reference applies in each channel (both subjects at the member base 10) :: {"scores":[10,10],"first":10,"second":10}
+OK   L4 Q21 the port refuses a write for an exception subject when the module guard is bypassed :: {"result":{"status":"refused","subjectRef":"excepted-channel-a-viewer-x","reason":"EXCEPTION_ACTIVE"},"score":0,"outcomesTable":true}
+
+## [5482e5d] A human takeover, late AI result, timeout retry, version and generation guards (SUB-026, Q27 second half)
+OK   A1 a late AI result after a human takeover is a conflict with the current result; one verdict, one delivery, score -3 :: {"human":"committed","late":{"status":"conflict","reason":"TASK_NOT_OPEN","current":{"contractVersion":"1","verdictId":"id-1","seq":1,"classification":"BLOCK","downstream":"BLOCK","source":"MANUAL","decidedAt":"2026-11-10T10:00:10.000Z"}}}
+OK   A2 a second task for an event that already has a final verdict is ALREADY_FINAL with the current result; nothing written :: {"status":"conflict","reason":"ALREADY_FINAL","current":{"contractVersion":"1","verdictId":"id-1","seq":1,"classification":"BLOCK","downstream":"BLOCK","source":"MANUAL","decidedAt":"2026-11-10T10:00:10.000Z"}}
+OK   A3 generation and event version guards refuse the commit and write nothing :: {"staleGen":{"status":"conflict","reason":"STALE_GENERATION","current":null},"staleVer":{"status":"conflict","reason":"STALE_EVENT_VERSION","current":null}}
+OK   A4 a data admin (real role matrix) cannot decide :: {"status":"denied","reason":"PERMISSION_DENIED"}
+
+## [5482e5d] B moderators racing from separate processes on one database file
+OK   B1 six concurrent commits: exactly one committed, five conflicts :: {"committed":["mod-2"],"conflictReasons":["TASK_NOT_OPEN","TASK_NOT_OPEN","TASK_NOT_OPEN","TASK_NOT_OPEN","TASK_NOT_OPEN"],"others":[]}
+OK   B2 the conflicts all show the stored verdict; one verdict, one delivery, one ledger row, one Change Log row :: {"winnerVerdict":{"id":"mod-2-1","classification":"BLOCK","by":"mod-2"},"counts":{"verdicts":1,"deliveries":1,"ledger":1,"changeLogs":1}}
+
+## [5482e5d] C overturn corrects by the ledger's actual change, once (SUB-027)
+OK   C1 the clamped fourth BLOCK (-1 at the floor -10) is corrected by +1, not by the configured 3 :: {"before":-10,"o4":{"status":"overturned","compensation":"applied","delta":1},"after":-9}
+OK   C2 a second overturn of the same event changes the verdict but not the score again :: {"again":{"status":"overturned","compensation":"duplicate"}}
+OK   C3 a repeated operation id is a duplicate :: {"status":"duplicate","seq":3,"verdictId":"overturn:channel-a:op-4b"}
+OK   C4 a data admin cannot overturn :: {"status":"denied","reason":"PERMISSION_DENIED"}
+NOTE C5 five BLOCKs (-3 each, floor -10), then overturn of the first :: {"ledger":[{"k":"event:channel-a:msg-1","d":-3},{"k":"event:channel-a:msg-2","d":-3},{"k":"event:channel-a:msg-3","d":-3},{"k":"event:channel-a:msg-4","d":-1}],"before":-10,"overturn":{"compensation":"applied","delta":3},"after":-7,"replayWithoutFirst":-10}
+
+## [5482e5d] D overturn of an old BLOCK and downstream delivery (补发必须明确且受有效期限制; proposal 7.1, 6.3)
+FAIL D1 overturning a 2-hour-old BLOCK to ALLOW leaves no deliverable ALLOW intent; delivery needs the separate resend action :: {"outcome":{"status":"overturned","intent":{"contractVersion":"1","eventRef":{"contractVersion":"1","channelId":"channel-a","platformMessageId":"msg-1","correlationId":"corr-event-1"},"verdict":"ALLOW","platformOrder":1,"deliverySequence":2,"validUntil":"2026-11-10T12:05:00.000Z"}},"deliveries":[{"id":"id-56","status":"PENDING","v":"2026-11-10T10:05:00.000Z","s":1,"downstream":"BLOCK"},{"id":"overturn-delivery:channel-a:op-late","status":"PENDING","v":"2026-11-10T12:05:00.000Z","s":2,"downstream":"ALLOW"}]}
+NOTE D2 the explicit resend path for the same message :: {"resendOriginal":{"status":"refused","reason":"WINDOW_CLOSED"},"resendOverturnAfterExpiry":{"status":"refused","reason":"WINDOW_CLOSED"},"resendMaxAgeMs":600000}
+
+## [5482e5d] E explicit resend of an expired delivery (SUB-027)
+OK   E1 not expired -> NOT_EXPIRED; expired within 10 min -> resent with a 60 s window; same op -> duplicate; after 10 min -> WINDOW_CLOSED; data admin -> denied :: {"committedValidUntil":"2026-11-10T10:05:00.000Z","early":{"status":"refused","reason":"NOT_EXPIRED"},"ok":"resent","okValid":"2026-11-10T10:07:00.000Z","dup":"duplicate","late":{"status":"refused","reason":"WINDOW_CLOSED"},"admin":"denied","resentRow":[{"id":"resend:channel-a:r1","v":"2026-11-10T10:07:00.000Z","status":"PENDING"}]}
+OK   E2 after a deletion crossing (generation raised) a resend is refused :: {"status":"refused","reason":"STALE_GENERATION"}
+NOTE E3 statuses the resend reads :: the resend checks validUntil, verdict currency, generation and message age; it does not read deliveries.status (a SENT delivery past its window can be resent)
+
+## [5482e5d] F blacklist, whitelist and terms by permission; Change Log rows (Q29 writer side)
+OK   F1 DATA_ADMIN (real role matrix) is refused for list and term edits; nothing written :: {"asAdmin":{"status":"denied","reason":"PERMISSION_DENIED"},"termAdmin":{"status":"denied","reason":"PERMISSION_DENIED"}}
+OK   F2 a moderator blacklists and adds a term; a whitelist while blacklisted is a conflict :: {"asMod":{"status":"applied"},"white":{"status":"conflict","reason":"OTHER_LIST_ACTIVE"},"termMod":{"status":"applied"}}
+OK   F3 Change Log summaries carry no score digits and no message text; list rows carry subject:<id>; verdict rows the event correlation :: [{"k":"LIST_CHANGED","s":"名单变更：加入黑名单","c":"subject:subject-viewer-1"},{"k":"TERM_CHANGED","s":"词条变更：词条入库","c":null},{"k":"MANUAL_VERDICT","s":"人工裁决：拦截","c":"corr-event-1"},{"k":"MANUAL_VERDICT","s":"复核改判：拦截 → 放行","c":"corr-event-1"},{"k":"SCORE_CHANGED","s":"纠正计分（依据账本记录）","c":"corr-event-1"}]
+
+## [5482e5d] G Q19 ③ verdict, delivery, score and Change Log in one transaction
+OK   G1 a scoring failure rolls back the verdict, the delivery and the Change Log; the task stays open :: {"threw":"synthetic scoring failure","counts":{"verdicts":0,"deliveries":0,"changeLogs":0,"taskStatus":"QUEUED"}}
+
+## [5482e5d] H a human verdict on an exception subject (Q21 through DecisionService)
+OK   H1 the verdict is kept, the score is refused and not written :: {"status":"committed","scoring":"refused"}
+
+## [5482e5d] M migration 0005 and docs/data-dictionary.md
+OK   M1 score_outcomes columns, types and nullability match the dictionary; PK idempotency_key; FK subject_id -> subjects.id; CHECK name present :: {"cols":[{"name":"idempotency_key","type":"TEXT","notnull":1,"pk":1},{"name":"subject_id","type":"TEXT","notnull":1,"pk":0},{"name":"outcome","type":"TEXT","notnull":1,"pk":0},{"name":"reason_code","type":"TEXT","notnull":1,"pk":0},{"name":"created_at","type":"TEXT","notnull":1,"pk":0}],"dictCols":[{"name":"idempotency_key","type":"TEXT","notnull":1},{"name":"subject_id","type":"TEXT","notnull":1},{"name":"outcome","type":"TEXT","notnull":1},{"name":"reason_code","type":"TEXT","notnull":1},{"name":"created_at","type":"TEXT","notnull":1}],"fks":["subject_id->subjects.id"],"ddl":"CREATE TABLE `score_outcomes` (\n\t`idempotency_key` text PRIMARY KEY NOT NULL,\n\t`subject_id` text NOT NULL,\n\t`outcome` text NOT NULL,\n\t`reason_code` text NOT NULL,\n\t`created_at` text NOT NULL,\n\tFOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON UPDATE no action ON DELETE no action,\n\tCONSTRAINT \"ck_score_outcomes_kind\" CHECK(outcome IN ('NO_EFFECT', 'REFUSED'))\n)"}
+OK   M2 the dictionary's table count equals the migrated database :: {"dictionary":"27","migrated":27}
+NOTE M3 journal tags :: ["0000_initial","0001_auth_sessions","0002_audit_log_fields","0003_drop_subject_nickname_checks","0004_data_request_kinds","0005_score_outcomes"]
+
+[5482e5d] checks 24, failures 1

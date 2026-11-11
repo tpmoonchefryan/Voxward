@@ -1,0 +1,99 @@
+5482e5d Merge voxward/s014-decision (batch m6)
+2eaf9d7 Merge voxward/s011-review (batch m6)
+29806b5 Merge voxward/s010-sc-translation (batch m6)
+2828176 VOXWARD-STORY-011: add self-check evidence
+92b5ada VOXWARD-SUB-020: add SC safety review and cue sheet with translation switch
+f24182d VOXWARD-SUB-027: 实现复核改判纠分、名单词条权限与过期消息补发
+7aa734e VOXWARD-SUB-022: add candidate-term cards and confirmation interface
+390a346 VOXWARD-STORY-011 Q38: bound settled task records to a window of the newest ones
+a44b05a VOXWARD-SUB-021: add fast-lane review triggers, selection, aliases and settlement
+a5bc073 VOXWARD-SUB-026: 实现人工接管、冲突状态与裁决计分同事务
+ed107d2 VOXWARD-STORY-010 Q23: a flagged translation withholds only its own item
+488a9f7 VOXWARD-SUB-019: add real-time, SC and review model and reasoning settings
+a02a8e1 VOXWARD-STORY-010 Q40: read Super Chat comment from superChatDetails.userComment
+d0637a5 VOXWARD-STORY-010: add spec
+2d3c7e6 VOXWARD-STORY-011: add spec
+2c942f7 VOXWARD-STORY-014: add spec
+
+ 93 files changed, 10928 insertions(+), 89 deletions(-)
+ 78 files changed, 9488 insertions(+), 89 deletions(-)
+
+ apps/server/src/db/decision-store.ts                                          |  705 ++++++++++++++++++++++++++++
+ apps/server/src/db/migrations/0005_score_outcomes.sql                         |    9 +
+ apps/server/src/db/migrations/meta/0005_snapshot.json                         | 2921 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ apps/server/src/db/migrations/meta/_journal.json                              |    7 +
+ apps/server/src/db/schema/index.ts                                            |    1 +
+ apps/server/src/db/schema/score-outcomes.ts                                   |   20 +
+ apps/server/src/db/scoring-ledger.ts                                          |   53 ++-
+ apps/server/src/modules/decision-service/compensation.ts                      |   56 +++
+ apps/server/src/modules/decision-service/concurrency.ts                       |   17 +
+ apps/server/src/modules/decision-service/index.ts                             |   41 +-
+ apps/server/src/modules/decision-service/list-permissions.ts                  |   83 ++++
+ apps/server/src/modules/decision-service/resend.ts                            |   48 ++
+ apps/server/src/modules/decision-service/routes.ts                            |  233 +++++++++
+ apps/server/src/modules/decision-service/service.ts                           |   79 ++++
+ apps/server/src/modules/inference-provider/index.ts                           |    5 +
+ apps/server/src/modules/inference-provider/model-settings/capability-check.ts |   47 ++
+ apps/server/src/modules/inference-provider/model-settings/routes.ts           |   47 ++
+ apps/server/src/modules/inference-provider/model-settings/settings.ts         |  190 ++++++++
+ apps/server/src/modules/inference-provider/sc-translation/cue-sheet.ts        |   64 +++
+ apps/server/src/modules/inference-provider/sc-translation/pipeline.ts         |  214 +++++++++
+ apps/server/src/modules/inference-provider/validation/batch-contract.ts       |   43 +-
+ apps/server/src/modules/inference-provider/validation/errors.ts               |    6 +-
+ apps/server/src/modules/inference-provider/validation/output-text-check.ts    |   23 +-
+ apps/server/src/modules/moderation-engine/candidates/routes.ts                |   69 +++
+ apps/server/src/modules/moderation-engine/candidates/store.ts                 |  137 ++++++
+ apps/server/src/modules/moderation-engine/index.ts                            |   67 +++
+ apps/server/src/modules/moderation-engine/review/author-alias.ts              |   22 +
+ apps/server/src/modules/moderation-engine/review/ports.ts                     |  144 ++++++
+ apps/server/src/modules/moderation-engine/review/runner.ts                    |  307 ++++++++++++
+ apps/server/src/modules/moderation-engine/review/selection.ts                 |   78 +++
+ apps/server/src/modules/moderation-engine/review/settlement.ts                |   54 +++
+ apps/server/src/modules/moderation-engine/review/triggers.ts                  |   65 +++
+ apps/server/src/modules/platform-source/youtube/stream-list.ts                |   21 +-
+ apps/server/src/modules/scoring-engine/compensation.ts                        |   43 +-
+ apps/server/src/modules/scoring-engine/engine.ts                              |    2 +-
+ apps/server/src/modules/scoring-engine/identity-events.ts                     |    8 +-
+ apps/server/src/modules/scoring-engine/index.ts                               |   55 ++-
+ apps/server/src/modules/task-coordinator/coordinator.ts                       |   36 +-
+ apps/server/src/modules/task-coordinator/index.ts                             |    1 +
+ apps/server/test/db/decision-store.test.ts                                    |   92 ++++
+ apps/server/test/db/migrate.test.ts                                           |    4 +-
+ apps/server/test/db/schema.test.ts                                            |    4 +-
+ apps/server/test/decision-service/compensation/list-permissions.test.ts       |  102 ++++
+ apps/server/test/decision-service/compensation/overturn.test.ts               |  200 ++++++++
+ apps/server/test/decision-service/compensation/resend.test.ts                 |  155 ++++++
+ apps/server/test/decision-service/fixtures.ts                                 |  132 ++++++
+ apps/server/test/decision-service/routes.test.ts                              |  151 ++++++
+ apps/server/test/decision-service/service/commit.test.ts                      |  151 ++++++
+ apps/server/test/decision-service/service/concurrency.test.ts                 |  113 +++++
+ apps/server/test/inference-provider/model-settings/capability-check.test.ts   |  101 ++++
+ apps/server/test/inference-provider/model-settings/fixtures.ts                |   38 ++
+ apps/server/test/inference-provider/model-settings/routes.test.ts             |  129 +++++
+ apps/server/test/inference-provider/model-settings/settings.test.ts           |  106 +++++
+ apps/server/test/inference-provider/sc-translation/cue-sheet.test.ts          |   23 +
+ apps/server/test/inference-provider/sc-translation/fixtures.ts                |  102 ++++
+ apps/server/test/inference-provider/sc-translation/pipeline.test.ts           |  243 ++++++++++
+ apps/server/test/inference-provider/sc-translation/safety-only.test.ts        |   97 ++++
+ apps/server/test/inference-provider/validation/batch-contract.test.ts         |   37 +-
+ apps/server/test/inference-provider/validation/unicode-span.test.ts           |   13 +-
+ apps/server/test/moderation-engine/candidates/fixtures.ts                     |   52 ++
+ apps/server/test/moderation-engine/candidates/routes.test.ts                  |   77 +++
+ apps/server/test/moderation-engine/candidates/store.test.ts                   |   94 ++++
+ apps/server/test/moderation-engine/review/fixtures.ts                         |  234 +++++++++
+ apps/server/test/moderation-engine/review/runner.test.ts                      |  285 +++++++++++
+ apps/server/test/moderation-engine/review/selection.test.ts                   |  106 +++++
+ apps/server/test/moderation-engine/review/triggers-alias.test.ts              |   62 +++
+ apps/server/test/platform-source/youtube-identity/to-business-event.test.ts   |    6 +
+ apps/server/test/platform-source/youtube-stream/fixtures.ts                   |   19 +-
+ apps/server/test/platform-source/youtube-stream/intake-pieces.test.ts         |   15 +
+ apps/server/test/scoring-engine/ledger/compensation.test.ts                   |    2 +-
+ apps/server/test/scoring-engine/ledger/identity-events.test.ts                |    4 +-
+ apps/server/test/scoring-engine/ledger/outcomes.test.ts                       |  152 ++++++
+ apps/server/test/task-coordinator/retention.test.ts                           |   86 ++++
+ docs/data-dictionary.md                                                       |   24 +-
+ packages/contracts/src/index.ts                                               |    1 +
+ packages/contracts/src/modules/decision-service.ts                            |  118 ++++-
+ packages/contracts/src/modules/inference-provider.ts                          |   11 +
+ packages/contracts/src/ports/decision-store.ts                                |  215 +++++++++
+ 78 files changed, 9488 insertions(+), 89 deletions(-)

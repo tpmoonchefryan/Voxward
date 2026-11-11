@@ -1,0 +1,6 @@
+NOTE marker strings still on the heap after the store rows were removed (20 per kind): {"cancelled":20,"expired":20,"settled":0}
+OK   H1 control: tasks settled through runBatch leave no message text in the runner :: {"cancelled":20,"expired":20,"settled":0}
+FAIL H2 tasks cancelled for a deletion leave no message text in the runner (VW-R-017: 不创建清理遗漏副本) :: {"cancelled":20,"expired":20,"settled":0}
+FAIL H3 tasks that expired in the coordinator leave no message text in the runner :: {"cancelled":20,"expired":20,"settled":0}
+
+[5482e5d] checks 3, failures 2

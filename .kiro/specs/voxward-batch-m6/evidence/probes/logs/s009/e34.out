@@ -1,0 +1,69 @@
+
+## [5482e5d] §A ordering gate by lane (B4)
+OK   A1 BACKGROUND queued (order 1) -> REALTIME (order 2) commits: {"status":"committed"}
+NOTE A1 BACKGROUND queued (order 1) -> REALTIME (order 2) commits: other tasks: ["QUEUED"]
+OK   A2 BACKGROUND running (order 1) -> REALTIME (order 2) commits: {"status":"committed"}
+NOTE A2 BACKGROUND running (order 1) -> REALTIME (order 2) commits: other tasks: ["RUNNING"]
+OK   A3 BACKGROUND queued (order 1) -> PAID (order 2) commits: {"status":"committed"}
+NOTE A3 BACKGROUND queued (order 1) -> PAID (order 2) commits: other tasks: ["QUEUED"]
+OK   A4 BACKGROUND running (order 1) -> PAID (order 2) commits: {"status":"committed"}
+NOTE A4 BACKGROUND running (order 1) -> PAID (order 2) commits: other tasks: ["RUNNING"]
+NOTE A5 first batch lane: "PAID"
+OK   A5 REALTIME queued (order 1) -> PAID (order 2, dispatched first) commits: {"status":"committed"}
+NOTE A5 REALTIME queued (order 1) -> PAID (order 2, dispatched first) commits: other tasks: ["QUEUED"]
+OK   A6 REALTIME running (order 1) -> PAID (order 2) commits: {"status":"committed"}
+NOTE A6 REALTIME running (order 1) -> PAID (order 2) commits: other tasks: ["RUNNING"]
+OK   A7 REALTIME: a later task of the same lane waits for the earlier one: {"status":"waiting","waitingOn":"t-1"}
+OK   A8 REALTIME: once the earlier deadline passes (no sweep yet), the later one commits: {"status":"committed"}
+OK   A9 REALTIME: and records the unfinished predecessor: {"orderNote":"PREDECESSOR_UNFINISHED:t-1"}
+OK   A7 PAID: a later task of the same lane waits for the earlier one: {"status":"waiting","waitingOn":"t-1"}
+OK   A8 PAID: once the earlier deadline passes (no sweep yet), the later one commits: {"status":"committed"}
+OK   A9 PAID: and records the unfinished predecessor: {"orderNote":"PREDECESSOR_UNFINISHED:t-1"}
+OK   A7 BACKGROUND: a later task of the same lane waits for the earlier one: {"status":"waiting","waitingOn":"t-1"}
+OK   A8 BACKGROUND: once the earlier deadline passes (no sweep yet), the later one commits: {"status":"committed"}
+OK   A9 BACKGROUND: and records the unfinished predecessor: {"orderNote":"PREDECESSOR_UNFINISHED:t-1"}
+OK   A10 REALTIME waits only for the earlier REALTIME task, not the BACKGROUND one in between: {"status":"waiting","waitingOn":"t-1"}
+OK   A10 after the earlier REALTIME task commits, the later one commits: [{"status":"committed"},{"status":"committed"}]
+NOTE A11 BACKGROUND (order 2) behind a running REALTIME (order 1) of the same channel: {"status":"committed"}
+OK   A11 another channel never waits: {"status":"committed"}
+
+## [5482e5d] §B hung Crew calls (B5)
+OK   B1 first pump starts ch-a: 1
+OK   B1 pump after ch-a's deadline returns in time; ch-a to human review; one cancel sent: [true,"PENDING_REVIEW","DEADLINE_EXCEEDED",["crew-1"]]
+OK   B1 next pump returns and starts the 2 free slots (ch-a's slot stays held): [true,2,["RUNNING","RUNNING","QUEUED"]]
+OK   B1 other channels finish normally (DONE) while the cancel still hangs: [true,1,["DONE","DONE","DONE"]]
+OK   B1 open sessions never above the limit: [true,[]]
+OK   B1 crew-1 is still open on the Crew side and its cancel still pending: [true,1]
+OK   B1 executor.cancelEvent returns in time while the cancel hangs: true
+OK   B1 once Crew answers the hung cancel late, ch-a's slot comes back (3 start): 3
+OK   B2 cancelEvent returns in time; task DISCARDED CANCELLED; Crew asked once: [true,"DISCARDED","CANCELLED",["crew-1"]]
+OK   B2 another channel dispatches and commits; nothing written for the cancelled task: [true,1,"DONE",false]
+OK   B2 open sessions never above the limit: []
+NOTE B3 sessions started per pump: [1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+OK   B3 every awaited pump returned in time: 0
+OK   B3 each task reaches an explicit outcome (no QUEUED or RUNNING left): 0
+NOTE B3 final statuses: {"PENDING_REVIEW":12}
+NOTE B3 slots held by hung cancels / sessions Crew still has open / cancels sent: [3,3,3]
+OK   B3 open sessions never above the limit: [true,[]]
+OK   B4 pumps return while start #1 hangs; ch-b dispatches: [true,1,true,1,"RUNNING"]
+OK   B4 at ch-a's deadline its task goes to human review and its slot is freed for ch-c: [true,"PENDING_REVIEW","DEADLINE_EXCEEDED",1,"RUNNING"]
+OK   B4 open sessions within the limit while start #1 is outstanding: [2,1,[]]
+NOTE B4 start #1 returns late: Crew-side open sessions at that moment vs limit (residual 2 of the rework): [{"how":"late start","open":3,"limit":2}]
+OK   B4 the late session is cancelled at once and closed: [["crew-3"],2]
+OK   B4 the other channels commit: ["DONE","DONE"]
+OK   B5 every pump returned in time; every task ended in human review: [0,true]
+NOTE B5 start calls made / still outstanding after 10 deadline cycles: [20,20]
+OK   B6 done hangs: pump returns, ch-a to human review, cancel accepted, slot reused by ch-b which commits: [true,"PENDING_REVIEW",["crew-1"],true,1,"DONE"]
+OK   B6 open sessions never above the limit: [1,[]]
+OK   B6 cancelEvent returns in time when done hangs: true
+OK   B7 refused cancel: resent, then the slot is released and ch-b commits: [["crew-1","crew-1"],true,true,"DONE",[]]
+NOTE B7 sessions started by the two pumps after the refusal: [1,0]
+
+## [5482e5d] §C settled tasks release their text (N2)
+NOTE N2 text strings still on the heap, by how the task ended (50 per kind; 'open' are still queued): {"open":50}
+OK   N2 queued tasks keep their text (the search finds what is there): 50
+OK   N2 settled tasks keep no text: done, cancelled (queued/running), stale, failed, expired, late, refused: [0,0,0,0,0,0,0,0]
+NOTE N2 heap while settled light records accumulate: [{"settled":0,"heapMB":17},{"settled":20000,"heapMB":20.5},{"settled":60000,"heapMB":20.1}]
+NOTE N2 heap per settled task (bytes): 54
+
+[5482e5d] checks 44, failures 0

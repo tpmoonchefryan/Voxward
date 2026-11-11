@@ -1,0 +1,32 @@
+[
+ {
+  "host": "oauth2.googleapis.com",
+  "fetch": "refused:ECONNREFUSED",
+  "https": "refused:ECONNREFUSED",
+  "net": "refused:ECONNREFUSED"
+ },
+ {
+  "host": "www.googleapis.com",
+  "fetch": "refused:ECONNREFUSED",
+  "https": "refused:ECONNREFUSED",
+  "net": "refused:ECONNREFUSED"
+ },
+ {
+  "host": "accounts.google.com",
+  "fetch": "refused:ECONNREFUSED",
+  "https": "refused:ECONNREFUSED",
+  "net": "refused:ECONNREFUSED"
+ },
+ {
+  "host": "prod.us-east-1.auth.desktop.kiro.dev",
+  "fetch": "refused:ECONNREFUSED",
+  "https": "refused:ECONNREFUSED",
+  "net": "refused:ECONNREFUSED"
+ },
+ {
+  "host": "example.com",
+  "fetch": "refused:ECONNREFUSED",
+  "https": "refused:ECONNREFUSED",
+  "net": "refused:ECONNREFUSED"
+ }
+]
