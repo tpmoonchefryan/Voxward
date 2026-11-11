@@ -1,6 +1,9 @@
 import type { SchemaIssueCode } from "@voxward/contracts";
 
-/** Failures only the server can see: input shape, batch membership, span bounds and the generated text check. */
+/**
+ * Failures only the server can see: input shape, batch membership, span bounds and generated text that could not be
+ * verified. A rule hit on generated text is not a batch failure (Q23), so it has no code here.
+ */
 export const SERVER_ISSUE_CODES = [
   "BATCH_EMPTY",
   "BATCH_TOO_LARGE",
@@ -11,7 +14,6 @@ export const SERVER_ISSUE_CODES = [
   "ITEM_ID_DUPLICATE",
   "ITEM_RESULT_MISSING",
   "SPAN_OUT_OF_RANGE",
-  "GENERATED_TEXT_REJECTED",
   "GENERATED_TEXT_UNVERIFIED",
   "ERRORS_TRUNCATED",
 ] as const;

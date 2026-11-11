@@ -50,8 +50,8 @@ describe("rule engine port", () => {
 });
 
 describe("generated text fields", () => {
-  it("skips empty text and reports one error per flagged field, with the item id", async () => {
-    const errors = await checkGeneratedTextFields(
+  it("skips empty text and lists each rejected field by name, with no batch error (Q23)", async () => {
+    const findings = await checkGeneratedTextFields(
       2,
       "b-3",
       [
@@ -61,11 +61,11 @@ describe("generated text fields", () => {
       ],
       ruleEngineTextChecker(EXPLICIT_RULES),
     );
-    expect(errors).toEqual([{ code: "GENERATED_TEXT_REJECTED", path: "/items/2/slangNote", itemId: "b-3" }]);
+    expect(findings).toEqual({ errors: [], rejectedFields: ["slangNote"] });
   });
 
   it("marks every non-empty field unverified when no checker is bound", async () => {
-    const errors = await checkGeneratedTextFields(
+    const findings = await checkGeneratedTextFields(
       0,
       "b-1",
       [
@@ -74,6 +74,9 @@ describe("generated text fields", () => {
       ],
       undefined,
     );
-    expect(errors).toEqual([{ code: "GENERATED_TEXT_UNVERIFIED", path: "/items/0/translatedText", itemId: "b-1" }]);
+    expect(findings).toEqual({
+      errors: [{ code: "GENERATED_TEXT_UNVERIFIED", path: "/items/0/translatedText", itemId: "b-1" }],
+      rejectedFields: [],
+    });
   });
 });
