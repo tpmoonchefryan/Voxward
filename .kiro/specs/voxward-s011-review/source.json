@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:8f928245aa79a29f26ad28a6",
+  "workRevision": 4,
+  "sourceDigest": "172094d563836f521ce8f65ec1db1423fb3e16e1c38884a15535bb3a24f8319e",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:8f928245aa79a29f26ad28a6",
+    "workRevision": 4,
+    "sourceDigest": "172094d563836f521ce8f65ec1db1423fb3e16e1c38884a15535bb3a24f8319e",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:8f928245aa79a29f26ad28a6",
+        "externalKey": "VOXWARD-STORY-011",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现快速通道复盘与候选词确认",
+        "summary": "实现快速通道复盘与候选词确认；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:8980504408e4d156c130a8f9",
+        "scopeDigest": "21abef82bc89b1eb8a27cc8cd0b104f88030b75de85e446e099590dd8ae281ea",
+        "relations": {
+          "blockedBy": [
+            "work:05e6184a65712b369d65bba7",
+            "work:352ba5df1e0b354ede1a9af0",
+            "work:685ad243ec946eb7f628c93e",
+            "work:ac2a8c1b963085361cf086f0",
+            "work:c07537a238d62efa3b9779f6"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:8980504408e4d156c130a8f9",
+          "supersedes": []
+        },
+        "fieldSha256": "efc8e69704f3514f9b75415b62298e8ee0a803d0c45833f95c1eb0e83907d0ab",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "acc9c3696ec6d9c7de3219fc33f3852bae0bba38a4271e13b1992d6342343424",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "584a568411196f254187073d7e834f8b6c527fd7413a929c78c4865c9c11815b",
+    "design.md": "382c500e3f7cfe051d4caee4a5c488e90e92e358df5086749d1e4052cf8bcb7a",
+    "tasks.md": "4906f764eb9553d3c6cb8d968f7391f176d1be162e01acea219d5e37bc39277f"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "479b50cae9dc86fbb2b6a98e0ea745b67dfe278ccd923cdbe7b4857d74fc269b"
+}

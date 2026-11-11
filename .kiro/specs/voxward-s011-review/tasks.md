@@ -1,0 +1,28 @@
+<!-- EINZBERN-SPEC:MANAGED-START -->
+# Tasks
+
+<!-- Einzbern source: work=work:8f928245aa79a29f26ad28a6 revision=4 sha256=172094d563836f521ce8f65ec1db1423fb3e16e1c38884a15535bb3a24f8319e -->
+
+Exactly one executable task represents the current work item. It is a local Spec checklist only; checking it never changes formal work status or evidence.
+
+- [ ] 1. 实现快速通道复盘与候选词确认
+  - Work item: `work:8f928245aa79a29f26ad28a6` revision 4.
+  - Goal from the current formal source: 仅有效未结算快速放行消息被复盘，候选词由授权人员确认后进入规则。
+  - Scope from the current formal source: 
+  - Acceptance from the current formal source: VW-S011-AC001@1 [work:8f928245aa79a29f26ad28a6/VW-S011-R001@1] 复盘与人工/删除并行、证据过期、重复任务和未确认候选词。: 无重复或无依据计分；失效数据不恢复；AI 不直接修改规则；候选词保留来源和确认状态。 (复盘选择、并发结算、过期及候选词确认测试。) VW-S011-PARENT@1 [work:8980504408e4d156c130a8f9/VW-E002-R011@1] 复盘与人工/删除并行、证据过期、重复任务和未确认候选词。: 无重复或无依据计分；失效数据不恢复；AI 不直接修改规则；候选词保留来源和确认状态。 (复用本单同候选版本的组件/材料证据，保留来源与实际观察；复盘选择、并发结算、过期及候选词确认测试。) VW-S011-INHERIT-001@1 [work:8bd4977aa0770aa2f41229a2/VW-R-001@1] 审查本单产出的接口、说明及依赖方向。: 保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S011-INHERIT-005@1 [work:8bd4977aa0770aa2f41229a2/VW-R-005@1] 复盘与人工/删除并行、证据过期、重复任务和未确认候选词。（本单对 VW-R-005 的贡献）: 无重复或无依据计分；失效数据不恢复；AI 不直接修改规则；候选词保留来源和确认状态。 继续遵守 VW-R-005 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (复盘选择、并发结算、过期及候选词确认测试。) VW-S011-INHERIT-006@1 [work:8bd4977aa0770aa2f41229a2/VW-R-006@1] 核对本单与 VW-R-006 对应模块的接口、前置和实际影响。: 本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。 (对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。) VW-S011-INHERIT-008@1 [work:8bd4977aa0770aa2f41229a2/VW-R-008@1] 复盘与人工/删除并行、证据过期、重复任务和未确认候选词。（本单对 VW-R-008 的贡献）: 无重复或无依据计分；失效数据不恢复；AI 不直接修改规则；候选词保留来源和确认状态。 继续遵守 VW-R-008 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (复盘选择、并发结算、过期及候选词确认测试。) VW-S011-INHERIT-009@1 [work:8bd4977aa0770aa2f41229a2/VW-R-009@1] 复盘与人工/删除并行、证据过期、重复任务和未确认候选词。（本单对 VW-R-009 的贡献）: 无重复或无依据计分；失效数据不恢复；AI 不直接修改规则；候选词保留来源和确认状态。 继续遵守 VW-R-009 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (复盘选择、并发结算、过期及候选词确认测试。) VW-S011-INHERIT-010@1 [work:8bd4977aa0770aa2f41229a2/VW-R-010@1] 核对本单与 VW-R-010 对应模块的接口、前置和实际影响。: 本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。 (对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。) VW-S011-INHERIT-011@1 [work:8bd4977aa0770aa2f41229a2/VW-R-011@1] 审查本单使用的仓储接口、数据字段、事务或部署说明。: 写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S011-INHERIT-012@1 [work:8bd4977aa0770aa2f41229a2/VW-R-012@1] 审查本单暴露的接口、页面、运行权限或文档示例。: 频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S011-INHERIT-017@1 [work:8bd4977aa0770aa2f41229a2/VW-R-017@1] 审查本单涉及的数据、缓存、任务、关联或恢复说明。: 删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。)
+  - Original work notes and delivery details from the current formal source: 交付物：周期/数量/下播触发；任务内临时作者别名；已处理/例外/删除/过期排除；统一结算；候选词卡片及确认接口。 前置：VOXWARD-STORY-005,VOXWARD-STORY-006,VOXWARD-STORY-007,VOXWARD-STORY-008,VOXWARD-STORY-009 根需求关联：VW-R-005,VW-R-008,VW-R-009,VW-R-014。 本单验收只证明声明的贡献和继承约束合规性，父级完整判据保持。其它模块的实现与最终验证不因本单完成而自动通过。证据需记录候选版本、输入、实际结果和未验证范围；继承引用不是已执行证明。 当前 planned；本次仅拆单。实际派工读取项目/宿主当前配置，暂无执行人、完成证据或发布/平台操作回执。 周期/数量/下播触发；任务内临时作者别名；已处理/例外/删除/过期排除；统一结算；候选词卡片及确认接口。 S-PARENT work:8980504408e4d156c130a8f9#VW-E002-R011@requirement@1 [complete] 仅有效未结算快速放行消息被复盘，候选词由授权人员确认后进入规则。 交付：周期/数量/下播触发；任务内临时作者别名；已处理/例外/删除/过期排除；统一结算；候选词卡片及确认接口。 S-SPLIT minutes:a791ac5683fc0b966d851c2f#D2@1 [complete] 据本次授权，以 7 个 Epic、33 个 Story 承接既定 MVP：核心契约/存储/权限/规则评分；Kiro/Crew/JSON/调度/精翻复盘；YouTube 与人工操作；数据生命周期和两类日志；浏览器/OBS/协议与隔离演示；集成验收/性能/部署；政策及 Frankenstein 材料。Story 按可验收产出划分，建立真实前置依赖，政策草案可提前推进；第三方候选、许可和性能未验证状态不被计划掩盖。 VW-S011-R001@1: 仅有效未结算快速放行消息被复盘，候选词由授权人员确认后进入规则。 交付：周期/数量/下播触发；任务内临时作者别名；已处理/例外/删除/过期排除；统一结算；候选词卡片及确认接口。 behavior: 复盘与人工/删除并行、证据过期、重复任务和未确认候选词。 预期：无重复或无依据计分；失效数据不恢复；AI 不直接修改规则；候选词保留来源和确认状态。 discretion: 可在已定接口/数据范围内决定目录、内部实现与最小必要验证方法；需根据实际仓库补齐代码/Specs，不假定已有产品代码。不得删除父需求、固定新模型/子代理数量、扩大对外数据或私自改变判据；不把自测等同于独立验收或外部批准。
+
+A checked task is local progress only. Formal completion still requires the engine's work transition and its required evidence.
+<!-- EINZBERN-SPEC:MANAGED-END -->
+
+## 逐步任务（受管段之外）
+
+顺序：SPEC → SUB-021 → Q38 → SUB-022 → 自测 → 证据。每项完成后在本段打勾，并随该项 commit 一起提交。
+
+- [ ] S0. 规格：design.md 与 tasks.md 受管段之外的实施设计已写，`kiro-specs.mjs check` 为 SPEC_CURRENT。提交信息 `VOXWARD-STORY-011: add spec`。
+- [x] S1. VOXWARD-SUB-021：实现 `moderation-engine/review/` 的 ports、triggers、selection、author-alias、settlement、runner，并接入 `index.ts`。测试位于 `test/moderation-engine/review/`。覆盖 VW-SUB021-AC001、VW-S011-AC001 中的复盘选择、并发结算、过期，以及 Q27 前半（BLOCK 写复核记录并入人工队列）。提交信息含 `VOXWARD-SUB-021`。
+- [x] S2. Q38：task-coordinator 结算后的记录改为有上限的 FIFO 窗口（`maxSettledRecords`，默认 5000，自定）。未结算任务不淘汰。新增 `retainedRecords()` 供测试与运维观察。`test/task-coordinator/retention.test.ts` 证明记录数有上限。单独提交，提交信息含 `VOXWARD-STORY-011 Q38`。
+- [x] S3. VOXWARD-SUB-022：实现 `moderation-engine/candidates/store.ts` 与 `routes.ts`，并接入 `index.ts`。测试位于 `test/moderation-engine/candidates/`。覆盖 VW-SUB022-AC001：未确认候选词、无权限确认、确认后规则版本变化。提交信息含 `VOXWARD-SUB-022`。
+- [x] S4. 自测：`pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check` 全部退出 0；不设 `VOXWARD_DATABASE_FILE` 运行 `tools/smoke.sh`。
+- [x] S5. 证据：`.kiro/specs/voxward-s011-review/evidence/self-check.md` 记录自测命令、退出码、测试数、关键输出摘录，随最后一个 commit 提交。
+- [ ] S6. 交付报告：模型、commit、改动文件、自测结果、各子单 AC001 的实际结果、自定选择、偏离、来源缺口、未验证项、与同批包的可能冲突。

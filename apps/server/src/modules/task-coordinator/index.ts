@@ -70,5 +70,6 @@ function unwiredCoordinator(): TaskCoordinatorService {
     cancelEvent: notWired("cancelEvent"),
     idleBatchIds: notWired("idleBatchIds"),
     sweep: notWired("sweep"),
+    retainedRecords: () => 0,
   };
 }

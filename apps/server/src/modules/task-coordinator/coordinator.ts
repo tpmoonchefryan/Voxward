@@ -61,6 +61,8 @@ export interface CoordinatorLimits {
   readonly maxAttempts: number;
   readonly backoffBaseMs: number;
   readonly backoffCapMs: number;
+  /** Settled task records kept for status queries. The oldest settled record leaves when the window is full (Q38, 自定). */
+  readonly maxSettledRecords: number;
 }
 
 export const DEFAULT_COORDINATOR_LIMITS: CoordinatorLimits = {
@@ -72,6 +74,7 @@ export const DEFAULT_COORDINATOR_LIMITS: CoordinatorLimits = {
   maxAttempts: 3,
   backoffBaseMs: 1000,
   backoffCapMs: 8000,
+  maxSettledRecords: 5000,
 };
 
 export interface CoordinatorLimitOverrides extends Partial<Omit<CoordinatorLimits, "maxQueued">> {
@@ -135,6 +138,8 @@ export interface TaskCoordinatorService extends TaskCoordinator {
   cancelEvent(key: EventKey): Promise<{ readonly cancelledTaskIds: readonly string[] }>;
   idleBatchIds(): Promise<readonly string[]>;
   sweep(): Promise<number>;
+  /** Task records held now: open tasks plus the settled window. Observation for operations and tests (Q38). */
+  retainedRecords(): number;
 }
 
 /** A caller-supplied value failed validation. The message names the field, never the value. */
@@ -251,6 +256,7 @@ function resolveLimits(overrides: CoordinatorLimitOverrides | undefined): Coordi
     maxAttempts: overrides?.maxAttempts ?? defaults.maxAttempts,
     backoffBaseMs: overrides?.backoffBaseMs ?? defaults.backoffBaseMs,
     backoffCapMs: overrides?.backoffCapMs ?? defaults.backoffCapMs,
+    maxSettledRecords: overrides?.maxSettledRecords ?? defaults.maxSettledRecords,
   };
   validateLimits(limits);
   return limits;
@@ -265,6 +271,7 @@ function validateLimits(limits: CoordinatorLimits): void {
     ["maxAttempts", limits.maxAttempts, 1],
     ["backoffBaseMs", limits.backoffBaseMs, 0],
     ["backoffCapMs", limits.backoffCapMs, 0],
+    ["maxSettledRecords", limits.maxSettledRecords, 1],
     ...TASK_LANES.map((lane): readonly [string, number, number] => [`maxQueued.${lane}`, limits.maxQueued[lane], 1]),
   ];
   for (const [key, value, minimum] of checks) {
@@ -293,8 +300,13 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
   };
   const clock = options.clock ?? (() => new Date());
   const newId = options.newId ?? (() => globalThis.crypto.randomUUID());
-  /** Every task accepted by this process, by id. Settled records stay for status queries. */
+  /**
+   * Every task accepted by this process, by id. Settled records stay for status queries, up to `maxSettledRecords` of the
+   * newest ones (Q38).
+   */
   const tasks = new Map<string, TaskRecord>();
+  /** Settled task ids in the order they settled. Its first entry is the oldest settled record. */
+  const settledOrder = new Set<string>();
   /** One event maps to at most one task, so a repeated event never runs twice. */
   const taskByEvent = new Map<string, string>();
   /** Open tasks (QUEUED or RUNNING), by lane and by channel. Scheduling reads these, never the settled history. */
@@ -339,11 +351,30 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
     indexAdd(openByChannel, task.channelId, task);
   }
 
-  /** A settled task leaves the open indexes and releases its message text. The record stays for queries. */
+  /**
+   * A settled task leaves the open indexes and releases its message text. The record stays for queries inside a window
+   * of the newest `maxSettledRecords` settled tasks. Open tasks are never in the window, so they are never dropped.
+   */
   function closeTask(task: TaskRecord): void {
     indexRemove(openByLane, task.lane, task.taskId);
     indexRemove(openByChannel, task.channelId, task.taskId);
     task.body = "";
+    settledOrder.add(task.taskId);
+    while (settledOrder.size > limits.maxSettledRecords) {
+      const oldest = settledOrder.values().next();
+      if (oldest.done === true) break;
+      settledOrder.delete(oldest.value);
+      forget(oldest.value);
+    }
+  }
+
+  /** Drops a settled record and its event index entry, but only when the index still points at this task. */
+  function forget(taskId: string): void {
+    const task = tasks.get(taskId);
+    if (task === undefined) return;
+    tasks.delete(taskId);
+    const eventIndex = eventIndexOf(keyOfTask(task));
+    if (taskByEvent.get(eventIndex) === taskId) taskByEvent.delete(eventIndex);
   }
 
   function refOf(task: TaskRecord): TaskRef {
@@ -643,5 +674,6 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
     cancelEvent,
     idleBatchIds,
     sweep: async () => sweepExpired(nowMs()),
+    retainedRecords: () => tasks.size,
   };
 }
