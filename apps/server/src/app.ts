@@ -72,6 +72,8 @@ function dataDepsFor(database: VoxwardDatabase): DataDeps {
     newId: () => randomUUID(),
     now: () => new Date(),
     retentionDays: RETENTION_DAYS,
+    // No in-process surface is mounted by this binding yet (S019 design §8). SUB-036 lists the ones it holds.
+    caches: { names: [], forgetSubject: () => 0 },
   };
 }
 

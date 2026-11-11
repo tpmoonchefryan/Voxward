@@ -6,11 +6,14 @@
 import type { ChangeLogRow } from "./audit-log.js";
 import type { IdentityKind } from "./scoring-ledger.js";
 
-/** Request kinds from proposal §11.2. Only DELETE carries a deletion mode. */
-export const DATA_REQUEST_KINDS = ["ACCESS", "CORRECTION", "DELETE", "STOP_SCORING"] as const;
+/**
+ * Request kinds. DELETE is proposal §11.2. RESUME_SCORING is the explicit request that lifts a scoring exception
+ * (SUB-035, design §5). It is the only path that lifts one.
+ */
+export const DATA_REQUEST_KINDS = ["ACCESS", "CORRECTION", "DELETE", "STOP_SCORING", "RESUME_SCORING"] as const;
 export type DataRequestKind = (typeof DATA_REQUEST_KINDS)[number];
 
-/** The two deletion options from proposal §11.2. */
+/** The two deletion options from proposal §11.2. Only DELETE carries a deletion mode. */
 export const DELETE_MODES = ["DELETE_DATA_ONLY", "DELETE_AND_EXCEPT"] as const;
 export type DeleteMode = (typeof DELETE_MODES)[number];
 
@@ -29,6 +32,36 @@ export type ExecutionState = (typeof EXECUTION_STATES)[number];
 
 export const DELETION_ITEM_STATES = ["PENDING", "DONE", "FAILED"] as const;
 export type DeletionItemState = (typeof DELETION_ITEM_STATES)[number];
+
+/**
+ * Storage surfaces a deletion covers, one item each (design §6). The values match the target_kind CHECK in the
+ * database schema.
+ */
+export const DELETION_TARGET_KINDS = [
+  "SUBJECT",
+  "CHANNEL_EVENT",
+  "TASK",
+  "VERDICT",
+  "DELIVERY",
+  "SUBJECT_IDENTITY",
+  "SUBJECT_SCORE",
+  "SCORE_LEDGER",
+  "SCORE_OUTCOME",
+  "NICKNAME_CHECK",
+  "NICKNAME_CHANGE",
+  "LIST_ENTRY",
+  "SCORE_EXCEPTION",
+  "TECHNICAL_LOG",
+  "TECHNICAL_LOG_EVIDENCE",
+  "CHANGE_LOG",
+  "CANDIDATE_CARD",
+  "CACHE",
+] as const;
+export type DeletionTargetKind = (typeof DELETION_TARGET_KINDS)[number];
+
+/** Why a scoring exception was lifted. Stored as a controlled code; the database has no CHECK on this column. */
+export const EXCEPTION_REMOVAL_REASONS = ["RESUME_REQUESTED"] as const;
+export type ExceptionRemovalReason = (typeof EXCEPTION_REMOVAL_REASONS)[number];
 
 export const LIST_KINDS = ["BLACKLIST", "WHITELIST"] as const;
 export type ListKind = (typeof LIST_KINDS)[number];
@@ -76,6 +109,69 @@ export interface VerificationUpdate {
 
 export type DecisionOutcome = "DECIDED" | "ALREADY_DECIDED" | "NOT_FOUND";
 
+/** One storage surface to register when a deletion starts. `id` is the item row's identifier. */
+export interface DeletionTarget {
+  readonly id: string;
+  readonly targetKind: DeletionTargetKind;
+  readonly targetRef: string;
+}
+
+/**
+ * The start of a deletion, in one transaction (design §5). The port checks the request, creates the scoring-exception
+ * marker when the mode asks for it, raises the subject's processing generation, registers every target and writes
+ * both Change Log rows. `exceptionChange` is required for DELETE_AND_EXCEPT and written only when the marker is new.
+ */
+export interface DeletionStart {
+  readonly requestId: string;
+  readonly channelId: string;
+  readonly subjectId: string;
+  readonly mode: DeleteMode;
+  readonly at: string;
+  readonly exceptionId: string;
+  readonly exceptionChange: ChangeLogRow | null;
+  readonly targets: readonly DeletionTarget[];
+  readonly startChange: ChangeLogRow;
+}
+
+export type DeletionStartOutcome =
+  | { readonly status: "STARTED"; readonly generation: number; readonly exceptionCreated: boolean }
+  | { readonly status: "ALREADY_STARTED"; readonly executionState: ExecutionState }
+  | { readonly status: "NOT_ELIGIBLE"; readonly reason: "NOT_DELETE" | "NOT_VERIFIED" }
+  | { readonly status: "NOT_FOUND" };
+
+/** The outcome of one storage surface, written after its cleanup step has run. Carries a code, never content. */
+export interface ItemMark {
+  readonly requestId: string;
+  readonly targetKind: DeletionTargetKind;
+  readonly targetRef: string;
+  readonly state: Exclude<DeletionItemState, "PENDING">;
+  readonly errorCode: string | null;
+  readonly at: string;
+}
+
+/** The request's execution state once every item has a result. Written with its Change Log row. */
+export interface ExecutionFinish {
+  readonly requestId: string;
+  readonly channelId: string;
+  readonly executionState: Extract<ExecutionState, "COMPLETED" | "PARTIAL_FAILED">;
+  readonly at: string;
+  readonly change: ChangeLogRow;
+}
+
+/** An explicit RESUME_SCORING request that lifts the subject's exception. Nothing else lifts one. */
+export interface ExceptionResume {
+  readonly requestId: string;
+  readonly channelId: string;
+  readonly subjectId: string;
+  readonly at: string;
+  readonly change: ChangeLogRow;
+}
+
+export type ExceptionResumeOutcome =
+  | { readonly status: "RESUMED" }
+  | { readonly status: "NO_ACTIVE_EXCEPTION" }
+  | { readonly status: "REQUEST_NOT_ELIGIBLE" };
+
 /** Facts about one subject that the panel shows. Read only. Nicknames are not part of it. */
 export interface SubjectFacts {
   readonly subjectId: string;
@@ -99,6 +195,17 @@ export interface DataRequestPort {
    * Change Log row. A request that is already decided, or that is not in the channel, changes nothing.
    */
   decideVerification(update: VerificationUpdate, change: ChangeLogRow): DecisionOutcome;
+  /** One short transaction. Starts a deletion: exception, generation, targets and Change Log rows (design §5). */
+  startDeletion(start: DeletionStart): DeletionStartOutcome;
+  /** One short transaction. Records the result of one storage surface. */
+  markItem(mark: ItemMark): void;
+  /** One short transaction. Sets the execution state of a deletion and writes its Change Log row. */
+  finishExecution(finish: ExecutionFinish): void;
+  /**
+   * One short transaction. Lifts the subject's active exception, only for a verified RESUME_SCORING request of the same
+   * subject. Any other caller leaves the exception in place.
+   */
+  resumeException(resume: ExceptionResume): ExceptionResumeOutcome;
   /** Read only. Undefined when the request does not belong to the channel. */
   readRequest(channelId: string, requestId: string): DataRequestRecord | undefined;
   /** Read only. Requests of one subject, newest first. */
@@ -110,4 +217,14 @@ export interface DataRequestPort {
 export interface SubjectReadPort {
   /** Read only. Undefined when the subject does not belong to the channel. */
   readSubject(channelId: string, subjectId: string): SubjectFacts | undefined;
+}
+
+/**
+ * In-process surfaces that hold subject data outside the database (design §5 and §6). `names` lists the surfaces this
+ * process holds. A deletion registers one item per name: CANDIDATE_CARD for `CANDIDATE_CARD`, CACHE for the others.
+ * `forgetSubject` drops the subject's entries in that surface and returns how many it dropped.
+ */
+export interface SubjectCacheHub {
+  readonly names: readonly string[];
+  forgetSubject(name: string, channelId: string, platformSubjectKey: string, correlationIds: readonly string[]): number;
 }

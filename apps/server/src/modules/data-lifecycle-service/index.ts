@@ -1,8 +1,8 @@
 import { CONTRACT_VERSION, type DataLifecycleService } from "@voxward/contracts";
 
 /**
- * Placeholder for the DataLifecycleService contract. `requestDeletion` stays a placeholder until STORY-019. The data
- * panel reaches this module through `createDataRoutes` instead.
+ * Placeholder for the DataLifecycleService contract. `requestDeletion` stays a placeholder: deletions start through
+ * `startDeletionRequest` and the data panel's routes. The panel reaches this module through `createDataRoutes`.
  */
 export function createDataLifecycleService(): DataLifecycleService {
   return {
@@ -14,5 +14,9 @@ export function createDataLifecycleService(): DataLifecycleService {
 }
 
 export { buildControlledMaterial, type ControlledMaterial } from "./export-material.js";
+export { startDeletionRequest } from "./delete-with-exception.js";
+export { deletionTargets, EVIDENCE_SURFACES, type CleanupTarget } from "./cleanup-targets.js";
+export { preferenceMarkerOf, PREFERENCE_PURPOSE, type PreferenceMarker } from "./preference-marker.js";
+export { resumeScoring } from "./resume-scoring.js";
 export { createDataRoutes, type DataRoutes } from "./routes.js";
 export { DATA_HANDLE_CAPABILITY, type DataActor, type DataDeps, type RouteResponse } from "./types.js";

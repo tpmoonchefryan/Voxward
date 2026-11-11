@@ -79,7 +79,7 @@ export function stageOf(record: DataRequestRecord): RequestStage {
     case "CANCELLED":
       return "CANCELLED";
     case "PENDING":
-      return record.kind === "DELETE" ? "AWAITING_EXECUTION" : "NOT_EXECUTED_HERE";
+      return record.kind === "DELETE" || record.kind === "RESUME_SCORING" ? "AWAITING_EXECUTION" : "NOT_EXECUTED_HERE";
   }
 }
 

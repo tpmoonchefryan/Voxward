@@ -43,6 +43,13 @@
       "when": 1794402938484,
       "tag": "0005_score_outcomes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794421014194,
+      "tag": "0006_data_deletion_targets",
+      "breakpoints": true
     }
   ]
 }

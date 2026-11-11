@@ -534,7 +534,7 @@
 | `id` | TEXT | 否 | 主键。 |
 | `channel_id` | TEXT | 否 | 外键，指向 `channels.id`。 |
 | `subject_id` | TEXT | 是 | 外键，指向 `subjects.id`。主体的稳定引用。 |
-| `request_kind` | TEXT | 否 | 取值 `ACCESS`、`CORRECTION`、`DELETE`、`STOP_SCORING`（提案 §11.2 的四类请求）。 |
+| `request_kind` | TEXT | 否 | 取值 `ACCESS`、`CORRECTION`、`DELETE`、`STOP_SCORING`（提案 §11.2 的四类请求）与 `RESUME_SCORING`（S019：明确恢复计分的请求，是唯一移除记分例外的途径）。 |
 | `request_source` | TEXT | 否 | 取值 `VIEWER_REQUEST`、`OPERATOR_INITIATED`。 |
 | `verification_state` | TEXT | 否 | 取值 `PENDING`、`VERIFIED`、`REJECTED`。 |
 | `verification_method` | TEXT | 是 | 取值 `ACCOUNT_OWNERSHIP`（确认账号归属）、`REQUEST_AUTHORIZATION`（确认请求授权）。核验通过时必填。 |
@@ -553,7 +553,7 @@
 | --- | --- | --- |
 | `data_requests_channel_state_idx` | 索引 | `(channel_id, execution_state)`。 |
 | `data_requests_subject_idx` | 索引 | `(channel_id, subject_id)`，供面板列出主体的请求。 |
-| `ck_data_requests_kind` | CHECK | `request_kind` 只能取上列四个值。 |
+| `ck_data_requests_kind` | CHECK | `request_kind` 只能取上列五个值。 |
 | `ck_data_requests_source` | CHECK | `request_source` 只能取上列两个值。 |
 | `ck_data_requests_verification` | CHECK | `verification_state` 只能取上列三个值。 |
 | `ck_data_requests_method` | CHECK | `verification_method` 为空，或只能取上列两个值。 |
@@ -588,7 +588,7 @@
 | --- | --- | --- |
 | `data_request_items_target_uq` | 唯一索引 | `(request_id, target_kind, target_ref)` 唯一。 |
 | `data_request_items_state_idx` | 索引 | `(request_id, item_state)`。 |
-| `ck_data_request_items_kind` | CHECK | `target_kind` 取值：`SUBJECT`、`CHANNEL_EVENT`、`TASK`、`VERDICT`、`DELIVERY`、`SUBJECT_IDENTITY`、`SUBJECT_SCORE`、`SCORE_LEDGER`、`NICKNAME_CHECK`、`NICKNAME_CHANGE`、`LIST_ENTRY`、`SCORE_EXCEPTION`、`TECHNICAL_LOG`、`TECHNICAL_LOG_EVIDENCE`、`CHANGE_LOG`。 |
+| `ck_data_request_items_kind` | CHECK | `target_kind` 取值：`SUBJECT`、`CHANNEL_EVENT`、`TASK`、`VERDICT`、`DELIVERY`、`SUBJECT_IDENTITY`、`SUBJECT_SCORE`、`SCORE_LEDGER`、`SCORE_OUTCOME`、`NICKNAME_CHECK`、`NICKNAME_CHANGE`、`LIST_ENTRY`、`SCORE_EXCEPTION`、`TECHNICAL_LOG`、`TECHNICAL_LOG_EVIDENCE`、`CHANGE_LOG`、`CANDIDATE_CARD`、`CACHE`（S019 新增 `SCORE_OUTCOME`、`CANDIDATE_CARD`、`CACHE`）。 |
 | `ck_data_request_items_state` | CHECK | `item_state` 只能取上列三个值。 |
 
 ## Change Log

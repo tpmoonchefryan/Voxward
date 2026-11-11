@@ -51,6 +51,7 @@ export function dataDepsFor(database: VoxwardDatabase): DataDeps {
     newId: () => `id-${++counter}`,
     now: () => new Date(FIXED_NOW),
     retentionDays: RETENTION_DAYS,
+    caches: { names: [], forgetSubject: () => 0 },
   };
 }
 

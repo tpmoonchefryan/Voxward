@@ -1,4 +1,4 @@
-import type { AuditLogPort, DataRequestPort, SubjectReadPort } from "@voxward/contracts";
+import type { AuditLogPort, DataRequestPort, SubjectCacheHub, SubjectReadPort } from "@voxward/contracts";
 
 /** The capability that every data-panel route needs. S003 grants it to DATA_ADMIN only (design section 4.1). */
 export const DATA_HANDLE_CAPABILITY = "data.handle";
@@ -18,6 +18,8 @@ export interface DataDeps {
   readonly requests: DataRequestPort;
   readonly subjects: SubjectReadPort;
   readonly logs: Pick<AuditLogPort, "locateSubjectLogs" | "insertChangeLog">;
+  /** In-process surfaces that a deletion must forget (S019, design §5). The binding lists the ones it holds. */
+  readonly caches: SubjectCacheHub;
   /** Identifier source. Required: the module cannot import node:crypto. */
   readonly newId: () => string;
   /** Server clock. Every timestamp the module writes comes from here. */

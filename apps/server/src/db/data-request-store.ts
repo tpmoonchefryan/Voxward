@@ -3,17 +3,20 @@ import type {
   DataRequestItemRecord,
   DataRequestPort,
   DataRequestRecord,
-  DeletionItemState,
   DecisionOutcome,
+  DeletionItemState,
+  DeletionStartOutcome,
   DeleteMode,
+  ExceptionResumeOutcome,
   ExecutionState,
   RequestSource,
   VerificationMethod,
   VerificationState,
 } from "@voxward/contracts";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import type { VoxwardDatabase } from "./client.js";
-import { changeLogs, dataRequestItems, dataRequests } from "./schema/index.js";
+import { changeLogs, dataRequestItems, dataRequests, scoreExceptions } from "./schema/index.js";
+import { ScoreExceptionStore, SubjectStore } from "./repository.js";
 import { runShortTransaction, type ShortTransaction } from "./transaction.js";
 
 type RequestRow = typeof dataRequests.$inferSelect;
@@ -67,6 +70,144 @@ export function createDataRequestPort(database: VoxwardDatabase): DataRequestPor
       });
     },
 
+    startDeletion(start) {
+      return runShortTransaction(database, (tx): DeletionStartOutcome => {
+        const row = tx
+          .select()
+          .from(dataRequests)
+          .where(and(eq(dataRequests.id, start.requestId), eq(dataRequests.channelId, start.channelId)))
+          .get();
+        if (row === undefined) return { status: "NOT_FOUND" };
+        if (row.requestKind !== "DELETE") return { status: "NOT_ELIGIBLE", reason: "NOT_DELETE" };
+        if (row.verificationState !== "VERIFIED") return { status: "NOT_ELIGIBLE", reason: "NOT_VERIFIED" };
+        // A repeated start finds the request already running (or finished) and writes nothing.
+        if (row.executionState !== "PENDING") {
+          return { status: "ALREADY_STARTED", executionState: row.executionState as ExecutionState };
+        }
+        if (row.subjectId !== start.subjectId) throw new Error("deletion start names a subject other than the request's");
+
+        // Design §5: the exception first (for DELETE_AND_EXCEPT), then the generation, then the targets. All in this one
+        // transaction, so a failure anywhere leaves none of them written.
+        let exceptionCreated = false;
+        if (start.mode === "DELETE_AND_EXCEPT") {
+          if (start.exceptionChange === null) throw new Error("DELETE_AND_EXCEPT needs an exception change row");
+          const ensured = ScoreExceptionStore.ensureActive(tx, {
+            id: start.exceptionId,
+            channelId: start.channelId,
+            subjectId: start.subjectId,
+            sourceRequestId: start.requestId,
+            createdAt: start.at,
+          });
+          if (ensured.status === "created") {
+            exceptionCreated = true;
+            writeChange(tx, start.exceptionChange);
+          }
+        }
+
+        const generation = SubjectStore.bumpGeneration(tx, start.subjectId);
+        if (generation === undefined) throw new Error("the subject of the deletion request does not exist");
+
+        for (const target of start.targets) {
+          tx.insert(dataRequestItems)
+            .values({
+              id: target.id,
+              requestId: start.requestId,
+              targetKind: target.targetKind,
+              targetRef: target.targetRef,
+              itemState: "PENDING",
+              errorCode: null,
+              attemptedAt: null,
+              completedAt: null,
+            })
+            .run();
+        }
+
+        tx.update(dataRequests)
+          .set({ executionState: "RUNNING", updatedAt: start.at })
+          .where(eq(dataRequests.id, start.requestId))
+          .run();
+        writeChange(tx, start.startChange);
+        return { status: "STARTED", generation, exceptionCreated };
+      });
+    },
+
+    markItem(mark) {
+      runShortTransaction(database, (tx) => {
+        tx.update(dataRequestItems)
+          .set({
+            itemState: mark.state,
+            errorCode: mark.errorCode,
+            attemptedAt: mark.at,
+            completedAt: mark.state === "DONE" ? mark.at : null,
+          })
+          .where(
+            and(
+              eq(dataRequestItems.requestId, mark.requestId),
+              eq(dataRequestItems.targetKind, mark.targetKind),
+              eq(dataRequestItems.targetRef, mark.targetRef),
+            ),
+          )
+          .run();
+      });
+    },
+
+    finishExecution(finish) {
+      runShortTransaction(database, (tx) => {
+        const result = tx
+          .update(dataRequests)
+          .set({
+            executionState: finish.executionState,
+            completedAt: finish.executionState === "COMPLETED" ? finish.at : null,
+            updatedAt: finish.at,
+          })
+          .where(and(eq(dataRequests.id, finish.requestId), eq(dataRequests.channelId, finish.channelId)))
+          .run();
+        if (result.changes !== 1) throw new Error("deletion request not found in the channel");
+        writeChange(tx, finish.change);
+      });
+    },
+
+    resumeException(resume): ExceptionResumeOutcome {
+      return runShortTransaction(database, (tx): ExceptionResumeOutcome => {
+        const request = tx
+          .select()
+          .from(dataRequests)
+          .where(and(eq(dataRequests.id, resume.requestId), eq(dataRequests.channelId, resume.channelId)))
+          .get();
+        const eligible =
+          request !== undefined &&
+          request.requestKind === "RESUME_SCORING" &&
+          request.verificationState === "VERIFIED" &&
+          request.subjectId === resume.subjectId &&
+          request.executionState === "PENDING";
+        if (!eligible) return { status: "REQUEST_NOT_ELIGIBLE" };
+
+        const active = tx
+          .select({ id: scoreExceptions.id })
+          .from(scoreExceptions)
+          .where(
+            and(
+              eq(scoreExceptions.channelId, resume.channelId),
+              eq(scoreExceptions.subjectId, resume.subjectId),
+              isNull(scoreExceptions.removedAt),
+            ),
+          )
+          .get();
+        if (active !== undefined) {
+          tx.update(scoreExceptions)
+            .set({ removedAt: resume.at, removedReasonCode: "RESUME_REQUESTED" })
+            .where(eq(scoreExceptions.id, active.id))
+            .run();
+        }
+        tx.update(dataRequests)
+          .set({ executionState: "COMPLETED", completedAt: resume.at, updatedAt: resume.at })
+          .where(eq(dataRequests.id, resume.requestId))
+          .run();
+        writeChange(tx, resume.change);
+        return active === undefined ? { status: "NO_ACTIVE_EXCEPTION" } : { status: "RESUMED" };
+      });
+    },
+
     readRequest(channelId, requestId) {
       const row = database.orm
         .select()
@@ -113,7 +254,7 @@ function toRequestValues(record: DataRequestRecord) {
     verificationMethod: record.verificationMethod,
     mode: record.mode,
     executionState: record.executionState,
-    // Deletion targets are added by the execution path (STORY-019). Registration stores an empty scope.
+    // The deletion scope is written when the deletion starts. Registration stores an empty scope.
     scopeJson: "{}",
     createdAt: record.createdAt,
     verifiedAt: record.verifiedAt,
@@ -155,4 +296,3 @@ function toItemRecord(row: ItemRow): DataRequestItemRecord {
     completedAt: row.completedAt,
   };
 }
-
