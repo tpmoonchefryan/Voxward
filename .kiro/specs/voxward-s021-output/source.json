@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:26274628cbb8f691b6cf430c",
+  "workRevision": 4,
+  "sourceDigest": "a308b90f072f7658b40e147284f48a5430f406a696db45b3ac8e0861b096b993",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:26274628cbb8f691b6cf430c",
+    "workRevision": 4,
+    "sourceDigest": "a308b90f072f7658b40e147284f48a5430f406a696db45b3ac8e0861b096b993",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:26274628cbb8f691b6cf430c",
+        "externalKey": "VOXWARD-STORY-021",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现只读输出协议与投递状态",
+        "summary": "实现只读输出协议与投递状态；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:1f83883cd1373011cf0f8b49",
+        "scopeDigest": "4881311c5ac4a4576b279917854af2ac99d6f6d2cf351c100f862eb91009badc",
+        "relations": {
+          "blockedBy": [
+            "work:029c382b5915050f0c4de600",
+            "work:210958ccce508a7abf314287",
+            "work:40166e96c2ab9f8c9746a73a",
+            "work:685ad243ec946eb7f628c93e",
+            "work:ac2a8c1b963085361cf086f0",
+            "work:fd4f81864ddb33703517e12f"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:1f83883cd1373011cf0f8b49",
+          "supersedes": []
+        },
+        "fieldSha256": "d5509de692924f3da02821685735eb404158217ef00e190ce3e45bca0316531d",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "d3fbd8d905760755a45b0e820b37e05aad74be506b71d39fdf011a871d825a85",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "f53c1f324e6e740b71b259d5dca01211c6432ddea2471f29a6b4b757ad3acc37",
+    "design.md": "83da7280f86763c19a61b29fbb0e1f4d4fa6025021ed8374eaea9e2be0f91d67",
+    "tasks.md": "3bbf3d68645fc9f59dd7d4aa62f1bb381d2545fcd9aa01663ce377567dd9fed0"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "9237651bbca8e303408389e39a7c696b2b5c8c2d2f34e92503a135d6a1b5c6be"
+}
