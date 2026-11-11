@@ -148,8 +148,9 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
         }, timing.sendTimeoutMs);
         ws.send(JSON.stringify(message), (error) => {
           clearTimeout(timer);
-          if (error === undefined) resolve();
-          else reject(error);
+          // The write callback passes null on success, so a failure is a truthy error.
+          if (error) reject(error);
+          else resolve();
         });
       });
     }
