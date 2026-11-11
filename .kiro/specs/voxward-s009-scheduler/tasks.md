@@ -20,13 +20,13 @@ A checked task is local progress only. Formal completion still requires the engi
 勾选只表示本地进度，正式完成仍以引擎转态和证据为准。
 
 - [x] S009-SPEC 实施设计与规格（design.md 本地段）
-- [ ] SUB-017 TaskCoordinator 有界调度、截止时间与有限重试（VOXWARD-SUB-017）
-  - [ ] 微批、车道与后台余量
-  - [ ] 截止时间与超时转人工
-  - [ ] 有限重试与退避
-  - [ ] 结果提交的代次与事务确认
-  - [ ] 通道内有限保序
-  - [ ] 测试 VW-SUB017-AC001
+- [x] SUB-017 TaskCoordinator 有界调度、截止时间与有限重试（VOXWARD-SUB-017）
+  - [x] 微批、车道与后台余量
+  - [x] 截止时间与超时转人工
+  - [x] 有限重试与退避
+  - [x] 结果提交的代次与事务确认
+  - [x] 通道内有限保序
+  - [x] 测试 VW-SUB017-AC001
 - [ ] SUB-018 TaskCoordinator 的 Crew 适配与动态并发（VOXWARD-SUB-018）
   - [ ] 动态并发上限
   - [ ] Crew 执行器、不可用明确失败、取消与回收
