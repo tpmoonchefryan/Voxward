@@ -2,6 +2,8 @@
 # Default-config startup smoke: pnpm dev and bundled node dist/main.js, /healthz on 127.0.0.1:3000.
 # Usage: smoke.sh <checkoutDir> <logDir>
 D="$1"; O="$2"
+[ -d "$D/apps/server" ] || { echo "smoke: checkout not found: $D" >&2; exit 2; }
+if ss -ltn | grep -qE '127.0.0.1:(3000|5173)\b'; then echo "smoke: port 3000/5173 already in use; refusing" >&2; ss -ltnp | grep -E ':3000|:5173' >&2; exit 3; fi
 mkdir -p "$O"
 probe() {
   local name="$1" dir="$2"; shift 2
