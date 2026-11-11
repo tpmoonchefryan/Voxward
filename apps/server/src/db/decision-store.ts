@@ -27,7 +27,7 @@ import {
   type TermEdit,
   type TermEditResult,
 } from "@voxward/contracts";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, sql } from "drizzle-orm";
 import type { VoxwardDatabase } from "./client.js";
 import { TaskStore } from "./repository.js";
 import {
@@ -37,6 +37,7 @@ import {
   listEntries,
   ruleTerms,
   scoreLedger,
+  scoreOutcomes,
   subjects,
   tasks,
   verdicts,
@@ -277,10 +278,12 @@ function commitOverturnInTransaction(
 
   // Compensation reverses what the ledger actually recorded for this event, not the configured deduction.
   const original = tx
-    .select({ actualDelta: scoreLedger.actualDelta })
+    .select({ rowid: sql<number>`rowid`, actualDelta: scoreLedger.actualDelta, createdAt: scoreLedger.createdAt })
     .from(scoreLedger)
     .where(eq(scoreLedger.idempotencyKey, `event:${event.channelId}:${event.platformMessageRef}`))
     .get();
+  // Read before the correction is written, so the correction's own entries are not counted as later ones.
+  const laterLimitTouched = original !== undefined && laterEntryTouchedLimit(tx, event.subjectId, original);
 
   // The partial unique index allows one current verdict, so the old one is demoted before the new one is inserted.
   tx.update(verdicts).set({ isCurrent: 0 }).where(eq(verdicts.id, current.verdictId)).run();
@@ -309,8 +312,9 @@ function commitOverturnInTransaction(
       outputGrantId: null,
       deliverySequence,
       platformOrder: event.platformOrder,
-      validUntil: input.validUntil,
-      status: "PENDING",
+      // A release is written as expired: a resend can name the row, but nothing sends it on its own.
+      validUntil: input.deliverable ? input.validUntil : input.decidedAt,
+      status: input.deliverable ? "PENDING" : "EXPIRED",
       attempts: 0,
       updatedAt: input.decidedAt,
     })
@@ -355,6 +359,23 @@ function commitOverturnInTransaction(
     });
   }
 
+  // The amount stays the ledger's. A later entry at a limit may make a replay of the ledger end elsewhere, so a person
+  // checks the difference. The mark is kept in the Change Log as well as in the result.
+  const needsManualAdjustment =
+    laterLimitTouched && (compensation.status === "applied" || compensation.status === "no_effect");
+  if (needsManualAdjustment) {
+    insertChangeLog(tx, {
+      id: newId(),
+      channelId: event.channelId,
+      occurredAt: input.decidedAt,
+      actorRef: input.actorRef,
+      changeKind: "SCORE_CHANGED",
+      summary: "纠分需人工调整：其后有条目触及上下限",
+      correlationId: event.correlationId,
+      expiresAt: options.changeLogExpiresAt(input.decidedAt),
+    });
+  }
+
   return {
     status: "overturned",
     seq,
@@ -364,6 +385,7 @@ function commitOverturnInTransaction(
     deliverySequence,
     compensation: compensation.status,
     compensationDelta: compensation.actualDelta,
+    needsManualAdjustment,
   };
 }
 
@@ -389,6 +411,10 @@ function commitResendInTransaction(
   if (current.taskGeneration !== readSubjectGeneration(tx, event.subjectId)) {
     return { status: "refused", reason: "STALE_GENERATION" };
   }
+
+  // A delivery the output already marked SENT has reached the downstream. Sending it again would deliver it twice.
+  const sent = tx.select({ status: deliveries.status }).from(deliveries).where(eq(deliveries.id, input.deliveryId)).get();
+  if (sent?.status === "SENT") return { status: "refused", reason: "ALREADY_SENT" };
 
   const deliverySequence = nextDeliverySequence(tx, event.id);
   tx.insert(deliveries)
@@ -688,6 +714,37 @@ function manualVerdictSummary(downstream: DownstreamVerdict): string {
 
 function overturnSummary(before: DownstreamVerdict, after: DownstreamVerdict): string {
   return `复核改判：${before === "BLOCK" ? "拦截" : "放行"} → ${after === "BLOCK" ? "拦截" : "放行"}`;
+}
+
+/**
+ * True when a score entry of the subject after the original reached a limit: the ledger recorded it clamped, or it changed
+ * nothing because the limit was already reached. Ledger entries are ordered by their row id. No-effect results carry only a
+ * time, so one written in the same millisecond as the original counts as later.
+ */
+function laterEntryTouchedLimit(tx: ShortTransaction, subjectId: string, original: { rowid: number; createdAt: string }): boolean {
+  const clampedEntry = tx
+    .select({ n: sql<number>`count(*)` })
+    .from(scoreLedger)
+    .where(
+      and(
+        eq(scoreLedger.subjectId, subjectId),
+        sql`rowid > ${original.rowid}`,
+        sql`${scoreLedger.requestedDelta} <> ${scoreLedger.actualDelta}`,
+      ),
+    )
+    .get();
+  const clampedNoEffect = tx
+    .select({ n: sql<number>`count(*)` })
+    .from(scoreOutcomes)
+    .where(
+      and(
+        eq(scoreOutcomes.subjectId, subjectId),
+        eq(scoreOutcomes.reasonCode, "CLAMPED"),
+        gte(scoreOutcomes.createdAt, original.createdAt),
+      ),
+    )
+    .get();
+  return (clampedEntry?.n ?? 0) > 0 || (clampedNoEffect?.n ?? 0) > 0;
 }
 
 function scoringStatus(result: ScoreCommitResult): { status: ScoringStatus; actualDelta: number } {

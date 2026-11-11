@@ -110,10 +110,11 @@ export function overturnResponse(outcome: OverturnOutcome): RouteResponse {
         body: {
           status: "overturned",
           seq: outcome.seq,
-          verdict: outcome.intent.verdict,
-          deliverySequence: outcome.intent.deliverySequence,
-          validUntil: outcome.intent.validUntil,
+          verdict: outcome.downstream,
+          deliverySequence: outcome.intent?.deliverySequence ?? null,
+          validUntil: outcome.intent?.validUntil ?? null,
           compensation: outcome.compensation,
+          needsManualAdjustment: outcome.needsManualAdjustment,
         },
       };
     case "duplicate":

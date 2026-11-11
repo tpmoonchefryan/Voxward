@@ -32,7 +32,7 @@ export const OVERTURN_CONFLICT_REASONS = [
 export type OverturnConflictReason = (typeof OVERTURN_CONFLICT_REASONS)[number];
 
 /** Reasons a resend is refused. The delivery is not sent again. */
-export const RESEND_REFUSAL_REASONS = ["NOT_FOUND", "NOT_EXPIRED", "NOT_CURRENT", "STALE_GENERATION", "WINDOW_CLOSED"] as const;
+export const RESEND_REFUSAL_REASONS = ["NOT_FOUND", "NOT_EXPIRED", "NOT_CURRENT", "STALE_GENERATION", "WINDOW_CLOSED", "ALREADY_SENT"] as const;
 export type ResendRefusalReason = (typeof RESEND_REFUSAL_REASONS)[number];
 
 /** The decision stored for an event now. An operator sees it when a commit or a review loses a race. */
@@ -86,11 +86,22 @@ export type OverturnOutcome =
       readonly status: "overturned";
       readonly seq: number;
       readonly verdictId: string;
-      readonly intent: DeliveryIntent;
+      /** The downstream verdict of the new conclusion. */
+      readonly downstream: DownstreamVerdict;
+      /**
+       * The delivery this review sends now. Null for a release: a released message reaches the output only through an
+       * explicit resend. A block is delivered at once, so the output can take the old content off.
+       */
+      readonly intent: DeliveryIntent | null;
       /** What the score correction did. `no_effect` covers an event that had no score change to correct. */
       readonly compensation: ScoringStatus;
       /** Points the correction moved the score by, after the clamp. Zero when nothing was corrected. */
       readonly compensationDelta: number;
+      /**
+       * True when a later score entry of the same subject reached a limit, so a replay of the ledger could end at another
+       * score. The correction keeps the ledger amount; a person checks the difference (proposal 7.1).
+       */
+      readonly needsManualAdjustment: boolean;
     }
   | { readonly status: "duplicate"; readonly seq: number; readonly verdictId: string }
   | { readonly status: "conflict"; readonly reason: OverturnConflictReason; readonly current: CurrentDecision | null }

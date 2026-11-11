@@ -139,6 +139,20 @@ describe("expired deliveries are resent only by an explicit, time-limited action
     expect(countWhere(db.database, "SELECT COUNT(*) AS n FROM deliveries")).toBe(1);
   });
 
+  it("a delivery the output already marked SENT is not resent, so the downstream does not get the message twice", async () => {
+    await settleBlock();
+    db.database.sqlite.prepare("UPDATE deliveries SET status = 'SENT' WHERE id = ?").run(firstDeliveryId());
+
+    const outcome = await decisionService(db.database, { now: AFTER_EXPIRY }).resend({
+      deliveryId: firstDeliveryId(),
+      operationId: "resend-1",
+      actor: moderator("mod-1"),
+    });
+
+    expect(outcome).toEqual({ status: "refused", reason: "ALREADY_SENT" });
+    expect(countWhere(db.database, "SELECT COUNT(*) AS n FROM deliveries")).toBe(1);
+  });
+
   it("a data admin cannot resend, and an unknown delivery is refused", async () => {
     await settleBlock();
     const service = decisionService(db.database, { now: AFTER_EXPIRY });
