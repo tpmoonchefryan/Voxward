@@ -1,0 +1,4 @@
+#!/bin/sh
+# Stands in front of the real kiro-cli on PATH during acceptance runs. Every call is logged and refused.
+printf '%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "$PWD" "$*" >> "${PROBE_SHIM_LOG:-/dev/null}"
+exit 97

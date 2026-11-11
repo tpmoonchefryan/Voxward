@@ -1,0 +1,15 @@
+const [C] = process.argv.slice(2);
+const { validateModerationBatch } = await import(`${C}/apps/server/src/modules/inference-provider/index.ts`);
+const input = (n: number, id = (i: number) => `id-${i}`) => ({ items: Array.from({ length: n }, (_, i) => ({ itemId: id(i), text: "t" })) });
+const t0 = performance.now();
+const r1 = await validateModerationBatch({ items: Array.from({ length: 10000 }, (_, i) => ({ itemId: `x${i}`, verdict: "ALLOW_NOISE", reasonCodes: ["NOISE"] })) }, input(2), { maxItems: 100 });
+const ms = performance.now() - t0;
+const r2 = await validateModerationBatch({ items: Array.from({ length: 60 }, (_, i) => ({ itemId: `wrong-${i}`, verdict: "ALLOW_NOISE", reasonCodes: ["NOISE"] })) }, input(60), { maxItems: 100 });
+const emoji = (k: number) => "😀".repeat(k);
+const r3 = await validateModerationBatch({ items: [{ itemId: emoji(64), verdict: "ALLOW_NOISE", reasonCodes: ["NOISE"] }] }, input(1, () => emoji(64)), { maxItems: 100 });
+const r4 = await validateModerationBatch({ items: [{ itemId: emoji(65), verdict: "ALLOW_NOISE", reasonCodes: ["NOISE"] }] }, input(1, () => emoji(65)), { maxItems: 100 });
+const codes = (r: any) => (r.ok ? "ok" : r.errors.map((e: any) => e.code));
+console.log("10000 outputs for 2 inputs:", JSON.stringify(codes(r1)), `${ms.toFixed(1)} ms`);
+const c2 = codes(r2) as string[];
+console.log("60 wrong ids:", c2.length, "last:", c2.at(-1), "echoes a model id:", JSON.stringify(r2).includes("wrong-"));
+console.log("64 emoji id:", JSON.stringify(codes(r3)), "65 emoji id:", JSON.stringify(codes(r4)));
