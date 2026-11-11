@@ -177,3 +177,14 @@ No design authority is configured for the resolved work context. No authority wa
 ### 12. 验证门禁
 
 `pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check` 均须退出 0。启动冒烟使用 `tools/smoke.sh`，不设 `VOXWARD_DATABASE_FILE`。证据写入 `.kiro/specs/voxward-s021-output/evidence/self-check.md`。
+
+### 13. 实施偏离记录（实施子代理追加，受管段之外）
+
+| 设计原文 | 实际实现 | 原因 |
+| --- | --- | --- |
+| 第 6 节：`FAILED` 行的原因码 `CONTENT_UNAVAILABLE` 与失败状态一并记录 | 只把状态置为 `FAILED`，不记录原因码 | `deliveries` 表没有原因列。新增列需要迁移，超出本单。原因记入来源缺口，由后续单处理（自定）。 |
+| 第 8 节：注册表接口未列出 | 端口 `OutputSubscriberRegistry` 另含 `activeChannelIds()`，`OutputSubscriber.close` 接收 `NativeClose` 对象 | 投递泵需要列出有在线消费者的频道；关闭码与原因文本放在同一常量中，避免两处不一致（自定）。 |
+| 第 3 节：`modules/output-adapter` 的 `createOutputAdapter` 为占位 | `deliver` 只唤醒对应频道的投递泵，不写第二份投递记录 | 投递行在决策事务中已经写入，队列即 `deliveries` 表（自定，依据第 6 节）。 |
+| 第 8 节：`app.ts` 装配投递泵与 250 ms 定时器 | 尚未装配 | 泵只通过在线注册表发送，而注册表由 WebSocket 传输填充。传输接入时一并装配，避免无传输时的空转写入（自定）。 |
+
+传输层（`apps/server/src/adapters/native-output/socket.ts`）、`ws` 与 `@types/ws` 依赖、`apps/server/package.json` 的 `--external:ws`、升级端点测试，以及启动冒烟与证据文件，均待依赖安装获准后完成。

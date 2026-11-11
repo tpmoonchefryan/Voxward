@@ -54,8 +54,11 @@ export interface OutputDeliveryPort {
   markSent(input: { readonly deliveryId: string; readonly nowIso: string }): boolean;
   /** Counts one failed send. The row becomes FAILED once `maxAttempts` failures are reached. */
   recordSendFailure(input: { readonly deliveryId: string; readonly nowIso: string; readonly maxAttempts: number }): SendFailureOutcome;
-  /** Compare-and-set PENDING to FAILED with a fixed reason code. */
-  markFailed(input: { readonly deliveryId: string; readonly nowIso: string; readonly reason: string }): boolean;
+  /**
+   * Compare-and-set PENDING to FAILED. Used when an ALLOW row has no approved content to show. The failure is a system
+   * failure, not a violation. The schema has no column for the reason, so the status alone records it (来源缺口).
+   */
+  markFailed(input: { readonly deliveryId: string; readonly nowIso: string }): boolean;
 }
 
 export interface ApprovedContentPort {
@@ -67,8 +70,8 @@ export interface ApprovedContentPort {
 export interface OutputSubscriber {
   readonly grantId: string;
   readonly channelId: string;
-  /** Resolves when the frame is handed to the connection. Rejects when the write fails or times out. */
-  send(frame: NativeFrame): Promise<void>;
+  /** Resolves when the message is handed to the connection. Rejects when the write fails or times out. */
+  send(message: NativeFrame): Promise<void>;
   /** Bytes queued and not yet written to the connection. */
   bufferedAmount(): number;
   /** Closes the connection with a fixed close code and reason. */

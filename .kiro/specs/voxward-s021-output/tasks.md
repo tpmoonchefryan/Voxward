@@ -36,13 +36,13 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ### SUB-040（VOXWARD-SUB-040）投递 ID、状态、有限发送与补发契约
 
-- [ ] 2.1 投递泵：`apps/server/src/modules/output-adapter/delivery.ts`（读取可发送行、过期、CAS 为 SENT、失败计数与 FAILED、顺序保持）。
-- [ ] 2.2 数据库端口实现：`apps/server/src/db/output-store.ts` 增加投递状态方法（同事务比较状态）。
-- [ ] 2.3 补发契约：`apps/server/src/modules/output-adapter/resend.ts`（只发送 PENDING 且未过期；SENT 与 EXPIRED 不自动重发）。
-- [ ] 2.4 模块入口：`apps/server/src/modules/output-adapter/index.ts`（`createOutputAdapter`，`deliver` 为唤醒；保留合成适配器绑定）。
-- [ ] 2.5 文档：`docs/protocol/output-native-v1.md`（字段、版本、鉴权、心跳、断连、去重、过期与补发）。
-- [ ] 2.6 样例：`examples/consumer-dedup/`（按投递 ID 去重；只连 127.0.0.1；凭据只从环境变量读取）。
-- [ ] 2.7 测试：`test/output-adapter/delivery/pump.test.ts`、`resend-contract.test.ts`、`consumer-dedup.test.ts`（ALREADY_SENT 经真实决策存储）。
+- [x] 2.1 投递泵：`apps/server/src/modules/output-adapter/delivery.ts`（读取可发送行、过期、CAS 为 SENT、失败计数与 FAILED、顺序保持）。
+- [x] 2.2 数据库端口实现：`apps/server/src/db/output-store.ts` 增加投递状态方法（同事务比较状态）。
+- [x] 2.3 补发契约：`apps/server/src/modules/output-adapter/resend.ts`（只发送 PENDING 且未过期；SENT 与 EXPIRED 不自动重发）。
+- [x] 2.4 模块入口：`apps/server/src/modules/output-adapter/index.ts`（`createOutputAdapter`，`deliver` 为唤醒；保留合成适配器绑定）。
+- [x] 2.5 文档：`docs/protocol/output-native-v1.md`（字段、版本、鉴权、心跳、断连、去重、过期与补发）。
+- [x] 2.6 样例：`examples/consumer-dedup/`（按投递 ID 去重；只连 127.0.0.1；凭据只从环境变量读取）。
+- [x] 2.7 测试：`test/output-adapter/delivery/pump.test.ts`、`resend-contract.test.ts`、`consumer-dedup.test.ts`（ALREADY_SENT 经真实决策存储）。
 - [ ] 2.8 自测与证据：`.kiro/specs/voxward-s021-output/evidence/self-check.md`，随最后一个提交。
 
 ### 自测门禁（两张子单完成后）

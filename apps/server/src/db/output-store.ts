@@ -3,12 +3,24 @@ import {
   NATIVE_OUTPUT_KIND,
   NATIVE_OUTPUT_SCOPE,
   type ApprovedContentPort,
+  type DownstreamVerdict,
+  type OutputDeliveryPort,
   type OutputGrantPort,
+  type SendableDelivery,
+  type SendFailureOutcome,
 } from "@voxward/contracts";
-import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, lte } from "drizzle-orm";
 import type { VoxwardDatabase } from "./client.js";
-import { credentialRefs, outputGrants, technicalLogEvidence, technicalLogs } from "./schema/index.js";
-import type { ShortTransaction } from "./transaction.js";
+import {
+  channelEvents,
+  credentialRefs,
+  deliveries,
+  outputGrants,
+  technicalLogEvidence,
+  technicalLogs,
+  verdicts,
+} from "./schema/index.js";
+import { runShortTransaction, type ShortTransaction } from "./transaction.js";
 
 /**
  * The value stored in credential_refs.secret_ref for an output credential: `secretref:` and the SHA-256 digest of the
@@ -138,6 +150,119 @@ export function createApprovedContentPort(database: VoxwardDatabase): ApprovedCo
       if (text === undefined) return undefined;
       const translation = rows.find((row) => row.kind === "TRANSLATION");
       return { text: text.payload, translation: translation?.payload ?? null };
+    },
+  };
+}
+
+/**
+ * Delivery status port over `deliveries`. Each call is one short synchronous transaction. Every status change is a
+ * compare-and-set on the status the row must still have, so a row that changed meanwhile is left alone.
+ */
+export function createOutputDeliveryPort(database: VoxwardDatabase): OutputDeliveryPort {
+  return {
+    readSendable({ channelId, nowIso, limit }) {
+      const rows = database.orm
+        .select({
+          deliveryId: deliveries.id,
+          channelId: channelEvents.channelId,
+          correlationId: channelEvents.correlationId,
+          downstream: verdicts.downstream,
+          platformOrder: deliveries.platformOrder,
+          deliverySequence: deliveries.deliverySequence,
+          validUntil: deliveries.validUntil,
+        })
+        .from(deliveries)
+        .innerJoin(channelEvents, eq(channelEvents.id, deliveries.eventId))
+        .innerJoin(verdicts, eq(verdicts.id, deliveries.verdictId))
+        .where(
+          and(
+            eq(channelEvents.channelId, channelId),
+            eq(deliveries.status, "PENDING"),
+            gt(deliveries.validUntil, nowIso),
+            eq(verdicts.isCurrent, 1),
+          ),
+        )
+        .orderBy(asc(deliveries.platformOrder), asc(deliveries.deliverySequence), asc(deliveries.id))
+        .limit(limit)
+        .all();
+      // The verdict column has a CHECK that admits only ALLOW and BLOCK, so the cast cannot produce another value.
+      return rows.map(
+        (row): SendableDelivery => ({
+          deliveryId: row.deliveryId,
+          channelId: row.channelId,
+          correlationId: row.correlationId,
+          status: "PENDING",
+          verdict: row.downstream as DownstreamVerdict,
+          platformOrder: row.platformOrder,
+          deliverySequence: row.deliverySequence,
+          validUntil: row.validUntil,
+        }),
+      );
+    },
+
+    expireDue({ nowIso, limit }) {
+      return runShortTransaction(database, (tx) => {
+        const due = tx
+          .select({ id: deliveries.id })
+          .from(deliveries)
+          .where(and(eq(deliveries.status, "PENDING"), lte(deliveries.validUntil, nowIso)))
+          .limit(limit)
+          .all();
+        let changed = 0;
+        for (const row of due) {
+          changed += tx
+            .update(deliveries)
+            .set({ status: "EXPIRED", updatedAt: nowIso })
+            .where(and(eq(deliveries.id, row.id), eq(deliveries.status, "PENDING")))
+            .run().changes;
+        }
+        return changed;
+      });
+    },
+
+    markSent({ deliveryId, nowIso }) {
+      // Runs after every consumer accepted the frame. Only a PENDING row that has not expired becomes SENT.
+      return runShortTransaction(
+        database,
+        (tx) =>
+          tx
+            .update(deliveries)
+            .set({ status: "SENT", updatedAt: nowIso })
+            .where(and(eq(deliveries.id, deliveryId), eq(deliveries.status, "PENDING"), gt(deliveries.validUntil, nowIso)))
+            .run().changes === 1,
+      );
+    },
+
+    recordSendFailure({ deliveryId, nowIso, maxAttempts }) {
+      return runShortTransaction(database, (tx): SendFailureOutcome => {
+        const row = tx
+          .select({ attempts: deliveries.attempts })
+          .from(deliveries)
+          .where(and(eq(deliveries.id, deliveryId), eq(deliveries.status, "PENDING")))
+          .get();
+        if (row === undefined) return "NOT_PENDING";
+        const attempts = row.attempts + 1;
+        const status = attempts >= maxAttempts ? "FAILED" : "PENDING";
+        const changed = tx
+          .update(deliveries)
+          .set({ attempts, status, updatedAt: nowIso })
+          .where(and(eq(deliveries.id, deliveryId), eq(deliveries.status, "PENDING")))
+          .run().changes;
+        if (changed !== 1) return "NOT_PENDING";
+        return status === "FAILED" ? "FAILED" : "RETRY";
+      });
+    },
+
+    markFailed({ deliveryId, nowIso }) {
+      return runShortTransaction(
+        database,
+        (tx) =>
+          tx
+            .update(deliveries)
+            .set({ status: "FAILED", updatedAt: nowIso })
+            .where(and(eq(deliveries.id, deliveryId), eq(deliveries.status, "PENDING")))
+            .run().changes === 1,
+      );
     },
   };
 }

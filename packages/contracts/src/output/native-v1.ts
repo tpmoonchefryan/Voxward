@@ -1,13 +1,13 @@
 /**
  * Native read-only output protocol, version 1. A downstream consumer subscribes to one room with a revocable credential
- * and receives approved display events as JSON text frames. The consumer sends no content. Its only client frames are
- * WebSocket control frames (pong).
+ * and receives approved display events as JSON text messages. The consumer sends no content. Its only client messages are
+ * WebSocket control messages (pong).
  */
 
 /** Subprotocol the client offers and the server selects. The server never echoes the credential entry. */
 export const NATIVE_OUTPUT_PROTOCOL = "vw-output.v1";
 
-/** Version carried by every frame. */
+/** Version carried by every message. */
 export const NATIVE_OUTPUT_VERSION = 1 as const;
 
 /**
@@ -76,7 +76,7 @@ export interface WardBlockedFrame extends DeliveryFields {
 
 export type NativeFrame = HelloFrame | DeliverFrame | WardBlockedFrame;
 
-/** Exact key lists. A frame carries these keys and no others. */
+/** Exact key lists. A message carries these keys and no others. */
 export const NATIVE_FRAME_FIELDS = {
   HELLO: ["type", "version", "protocol", "heartbeatMs"],
   DELIVER: ["type", "version", "deliveryId", "deliverySequence", "platformOrder", "validUntil", "display"],
