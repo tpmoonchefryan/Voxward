@@ -2,6 +2,7 @@
  * Synthetic fixtures for the YouTube credential tests: a fake Google authorization server, an in-memory credential_refs
  * table, and a harness that wires the real vault. No test in this folder reaches the network.
  */
+import { createHash } from "node:crypto";
 import { createCredentialVault } from "../../../src/security/credential-vault.js";
 import {
   createYouTubeCredentialStore,
@@ -51,7 +52,8 @@ export interface FakeAuthorizationServer {
 }
 
 export function createFakeAuthorizationServer(client: { readonly clientId: string; readonly clientSecret: string; readonly redirectUri: string }): FakeAuthorizationServer {
-  const codes = new Map<string, { readonly scopes: readonly string[]; readonly refreshToken: string }>();
+  // challenge is the PKCE S256 challenge sent with the authorization request. Null when the request carried none.
+  const codes = new Map<string, { readonly scopes: readonly string[]; readonly refreshToken: string; readonly challenge: string | null }>();
   const refreshGrants = new Map<string, readonly string[]>();
   const posts: { url: string; form: Form }[] = [];
   const revoked: string[] = [];
@@ -74,12 +76,21 @@ export function createFakeAuthorizationServer(client: { readonly clientId: strin
     return { status: 200, body };
   }
 
+  /** S256: the verifier must hash to the challenge. A missing verifier fails the same way a wrong one does. */
+  function verifierMatches(challenge: string, verifier: string | undefined): boolean {
+    if (verifier === undefined || verifier === "") return false;
+    return createHash("sha256").update(verifier, "utf8").digest("base64url") === challenge;
+  }
+
   function exchangeCode(form: Form): HttpResponse {
     if (form.redirect_uri !== client.redirectUri) return { status: 400, body: { error: "redirect_uri_mismatch" } };
     const code = form.code ?? "";
     const grant = codes.get(code);
     codes.delete(code);
     if (grant === undefined) return { status: 400, body: { error: "invalid_grant" } };
+    if (grant.challenge !== null && !verifierMatches(grant.challenge, form.code_verifier)) {
+      return { status: 400, body: { error: "invalid_grant" } };
+    }
     refreshGrants.set(grant.refreshToken, grant.scopes);
     return tokenResponse(grant.scopes, grant.refreshToken);
   }
@@ -121,11 +132,13 @@ export function createFakeAuthorizationServer(client: { readonly clientId: strin
     posts,
     revoked,
     approve(authorizationUrl, options) {
-      const scope = new URL(authorizationUrl).searchParams.get("scope") ?? "";
+      const params = new URL(authorizationUrl).searchParams;
+      const scope = params.get("scope") ?? "";
       const requested = scope.split(" ").filter((item) => item !== "");
+      const challenge = params.get("code_challenge_method") === "S256" ? params.get("code_challenge") : null;
       const code = issue("code");
       const refreshToken = issue("refresh");
-      codes.set(code, { scopes: options?.grantScopes ?? requested, refreshToken });
+      codes.set(code, { scopes: options?.grantScopes ?? requested, refreshToken, challenge });
       return { code, refreshToken };
     },
     invalidate(refreshToken) {
@@ -209,6 +222,8 @@ export function createHarness(
   const roles = new Map<string, ChannelRoleName>([
     ["acct-owner:chan-1", "CHANNEL_OWNER"],
     ["acct-mod:chan-1", "MODERATOR"],
+    // A second channel's owner on the same deployment. Used by the attacker cases.
+    ["acct-other:chan-2", "CHANNEL_OWNER"],
   ]);
   const routes = createYouTubeAuthRoutes({
     store,

@@ -74,6 +74,8 @@ export type CredentialPurpose = "PLATFORM_OAUTH" | "PLATFORM_PROJECT_KEY";
 export interface CredentialSecrets {
   put(purpose: CredentialPurpose, value: string): { readonly ref: string };
   reveal(ref: string, purpose: CredentialPurpose): string;
+  /** Deletes a sealed value. False means the reference was already gone. Throws when the purpose does not match. */
+  remove(ref: string, purpose: CredentialPurpose): boolean;
 }
 
 export interface CredentialRefRow {
@@ -136,6 +138,7 @@ export interface YouTubeCredentialStore {
   registerClientSecret(value: string): void;
   clientSecret(): SecretRead;
   readGrant(channelId: string): GrantRead;
+  /** Writes a new grant and retires the channel's previous one: its row is revoked and its sealed value deleted. */
   storeGrant(channelId: string, record: GrantRecord): void;
   /** Marks the channel's newest grant revoked. Call only after the provider confirmed the revocation. */
   revokeGrant(channelId: string): void;
@@ -184,6 +187,7 @@ export function createYouTubeCredentialStore(deps: YouTubeCredentialDeps): YouTu
     },
 
     storeGrant(channelId, record) {
+      const previous = refs.findLatest(channelId, "PLATFORM_OAUTH");
       const { ref } = secrets.put("PLATFORM_OAUTH", JSON.stringify(record));
       refs.insert({
         id: deps.newId(),
@@ -192,6 +196,10 @@ export function createYouTubeCredentialStore(deps: YouTubeCredentialDeps): YouTu
         secretRef: ref,
         createdAt: deps.now(),
       });
+      if (previous === undefined) return;
+      // The new grant is written first, so a failure while retiring the old one never leaves the channel without a grant.
+      if (previous.revokedAt === null) refs.revoke(previous.id, deps.now());
+      secrets.remove(previous.secretRef, "PLATFORM_OAUTH");
     },
 
     revokeGrant(channelId) {

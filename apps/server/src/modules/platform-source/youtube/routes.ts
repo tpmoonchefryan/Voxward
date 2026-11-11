@@ -24,6 +24,8 @@ import {
   buildAuthorizationUrl,
   exchangeAuthorizationCode,
   type OAuthHttp,
+  pkceChallenge,
+  pkceVerifier,
   refreshAccessToken,
   type RevokeOutcome,
   revokeToken,
@@ -157,20 +159,26 @@ export function createYouTubeAuthRoutes(deps: YouTubeAuthRouteDeps): YouTubeAuth
       if (operation === null) return respond(400, { error: "OPERATION_NOT_OAUTH" });
       const blocked = configurationState(store.client, store.clientSecret());
       if (blocked !== null) return respond(409, { state: blocked });
-      const state = deps.states.issue({ channelId: actor.channelId, accountId: actor.accountId, operation });
+      const codeVerifier = pkceVerifier();
+      const state = deps.states.issue({ channelId: actor.channelId, accountId: actor.accountId, operation, codeVerifier });
       const authorizationUrl = buildAuthorizationUrl({
         clientId: store.client.clientId,
         redirectUri: store.client.redirectUri,
         scopes: scopesOf(operation),
         state,
+        codeChallenge: await pkceChallenge(codeVerifier),
       });
       return respond(200, { operation, authorizationUrl });
     },
 
     async callback(accountId, query) {
-      const pending = deps.states.consume(query.state ?? "");
+      const state = query.state ?? "";
+      // Check before consuming. A failed attempt by another account must not use up the owner's state.
+      const pending = deps.states.peek(state);
       if (pending === null || pending.accountId !== accountId) return respond(400, { error: "STATE_INVALID" });
       if (deps.resolveRole(accountId, pending.channelId) !== "CHANNEL_OWNER") return respond(403, { error: "FORBIDDEN" });
+      // The checks passed, so this attempt owns the state. It is single use from here on, whatever the provider answers.
+      deps.states.consume(state);
       const operation = parseOAuthOperation(pending.operation);
       if (operation === null) return respond(400, { error: "OPERATION_NOT_OAUTH" });
 
@@ -192,6 +200,7 @@ export function createYouTubeAuthRoutes(deps: YouTubeAuthRouteDeps): YouTubeAuth
           clientSecret: clientSecret.value,
           redirectUri: store.client.redirectUri,
           code: query.code,
+          codeVerifier: pending.codeVerifier,
         });
       } catch {
         return respond(502, statusBody(operation, failedStatus(store.client, "PROBE_FAILED")));

@@ -148,10 +148,12 @@ describe("credential store", () => {
 
 describe("OAuth client", () => {
   it("builds the authorization URL on the documented endpoint", () => {
-    const url = new URL(buildAuthorizationUrl({ clientId: "c", redirectUri: "https://x.example.test/cb", scopes: [READ_SCOPE, YOUTUBE_SCOPES.forceSsl], state: "s" }));
+    const url = new URL(buildAuthorizationUrl({ clientId: "c", redirectUri: "https://x.example.test/cb", scopes: [READ_SCOPE, YOUTUBE_SCOPES.forceSsl], state: "s", codeChallenge: "synthetic-challenge-0001" }));
     expect(`${url.origin}${url.pathname}`).toBe(GOOGLE_AUTHORIZATION_ENDPOINT);
     expect(url.searchParams.get("scope")).toBe(`${READ_SCOPE} ${YOUTUBE_SCOPES.forceSsl}`);
     expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("code_challenge")).toBe("synthetic-challenge-0001");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
   });
 
   it("maps unknown provider error codes to unknown rather than trusting them", () => {
@@ -170,14 +172,19 @@ describe("OAuth client", () => {
     expect(await revokeToken(server.http, "synthetic-unknown-token")).toEqual({ ok: false, error: "unknown" });
   });
 
-  it("consumes each state once and refuses an expired one", () => {
+  it("consumes each state once, peeks without consuming, and refuses an expired one", () => {
     let nowMs = 0;
     const states = createAuthorizationStates({ now: () => nowMs, ttlMs: 1000 });
-    const first = states.issue({ channelId: "chan-1", accountId: "acct-owner", operation: "AUTHORIZED_DATA_READ" });
-    expect(states.consume(first)).toEqual({ channelId: "chan-1", accountId: "acct-owner", operation: "AUTHORIZED_DATA_READ" });
+    const entry = { channelId: "chan-1", accountId: "acct-owner", operation: "AUTHORIZED_DATA_READ", codeVerifier: "synthetic-verifier-0001" };
+    const first = states.issue(entry);
+    expect(states.peek(first)).toEqual(entry);
+    expect(states.peek(first)).toEqual(entry);
+    expect(states.consume(first)).toEqual(entry);
     expect(states.consume(first)).toBeNull();
-    const expired = states.issue({ channelId: "chan-1", accountId: "acct-owner", operation: "AUTHORIZED_DATA_READ" });
+    expect(states.peek(first)).toBeNull();
+    const expired = states.issue(entry);
     nowMs = 1000;
+    expect(states.peek(expired)).toBeNull();
     expect(states.consume(expired)).toBeNull();
   });
 });
