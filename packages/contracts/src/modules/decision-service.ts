@@ -97,6 +97,11 @@ export type OverturnOutcome =
       readonly compensation: ScoringStatus;
       /** Points the correction moved the score by, after the clamp. Zero when nothing was corrected. */
       readonly compensationDelta: number;
+      /**
+       * True when a later score entry of the same subject reached a limit, so a replay of the ledger could end at another
+       * score. The correction keeps the ledger amount; a person checks the difference (proposal 7.1).
+       */
+      readonly needsManualAdjustment: boolean;
     }
   | { readonly status: "duplicate"; readonly seq: number; readonly verdictId: string }
   | { readonly status: "conflict"; readonly reason: OverturnConflictReason; readonly current: CurrentDecision | null }

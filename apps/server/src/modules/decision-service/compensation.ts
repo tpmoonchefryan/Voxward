@@ -56,6 +56,7 @@ export function overturnEvent(deps: DecisionDeps, request: OverturnRequest): Ove
           : null,
         compensation: result.compensation,
         compensationDelta: result.compensationDelta,
+        needsManualAdjustment: result.needsManualAdjustment,
       };
     case "duplicate":
       return { status: "duplicate", seq: result.seq, verdictId: result.verdictId };

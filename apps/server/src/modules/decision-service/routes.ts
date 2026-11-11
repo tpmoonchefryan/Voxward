@@ -114,6 +114,7 @@ export function overturnResponse(outcome: OverturnOutcome): RouteResponse {
           deliverySequence: outcome.intent?.deliverySequence ?? null,
           validUntil: outcome.intent?.validUntil ?? null,
           compensation: outcome.compensation,
+          needsManualAdjustment: outcome.needsManualAdjustment,
         },
       };
     case "duplicate":

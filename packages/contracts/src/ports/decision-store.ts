@@ -136,6 +136,7 @@ export type OverturnStoreResult =
       readonly deliverySequence: number;
       readonly compensation: ScoringStatus;
       readonly compensationDelta: number;
+      readonly needsManualAdjustment: boolean;
     }
   | { readonly status: "duplicate"; readonly seq: number; readonly verdictId: string }
   | { readonly status: "conflict"; readonly reason: OverturnConflictReason; readonly current: CurrentDecision | null };

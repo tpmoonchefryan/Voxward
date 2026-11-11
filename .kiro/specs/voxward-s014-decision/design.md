@@ -72,7 +72,7 @@ No design authority is configured for the resolved work context. No authority wa
 - `modules/decision-service/*` 只导入 `@voxward/contracts` 与本模块文件（check-deps 规则不改）。
 - 裁决与计分的存储实现是 `db/decision-store.ts`（分区 `db`，只依赖 contracts 与 db 内部）。计分的纯决策函数由组合层（`app.ts`，可导入模块）传入。
 - 模块对计分的依赖只通过 `ScoreDecision` 类型和注入的计划函数，不导入 `scoring-engine`。
-- HTTP 绑定 `auth/decision-routes.ts` 只接收 `routes` 对象，不导入 `modules/*`（与 `auth/data-routes.ts` 相同）。
+- HTTP 绑定只接收 `routes` 对象，不导入 `modules/*`（与 `auth/data-routes.ts` 相同）。本检出没有绑定文件，见 §8。
 
 ## 2. 文件布局
 
@@ -93,7 +93,7 @@ apps/server/src/modules/decision-service/compensation.ts 改判规则：代次�
 apps/server/src/modules/decision-service/list-permissions.ts 名单与词条的权限和编辑
 apps/server/src/modules/decision-service/resend.ts    过期消息补发规则（显式、有效期限）
 apps/server/src/modules/decision-service/routes.ts    路由纯函数
-apps/server/src/auth/decision-routes.ts               Fastify 绑定（由 app.ts 注册）
+apps/server/src/auth/decision-routes.ts               计划项，本检出不存在（见 §8）
 apps/server/test/decision-service/**                  测试（合成数据）
 apps/server/test/scoring-engine/ledger/outcomes.test.ts  Q19、Q21 的端口测试
 apps/server/test/db/decision-store.test.ts            裁决与计分同一事务的回滚测试
@@ -111,13 +111,16 @@ apps/server/test/db/decision-store.test.ts            裁决与计分同一事�
 - 主体的 `processing_generation` 在删除或重算时提高。任务与改判都要求代次一致（提案 §7.2）。
 - 裁决提交：任务未关闭、事件版本一致、代次一致、当前无裁决。四项任一不符则拒绝，并返回当前结果（Q27 后半）。
 - 裁决、投递意图、计分和人工操作的 Change Log 在同一事务内写入。计分失败则整个事务回滚（Q19③）。
-- 计分幂等键：裁决为 `event:<频道>:<平台消息>`；补偿为 `compensation:<频道>:<平台消息>`（每个事件至多纠分一次，自定）；人工补偿为 `manual:<频道>:<操作标识>`；身份事件为 `identity:<频道>:<主体>:<源事件>`（Q19②）。
+- 计分幂等键：裁决为 `event:<频道>:<平台消息>`；补偿为 `compensation:<频道>:<平台消息>`（每个事件至多纠分一次，自定）；人工补偿为 `manual:<频道>:<主体>:<操作标识>`（与 `scoring-engine/compensation.ts` 一致）；身份事件为 `identity:<频道>:<主体>:<源事件>`（Q19②）。
 - 无计分结果（冷却、噪声、钳制后为零、例外、禁用）也写入 `score_outcomes`，之后的同一键返回 `duplicate`，不会在冷却结束后补计分（Q19①）。
 - 例外主体的任何计分写入由端口直接拒绝（Q21），并记录 `REFUSED`。
 - 改判的纠分依据原账本条目的 `actual_delta`，取负号后经当前上下限钳制（提案 §5.1、§7.1）。不读取配置扣分值，不做机械加回（「无旧结果重建或机械加回配置分」）。
-- 改判后不再对新结论计分。新结论只替换当前裁决，纠分依据原账本一次（自定：提案 §7.1 写的是「按账本纠正该条实际计分」）。
+- 其后有条目触及上下限时，纠分仍按账本实际变化取反、经当前上下限钳制，但结果带 `needsManualAdjustment: true`，并写入一条 Change Log（摘要「纠分需人工调整：其后有条目触及上下限」，不含分数）。「其后」指同一主体、原条目之后的条目：账本条目被钳制（请求变化量与实际变化量不同），或无计分结果为 `CLAMPED`（Q49，N4 的处理方式是标记，不在账本上重算；理由见 §10）。
+- 改判后不再对新结论计分。新结论只替换当前裁决，纠分依据原账本一次（自定：提案 §7.1 写的是「按账本纠正该条实际计分」）。这样做的代价是：改判为放行后，原误判造成的计分差异不随新结论重算。
+- 改判为放行：不产生投递意图（`OverturnOutcome.intent` 为 null）。新裁决的投递行写为 `EXPIRED`，有效期取改判时刻，所以输出端不会发出它；显式补发可以引用这一行（提案 §6.3、§7.1）。
+- 改判为拦截：仍产生 `PENDING` 的投递，有效期 5 分钟，让输出端撤下旧内容。这一方向是否还要发出不含原文的拦截事件，按提案 §13.1 另定，本包不改变它。
 - 代次已变（删除交叉）时，改判、纠分与补发都被拒绝，不生成新数据（提案 §11.4、§12）。
-- 补发：只对已过期的投递（`valid_until` 早于当前时间）、且其裁决仍为当前、代次未变、事件到达时间不超过 10 分钟的情况允许（自定）。新投递的有效期为 60 秒（自定）；同一操作标识重复时返回 `duplicate`（投递标识由频道与操作标识派生）。
+- 补发：只对已过期的投递（`valid_until` 早于当前时间）、且其裁决仍为当前、代次未变、事件到达时间不超过 10 分钟的情况允许（自定）。新投递的有效期为 60 秒（自定）；同一操作标识重复时返回 `duplicate`（投递标识由频道与操作标识派生）。已标记为 `SENT` 的投递不补发（拒绝原因 `ALREADY_SENT`，自定：下游已经收到，再发会让观众看到或听到两次）。
 - 名单与词条：需要 `list.edit` 能力（房管与房主有，数据管理员没有，见 `auth/permissions.ts`）。同一主体至多一条有效名单项（数据库已有唯一索引）。同一词条的有效记录唯一。
 - Change Log 摘要不写分数、不写消息正文。主体级记录（名单、例外、人工调分）的 `correlation_id` 取 `subject:<主体标识>`，改判与补偿取事件的关联标识（Q29 写入方要求）。删除索引对主体级记录的查找仍是 S019 的工作，本包不改删除索引。
 
@@ -129,8 +132,9 @@ apps/server/test/db/decision-store.test.ts            裁决与计分同一事�
 | `test/decision-service/service/concurrency.test.ts` | 两名房管对同一任务先后提交：只有一次结算，后者得到冲突与当前结果；超时重试不重复计分 | VW-SUB026-AC001 |
 | `test/db/decision-store.test.ts` | 裁决与计分同一事务：计分失败回滚裁决；裁决冲突回滚计分 | Q19③、Q27 |
 | `test/scoring-engine/ledger/outcomes.test.ts` | 无计分结果留幂等记录；例外主体端口拒绝；人工补偿与身份键按频道区分 | Q19①②、Q21 |
-| `test/decision-service/compensation/overturn.test.ts` | 误判放行按实际账本纠分；钳制后的纠分只纠可纠部分；同一事件只纠一次；代次变化后拒绝 | VW-SUB027-AC001 |
-| `test/decision-service/compensation/resend.test.ts` | 补发只允许已过期且仍为当前的投递；有效期受限；重复操作幂等；代次变化后拒绝 | VW-SUB027-AC001 |
+| `test/decision-service/compensation/overturn.test.ts` | 误判放行按实际账本纠分；钳制后的纠分只纠可纠部分；同一事件只纠一次；代次变化后拒绝；改判为放行不产生投递意图，时限内补发可用、超过 10 分钟被拒（`WINDOW_CLOSED`）；改判为拦截保留投递 | VW-SUB027-AC001 |
+| `test/decision-service/compensation/correction-limits.test.ts` | 其后条目触及上下限（钳制或底线后的无效果结果）时纠分标记需人工调整并保留账本金额；无此类条目时不标记 | VW-SUB027-AC001（Q49） |
+| `test/decision-service/compensation/resend.test.ts` | 补发只允许已过期且仍为当前的投递；有效期受限；重复操作幂等；代次变化后拒绝；已 SENT 的投递拒绝（`ALREADY_SENT`） | VW-SUB027-AC001 |
 | `test/decision-service/compensation/list-permissions.test.ts` | 数据管理员的名单与词条操作被拒绝；房管可以编辑；摘要不含分数 | VW-SUB027-AC001 |
 | `test/decision-service/routes.test.ts` | 路由纯函数的状态码与能力检查 | VW-SUB026-AC001（路由） |
 
@@ -139,6 +143,8 @@ apps/server/test/db/decision-store.test.ts            裁决与计分同一事�
 - 不改 `task-coordinator/`、`moderation-engine/review/`、`scripts/check-deps.mjs`、配置 schema 与 `ServerConfig`。
 - 不改删除索引（S019）、数据生命周期模块、输出适配器的真实投递。
 - 不实现「同一事件多次改判的计分重算」。改判只纠一次原始计分（自定）。
+- 不重放账本重算后续条目的计分（N4 的处理是标记，见 §4 与 §10）。
+- 改判为拦截时的投递保留；是否另发不含原文的拦截事件，按提案 §13.1 另定。
 - 不做真实平台操作，不推送，不发布，不写引擎工单。
 - 不对性能作承诺；并发测试使用同一数据库文件上的两个连接，不做压力测试。
 
@@ -147,6 +153,7 @@ apps/server/test/db/decision-store.test.ts            裁决与计分同一事�
 - 提案没有规定补发的时效、改判后的二次计分、名单与裁决冲突的处理方式。以上均标「自定」。
 - 删除索引找不到没有技术日志关联的主体级 Change Log（Q29），本包只保证写入方带关联值，不保证删除索引能找到它们。
 - 生产环境的多进程并发、真实平台回执、真实投递均未验证。
+- 替换后会不会让原本未被钳制的后续条目新触及上下限，账本里看不出来。本包只看原账本时间线上是否触及，不重放（N4 的已知缺口）。
 
 ## 8. 实施记录与偏离（SUB-026）
 
@@ -164,6 +171,19 @@ apps/server/test/db/decision-store.test.ts            裁决与计分同一事�
 - 补发的投递标识由频道与操作标识派生（`resend:<频道>:<操作标识>`），重复请求即为 `duplicate`。改判的投递与裁决标识同理（`overturn:` 与 `overturn-delivery:`）。
 - 名单与词条的 Change Log 不带分数。主体级名单记录的 `correlation_id` 为 `subject:<主体标识>`；词条记录没有主体，关联为空。
 - 例外标记的 Change Log 不在本包实现（例外的写入路径属于 S019）。
-- 补发的有效期与时限由 `DEFAULT_DECISION_LIMITS` 给出（自定：改判投递 5 分钟，补发投递 60 秒，补发时限 10 分钟）。
+- 补发的有效期与时限由 `DEFAULT_DECISION_LIMITS` 给出（自定：改判为拦截的投递 5 分钟，补发投递 60 秒，补发时限 10 分钟；改判为放行不投递，见 §10）。
 - 删除索引对主体级 Change Log 的查找仍是 S019 的工作（Q29）。
+
+## 10. 返工记录（P-S014-fix：B5、Q49/N4、Q53）
+
+来源：批次 m6 判断的 B5、N4、N8（`voxward-batch-m6/evidence/judgment.md`），探针 `probe-m6-s014.mts` 的 C5、D1、E3 节。
+
+- B5 放行改判不产生投递。改判为放行时 `OverturnOutcome.intent` 为 null。新裁决的投递行写为 `EXPIRED`，有效期取改判时刻；显式补发可以引用这一行，仍受 10 分钟时限约束。修前探针 D1 报 1 项不符：2 小时前的拦截改判为放行后，产生了状态 `PENDING`、有效期 5 分钟的放行投递。修后该投递不存在，时限内的补发可用，超时的补发得到 `WINDOW_CLOSED`。
+- B5 改判为拦截保留原投递（`PENDING`，5 分钟）。撤下旧内容的方向不因本项取消；是否另发不含原文的拦截事件，按提案 §13.1 另定。
+- B5 已送达的投递不补发。补发检查投递状态，`SENT` 返回 `ALREADY_SENT`。修前探针 E3 观察到：补发不读取 `deliveries.status`，已送达的投递过期后仍可再发，下游会收到两次。
+- Q49（N4）选择「标记，不重算」。原条目之后，同一主体有账本条目被钳制（请求变化量与实际变化量不同），或有无计分结果为 `CLAMPED`，纠分就标为需要人工调整：结果带 `needsManualAdjustment: true`，Change Log 增加一条摘要。纠分金额不变，仍是账本实际变化取反后经当前上下限钳制的结果。修前探针 C5 实测 −7，按账本重放应为 −10；修后得到同样的 −7，并带标记。
+- 选择标记而非重算的理由：重算要在保留的账本上重放计分规则，需要改计分引擎，而计分引擎不在本包范围内。
+- 判断依据是原账本时间线。账本行按行号排序；无计分结果只有时间戳，同一毫秒内写入的结果按「其后」计，偏保守。
+- Q53：§2 列出的 `auth/decision-routes.ts` 在本检出中不存在，§8 记为未完成；§4 的人工补偿键改为代码中的 `manual:<频道>:<主体>:<操作标识>`。
+- 契约改动（破坏性）：`OverturnOutcome` 增加 `downstream` 与 `needsManualAdjustment`，`intent` 改为可空；`RESEND_REFUSAL_REASONS` 增加 `ALREADY_SENT`；存储端口 `OverturnStoreInput` 增加 `deliverable`，`OverturnStoreResult` 增加 `needsManualAdjustment`，补发拒绝原因增加 `ALREADY_SENT`。`CONTRACT_VERSION` 仍为 "1"，版本规则与 N9 一并处理。
 
