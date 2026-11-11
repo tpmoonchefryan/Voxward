@@ -45,8 +45,8 @@
 | 3 | S003, S005, S007 | SUB-006→007（两张都属 S003，合成一个包，共用一份 spec）；SUB-010→011；SUB-013→014 | **done**：S005 和 S007 在 9b7a7f8 通过；S003 被打回 1 次，返工后在 cd91ba0 通过。证据放在 `.kiro/specs/voxward-batch3/evidence/`（含 rework/）。知识卡新增 10 张 |
 | 4 | S006, S008, S012, S016 | SUB-012；SUB-015→016；SUB-023；SUB-029→030 | **done**：S012、S016 在 c67db24；S008 返工后在 b1a1471（18 行按 D1 用替身判定）；S006 打回 2 次，第 3 轮在 5ce5bee 通过。证据在 `.kiro/specs/voxward-batch4/`、`voxward-batch5a/`、`voxward-batch5b/` |
 | 5 | S009, S013, S017, S018 | SUB-017→018；SUB-024→025；SUB-031→032；SUB-033→034 | **done**：S017、S018 在 b1a1471；S009 打回 1 次（B4、B5），返工后和 S013（含 Q28、Q20）在 0b929d3 通过 64/64。证据在 `voxward-batch5b/`、`voxward-batch6/`；知识卡新增 10 张 |
-| 6 | S010, S011, S014 | SUB-019→020；SUB-021→022；SUB-026→027 | 第 1 次验收在 5482e5d 三组都打回（B1 归 SUB-020；B2、B3、B4 归 SUB-021；B5 归 SUB-027），rejections=1 返工中。证据 `.kiro/specs/voxward-batch-m6/evidence/` |
-| 7 | S015, S019, S021, S027 | SUB-028；SUB-035→036；SUB-039→040；SUB-049→050 | 未开始 |
+| 6 | S010, S011, S014 | SUB-019→020；SUB-021→022；SUB-026→027 | S010、S014 返工 1 次后在 fff691e **done**。S011 第 2 轮打回（B6：跨调用方优先级），rejections=2，升 sonnet 返工。证据 `voxward-batch-m6/`、`voxward-batch-m6r1/` |
+| 7 | S015, S019, S021, S027 | SUB-028；SUB-035→036；SUB-039→040；SUB-049→050 | S015、S021 实施中；S019、S027 等 S011 done |
 | 8 | S020, S022, S023, S024, S026 | SUB-037→038→042；SUB-041；SUB-043；SUB-044→045；SUB-048 | 未开始 |
 | 9 | S025, S028 | SUB-046→047；SUB-051 | 未开始 |
 | 10–13 | S029, S030, S032, S033 | SUB-052→053；SUB-054；SUB-056；SUB-057、SUB-058 | 未开始 |
@@ -115,3 +115,7 @@
 | Q52 | 总表第 6 批验收 N7 | 接线约束：复盘结论写成当前裁决；`resumePendingScoring` 定时调用；复盘模型端口绑定 S010 review 设置；SC 进 PAID 车道 | 接线 Story（同 Q39）、S026 |
 | Q53 | 总表第 6 批验收 N8 | 文档出入：S014 设计 §2、§4；S009 设计 §12、§13；S011 设计没登记缺少驳回 | S011、S014 返工时改 |
 | Q54 | 总表第 6 批验收 N9 | DecisionService 契约不兼容变更但 `CONTRACT_VERSION` 仍为 "1" | 下次改契约包的 Story |
+| Q19、Q21、Q23、Q40、Q27 后半 | 更新 | 已修，随 S010、S014 在 fff691e 关单 | — |
+| Q55 | m6 复验 N1 | Q49 余下缺口：只在重放时才触及上下限的情形不标记（C6：结果 9，重放应为 7） | 下次改 `db/decision-store.ts` 的 Story，最迟 S026 |
+| Q56 | m6 复验 N2 | 投递状态没有 SENT 写入方；输出端只能发 PENDING 且未过期的行 | S021 |
+| Q57 | m6 复验 N3 | 一个协调器只接一个复盘运行器；跳过不认识的任务时仍整批 finishBatch（R7） | 接线 Story、S026 |
