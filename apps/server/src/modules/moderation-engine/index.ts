@@ -221,3 +221,23 @@ export {
   type SettlementWrite,
   type StoredSettlementState,
 } from "./review/ports.js";
+
+/* Candidate-term cards (S011, VW-SUB022). Confirmation needs `review.decide`; a proposal never changes the rule set. */
+export {
+  CANDIDATE_STATUSES,
+  type CandidateCard,
+  type CandidateRulePort,
+  type CandidateStatus,
+  type CandidateStore,
+  type CandidateStoreOptions,
+  type ConfirmResult,
+  createCandidateStore,
+} from "./candidates/store.js";
+export {
+  type CandidateActor,
+  type CandidateRouteResponse,
+  type CandidateRoutes,
+  createCandidateRoutes,
+  QUEUE_READ_CAPABILITY,
+  REVIEW_DECIDE_CAPABILITY,
+} from "./candidates/routes.js";
