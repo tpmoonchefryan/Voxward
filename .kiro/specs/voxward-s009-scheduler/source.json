@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:ac2a8c1b963085361cf086f0",
+  "workRevision": 4,
+  "sourceDigest": "cdcf67a029fe854ac47ea20b9afa3f524e781016862fe706b15f8fd5e22ea616",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:ac2a8c1b963085361cf086f0",
+    "workRevision": 4,
+    "sourceDigest": "cdcf67a029fe854ac47ea20b9afa3f524e781016862fe706b15f8fd5e22ea616",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:ac2a8c1b963085361cf086f0",
+        "externalKey": "VOXWARD-STORY-009",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现有界调度、动态并发和截止时间",
+        "summary": "实现有界调度、动态并发和截止时间；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:8980504408e4d156c130a8f9",
+        "scopeDigest": "44419e501f2bd0a94b1da7b32199d8642c2eb0beb30e62c6bfb73480a088a09c",
+        "relations": {
+          "blockedBy": [
+            "work:05e6184a65712b369d65bba7",
+            "work:352ba5df1e0b354ede1a9af0",
+            "work:40166e96c2ab9f8c9746a73a"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:8980504408e4d156c130a8f9",
+          "supersedes": []
+        },
+        "fieldSha256": "ed1b522c8016c93319d4bab83f047be95d75a98ed60ca09172497a1f1e24b201",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "01620a6277f13cd328aba73c94520e2621166899e38cb16d60cb11c5e981172b",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "19b204612c144df8084e6237854bf537fa1c4891d6b04dacbeb91bc414e6dc92",
+    "design.md": "9baeb9bf374c9b47bbea8ff0b2714e29443e8d3cdb21f4765c6bc025c0468b71",
+    "tasks.md": "387dd7166fc1c41a41e9cdab14b0bfe87a294768bd764dc87a7a738180a0ec13"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "0a07b7c532cda21cd9ce4e54865d673443a8d505c85a81fb51912071b85abf9a"
+}
