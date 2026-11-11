@@ -23,7 +23,7 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] S1. Q40：Super Chat 正文读 `superChatDetails.userComment`；替身改为真实形状，覆盖有留言和无留言（commit：`VOXWARD-STORY-010 Q40`）
 - [x] S2. VOXWARD-SUB-019：契约最小改动；模型设置的类型、存储端口、能力检查、处理函数；测试（commit：`VOXWARD-SUB-019`）
 - [x] S3. Q23：生成文本命中规则只抑制该条；BLOCK 条目不检查（commit：`VOXWARD-STORY-010 Q23`）
-- [ ] S4. VOXWARD-SUB-020：SC 流水线、小抄结构、精翻关时的安全审核、测试；证据文件随本 commit 提交（commit：`VOXWARD-SUB-020`）
-- [ ] S5. 自测：`pnpm install`、`build`、`typecheck`、`test`、`check:deps`、`kiro-specs.mjs check` 全部退出 0
-- [ ] S6. 冒烟：`smoke.sh` 通过，服务已停止
+- [x] S4. VOXWARD-SUB-020：SC 流水线、小抄结构、精翻关时的安全审核、测试；证据文件随本 commit 提交（commit：`VOXWARD-SUB-020`）
+- [x] S5. 自测：`pnpm install`、`build`、`typecheck`、`test`、`check:deps`、`kiro-specs.mjs check` 全部退出 0
+- [x] S6. 冒烟：`smoke.sh` 通过，服务已停止
 - [ ] S7. 交付报告
