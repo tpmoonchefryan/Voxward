@@ -126,7 +126,8 @@ export interface ReviewBatchLease {
  */
 export interface BackgroundCoordinatorPort {
   enqueueInLane(lane: "BACKGROUND", event: ChannelEvent, deadlineAt: string): Promise<TaskRef>;
-  takeBatch(): Promise<ReviewBatchLease | null>;
+  /** Takes a batch from the BACKGROUND lane only. Realtime and paid work stays with the Crew executor (VW-R-006). */
+  takeBatch(options: { readonly lanes: readonly ["BACKGROUND"] }): Promise<ReviewBatchLease | null>;
   commitResult(
     taskId: string,
     result: { readonly apply: () => void; readonly evidence: readonly EvidenceEntry[] },

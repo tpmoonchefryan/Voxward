@@ -129,7 +129,7 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
   }
 
   async function runBatch(): Promise<BatchOutcome | null> {
-    const batch: ReviewBatchLease | null = await deps.coordinator.takeBatch();
+    const batch: ReviewBatchLease | null = await deps.coordinator.takeBatch({ lanes: ["BACKGROUND"] });
     if (batch === null) return null;
 
     const items: ItemOutcome[] = [];
@@ -137,7 +137,8 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
     for (const task of batch.tasks) {
       const entry = entries.get(task.taskId);
       if (entry === undefined) {
-        items.push(await failTask(task.taskId, null, "REVIEW_TASK_UNKNOWN"));
+        // Not enqueued by this runner. A non-retryable error would settle another owner's task (B2), so the task is left
+        // to the coordinator's deadline sweep.
         continue;
       }
       known.push({ taskId: task.taskId, text: task.text, itemId: `i${known.length}`, entry });
