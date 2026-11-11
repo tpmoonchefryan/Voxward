@@ -19,6 +19,7 @@ import {
   type NicknameScopeStrategy,
 } from "./rules/engine.js";
 import { type CompiledRuleSet, compileRuleSet, ModerationConfigError, type RuleSetInput } from "./rules/groups.js";
+import { DEFAULT_NORMALIZE_OPTIONS } from "./rules/normalize.js";
 import { createTableTransliterator, type Transliterator } from "./rules/transliterate.js";
 
 /**
@@ -59,6 +60,12 @@ const NO_NICKNAMES: NicknameSource = { displayNicknameOf: () => Promise.resolve(
 
 export function createModerationChecker(options: ModerationOptions = {}): ModerationChecker {
   const ruleSet = options.ruleSet === undefined ? null : compiledOrThrow(options.ruleSet);
+  const normalization = ruleSet?.normalization ?? DEFAULT_NORMALIZE_OPTIONS;
+  const transliterator = options.transliterator ?? createTableTransliterator(new Map(), normalization);
+  if (ruleSet !== null && transliterator.normalization.stripCombiningMarks !== normalization.stripCombiningMarks) {
+    // The table is checked and read with its own options. They must be the rule set's, or a reading would not match.
+    throw new ModerationConfigError([{ code: "NORMALIZATION_MISMATCH", ref: "transliterator" }]);
+  }
   const now = options.now ?? (() => performance.now());
   const cache = createNicknameVerdictCache({
     ttlMs: options.nicknameCache?.ttlMs ?? NICKNAME_CACHE_DEFAULTS.ttlMs,
@@ -67,7 +74,7 @@ export function createModerationChecker(options: ModerationOptions = {}): Modera
   });
   const env: CheckEnvironment = {
     ruleSet,
-    transliterator: options.transliterator ?? createTableTransliterator(new Map()),
+    transliterator,
     limits: { ...DEFAULT_LIMITS, ...options.limits },
     now,
   };

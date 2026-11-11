@@ -29,12 +29,17 @@ export interface RawUnit {
 // compose with the leading jamo under NFKC, so they stay in the same unit.
 const ATTACHES_TO_PREVIOUS = /^[\p{M}\p{Cf}\u1160-\u11FF\uD7B0-\uD7FF]$/u;
 const MATCH_IGNORED = /[\p{M}\p{Cf}]/gu;
-const COMBINING_MARKS = /\p{M}/gu;
+/**
+ * The combining diacritical mark blocks (S006 B1). Only marks in these blocks are stripped. Japanese sound marks
+ * (U+3099, U+309A) and other marks that a script needs stay, so NFKC can compose them with their base character.
+ */
+const COMBINING_DIACRITICAL = /[\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF\u20D0-\u20FF\uFE20-\uFE2F]/gu;
 
 /**
- * Options for the matching copy. Rule patterns and message text pass through the same options, so both sides agree.
- * `stripCombiningMarks` removes a mark that composes with its base letter. Without it, NFKC composes `a` with U+0301
- * into `á`, which then fails to match `a` (proposal §4.3 names the normalization steps; the default is S006's choice).
+ * Options for the matching copy. Normalized rule patterns and message text pass through the same options, so both
+ * sides agree. `stripCombiningMarks` removes a diacritical mark that composes with its base letter: without it, NFKC
+ * composes `a` with U+0301 into `á`, which then fails to match `a`. Regex rules match the composed copy instead,
+ * which this option does not change (S006 design 4.8).
  */
 export interface NormalizeOptions {
   readonly stripCombiningMarks: boolean;
@@ -42,6 +47,9 @@ export interface NormalizeOptions {
 
 /** Strips composed marks by default, because the bypass is an evasion path. A rule set can switch it off. */
 export const DEFAULT_NORMALIZE_OPTIONS: NormalizeOptions = { stripCombiningMarks: true };
+
+/** Options of the composed copy, which regex rules match. No diacritical mark is stripped from it. */
+export const COMPOSED_NORMALIZE_OPTIONS: NormalizeOptions = { stripCombiningMarks: false };
 
 /** Splits text into units at code point boundaries, attaching marks and format characters to the unit before them. */
 export function splitUnits(raw: string): RawUnit[] {
@@ -63,11 +71,12 @@ export function splitUnits(raw: string): RawUnit[] {
 
 /**
  * Normalizes one unit for matching: compatibility decomposition, lower case, no marks or format characters.
- * With `stripCombiningMarks`, the unit is decomposed first, so a mark is removed before NFKC can compose it.
+ * With `stripCombiningMarks`, the unit is decomposed, the diacritical marks are removed, and NFKC then recomposes
+ * what remains. A voiced kana such as `が` decomposes to か plus U+3099, keeps U+3099, and composes back to `が`.
  */
 export function normalizeUnit(raw: string, options: NormalizeOptions = DEFAULT_NORMALIZE_OPTIONS): string {
   const composed = options.stripCombiningMarks
-    ? raw.normalize("NFKD").replace(COMBINING_MARKS, "").normalize("NFKC")
+    ? raw.normalize("NFKD").replace(COMBINING_DIACRITICAL, "").normalize("NFKC")
     : raw.normalize("NFKC");
   return composed.toLowerCase().replace(MATCH_IGNORED, "");
 }

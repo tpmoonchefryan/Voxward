@@ -30,7 +30,10 @@ export interface GroupInput {
 export interface RuleSetInput {
   readonly version: string;
   readonly groups: readonly GroupInput[];
-  /** Matching-copy options. A missing key takes its default. See `NormalizeOptions`. */
+  /**
+   * Options for the normal copy: normalized rules, their patterns, and the transliteration table must use the same
+   * set. A missing key takes its default. Regex rules match the composed copy and do not depend on this (S006 4.8).
+   */
   readonly normalization?: Partial<NormalizeOptions>;
 }
 
@@ -65,6 +68,7 @@ export type RuleIssueCode =
   | "READING_PATTERN_INVALID"
   | "READING_CANNOT_PENALIZE"
   | "NORMALIZATION_INVALID"
+  | "NORMALIZATION_MISMATCH"
   | `REGEX_${RegexRejection}`;
 
 /**

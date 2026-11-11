@@ -183,8 +183,11 @@ No design authority is configured for the resolved work context. No authority wa
 ### 4.8 Q6：组合标记
 
 - `NormalizeOptions = { stripCombiningMarks: boolean }`，默认 `true`（自定：这是绕过路径，安全默认开启）。
-- 开启时，每个单元按 NFKD → 删除 `\p{M}` → NFKC → 小写 → 删除 `\p{M}` 与 `\p{Cf}` 归一化。
-- 规则集可在 `normalization` 字段覆盖。非布尔值或未知键在编译时报 `NORMALIZATION_INVALID`。模式文本与正文使用同一选项。
+- 开启时，每个单元按 NFKD → 删除组合附加符号区块中的标记 → NFKC → 小写 → 删除 `\p{M}` 与 `\p{Cf}` 归一化。组合附加符号区块为 U+0300–036F、U+1AB0–1AFF、U+1DC0–1DFF、U+20D0–20FF、U+FE20–FE2F。按区块删除，不按文字或语言启用（自定）。U+3099、U+309A 不在这些区块内，因此 `が`（か + U+3099）经 NFKC 重新组合为 `が`，不会变成 `か`。
+- 规则集可在 `normalization` 字段覆盖。非布尔值或未知键在编译时报 `NORMALIZATION_INVALID`。
+- 普通归一化规则（`normalized`）的模式与正文使用同一选项。转写表的键校验与读音也使用规则集的同一选项：检查器工厂用规则集的选项构建转写表，两者不一致时报 `NORMALIZATION_MISMATCH`。
+- 正则规则（`regex`）不受该选项影响。模式源串不归一化，正则匹配副本为 NFKC、小写并删除 `\p{M}` 与 `\p{Cf}`、但不去除组合标记的副本（即 S004 第 3 节、第 5 节的副本）。这是 B1 验收允许的两种做法中的第二种（自定）。结果：`ばか`、`café` 命中原文；`café` 也命中分解形式 `cafe` + U+0301。
+- 残余风险：正则 `badword` 不命中 `ba\u0301dword`。c67db24 因正则也在去除后的副本上匹配而命中。组合标记绕过只在归一化规则上封堵，这与 Q6 的问题描述（归一化规则）一致。若要求正则也封堵，改用第一种做法：正则源串按同一选项归一化，需要单独设计字符类与转义的处理，本包未做。
 - 行为变化：S004 的规则在默认设置下，含可组合标记的文本会按去除后的形式匹配（例如 `bádword` 匹配 `badword`）。这是 Q6 的修复范围。自测给出修复前后对照。
 
 ### 4.9 Q12：准入提示
