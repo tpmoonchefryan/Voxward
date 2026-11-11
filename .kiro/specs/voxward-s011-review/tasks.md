@@ -21,7 +21,7 @@ A checked task is local progress only. Formal completion still requires the engi
 
 - [ ] S0. 规格：design.md 与 tasks.md 受管段之外的实施设计已写，`kiro-specs.mjs check` 为 SPEC_CURRENT。提交信息 `VOXWARD-STORY-011: add spec`。
 - [x] S1. VOXWARD-SUB-021：实现 `moderation-engine/review/` 的 ports、triggers、selection、author-alias、settlement、runner，并接入 `index.ts`。测试位于 `test/moderation-engine/review/`。覆盖 VW-SUB021-AC001、VW-S011-AC001 中的复盘选择、并发结算、过期，以及 Q27 前半（BLOCK 写复核记录并入人工队列）。提交信息含 `VOXWARD-SUB-021`。
-- [ ] S2. Q38：task-coordinator 结算后的记录改为有上限的 FIFO 窗口（`maxSettledRecords`，默认 5000，自定）。未结算任务不淘汰。新增 `retainedRecords()` 供测试与运维观察。`test/task-coordinator/retention.test.ts` 证明记录数有上限。单独提交，提交信息含 `VOXWARD-STORY-011 Q38`。
+- [x] S2. Q38：task-coordinator 结算后的记录改为有上限的 FIFO 窗口（`maxSettledRecords`，默认 5000，自定）。未结算任务不淘汰。新增 `retainedRecords()` 供测试与运维观察。`test/task-coordinator/retention.test.ts` 证明记录数有上限。单独提交，提交信息含 `VOXWARD-STORY-011 Q38`。
 - [ ] S3. VOXWARD-SUB-022：实现 `moderation-engine/candidates/store.ts` 与 `routes.ts`，并接入 `index.ts`。测试位于 `test/moderation-engine/candidates/`。覆盖 VW-SUB022-AC001：未确认候选词、无权限确认、确认后规则版本变化。提交信息含 `VOXWARD-SUB-022`。
 - [ ] S4. 自测：`pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check` 全部退出 0；不设 `VOXWARD_DATABASE_FILE` 运行 `tools/smoke.sh`。
 - [ ] S5. 证据：`.kiro/specs/voxward-s011-review/evidence/self-check.md` 记录自测命令、退出码、测试数、关键输出摘录，随最后一个 commit 提交。
