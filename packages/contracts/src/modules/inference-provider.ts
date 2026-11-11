@@ -6,6 +6,17 @@ import type { VersionedModule } from "./module-contract.js";
 export interface InferenceCapabilities extends Versioned {
   readonly providerName: string;
   readonly supportsCancel: boolean;
+  /**
+   * Models the adapter reports it can run. Absent or empty means none is reported, so no model can be chosen for it.
+   * The model settings module reads this list and never adds to it.
+   */
+  readonly models?: readonly InferenceModelCapability[];
+}
+
+/** One model an adapter reports. `reasoningLevels` lists the levels it accepts; empty means it takes no reasoning parameter. */
+export interface InferenceModelCapability {
+  readonly modelId: string;
+  readonly reasoningLevels: readonly string[];
 }
 
 /**
