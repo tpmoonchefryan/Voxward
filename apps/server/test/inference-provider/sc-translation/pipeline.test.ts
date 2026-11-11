@@ -183,9 +183,9 @@ describe("runs refused before any model is called", () => {
     expect(model.sent).toEqual([]);
   });
 
-  it("refuses an SC selection the current report no longer supports, and does not swap it for another model", async () => {
-    const model = standInScModel((input) => scOutput(input));
-    const outcome = await runScBatch(requestOf("b-14", SAMPLES), ON, depsWith({ scModel: model, capabilities: () => REPORT_AFTER_CHANGE }));
+  it("refuses an SC selection its SC model port no longer reports, and does not swap it for another model", async () => {
+    const model = standInScModel((input) => scOutput(input), REPORT_AFTER_CHANGE);
+    const outcome = await runScBatch(requestOf("b-14", SAMPLES), ON, depsWith({ scModel: model }));
 
     expect(outcome).toMatchObject({
       ok: false,

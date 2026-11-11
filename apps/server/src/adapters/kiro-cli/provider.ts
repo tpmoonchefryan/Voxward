@@ -118,7 +118,7 @@ async function inferBatch(
     const model = buildModelInput(request.items);
     session = await openSession(request.batchId, options);
     markRunDirectoryActive(session.directory);
-    const stdout = await runCli(request.batchId, model, session, slot, options);
+    const stdout = await runCli(request.batchId, model, session, slot, runSettingsOf(request, options), options);
     const items = await decodeResult(request.batchId, request, model, stdout, options.validateOutput);
     return { contractVersion: CONTRACT_VERSION, batchId: request.batchId, items };
   } catch (error) {
@@ -136,7 +136,10 @@ async function inferBatch(
   }
 }
 
-/** Refuses a request the adapter cannot map back, before anything is sent. Runtime checks, because callers are not typed. */
+/**
+ * Refuses a request the adapter cannot map back or run, before anything is sent. Runtime checks, because callers are not
+ * typed.
+ */
 function checkRequest(request: InferenceRequest, maxItems: number, slots: ReadonlyMap<string, BatchSlot>): void {
   const batchId = typeof request.batchId === "string" ? request.batchId : "";
   const invalid = () => new KiroInferenceError("REQUEST_INVALID", batchId);
@@ -151,6 +154,26 @@ function checkRequest(request: InferenceRequest, maxItems: number, slots: Readon
     if (correlationIds.has(item.correlationId)) throw invalid();
     correlationIds.add(item.correlationId);
   }
+  checkRunSelection(request.selection, batchId);
+}
+
+/**
+ * A selection is applied as `--model`, so its model id must have the shape of a flag value. The CLI has no reasoning flag
+ * (STORY-010 G4). A run that asks for a reasoning level is refused, because it would run without that level otherwise.
+ */
+function checkRunSelection(selection: InferenceRequest["selection"], batchId: string): void {
+  if (selection === undefined) return;
+  const modelId: unknown = selection.modelId;
+  if (typeof modelId !== "string" || modelId === "" || modelId.startsWith("-")) {
+    throw new KiroInferenceError("REQUEST_INVALID", batchId);
+  }
+  if (selection.reasoning !== null) throw new KiroInferenceError("SELECTION_UNSUPPORTED", batchId);
+}
+
+/** The settings of one run. A request with a selection runs with its model. A request without one keeps the built-in model. */
+function runSettingsOf(request: InferenceRequest, options: KiroCliProviderOptions): RunSettings {
+  const model = request.selection === undefined ? options.model : request.selection.modelId;
+  return { agent: options.agent, model };
 }
 
 async function openSession(batchId: string, options: KiroCliProviderOptions): Promise<RunSession> {
@@ -170,6 +193,7 @@ function runCli(
   model: ModelInput,
   session: RunSession,
   slot: BatchSlot,
+  settings: RunSettings,
   options: KiroCliProviderOptions,
 ): Promise<string> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -183,7 +207,7 @@ function runCli(
 
     let child: ChildProcessWithoutNullStreams;
     try {
-      child = spawn(options.command, buildChatArguments(options), {
+      child = spawn(options.command, buildChatArguments(settings), {
         cwd: session.directory,
         env: { ...options.env },
         stdio: ["pipe", "pipe", "pipe"],

@@ -11,8 +11,15 @@ import {
   moderationValidator,
   readCalls,
 } from "../../adapters/kiro-cli/helpers.js";
-import { REPORT_WITH_MODELS } from "../model-settings/fixtures.js";
-import { depsWith, requestOf, SC_SELECTION, scOutput, standInScModel } from "./fixtures.js";
+import {
+  depsWith,
+  REPORT_MODELS_NO_REASONING,
+  requestOf,
+  reportingAdapter,
+  SAFETY_SELECTION,
+  scOutput,
+  standInScModel,
+} from "./fixtures.js";
 
 /** Items sent to the fake CLI in its most recent logged chat call, parsed from the end of the prompt as the adapter tests do. */
 function itemsSentTo(logPath: string): { itemId: string; text: string }[] {
@@ -38,15 +45,20 @@ describe("translation off: safety review through the real S008 adapter and the f
     rmSync(scratch, { recursive: true, force: true });
   });
 
+  // The S008 adapter's own describe() lists no model yet (STORY-010 G1). These tests give the adapter the report of the
+  // models its fake CLI runs, so the run passes the gate and reaches the CLI with the chosen model.
   const adapter = () =>
-    createKiroCliInferenceProvider({
-      command: FAKE_CLI,
-      env: fakeEnvironment(logPath, "ok"),
-      runtimeRoot,
-      maxItems: 10,
-      validateOutput: moderationValidator,
-      timeoutMs: 20_000,
-    });
+    reportingAdapter(
+      createKiroCliInferenceProvider({
+        command: FAKE_CLI,
+        env: fakeEnvironment(logPath, "ok"),
+        runtimeRoot,
+        maxItems: 10,
+        validateOutput: moderationValidator,
+        timeoutMs: 20_000,
+      }),
+      REPORT_MODELS_NO_REASONING,
+    );
 
   const batch = [
     { correlationId: "sc-1", text: "thank you for the stream" },
@@ -57,8 +69,8 @@ describe("translation off: safety review through the real S008 adapter and the f
     const scModel = standInScModel((input) => scOutput(input));
     const outcome: ScRunOutcome = await runScBatch(
       requestOf("sc-off-1", batch),
-      { translationEnabled: false, selection: SC_SELECTION },
-      depsWith({ safety: adapter(), scModel, capabilities: () => REPORT_WITH_MODELS }),
+      { translationEnabled: false, selection: SAFETY_SELECTION },
+      depsWith({ safety: adapter(), scModel }),
     );
 
     expect(outcome).toEqual({
@@ -74,8 +86,8 @@ describe("translation off: safety review through the real S008 adapter and the f
   it("sends the CLI only a temporary item id and the text, with no translation field and no viewer data", async () => {
     await runScBatch(
       requestOf("sc-off-2", batch),
-      { translationEnabled: false, selection: SC_SELECTION },
-      depsWith({ safety: adapter(), capabilities: () => REPORT_WITH_MODELS }),
+      { translationEnabled: false, selection: SAFETY_SELECTION },
+      depsWith({ safety: adapter() }),
     );
 
     const sent = itemsSentTo(logPath);
@@ -88,8 +100,8 @@ describe("translation off: safety review through the real S008 adapter and the f
     const scModel = standInScModel((input) => scOutput(input));
     await runScBatch(
       requestOf("sc-off-3", batch),
-      { translationEnabled: false, selection: SC_SELECTION },
-      depsWith({ safety: adapter(), scModel, capabilities: () => REPORT_WITH_MODELS }),
+      { translationEnabled: false, selection: SAFETY_SELECTION },
+      depsWith({ safety: adapter(), scModel }),
     );
 
     expect(scModel.sent).toEqual([]);

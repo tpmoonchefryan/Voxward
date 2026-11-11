@@ -1,15 +1,49 @@
 import {
   type AiBatchInput,
   CONTRACT_VERSION,
+  type InferenceCapabilities,
   type InferenceProvider,
   type InferenceRequest,
 } from "@voxward/contracts";
 import { REPORT_WITH_MODELS } from "../model-settings/fixtures.js";
 import { EXPLICIT_RULES, ruleEngineTextChecker } from "../validation/rule-engine-port.js";
-import type { ScModelPort, ScPipelineDeps } from "../../../src/modules/inference-provider/index.js";
+import type { ModelSelection, ScModelPort, ScPipelineDeps } from "../../../src/modules/inference-provider/index.js";
 
 /** The SC selection the fixtures choose. The report lists it, so the run is allowed to start. */
 export const SC_SELECTION = { modelId: "synthetic-model-a", reasoning: "low" } as const;
+
+/**
+ * The selection of the translation-off tests. The S008 adapter cannot apply a reasoning level (STORY-010 G4), so these
+ * runs take no reasoning level. A run that asks for one is refused, not run without it.
+ */
+export const SAFETY_SELECTION = { modelId: "synthetic-model-a", reasoning: null } as const;
+
+/** Models without any reasoning level, as the S008 adapter can run them. */
+export const REPORT_MODELS_NO_REASONING: InferenceCapabilities = {
+  contractVersion: CONTRACT_VERSION,
+  providerName: "synthetic-report",
+  supportsCancel: true,
+  models: [
+    { modelId: "synthetic-model-a", reasoningLevels: [] },
+    { modelId: "synthetic-model-b", reasoningLevels: [] },
+  ],
+};
+
+/** A report that claims a reasoning level the adapter does not apply. The adapter must refuse such a run. */
+export const REPORT_CLAIMING_HIGH: InferenceCapabilities = {
+  contractVersion: CONTRACT_VERSION,
+  providerName: "synthetic-report",
+  supportsCancel: true,
+  models: [{ modelId: "synthetic-model-a", reasoningLevels: ["high"] }],
+};
+
+/**
+ * The adapter with its report replaced by `report`. The gate reads that report, and the run goes to the same adapter.
+ * The S008 adapter's own describe() lists no model yet (STORY-010 G1), so the tests need this to open the gate.
+ */
+export function reportingAdapter(adapter: InferenceProvider, report: InferenceCapabilities): InferenceProvider {
+  return { ...adapter, describe: () => report };
+}
 
 /**
  * Translations for the synthetic cross-language samples. The viewer texts are invented. They cover Chinese, Japanese,
@@ -65,13 +99,26 @@ export function scOutput(input: AiBatchInput, override: (text: string) => Partia
   };
 }
 
-/** The SC model stand-in. It records each batch it was sent, so tests can check what left the pipeline. */
-export function standInScModel(output: (input: AiBatchInput) => unknown): ScModelPort & { readonly sent: AiBatchInput[] } {
+/**
+ * The SC model stand-in. It records each batch it was sent, and the selection each call carried, so tests can check what
+ * left the pipeline and what the port was asked to run.
+ */
+export function standInScModel(
+  output: (input: AiBatchInput) => unknown,
+  report: InferenceCapabilities = REPORT_WITH_MODELS,
+): ScModelPort & {
+  readonly sent: AiBatchInput[];
+  readonly received: { readonly batchId: string; readonly selection: ModelSelection }[];
+} {
   const sent: AiBatchInput[] = [];
+  const received: { readonly batchId: string; readonly selection: ModelSelection }[] = [];
   return {
     sent,
-    async infer(input) {
+    received,
+    describe: () => report,
+    async infer(input, call) {
       sent.push(input);
+      received.push(call);
       return output(input);
     },
   };
@@ -90,7 +137,6 @@ export const UNUSED_SAFETY: InferenceProvider = {
 /** Dependencies for one run. Every default is synthetic, and each test replaces only what it needs. */
 export function depsWith(overrides: Partial<ScPipelineDeps> = {}): ScPipelineDeps {
   return {
-    capabilities: () => REPORT_WITH_MODELS,
     safety: UNUSED_SAFETY,
     scModel: standInScModel((input) => scOutput(input)),
     generatedText: ruleEngineTextChecker(EXPLICIT_RULES),
