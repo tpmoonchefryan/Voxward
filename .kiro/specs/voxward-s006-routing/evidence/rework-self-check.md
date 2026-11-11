@@ -22,7 +22,7 @@ B1 的空行修正已本地并入 58e2ced（未推送）。
 | `pnpm install --frozen-lockfile` | 0 | 依赖与锁文件一致（f919d25） |
 | `pnpm build` | 0 | 服务端与 web 构建完成（f919d25） |
 | `pnpm typecheck` | 0 | 服务端与 web 通过（f919d25） |
-| `pnpm test` | 1（f919d25 上 5 次）；0（830c4b2 上 1 次） | 见第 5 节 |
+| `pnpm test` | 1（f919d25 上 6 次）；0（830c4b2 上 1 次） | 见第 5 节 |
 | `pnpm check:deps` | 0 | 123 个文件，0 违规（f919d25） |
 | `smoke.sh <工作树> $KIROCREW_SCRATCH/s006-fix` | 0 | dev：`ok=1 code=200 after 3s`；dist：`ok=1 code=200 after 2s`；结束后无监听（f919d25） |
 
@@ -83,13 +83,13 @@ B1 的空行修正已本地并入 58e2ced（未推送）。
 - 修复前（`fa5dc19` 源码加新增回归用例）：`test/moderation-engine` 中 13 项失败，见第 4 节。
 - 修复后：`test/moderation-engine` 15 个文件，313 项通过（N1 之后）。
 - 首次全量运行（830c4b2，与 f919d25 只差 `transliterate.ts` 中一处空行）：67 个文件，788 项通过，退出 0。
-- 之后在 f919d25 上全量运行 5 次，均退出 1。失败项都是计时类：
-  - `auth/auth.test.ts` 的 scrypt 相关用例：5000 ms 默认超时，五次全量运行中每次都有出现；
+- 之后在 f919d25 上全量运行 6 次，均退出 1。失败项都是计时类：
+  - `auth/auth.test.ts` 的 scrypt 相关用例：5000 ms 默认超时，六次全量运行中每次都有出现；第 6 次为「拒绝短密码等」「会话登录」「密码哈希」三项，均为 `Test timed out in 5000ms`；
   - `auth/routes.test.ts`：setup 钩子 10000 ms 超时，连带 `afterEach` 报错（1 次）；
   - `security/leak-scan.test.ts`：5000 ms 超时（1 次）；
   - `moderation-engine/rules/regex-cost.test.ts`：中位数 21.9 ms，超过 20 ms 预算（1 次）。
 - 同一时段隔离重跑：上述 4 个文件共 51 项全部通过，退出 0。
-- 失败运行期间 `/proc/loadavg` 的 1 分钟值在 6–17 之间（8 核）。其它工作树的 drizzle-kit 进程与 postgres 容器占用 CPU。
+- 失败运行期间 `/proc/loadavg` 的 1 分钟值在 3.5–17 之间（8 核）。其它工作树的 drizzle-kit 进程与 postgres 容器占用 CPU。
 - 没有改动任何测试的超时或预算，也没有删除失败用例。
 
 ## 6. 未验证项与残余风险
