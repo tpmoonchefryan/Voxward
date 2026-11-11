@@ -1,8 +1,9 @@
 import { CONTRACT_VERSION, type ChannelEvent } from "@voxward/contracts";
 import { describe, expect, it } from "vitest";
 import type { ServerConfig } from "../../src/config/schema.js";
-import { createModerationEngine, type ModerationOptions } from "../../src/modules/moderation-engine/index.js";
+import { createModerationChecker, createModerationEngine, type ModerationOptions } from "../../src/modules/moderation-engine/index.js";
 import { ModerationConfigError, type RuleSetInput } from "../../src/modules/moderation-engine/rules/groups.js";
+import { createTableTransliterator } from "../../src/modules/moderation-engine/rules/transliterate.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 
 const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" };
@@ -80,5 +81,16 @@ describe("ModerationEngine module entry", () => {
     const registry = buildRegistry(config);
     const result = await registry.moderationEngine.moderate(eventWithBody("hello"));
     expect(result).toMatchObject({ route: "REVIEW", correlationId: "correlation-1" });
+  });
+});
+
+describe("transliterator and rule set options (S006 B1)", () => {
+  it("refuses a transliterator built with other normalization options than the rule set", () => {
+    expect(() =>
+      createModerationChecker({
+        ruleSet,
+        transliterator: createTableTransliterator(new Map(), { stripCombiningMarks: false }),
+      }),
+    ).toThrow(ModerationConfigError);
   });
 });

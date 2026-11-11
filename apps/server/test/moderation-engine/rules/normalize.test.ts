@@ -83,3 +83,35 @@ describe("composed combining marks (S006 Q6)", () => {
     expect(normalizeText("\u1100\u1161\u11a8")).toBe("\uac01");
   });
 });
+
+describe("Q6 scope: only the composed diacritics are stripped (S006 B1)", () => {
+  it("strips every mark in the combining diacritical blocks", () => {
+    const marks = ["\u0300", "\u036F", "\u1AB0", "\u1ACE", "\u1DC0", "\u1DFF", "\u20D0", "\u20F0", "\uFE20", "\uFE2F"];
+    for (const mark of marks) {
+      expect(normalizeText(`a${mark}`)).toBe("a");
+    }
+  });
+
+  it("keeps the Japanese sound marks, so voiced kana stay distinct from their base kana", () => {
+    expect(normalizeText("ば")).toBe("ば");
+    expect(normalizeText("ば")).not.toBe(normalizeText("は"));
+    expect(normalizeText("バ")).toBe("バ");
+    expect(normalizeText("ぱ")).toBe("ぱ");
+    expect(normalizeText("が")).toBe("が");
+  });
+
+  it("composes a decomposed kana with its sound mark", () => {
+    expect(normalizeText("か\u3099")).toBe("が");
+    expect(normalizeText("ハ\u309A")).toBe("パ");
+  });
+
+  it("keeps the voiced kana in the matching copy, and its span maps back to the original kana", () => {
+    const field = normalizeField("body", "x ば");
+    expect(field.text).toBe("x ば");
+    expect(spansFor(field, 2, 3)).toEqual([{ field: "body", start: 2, end: 3 }]);
+  });
+
+  it("still strips a stray sound mark that does not compose, so a Latin word cannot hide behind it", () => {
+    expect(normalizeText("ba\u3099dword")).toBe("badword");
+  });
+});

@@ -77,7 +77,7 @@ No design authority is configured for the resolved work context. No authority wa
 | `packages/contracts/src/decisions/verdict.ts` | 修改 | Q22：`Verdict.penaltyHits` 与 `PenaltyHit` |
 | `apps/server/src/modules/scoring-engine/rules.ts`、`engine.ts`、`index.ts` | 修改 | Q22：BLOCK 扣分经 `selectPenalty`；输入校验 |
 | `apps/server/src/db/schema/subjects.ts` | 修改 | Q8：删除 `subject_nickname_checks` 定义 |
-| `apps/server/src/db/migrations/0002_*.sql` 与 `meta/` | 新增 | Q8：`DROP TABLE subject_nickname_checks`，由 drizzle-kit 生成 |
+| `apps/server/src/db/migrations/0003_*.sql` 与 `meta/` | 新增 | Q8：`DROP TABLE subject_nickname_checks`，由 drizzle-kit 生成（编号 0003；0002 已是审计字段迁移 `0002_audit_log_fields`） |
 | `docs/data-dictionary.md` | 修改 | Q8：删除该表段落，表数 27 改为 26 |
 | `apps/server/test/db/schema.test.ts` | 修改 | Q8：表数与迁移中的删除语句 |
 | `apps/server/test/moderation-engine/routing/*.test.ts` | 新增 | 路由验收测试 |
@@ -96,7 +96,8 @@ No design authority is configured for the resolved work context. No authority wa
 ## 3. 数据
 
 - 不新增表。`tasks.status` 仍只取 `TASK_STATUSES`。系统失败存为 `PENDING_REVIEW`，人工接管存为 `RUNNING`（自定，见第 4.5 节映射）。
-- 迁移 0002 删除 `subject_nickname_checks`（Q8）。选择进程内缓存的理由：S004 设计 §8 只规定进程内缓存；提案 §10 的数据组没有列该表；持久化摘要超出已列数据范围（自定）。缓存保存期限沿用 S004：TTL 1 小时，最多 10000 项，进程重启即清空。
+- 迁移 0003 删除 `subject_nickname_checks`（Q8）。编号 0003 是因为 0002 已是审计字段迁移 `0002_audit_log_fields`（N9）。选择进程内缓存的理由：S004 设计 §8 只规定进程内缓存；提案 §10 的数据组没有列该表；持久化摘要超出已列数据范围（自定）。缓存保存期限沿用 S004：TTL 1 小时，最多 10000 项，进程重启即清空。
+- 开发库（N10）：drizzle 的 SQLite 迁移器只执行 `when` 晚于库中最新 `created_at` 的条目。若开发库由改编号前的迁移链建成（本表的删除迁移曾记为 `0002`），升级时会跳过审计字段迁移，并在 `0003` 报错回滚。这类开发库应删除后重建。迁移本身不改；部署环境未受影响。
 - UNSETTLED_FAST_PASS 的当次裁决在 `verdicts` 中记为分类 `ALLOW_NOISE`、来源 `FAST_PASS`、下游 `ALLOW`（自定）。这样满足现有 CHECK，且不加分。
 
 ## 4. 接口
@@ -114,13 +115,13 @@ No design authority is configured for the resolved work context. No authority wa
 
 ### 4.3 真值表
 
-`planRoute` 按下表顺序求值，首条命中生效。
+`planRoute` 按下表顺序求值，首条命中生效。顺序与提案 §4.2 流程图一致：记分例外先于付费。N1 返工前，付费行在前，例外∧付费组合走 `PAID_TEXT_REVIEW` 并带例外标记；返工后该组合走 `REALTIME_REVIEW`。两者都是 AI 或人工路径，不构成快速放行。
 
 | 序 | 条件 | 计划 | 初始处理状态 | 说明 |
 | --- | --- | --- | --- | --- |
 | R1 | 基础检查 `BLOCK` | FINAL：来源 `BASE_RULE`，分类 `BLOCK`，结算 `NONE` | `DONE` | 基础拒绝可终结；例外队列项同时结束（`BASE_BLOCK`） |
-| R2 | 付费或会员自定义文本 | REVIEW：任务 `PAID_TEXT_REVIEW` | `QUEUED` | 付费文本审核不可跳过；例外标记照实携带 |
-| R3 | 记分例外 | REVIEW：任务 `REALTIME_REVIEW`，例外 = 是 | `QUEUED` | 每条都审；不走白名单、评分或噪声短路 |
+| R2 | 记分例外 | REVIEW：任务 `REALTIME_REVIEW`，例外 = 是 | `QUEUED` | 每条都审，包括同时是付费文本的消息；不走白名单、评分或噪声短路 |
+| R3 | 付费或会员自定义文本 | REVIEW：任务 `PAID_TEXT_REVIEW`，例外 = 否 | `QUEUED` | 付费文本审核不可跳过 |
 | R4 | 基础检查 `REVIEW` | REVIEW：任务 `REALTIME_REVIEW` | `QUEUED` | 未通过基础检查，不能快速放行 |
 | R5 | 无意义互动（确定性判定为 NOISE） | FINAL：来源 `FAST_PASS`，分类 `ALLOW_NOISE`，结算 `NONE` | `DONE` | 不加分、不扣分 |
 | R6 | 白名单 | FINAL：来源 `FAST_PASS`，分类 `ALLOW_NOISE`，结算 `NONE` | `DONE` | 短路；不冒充模型确认的有意义互动 |
@@ -183,16 +184,19 @@ No design authority is configured for the resolved work context. No authority wa
 ### 4.8 Q6：组合标记
 
 - `NormalizeOptions = { stripCombiningMarks: boolean }`，默认 `true`（自定：这是绕过路径，安全默认开启）。
-- 开启时，每个单元按 NFKD → 删除 `\p{M}` → NFKC → 小写 → 删除 `\p{M}` 与 `\p{Cf}` 归一化。
-- 规则集可在 `normalization` 字段覆盖。非布尔值或未知键在编译时报 `NORMALIZATION_INVALID`。模式文本与正文使用同一选项。
+- 开启时，每个单元按 NFKD → 删除组合附加符号区块中的标记 → NFKC → 小写 → 删除 `\p{M}` 与 `\p{Cf}` 归一化。组合附加符号区块为 U+0300–036F、U+1AB0–1AFF、U+1DC0–1DFF、U+20D0–20FF、U+FE20–FE2F。按区块删除，不按文字或语言启用（自定）。U+3099、U+309A 不在这些区块内，因此 `が`（か + U+3099）经 NFKC 重新组合为 `が`，不会变成 `か`。
+- 规则集可在 `normalization` 字段覆盖。非布尔值或未知键在编译时报 `NORMALIZATION_INVALID`。
+- 普通归一化规则（`normalized`）的模式与正文使用同一选项。转写表的键校验与读音也使用规则集的同一选项：检查器工厂用规则集的选项构建转写表，两者不一致时报 `NORMALIZATION_MISMATCH`。
+- 正则规则（`regex`）不受该选项影响。模式源串不归一化，正则匹配副本为 NFKC、小写并删除 `\p{M}` 与 `\p{Cf}`、但不去除组合标记的副本（即 S004 第 3 节、第 5 节的副本）。这是 B1 验收允许的两种做法中的第二种（自定）。结果：`ばか`、`café` 命中原文；`café` 也命中分解形式 `cafe` + U+0301。
+- 残余风险：正则 `badword` 不命中 `ba\u0301dword`。c67db24 因正则也在去除后的副本上匹配而命中。组合标记绕过只在归一化规则上封堵，这与 Q6 的问题描述（归一化规则）一致。若要求正则也封堵，改用第一种做法：正则源串按同一选项归一化，需要单独设计字符类与转义的处理，本包未做。
 - 行为变化：S004 的规则在默认设置下，含可组合标记的文本会按去除后的形式匹配（例如 `bádword` 匹配 `badword`）。这是 Q6 的修复范围。自测给出修复前后对照。
 
 ### 4.9 Q12：准入提示
 
 - `RuleIssue` 增加可选字段 `hint`。固定文案，不含模式原文。
-- `REGEX_GROUP_ALTERNATION`：「改写为顶层分支（如 `a|b`），或拆成多条规则」。
-- `REGEX_UNBOUNDED_WITH_VARIABLE_REPEAT`：「拆成多条规则，或把其中一个量词改为固定次数」。
-- 错误信息格式：`RULE_SET_INVALID: <code> at <ref> (hint: <文案>)`。
+- `REGEX_GROUP_ALTERNATION`：`write the alternatives as top-level branches, such as a|b, or split them into several rules`。
+- `REGEX_UNBOUNDED_WITH_VARIABLE_REPEAT`：`split the pattern into several rules, or give one of the quantifiers a fixed count`。
+- 错误信息格式：`RULE_SET_INVALID: <code> at <ref> (hint: <文案>)`。文案以代码为准（`groups.ts` 的 `REGEX_HINTS`，英文）。N9：本段原为中文，与代码不一致，已改为代码中的原文。
 
 ### 4.10 Q22：计分接线
 
@@ -212,7 +216,7 @@ No design authority is configured for the resolved work context. No authority wa
 | `test/moderation-engine/rules/normalize.test.ts`、`groups.test.ts`、`engine.test.ts` | Q6：组合标记绕过在默认下被拦截，关闭时保持旧行为；Q12：两类拒绝的提示与无模式原文 | 问题清单 Q6、Q12 |
 | `test/scoring-engine/engine/rules.test.ts`、`index.test.ts` | Q22：多规则取最大；校验 `penaltyHits` | 问题清单 Q22 |
 | `packages/contracts/test/contracts.test.ts` | `createVerdict` 的新字段 | 契约 |
-| `test/db/schema.test.ts`、`test/db/migrate.test.ts` | Q8：表数 26；迁移删除表；字典一致；从 0000、0001 升级时保留既有行 | 问题清单 Q8 |
+| `test/db/schema.test.ts`、`test/db/migrate.test.ts` | Q8：表数 26；迁移删除表；字典一致；从 0000–0002 升级时保留既有行 | 问题清单 Q8 |
 
 - VW-SUB012-AC001 是主验收行。STORY 的 VW-S006-AC001 由真值表与短路测试承担。PARENT 与 INHERIT 行只记录本包实际触及的部分。
 

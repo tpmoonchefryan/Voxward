@@ -8,7 +8,15 @@ import {
   type RuleHit,
   type Verdict,
 } from "./groups.js";
-import { identityField, joinMapped, type MappedText, type MatchField, type NormalizeOptions, normalizeField } from "./normalize.js";
+import {
+  COMPOSED_NORMALIZE_OPTIONS,
+  identityField,
+  joinMapped,
+  type MappedText,
+  type MatchField,
+  type NormalizeOptions,
+  normalizeField,
+} from "./normalize.js";
 import { spansFor } from "./span-map.js";
 import type { Transliterator } from "./transliterate.js";
 
@@ -52,10 +60,11 @@ export interface CheckEnvironment {
   readonly now: () => number;
 }
 
-/** The three copies of one field that rules match against. */
+/** The three copies of one field that rules match against. `composed` is the copy regex rules match (S006 design 4.8). */
 export interface FieldParts {
   readonly raw: MappedText;
   readonly normal: MappedText;
+  readonly composed: MappedText;
   readonly reading: MappedText;
 }
 
@@ -92,6 +101,7 @@ export function prepareField(
   return {
     raw: identityField(field, raw),
     normal: normalizeField(field, raw, normalization),
+    composed: normalizeField(field, raw, COMPOSED_NORMALIZE_OPTIONS),
     reading: transliterator.transliterate(field, raw).mapped,
   };
 }
@@ -179,6 +189,7 @@ function checkScope(scope: HitScope, parts: FieldParts, ruleSet: CompiledRuleSet
 function copyFor(kind: CompiledRule["matcher"]["kind"], parts: FieldParts): MappedText {
   if (kind === "exact") return parts.raw;
   if (kind === "reading") return parts.reading;
+  if (kind === "regex") return parts.composed;
   return parts.normal;
 }
 
@@ -203,6 +214,7 @@ function joinParts(first: FieldParts, second: FieldParts): FieldParts {
   return {
     raw: joinMapped(first.raw, second.raw),
     normal: joinMapped(first.normal, second.normal),
+    composed: joinMapped(first.composed, second.composed),
     reading: joinMapped(first.reading, second.reading),
   };
 }

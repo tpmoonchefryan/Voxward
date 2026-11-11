@@ -203,3 +203,70 @@ describe("composed combining marks through the checker (S006 Q6)", () => {
     expect(verdict.route).toBe("PASS");
   });
 });
+
+describe("kana and accented letters through the checker (S006 B1, E20 §3)", () => {
+  const normalizedSet = compiled({
+    version: "v3",
+    groups: [
+      {
+        id: "explicit",
+        action: { kind: "BLOCK" },
+        rules: [
+          { id: "norm-baka", kind: "normalized", text: "ばか" },
+          { id: "norm-baka-katakana", kind: "normalized", text: "バカ" },
+          { id: "norm-badword", kind: "normalized", text: "badword" },
+        ],
+      },
+    ],
+  });
+
+  const regexSet = compiled({
+    version: "v3",
+    groups: [
+      {
+        id: "explicit",
+        action: { kind: "BLOCK" },
+        rules: [
+          { id: "re-baka", kind: "regex", source: "ばか" },
+          { id: "re-baka-katakana", kind: "regex", source: "バカ" },
+          { id: "re-cafe", kind: "regex", source: "café" },
+        ],
+      },
+    ],
+  });
+
+  it("does not block a normalized kana rule on the homophone with the other voicing", async () => {
+    const verdict = await evaluateMessage(input("Viewer", "はかまいりにいく"), environment(normalizedSet));
+    expect(verdict.route).toBe("PASS");
+  });
+
+  it("does not block a normalized katakana rule on its unvoiced homophone", async () => {
+    const verdict = await evaluateMessage(input("Viewer", "ハカセ"), environment(normalizedSet));
+    expect(verdict.route).toBe("PASS");
+  });
+
+  it("still blocks a normalized kana rule on the same kana", async () => {
+    const verdict = await evaluateMessage(input("Viewer", "ばか"), environment(normalizedSet));
+    expect(verdict.route).toBe("BLOCK");
+  });
+
+  it("blocks a kana regex on the original text", async () => {
+    expect((await evaluateMessage(input("Viewer", "ばか"), environment(regexSet))).route).toBe("BLOCK");
+    expect((await evaluateMessage(input("Viewer", "バカ"), environment(regexSet))).route).toBe("BLOCK");
+  });
+
+  it("does not block a kana regex on the other voicing", async () => {
+    const verdict = await evaluateMessage(input("Viewer", "はかまいりにいく"), environment(regexSet));
+    expect(verdict.route).toBe("PASS");
+  });
+
+  it("blocks an accented regex on the original text, and on the decomposed form of the same text", async () => {
+    expect((await evaluateMessage(input("Viewer", "café"), environment(regexSet))).route).toBe("BLOCK");
+    expect((await evaluateMessage(input("Viewer", "cafe\u0301"), environment(regexSet))).route).toBe("BLOCK");
+  });
+
+  it("still blocks a normalized rule hidden behind a composed mark", async () => {
+    const verdict = await evaluateMessage(input("Viewer", "ba\u0301dword"), environment(normalizedSet));
+    expect(verdict.route).toBe("BLOCK");
+  });
+});

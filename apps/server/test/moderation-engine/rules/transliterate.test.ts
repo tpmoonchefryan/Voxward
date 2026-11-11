@@ -32,3 +32,29 @@ describe("table transliterator", () => {
     expect(() => createTableTransliterator(new Map([["甲", "Jia"]]))).toThrow(TypeError);
   });
 });
+
+describe("table transliterator with voiced kana (S006 B1)", () => {
+  it("accepts a voiced kana as a key and reads がか as gaka", () => {
+    const reading = createTableTransliterator(new Map([["が", "ga"], ["か", "ka"]])).transliterate("body", "がか");
+    expect(reading.mapped.text).toBe("gaka");
+    expect(reading.complete).toBe(true);
+  });
+
+  it("does not read a voiced kana through the entry of its base kana", () => {
+    const reading = createTableTransliterator(new Map([["か", "ka"]])).transliterate("body", "が");
+    expect(reading.mapped.text).toBe("");
+    expect(reading.complete).toBe(false);
+  });
+
+  it("validates keys with the options it was built with", () => {
+    const keep = { stripCombiningMarks: false };
+    expect(() => createTableTransliterator(new Map([["é", "e"]]), keep)).not.toThrow();
+    expect(() => createTableTransliterator(new Map([["é", "e"]]))).toThrow(TypeError);
+  });
+
+  it("reads with the options it was built with", () => {
+    const keep = createTableTransliterator(new Map([["é", "e"]]), { stripCombiningMarks: false });
+    expect(keep.normalization).toEqual({ stripCombiningMarks: false });
+    expect(keep.transliterate("body", "é").mapped.text).toBe("e");
+  });
+});

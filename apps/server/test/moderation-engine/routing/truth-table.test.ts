@@ -51,14 +51,15 @@ describe("truth table invariants over all 96 input combinations", () => {
       expect(plan).toEqual({ kind: "FINAL", verdictSource: "BASE_RULE", classification: "BLOCK", settlement: "NONE", reason: "BASE_BLOCK" });
     }
 
-    if (input.baseRoute !== "BLOCK" && input.paidText) {
-      // Paid text is not skipped, whatever else holds.
-      expect(plan).toMatchObject({ kind: "REVIEW", taskKind: "PAID_TEXT_REVIEW", exception: input.exceptionMarked });
+    if (input.baseRoute !== "BLOCK" && input.exceptionMarked) {
+      // An exception message is always reviewed, paid or not, and never fast-passed. The flowchart (proposal 4.2)
+      // checks the exception before the paid text.
+      expect(plan).toMatchObject({ kind: "REVIEW", taskKind: "REALTIME_REVIEW", exception: true, reason: "EXCEPTION" });
     }
 
-    if (input.baseRoute !== "BLOCK" && !input.paidText && input.exceptionMarked) {
-      // An exception message is always reviewed, and never fast-passed.
-      expect(plan).toMatchObject({ kind: "REVIEW", taskKind: "REALTIME_REVIEW", exception: true, reason: "EXCEPTION" });
+    if (input.baseRoute !== "BLOCK" && !input.exceptionMarked && input.paidText) {
+      // Paid text is not skipped by a fast lane, whatever else holds.
+      expect(plan).toMatchObject({ kind: "REVIEW", taskKind: "PAID_TEXT_REVIEW", exception: false, reason: "PAID_TEXT" });
     }
 
     if (plan.kind === "FINAL" && plan.verdictSource === "FAST_PASS") {
@@ -98,21 +99,30 @@ describe("truth table rows", () => {
     });
   });
 
-  it("R2: paid text goes to safety review even when the subject is whitelisted and above the fast-pass score", () => {
-    expect(planRoute({ ...plain, paidText: true, whitelisted: true, scoreReachesFastPass: true })).toEqual({
-      kind: "REVIEW",
-      taskKind: "PAID_TEXT_REVIEW",
-      exception: false,
-      reason: "PAID_TEXT",
-    });
-  });
-
-  it("R3: an exception message is reviewed, not noise and not whitelisted", () => {
+  it("R2: an exception message is reviewed, not noise and not whitelisted", () => {
     expect(planRoute({ ...plain, exceptionMarked: true, whitelisted: true, noise: true, scoreReachesFastPass: true })).toEqual({
       kind: "REVIEW",
       taskKind: "REALTIME_REVIEW",
       exception: true,
       reason: "EXCEPTION",
+    });
+  });
+
+  it("R2: an exception message that is also paid text is reviewed as an exception, following the flowchart order", () => {
+    expect(planRoute({ ...plain, exceptionMarked: true, paidText: true, whitelisted: true, scoreReachesFastPass: true })).toEqual({
+      kind: "REVIEW",
+      taskKind: "REALTIME_REVIEW",
+      exception: true,
+      reason: "EXCEPTION",
+    });
+  });
+
+  it("R3: paid text goes to safety review even when the subject is whitelisted and above the fast-pass score", () => {
+    expect(planRoute({ ...plain, paidText: true, whitelisted: true, scoreReachesFastPass: true })).toEqual({
+      kind: "REVIEW",
+      taskKind: "PAID_TEXT_REVIEW",
+      exception: false,
+      reason: "PAID_TEXT",
     });
   });
 

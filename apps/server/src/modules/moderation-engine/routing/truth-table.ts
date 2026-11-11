@@ -48,13 +48,14 @@ export type RoutePlan =
 
 /**
  * The unified routing truth table (proposal section 4.2; S006 design 4.3). Rows are evaluated in order, and the first
- * matching row decides. A basic-check BLOCK is final. Paid text is never skipped, and no fast lane applies to an
- * exception subject or to a message the basic check did not pass.
+ * matching row decides. The order follows the proposal flowchart: a basic-check BLOCK is final, an exception subject
+ * is reviewed before paid text is considered, and paid text is never skipped. No fast lane applies to an exception
+ * subject or to a message the basic check did not pass.
  */
 export function planRoute(input: PlanInput): RoutePlan {
   if (input.baseRoute === "BLOCK") return final("BASE_RULE", "BLOCK", "NONE", "BASE_BLOCK");
-  if (input.paidText) return review("PAID_TEXT_REVIEW", input.exceptionMarked, "PAID_TEXT");
   if (input.exceptionMarked) return review("REALTIME_REVIEW", true, "EXCEPTION");
+  if (input.paidText) return review("PAID_TEXT_REVIEW", false, "PAID_TEXT");
   if (input.baseRoute === "REVIEW") return review("REALTIME_REVIEW", false, "BASE_REVIEW");
   if (input.noise) return final("FAST_PASS", "ALLOW_NOISE", "NONE", "NOISE");
   if (input.whitelisted) return final("FAST_PASS", "ALLOW_NOISE", "NONE", "WHITELIST");
