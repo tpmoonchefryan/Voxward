@@ -26,9 +26,20 @@ export interface RawUnit {
 }
 
 // Marks and format characters belong to the character before them. Hangul medial and final jamo
-// compose with the leading jamo under NFKC, so they stay in the same unit.
-const ATTACHES_TO_PREVIOUS = /^[\p{M}\p{Cf}\u1160-\u11FF\uD7B0-\uD7FF]$/u;
+// compose with the leading jamo under NFKC, so they stay in the same unit. So do the spacing and half-width
+// sound marks of Japanese (U+309B, U+309C, U+FF9E, U+FF9F): NFKC turns each into the combining mark U+3099 or
+// U+309A, which then composes with the kana before it (S006 B3).
+const ATTACHES_TO_PREVIOUS = /^[\p{M}\p{Cf}\u1160-\u11FF\uD7B0-\uD7FF\u309B\u309C\uFF9E\uFF9F]$/u;
 const MATCH_IGNORED = /[\p{M}\p{Cf}]/gu;
+/**
+ * Characters that never reach the matching copy and that no other character composes with: the format characters
+ * and the default-ignorable marks, such as variation selectors and the combining grapheme joiner. NFC and NFKC
+ * compose a mark with its base only when no character of combining class 0 stands between them, so one of these
+ * between a kana and its sound mark keeps the two apart. They are removed before composition (S006 B3).
+ */
+const INVISIBLE = /\p{Cf}|(?=\p{M})\p{Default_Ignorable_Code_Point}/gu;
+/** The spacing sound marks. NFKC turns each into a space plus the combining mark, so they are mapped before NFKC. */
+const SPACING_SOUND_MARK = /[\u309B\u309C]/gu;
 /**
  * The combining diacritical mark blocks (S006 B1). Only marks in these blocks are stripped. Japanese sound marks
  * (U+3099, U+309A) and other marks that a script needs stay, so NFKC can compose them with their base character.
@@ -51,7 +62,10 @@ export const DEFAULT_NORMALIZE_OPTIONS: NormalizeOptions = { stripCombiningMarks
 /** Options of the composed copy, which regex rules match. No diacritical mark is stripped from it. */
 export const COMPOSED_NORMALIZE_OPTIONS: NormalizeOptions = { stripCombiningMarks: false };
 
-/** Splits text into units at code point boundaries, attaching marks and format characters to the unit before them. */
+/**
+ * Splits text into units at code point boundaries. Marks, format characters and sound marks attach to the unit before
+ * them, so a unit is what NFKC can compose on its own and it maps back to one stretch of the original text.
+ */
 export function splitUnits(raw: string): RawUnit[] {
   const units: RawUnit[] = [];
   let offset = 0;
@@ -70,14 +84,20 @@ export function splitUnits(raw: string): RawUnit[] {
 }
 
 /**
- * Normalizes one unit for matching: compatibility decomposition, lower case, no marks or format characters.
- * With `stripCombiningMarks`, the unit is decomposed, the diacritical marks are removed, and NFKC then recomposes
- * what remains. A voiced kana such as `が` decomposes to か plus U+3099, keeps U+3099, and composes back to `が`.
+ * Normalizes one unit for matching, in this order: remove the invisible characters, turn the spacing sound marks into
+ * combining marks, compose with NFKC, lower case, and drop the marks and format characters that are left. The
+ * invisible characters go first because they would stop a mark from composing with its base. With
+ * `stripCombiningMarks`, the unit is decomposed first, the diacritical marks are removed, and NFKC then recomposes what
+ * remains. A voiced kana such as `が` decomposes to か plus U+3099, keeps U+3099, and composes back to `が`. The same
+ * holds when the mark is U+FF9E, U+309B or has a format character in front of it (S006 B3).
  */
 export function normalizeUnit(raw: string, options: NormalizeOptions = DEFAULT_NORMALIZE_OPTIONS): string {
+  const visible = raw
+    .replace(INVISIBLE, "")
+    .replace(SPACING_SOUND_MARK, (mark) => (mark === "\u309B" ? "\u3099" : "\u309A"));
   const composed = options.stripCombiningMarks
-    ? raw.normalize("NFKD").replace(COMBINING_DIACRITICAL, "").normalize("NFKC")
-    : raw.normalize("NFKC");
+    ? visible.normalize("NFKD").replace(COMBINING_DIACRITICAL, "").normalize("NFKC")
+    : visible.normalize("NFKC");
   return composed.toLowerCase().replace(MATCH_IGNORED, "");
 }
 
