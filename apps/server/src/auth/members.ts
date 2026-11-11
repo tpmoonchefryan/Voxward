@@ -129,3 +129,19 @@ export function listActiveMembers(database: VoxwardDatabase, channelId: string):
     .all()
     .map(toMembership);
 }
+
+/** Every active membership of one account, in any channel. Read only. */
+export function listActiveMembershipsOf(database: VoxwardDatabase, accountId: string): Membership[] {
+  return database.orm
+    .select({
+      channelId: channelMembers.channelId,
+      accountRef: channelMembers.accountRef,
+      role: channelMembers.role,
+      logAccess: channelMembers.logAccess,
+      grantedAt: channelMembers.grantedAt,
+    })
+    .from(channelMembers)
+    .where(and(eq(channelMembers.accountRef, accountId), isNull(channelMembers.revokedAt)))
+    .all()
+    .map(toMembership);
+}

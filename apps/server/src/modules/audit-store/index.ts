@@ -27,6 +27,8 @@ export {
   type InvalidationListener,
   type InvalidationReason,
 } from "./invalidation.js";
+export { createViewerCache, type ViewerCache } from "./viewer/cache.js";
+export { createLogViewer, type LogViewerOptions, type ViewerAccess } from "./viewer/queries.js";
 
 /**
  * Who may read what. The server's membership data (S003) answers these questions, and the module decides what to show.

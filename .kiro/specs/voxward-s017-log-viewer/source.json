@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:df1b9e57f926fbd8f7302a95",
+  "workRevision": 4,
+  "sourceDigest": "18a74aabdfa73085376cdb4c4e62ba34f01693b6eb81fa544e75b496f7b94e9b",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:df1b9e57f926fbd8f7302a95",
+    "workRevision": 4,
+    "sourceDigest": "18a74aabdfa73085376cdb4c4e62ba34f01693b6eb81fa544e75b496f7b94e9b",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:df1b9e57f926fbd8f7302a95",
+        "externalKey": "VOXWARD-STORY-017",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现关联日志查看器与授权查询",
+        "summary": "实现关联日志查看器与授权查询；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:18aaac72724b30c2ee9be8b6",
+        "scopeDigest": "32a6509bcdd744d1480e0b19a0cf164d77c25564af9afcc78c8aa6d7dbbf22e8",
+        "relations": {
+          "blockedBy": [
+            "work:4c1238d3c3d98f2cc2f7d756",
+            "work:fd4f81864ddb33703517e12f"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:18aaac72724b30c2ee9be8b6",
+          "supersedes": []
+        },
+        "fieldSha256": "888c6f2dc909c703d153ff6e9bb224c035f6a8d8bf64333a946e3e320c5f0cd3",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "3345d68f40fbd272f492311c391ba00e68a53e803a4b2b72f55cb0d94242154c",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "fb52b7b27b78b1f6c67a964bd23ad560d015a5cf47d899a32468d663ce74ed64",
+    "design.md": "e0224d76d6961dfd994daf68298084ff6588843ad713f972b3af1f96d4be85f6",
+    "tasks.md": "b7a91d36cccef249c95d1cdd1c495232db9b88b9c560444584ff92b160d63c60"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "06c86aed7a2b217049a7ffe5f5ecbec1009be7af0426fe304da6b7b887e2c807"
+}
