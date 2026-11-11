@@ -25,7 +25,7 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 1.1 Q6：`rules/normalize.ts` 组合标记选项、`groups.ts` 规则集字段、`engine.ts` 接入，并加测试
   - [x] 1.2 Q12：`groups.ts` 准入提示文案与测试（代码与测试随 6b6cb86 一并提交，见证据第 1 节）
   - [x] 1.3 Q22：`packages/contracts` 的 `Verdict.penaltyHits`；scoring-engine 的 `selectPenalty` 接线与校验；测试
-  - [x] 1.4 Q8：删除 `subject_nickname_checks`（`schema/subjects.ts`、drizzle-kit 迁移 0002、`docs/data-dictionary.md`、`schema.test.ts`）
+  - [x] 1.4 Q8：删除 `subject_nickname_checks`（`schema/subjects.ts`、drizzle-kit 迁移 0003、`docs/data-dictionary.md`、`schema.test.ts`）
   - [x] 1.5 `routing/classification.ts`、`routing/states.ts`、`routing/exception-queue.ts` 与对应测试
   - [x] 1.6 `routing/truth-table.ts` 与真值表测试（96 种组合）
   - [x] 1.7 `routing/router.ts`、`moderation-engine/index.ts` 导出，端到端测试（真实基础检查与假账本的计分引擎）
