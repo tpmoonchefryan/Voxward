@@ -1,0 +1,113 @@
+[
+ {
+  "subject": "逐单元做 NFKC 会丢掉半角浊点和被格式字符隔开的组合浊点：ﾊﾞｶ 变成 ハカ，ｶﾞｽ 变成 カス",
+  "summary": "VoxWard 的规则匹配副本先按码点切成单元（只把 \\p{M}、\\p{Cf} 与谚文中终声字母并入前一单元），再逐单元做 NFKC。半角浊点、半浊点 U+FF9E/U+FF9F 是 \\p{Lm}，独立成单元；NFKC 把它们变成 U+3099/U+309A 后没有可组合的基字，随后被删除标记的一步去掉。格式字符（U+200B、U+2060、U+00AD）夹在假名与组合浊点之间时，NFKC 在格式字符处停止组合，浊点同样丢失。",
+  "snippet": "归一化先删 \\p{Cf}，再对整段做 NFKC，然后按码点对应关系建单元与区间映射；或者把 U+FF9E、U+FF9F、U+309B、U+309C 并入前一单元（U+309B/U+309C 先映射为组合浊点，否则 NFKC 会留下空格）。验收用例至少加：半角浊音与半浊音（ﾊﾞｶ、ﾎﾟﾝｺﾂ）、独立浊点（ハ゛カ）、浊点前夹零宽字符（は + U+200B + U+3099 + か）、反向误伤（规则 カス 对 ｶﾞｽ）与读音（转写表读 ｶﾞｶ）。",
+  "body": "第 5a 批候选 b1a1471（S006 B1 返工后）上，第 4 批 B1 的对照输入全部通过，但归一化规则 バカ、ブス、デブ、ハゲ、ポンコツ 对半角写法全部 PASS，正则 バカ 对 ﾊﾞｶ PASS，归一化规则 ばか 对夹 U+200B、U+2060、U+00AD 的写法 PASS；反向，规则 ハカ 命中 ﾊﾞｶ，扣分规则 カス 命中「ｶﾞｽ代が高い」；转写表 {ガ: ga, カ: ka} 把 ｶﾞｶ 读成 kaka 且标为完整。S004 基线 f4808fb 结果相同；第 4 批被打回的 c67db24 因两侧都删全部标记而偶然命中，掩盖了这个缺口。返工测试只覆盖预组合的 が 与「か + U+3099」。整段 \"ﾊﾞｶ\".normalize(\"NFKC\") 得到 バカ，问题只出在逐单元处理。本批因此第二次打回 STORY-006（B3）。",
+  "tags": [
+   "voxward",
+   "unicode",
+   "normalization",
+   "japanese",
+   "moderation"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/moderation-engine/rules/normalize.ts",
+    "apps/server/src/modules/moderation-engine/rules/transliterate.ts",
+    "apps/server/test/moderation-engine/rules/normalize.test.ts",
+    ".kiro/specs/voxward-s006-routing/design.md",
+    ".kiro/specs/voxward-batch5a/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "在这台主机上做真实浏览器验收：Chrome for Testing headless shell 加 Node 自带的 WebSocket 走 CDP，要加 --no-sandbox，截图没有中文字体",
+  "summary": "主机没有装 Playwright，但有 /srv/tcrn/cache/browser-binaries/g15-chrome-headless-shell-linux64/chrome-headless-shell（Chrome for Testing 149）。主机不允许非特权用户命名空间，Chrome 不加 --no-sandbox 就以 No usable sandbox 退出。Node 24 的全局 WebSocket 足以驱动 CDP，不用安装任何包。headless shell 没有中文字体，截图里中文是空白或方框，断言要读 DOM 文本。",
+  "snippet": "chrome-headless-shell --headless --no-sandbox --remote-debugging-address=127.0.0.1 --remote-debugging-port=0 --user-data-dir=$KIROCREW_SCRATCH/... about:blank，从 stderr 读 DevTools listening on ws://…；每个角色用 Target.createBrowserContext 隔离 Cookie，点击用元素中心坐标的 Input.dispatchMouseEvent，输入用 Input.insertText；在页面里 fetch('/auth/login') 登录即可，Secure 加 HttpOnly 加 SameSite=Strict 的会话 Cookie 在 http://127.0.0.1 上会被接受；只加载本机合成页面。",
+  "body": "第 5a 批验收用这种方式完成了 S017 日志查看器与 S018 数据面板的浏览器交互行（方法写「浏览器交互测试」「页面流程测试」）：Vite 开发服务器绑 127.0.0.1:5173，代理到真实 buildApp 的夹具（127.0.0.1:3000），30 项检查覆盖跨页关联链、上一条下一条、JSON 折叠、bdi 隔离（getComputedStyle 读到 unicode-bidi: isolate）、不同角色的字段与操作可见性，以及页面打开时删除数据后的显示。实施方的自测只有静态标记与纯函数测试，没有启动浏览器。browser MCP 工具只开放公网地址和用户登记的回环地址，不适合子代理；本地 CDP 脚本不依赖用户设置。",
+  "tags": [
+   "voxward",
+   "acceptance",
+   "browser",
+   "cdp",
+   "testing"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/web/vite.config.ts",
+    "apps/web/src/pages/logs/LogViewer.tsx",
+    "apps/web/src/pages/data/DataPanel.tsx",
+    "apps/server/src/auth/routes.ts",
+    ".kiro/specs/voxward-batch5a/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "kiro-cli 在这台主机上会自动升级：写着「固定版本」的验收与部署，要在每次执行时记下 --version 并对照所用参数",
+  "summary": "~/.local/bin/kiro-cli 在 2026-11-11 02:20 被替换，版本从 3.1.0 变成 3.2.0，发生在第 4 批验收与第 5a 批验收之间。适配器记录的所测版本（KIRO_CLI_TESTED_VERSION）与 D1 改版后的验收方法都写 3.1.0。适配器用到的参数在 3.2.0 中仍在、含义不变，3.2.0 新增 --all-cwds、--sessions、--resume-picker 等。",
+  "snippet": "每轮验收先跑 kiro-cli --version 与 kiro-cli chat --help，把适配器用到的固定参数、禁用参数与清理命令（--delete-session、--list-sessions -f json）逐个在帮助里核对并记下版本；部署与真实演练（STORY-029）要固定 CLI 版本并关闭自动更新，否则「固定版本」无从保证。",
+  "body": "第 4 批 E11 读到 kiro-cli 3.1.0，第 5a 批 E11 读到 3.2.0，帮助从 133 行变为 141 行。替身测试不依赖本机版本，所以本轮 S008 组仍按 D1 方法判为 satisfied，但把版本漂移记为非阻断 N2。kiro-cli 的更新目录在会话 scratch 下（kiro-cli-updates-1000），说明更新由 CLI 自己完成，不经包管理器。",
+  "tags": [
+   "voxward",
+   "kiro-cli",
+   "versioning",
+   "acceptance",
+   "deployment"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/adapters/kiro-cli/capabilities.ts",
+    "apps/server/src/adapters/kiro-cli/command.ts",
+    "deploy/kiro-runtime/README.md",
+    ".kiro/specs/voxward-s008-kiro-provider/design.md",
+    ".kiro/specs/voxward-batch5a/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "设计说「某角色可另外或同时持有另一角色」时，要对照成员表的唯一约束实测：一账号一频道一条有效授权会让兼任做不到",
+  "summary": "S003 设计 §4.1 与 S018 设计 §6 都说主播处理数据请求要「另外/同时持有 DATA_ADMIN」。但 channel_members 有部分唯一索引 (channel_id, account_ref) WHERE revoked_at IS NULL，grantMembership 会先撤销同一账号的旧授权。给主播账号授予 DATA_ADMIN 会撤销 CHANNEL_OWNER，账号随即失去主播能力。第 3 批验收接受了权限矩阵，这个矛盾直到 S018 第一次用 data.handle 才显现。",
+  "snippet": "对设计中每一种声称可以兼任的角色组合写一个探针：给同一账号依次授予两个角色，读回有效成员关系与能力集合，并直接插入第二条有效授权看唯一约束。数据模型是单角色时，要么增加显式的单独授予（类似 log_access 的标志），要么在设计和界面里写明用第二个账号。",
+  "body": "第 5a 批 E52：直接插入第二条有效授权报 UNIQUE constraint failed: channel_members.channel_id, channel_members.account_ref；经 grantMembership 授予 DATA_ADMIN 后，CHANNEL_OWNER 行 revoked_at 不为空，账号只剩 subject.evidence 与 data.handle。提案 §2.1 写数据管理员「由主播明确授予；可由主播本人兼任」，§11.2 写数据面板「面向主播及获授权的数据管理员」。因为验收行只要求有、无数据权限两类人员，本轮记为非阻断 N7，交给成员与角色管理的 Story。",
+  "tags": [
+   "voxward",
+   "authorization",
+   "roles",
+   "data-model"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/auth/members.ts",
+    "apps/server/src/auth/permissions.ts",
+    "docs/data-dictionary.md",
+    ".kiro/specs/voxward-s003-auth/design.md",
+    ".kiro/specs/voxward-s018-data-panel/design.md"
+   ]
+  }
+ },
+ {
+  "subject": "用脚本批量给验收行升版本时，交叉引用不会跟着改：「继承自 …@1」与「…AC001@1 保持」会停在旧版本",
+  "summary": "D1 的改版脚本（tools/d1-amend.cjs）只改了 18 行的 method 与 version。子单 PARENT、INHERIT 行场景末尾的「（继承自 VOXWARD-STORY-008 VW-S008-PARENT@1）」共 10 处，以及 SUB-015、SUB-016 的 STORY 行 expected 中的「VW-S008-AC001@1」都还是 @1。引擎的结构检查不报这类问题。",
+  "snippet": "改版脚本在改 version 的同时，扫描同组所有行的 scenario 与 expected，把指向被改行的「<id>@<旧版本>」改成新版本；改完后机械比对子单行与 Story 行：expected、method、requirement、version，以及去掉后缀的 scenario 与后缀里的版本号。",
+  "body": "第 5a 批 E01 对 74 行子单 PARENT/INHERIT 行做了机械比对：expected、method、requirement、版本与去掉「继承自」后缀的场景都与 Story 行一致，只有上述引用停在 @1。这不影响本轮判定，但会让读者以为子单引用的是旧版判据。本轮记为非阻断 N12，交主线程下次注解时顺带修。",
+  "tags": [
+   "voxward",
+   "einzbern",
+   "acceptance-rows",
+   "tooling"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    ".kiro/specs/voxward-master/tools/d1-amend.cjs",
+    ".kiro/specs/voxward-master/evidence/d1-decisions.json",
+    ".kiro/specs/voxward-batch5a/evidence/acceptance.md"
+   ]
+  }
+ }
+]
