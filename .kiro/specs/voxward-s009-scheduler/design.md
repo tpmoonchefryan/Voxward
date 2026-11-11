@@ -99,8 +99,8 @@ apps/server/test/task-coordinator/
 - QUEUED → RUNNING：被 `takeBatch` 取入一个批次。
 - RUNNING → DONE：结果提交通过事务确认。
 - RUNNING → QUEUED：可重试错误，并设置 `notBeforeMs`。
-- QUEUED / RUNNING → PENDING_REVIEW：明确的系统失败（超时、重试耗尽、不可重试错误、过载、输入过大、Crew 不可用、提交异常）。进入人工队列，不自动放行，不扣分（提案 §6.2）。
-- QUEUED / RUNNING → DISCARDED：取消、结果过期、结果被替代、数据已删除、未知任务。DISCARDED 的结果永远不写入。
+- QUEUED / RUNNING → PENDING_REVIEW：明确的系统失败（超时、重试耗尽、不可重试错误、过载、输入过大、Crew 不可用、提交异常）。进入人工队列，不自动放行，不扣分（提案 §6.2）。截止时间后才到达的结果也走这条路径（N1）。
+- QUEUED / RUNNING → DISCARDED：取消、结果被替代、数据已删除。DISCARDED 的结果永远不写入。
 
 一条事件（`channelId` + `platformMessageId`）最多对应一张任务。重复入队返回已有任务的 `TaskRef`（自定）。
 
@@ -157,8 +157,8 @@ export interface TaskCoordinatorService extends TaskCoordinator {
 
 车道：
 - 派工顺序 PAID > REALTIME > BACKGROUND。PAID 与 REALTIME 可用全部槽位。
-- 后台余量：`reserve = min(limit, max(1, ceil(limit / 4)))`，BACKGROUND 批次数不得超过 `limit - reserve`。并发降到最小值时后台暂停（自定）。
-- 每个批次占一个并发槽位，直到 `finishBatch` 释放。槽位释放由执行器负责，截止时间到期后由执行器取消 Crew 任务并释放。
+- 后台余量：`reserve = min(limit, max(1, ceil(limit / 4)))`，BACKGROUND 批次数不得超过 `limit - reserve`。当前并发上限为 1 时后台暂停（自定）。上限大于 1 时，即使并发降到配置的最小值，后台仍保留 `limit - reserve` 个槽位（N8，与代码一致）。
+- 每个批次占一个并发槽位，直到 `finishBatch` 释放。槽位由执行器在 Crew 接受取消、或会话已报告后释放（§9）。截止时间到期后，执行器对仍在运行的会话发起取消。
 
 ## 6. 重试与退避（自定）
 
@@ -172,7 +172,7 @@ export interface TaskCoordinatorService extends TaskCoordinator {
 `commitResult` 的顺序：
 1. 未知任务：`discarded(UNKNOWN_TASK)`。进程重启后的迟到结果落在这里。
 2. 非 RUNNING：返回原有的丢弃原因，不改变状态。
-3. 已过截止时间：转 DISCARDED（DEADLINE_EXCEEDED）。过期任务不恢复为有效输出。
+3. 已过截止时间：转 PENDING_REVIEW（DEADLINE_EXCEEDED），与截止时间扫描一致，返回 `discarded`（N1）。过期任务不恢复为有效输出，也不写入裁决。
 4. 前序门控：有未过期的前序任务，返回 `waiting`。
 5. 调用 `facts.commitIfCurrent`。committed 则转 DONE；stale 则转 DISCARDED，原因为 DATA_DELETED、GENERATION_CHANGED、VERSION_SUPERSEDED 或 ALREADY_SETTLED。
 6. 端口抛异常：转 PENDING_REVIEW（COMMIT_FAILED），返回 `failed`。
@@ -181,9 +181,9 @@ export interface TaskCoordinatorService extends TaskCoordinator {
 
 ## 8. 通道内有限保序（提案 §6.3）
 
-- 门控只作用于同一 `channelId` 内 `platformOrder` 更小、仍为 QUEUED 或 RUNNING 的前序任务。跨通道不互相等待。
+- 门控只作用于同一频道（`channelId`）且同一车道（`lane`）内 `platformOrder` 更小、仍为 QUEUED 或 RUNNING 的前序任务。提案「在各自通道内」指处理车道，不指 YouTube 频道（B4）。不同车道互不等待：后台任务不挡实时与付费任务，付费任务不被同频道实时任务挡住。不同频道互不等待。
 - 前序任务未过截止时间：返回 `waiting`，等待对象为最早的未过期前序任务。
-- 前序任务已过截止时间但仍未结束：门控放行，并在本任务上记录 `PREDECESSOR_UNFINISHED:<taskId>`（自定，写入技术日志的 `data`）。
+- 前序任务已过截止时间但仍未结束：门控放行，并在本任务上记录 `PREDECESSOR_UNFINISHED:<taskId>`（自定，写入技术日志的 `data`）。若前序任务已先被扫描转入 PENDING_REVIEW，门控不再看到它，本任务不记录该项；前序任务自己的 TIMED_OUT 条目已记下未完成原因（N3）。
 - 门控只约束提交顺序，派工不按通道排序。
 
 ## 9. 动态并发与 Crew 适配（SUB-018）
@@ -192,7 +192,7 @@ export interface TaskCoordinatorService extends TaskCoordinator {
 - CRITICAL：空闲内存比 < 0.10 或每核负载 ≥ 2.0。
 - TIGHT：空闲内存比 < 0.25 或每核负载 ≥ 1.0。
 - NORMAL：其余情况。
-- 非有限数、负数，或空闲内存比超过 1 时视为 CRITICAL（保守收缩）。阈值为自定。
+- 非有限数、负数，或空闲内存比超过 1 时视为 CRITICAL（保守收缩）。读取信号时抛出异常同样视为 CRITICAL（N7）。阈值为自定。
 
 目标并发：NORMAL → max；TIGHT → `max(min, floor(max / 2))`；CRITICAL → min。结果始终夹在 [min, max] 内。`min ≥ 1`，因此不会出现零并发的全局屏障。无滞后，每次读取即时生效（自定）。
 
@@ -203,11 +203,14 @@ Crew 执行器（`createCrewExecutor`）：
 - `done` 被拒绝（会话中途失联）记为 CREW_UNAVAILABLE。执行器内部未预期的异常使本批次整体明确失败（CREW_FAILED），槽位释放。
 - 同一任务出现两条以上对应条目时同样报 INVALID_OUTPUT。
 - 会话 `completed` 但某任务没有对应条目：该任务报 INVALID_OUTPUT。Crew 会话状态不是业务裁决，裁决只来自校验后的条目。
+- `completed` 报告必须已先经 S007 整批校验（VW-R-008）。执行器只按任务匹配校验后的条目，不再二次校验。Crew 端内容残留（VW-R-009）由真实绑定在 done 或 cancel 之后清理；本端口没有清理步骤，真实绑定归 S029（N6）。
 - 有条目：`commitResult`，`apply` 调用 `writeVerdict(taskId, item)`，evidence 为 ITEM_ID_MAP 与 VALIDATED_JSON（每个任务各一条）。
 - `waiting` 的提交放入待重试列表，下一次 `pump` 再试。
-- `pump()`：先 `sweep`，再对无 RUNNING 任务的空闲批次取消 Crew 任务并 `finishBatch`，重试暂存的提交，然后按并发上限取批启动。返回启动的批次数。`pump` 不等待会话结束。
+- `pump()`：先 `sweep`，再对无 RUNNING 任务的空闲批次发起 Crew 取消，重试暂存的提交，然后按并发上限取批启动。返回启动的批次数。`pump` 不等待会话结束，也不等待取消返回（B5）。
+- 取消不在主路径上等待（B5）：发起取消后，该批次保留槽位，直到 Crew 接受取消才 `finishBatch`。被拒绝的取消保留槽位，下一次 `pump` 再发。取消一直不返回时，该槽位一直保留，其它批次照常派工。若并发上限为 1，派工暂停直到 Crew 应答。这是残留风险：执行器侧不设上限，因为提前释放会让 Crew 侧的会话数超过上限；有界取消须由真实绑定保证（S029）。
+- start 尚未返回时批次已空闲：槽位立即释放，因为此时还没有可取消的 Crew 会话。若 start 之后才返回，执行器立即发起取消且不等待；被拒绝则由下一次 `pump` 再发。在取消被接受前，Crew 侧可能短暂多出一个会话（残留风险，未测量）。
 - `drain()`：等待已启动的会话全部报告。供测试与停机使用。
-- `cancelEvent(key)`：调用 `coordinator.cancelEvent`，再执行一次回收，使运行中的 Crew 任务及时取消。取消失败的会话保留槽位，下一次 `pump` 再试。
+- `cancelEvent(key)`：调用 `coordinator.cancelEvent`，再执行一次回收，使运行中的 Crew 任务及时取消，然后立即返回，不等待 Crew（B5）。取消被拒绝的会话保留槽位，下一次 `pump` 再试。
 
 ## 10. 测试与验收对应
 
@@ -225,6 +228,12 @@ Crew 执行器（`createCrewExecutor`）：
 | VW-SUB018-AC001 | `crew/capacity.test.ts` | 资源收缩与恢复；并发不超过上限、不低于下限；未知信号收缩 |
 | VW-SUB018-AC001 | `crew/adapter.test.ts` | Crew 可用、不可用（明确失败）、会话完成但无条目（不是裁决）、取消、重启后新进程不接管旧会话（未知任务的丢弃见 `acceptance.test.ts`）；并发随资源收缩 |
 | VW-SUB018-STORY | 同上 | 本单承担的 VW-S009-R001 中「Crew 适配与动态并发」部分 |
+| VW-SUB017-AC001（B4） | `ordering.test.ts`（车道）、`coordinator.test.ts`（提交顺序） | 同频道的后台排队或运行任务不挡实时与付费；付费不被同频道实时挡住；同车道保序保持 |
+| VW-SUB017-AC001（N1） | `acceptance.test.ts`（慢请求） | 提交时已过截止时间的结果进入人工队列，返回 discarded，不写裁决 |
+| VW-SUB017-AC001（N2） | `coordinator.test.ts`（结算记录） | 结算后仍可查询、去重；调度只见未结任务 |
+| VW-SUB017-AC001（N3） | `acceptance.test.ts`（前序超时） | 前序已被扫描转入人工队列时，后一条不记录缺口 |
+| VW-SUB018-AC001（B5） | `crew/adapter.test.ts`（挂起替身 `crew/hung-crew.ts`） | cancel、start、done 各自永不返回时，pump 与 cancelEvent 按时返回，其它频道照常派工，会话数不超过上限；取消被拒后下一次 pump 再发 |
+| VW-SUB018-AC001（N7） | `crew/capacity.test.ts` | 资源信号读取抛异常按 CRITICAL 收缩到下限 |
 | VW-S009-INHERIT-* | `scripts/check-deps.mjs`、契约包 `typecheck` | 依赖方向、契约不变；其余继承行为的完整验证由 EPIC-006 承接，本包不宣称 |
 
 真实 Crew 行为：未验证。本包只用替身。
@@ -246,6 +255,7 @@ Crew 执行器（`createCrewExecutor`）：
 - 主体引用沿用 S004 的做法：`channelId` + `sender.senderRef`，并标注为自定，待与 S019 的删除索引对齐。
 - 技术日志的 stage：入队失败与超时用 ERROR，提交结果用 COMMIT。超时 status 为 TIMED_OUT，丢弃为 SKIPPED。
 - 车道排队上限、并发上限的确切值由部署配置决定。
+- 结算后释放正文，保留轻量记录（任务状态、原因、事件键与版本），用于状态查询与同一事件的去重。未结任务按车道与频道建立索引，调度不遍历历史记录（N2）。轻量记录随累计任务数增长，清理策略未定。
 
 ## 13. 未验证项
 
@@ -253,3 +263,4 @@ Crew 执行器（`createCrewExecutor`）：
 - 提案所列的 250 ms 与 2 ms 数值。
 - 微批默认值在真实模型与消息量下的表现。
 - 与 S019 删除索引、S008 适配器、S011 决定提交的实际对接。
+- 长时间运行后的内存：结算后的轻量记录仍随累计任务数线性增长（N2 残留，清理策略未定），未在长时间运行下实测。

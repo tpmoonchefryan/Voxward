@@ -1,9 +1,11 @@
 import type { TaskStatus } from "@voxward/contracts";
+import type { TaskLane } from "./priority.js";
 
 /** The fields the ordering gate reads from one task. */
 export interface OrderedTask {
   readonly taskId: string;
   readonly channelId: string;
+  readonly lane: TaskLane;
   readonly platformOrder: number;
   readonly status: TaskStatus;
   readonly deadlineMs: number;
@@ -20,13 +22,15 @@ function blocks(task: OrderedTask): boolean {
 }
 
 /**
- * Gate for committing `task` within its channel. Earlier tasks of the same channel are awaited only until their own
- * deadlines. Past that point the commit proceeds, and the unfinished predecessor is reported so it can be recorded.
- * Tasks in other channels never wait on each other.
+ * Gate for committing `task` within its channel and its lane (proposal section 6.3: order holds inside each path). An
+ * earlier task of the same channel and lane is awaited only until its own deadline. Past that point the commit proceeds,
+ * and the unfinished predecessor is reported so it can be recorded. Tasks in other channels, and tasks in other lanes,
+ * never wait on each other.
  */
 export function orderGate(task: OrderedTask, channelTasks: readonly OrderedTask[], nowMs: number): OrderGate {
   const predecessors = channelTasks
-    .filter((other) => other.channelId === task.channelId && other.platformOrder < task.platformOrder && blocks(other))
+    .filter((other) => other.channelId === task.channelId && other.lane === task.lane)
+    .filter((other) => other.platformOrder < task.platformOrder && blocks(other))
     .sort((a, b) => a.platformOrder - b.platformOrder);
 
   const open = predecessors.filter((other) => nowMs < other.deadlineMs);

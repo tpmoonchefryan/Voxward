@@ -16,7 +16,8 @@ export interface CrewJob {
 
 /**
  * How a Crew session ended. `completed` carries the validated items the session returned. The session status is not a
- * verdict: each task takes its verdict only from its own validated item.
+ * verdict: each task takes its verdict only from its own validated item. The items must already have passed S007's
+ * batch validation (VW-R-008). This module only matches them to tasks.
  */
 export type CrewReport =
   | { readonly kind: "completed"; readonly items: readonly InferenceResultItem[] }
@@ -31,12 +32,17 @@ export interface CrewHandle {
 
 /**
  * The part of Kiro Crew this module uses. Real Crew behavior is not verified here. The binding is deployment work
- * (S029), and tests use a replacement.
+ * (S029), and tests use a replacement. Content that Crew keeps after a session ends is cleaned up by the binding, after
+ * `done` or `cancel` (VW-R-009). This port has no cleanup step.
  */
 export interface CrewPort {
   /** Starts one session. Rejects when Crew cannot take the job. */
   start(job: CrewJob): Promise<CrewHandle>;
-  /** Cancels a running session. */
+  /**
+   * Cancels a running session. The executor does not wait for the answer: until Crew accepts, the batch keeps its slot,
+   * and the pump goes on with other batches (design section 9). A cancel that never returns keeps one slot for good, so
+   * the binding must bound it (S029).
+   */
   cancel(crewRef: string): Promise<void>;
 }
 
@@ -52,7 +58,8 @@ export interface CrewExecutorOptions {
 export interface CrewExecutor {
   /**
    * Settles finished work, cancels sessions that no longer serve a live task, retries waiting commits, and then starts
-   * batches within the concurrency limit. Returns how many sessions it started. It does not wait for them.
+   * batches within the concurrency limit. Returns how many sessions it started. It waits neither for those sessions nor
+   * for the cancels it sends.
    */
   pump(): Promise<number>;
   /** Cancels an event's work now, and cancels the sessions that have nothing left to serve. */
@@ -74,6 +81,14 @@ interface Session {
   crewRef: string | null;
   reported: boolean;
   abandoned: boolean;
+}
+
+/** A cancel that Crew has not accepted yet. */
+interface PendingCancel {
+  /** The batch whose slot this cancel releases, or null when the slot was already released. */
+  readonly batchId: string | null;
+  /** A cancel call is outstanding. The next pump sends again only after that call is refused. */
+  sending: boolean;
 }
 
 function matchItem(items: readonly InferenceResultItem[], correlationId: string): InferenceResultItem | null {
@@ -102,6 +117,8 @@ export function createCrewExecutor(options: CrewExecutorOptions): CrewExecutor {
   const running = new Set<Promise<void>>();
   /** Results whose commit must wait for an earlier message. Retried on the next pump. */
   const parked = new Map<string, TaskResult>();
+  /** Cancels not yet accepted by Crew, keyed by Crew's session reference. */
+  const pendingCancels = new Map<string, PendingCancel>();
 
   function trackRun(run: Promise<void>): void {
     running.add(run);
@@ -177,36 +194,68 @@ export function createCrewExecutor(options: CrewExecutorOptions): CrewExecutor {
 
     session.crewRef = handle.crewRef;
     if (session.abandoned) {
-      await crew.cancel(handle.crewRef);
+      // The batch was released while Crew was still starting the session, so no slot is left to hold. Ask Crew to
+      // cancel without waiting; a refused cancel is sent again by the next pump.
+      handle.done.catch(() => undefined);
+      requestCancel(handle.crewRef, null);
+      sendPendingCancels();
       return;
     }
 
     const report = await handle.done.catch((): CrewReport => ({ kind: "failed", errorCode: CREW_UNAVAILABLE }));
     session.reported = true;
+    pendingCancels.delete(handle.crewRef);
     if (!session.abandoned) await settle(batch, report);
     await endSession(batch.batchId);
   }
 
   /**
-   * Cancels sessions that serve no live task, then releases their slots. A session whose cancel fails keeps its slot,
-   * and the next pump tries again. Freeing the slot early would let the host run more sessions than its limit.
+   * Starts a cancel for each session that serves no live task. A batch's slot is released only when Crew accepts the
+   * cancel, or when the session has already reported: freeing it earlier would let the host run more sessions than its
+   * limit. Nothing here waits for Crew, so a cancel that never answers keeps its slot and the pump goes on.
    */
   async function reapIdle(): Promise<void> {
     for (const batchId of await coordinator.idleBatchIds()) {
       const session = sessions.get(batchId);
-      if (session !== undefined) {
-        session.abandoned = true;
-        if (session.crewRef !== null && !session.reported) {
-          try {
-            await crew.cancel(session.crewRef);
-          } catch {
-            continue;
-          }
-        }
-        sessions.delete(batchId);
+      if (session === undefined) {
+        await coordinator.finishBatch(batchId);
+        continue;
       }
-      await coordinator.finishBatch(batchId);
+      session.abandoned = true;
+      if (session.crewRef === null || session.reported) {
+        // No Crew session is open for this batch: none has started, or it has already reported.
+        await endSession(batchId);
+        continue;
+      }
+      requestCancel(session.crewRef, batchId);
     }
+    sendPendingCancels();
+  }
+
+  /** Records that Crew must be asked to cancel a session. A session that is already pending keeps its entry. */
+  function requestCancel(crewRef: string, batchId: string | null): void {
+    if (!pendingCancels.has(crewRef)) pendingCancels.set(crewRef, { batchId, sending: false });
+  }
+
+  /** Sends each cancel that is not outstanding. Every call runs in the background, so the pump never waits on Crew. */
+  function sendPendingCancels(): void {
+    for (const [crewRef, pending] of pendingCancels) {
+      if (pending.sending) continue;
+      pending.sending = true;
+      settleCancel(crewRef, pending).catch(() => undefined);
+    }
+  }
+
+  /** One cancel call. Accepted: the batch's slot is released. Refused: the entry stays for the next pump. */
+  async function settleCancel(crewRef: string, pending: PendingCancel): Promise<void> {
+    try {
+      await crew.cancel(crewRef);
+    } catch {
+      pending.sending = false;
+      return;
+    }
+    pendingCancels.delete(crewRef);
+    if (pending.batchId !== null) await endSession(pending.batchId);
   }
 
   async function retryParked(): Promise<void> {

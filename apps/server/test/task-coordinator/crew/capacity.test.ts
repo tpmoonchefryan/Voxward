@@ -97,6 +97,20 @@ describe("createDynamicConcurrency", () => {
     expect(limit.current()).toBe(5);
   });
 
+  it("treats a signal reader that throws as critical, so the limit shrinks instead of failing", () => {
+    let available = false;
+    const port: ResourceSignalPort = {
+      read: () => {
+        if (!available) throw new Error("synthetic: probe unavailable");
+        return CALM;
+      },
+    };
+    const limit = createDynamicConcurrency({ min: 1, max: 6 }, port);
+    expect(limit.current()).toBe(1);
+    available = true;
+    expect(limit.current()).toBe(6);
+  });
+
   it("refuses bounds that cannot be used", () => {
     const port = new SignalPort(CALM);
     expect(() => createDynamicConcurrency({ min: 0, max: 4 }, port)).toThrow(TaskConfigError);

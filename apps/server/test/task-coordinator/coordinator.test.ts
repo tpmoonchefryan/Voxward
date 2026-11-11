@@ -298,3 +298,77 @@ describe("configuration", () => {
     expect(batch.tasks).toHaveLength(DEFAULT_COORDINATOR_LIMITS.maxBatchItems);
   });
 });
+
+describe("commit order across lanes (B4)", () => {
+  it("a queued background task does not hold back a real-time commit in the same channel", async () => {
+    const h = harnessWith({ limit: 1 });
+    await h.coordinator.enqueueInLane("BACKGROUND", eventOf({ platformMessageId: "bg", platformOrder: 1 }), h.clock.at(60_000));
+    const live = await h.coordinator.enqueue(eventOf({ platformMessageId: "live", platformOrder: 2 }), h.clock.at(60_000));
+    expect((await mustTake(h.coordinator)).lane).toBe("REALTIME");
+    expect(await h.coordinator.commitResult(live.taskId, resultFor(live.taskId))).toEqual({ status: "committed" });
+  });
+
+  it("a running background task does not hold back a real-time commit in the same channel", async () => {
+    const h = harnessWith({ limit: 2, limits: { maxBatchItems: 1 } });
+    const background = await h.coordinator.enqueueInLane(
+      "BACKGROUND",
+      eventOf({ platformMessageId: "bg", platformOrder: 1 }),
+      h.clock.at(60_000),
+    );
+    const live = await h.coordinator.enqueue(eventOf({ platformMessageId: "live", platformOrder: 2 }), h.clock.at(60_000));
+    expect((await mustTake(h.coordinator)).lane).toBe("REALTIME");
+    expect((await mustTake(h.coordinator)).lane).toBe("BACKGROUND");
+    expect(await h.coordinator.statusOf(background.taskId)).toBe("RUNNING");
+    expect(await h.coordinator.commitResult(live.taskId, resultFor(live.taskId))).toEqual({ status: "committed" });
+  });
+
+  it("a paid commit does not wait for an earlier real-time task of the same channel", async () => {
+    const h = harnessWith({ limit: 1 });
+    await h.coordinator.enqueueInLane("REALTIME", eventOf({ platformMessageId: "rt", platformOrder: 1 }), h.clock.at(60_000));
+    const paid = await h.coordinator.enqueueInLane("PAID", eventOf({ platformMessageId: "paid", platformOrder: 2 }), h.clock.at(60_000));
+    expect((await mustTake(h.coordinator)).lane).toBe("PAID");
+    expect(await h.coordinator.commitResult(paid.taskId, resultFor(paid.taskId))).toEqual({ status: "committed" });
+  });
+
+  it("keeps the commit order inside one lane", async () => {
+    const h = harnessWith({ limit: 1 });
+    const first = await h.coordinator.enqueue(eventOf({ platformMessageId: "m1", platformOrder: 1 }), h.clock.at(60_000));
+    const second = await h.coordinator.enqueue(eventOf({ platformMessageId: "m2", platformOrder: 2 }), h.clock.at(60_000));
+    await mustTake(h.coordinator);
+    expect(await h.coordinator.commitResult(second.taskId, resultFor(second.taskId))).toEqual({
+      status: "waiting",
+      waitingOn: first.taskId,
+    });
+  });
+});
+
+describe("settled records (N2)", () => {
+  it("keeps a settled task queryable and deduplicated, and schedules only the tasks that are still open", async () => {
+    const h = harnessWith({ limit: 4 });
+    const first = eventOf({ channelId: "ch-0", platformMessageId: "s-0", platformOrder: 0 });
+    let firstTaskId = "";
+    for (let index = 0; index < 300; index += 1) {
+      const event =
+        index === 0 ? first : eventOf({ channelId: `ch-${index % 5}`, platformMessageId: `s-${index}`, platformOrder: index });
+      const ref = await h.coordinator.enqueue(event, h.clock.at(60_000));
+      if (index === 0) firstTaskId = ref.taskId;
+      const batch = await mustTake(h.coordinator);
+      expect(await h.coordinator.commitResult(ref.taskId, resultFor(ref.taskId))).toEqual({ status: "committed" });
+      await h.coordinator.finishBatch(batch.batchId);
+    }
+
+    const again = await h.coordinator.enqueue(first, h.clock.at(60_000));
+    expect(again.taskId).toBe(firstTaskId);
+    expect(await h.coordinator.statusOf(firstTaskId)).toBe("DONE");
+    expect(await h.coordinator.cancelEvent(keyOfEvent(first))).toEqual({ cancelledTaskIds: [] });
+    expect(h.facts.applied).toHaveLength(300);
+
+    const live = await h.coordinator.enqueue(
+      eventOf({ channelId: "ch-0", platformMessageId: "live", platformOrder: 1000 }),
+      h.clock.at(60_000),
+    );
+    const batch = await mustTake(h.coordinator);
+    expect(batch.tasks.map((task) => task.taskId)).toEqual([live.taskId]);
+    expect(await h.coordinator.commitResult(live.taskId, resultFor(live.taskId))).toEqual({ status: "committed" });
+  });
+});

@@ -166,16 +166,27 @@ export class TaskConfigError extends Error {
 /** Same shape the Technical Log accepts for an error code. */
 const ERROR_CODE = /^[A-Z][A-Z0-9_]{0,63}$/;
 
+/**
+ * One task. Settling it releases the message text. The record itself stays, so a status query and a repeated event can
+ * still be answered (N2).
+ */
 interface TaskRecord {
   readonly taskId: string;
   readonly lane: TaskLane;
-  readonly event: ChannelEvent;
+  readonly channelId: string;
+  readonly platformMessageId: string;
+  readonly platformOrder: number;
+  readonly correlationId: string;
+  /** Internal subject reference, fixed at enqueue time. */
+  readonly subjectRef: string;
   readonly deadlineAt: string;
   readonly deadlineMs: number;
   readonly enqueuedMs: number;
   readonly bytes: number;
   readonly eventVersion: number;
   readonly processingGeneration: number;
+  /** The message text. Empty once the task settles. */
+  body: string;
   status: TaskStatus;
   attempts: number;
   notBeforeMs: number;
@@ -188,12 +199,27 @@ function keyOf(event: ChannelEvent): EventKey {
   return { channelId: event.channelId, platformMessageId: event.platformMessageId };
 }
 
+function keyOfTask(task: TaskRecord): EventKey {
+  return { channelId: task.channelId, platformMessageId: task.platformMessageId };
+}
+
 function eventIndexOf(key: EventKey): string {
   return JSON.stringify([key.channelId, key.platformMessageId]);
 }
 
-function sameEvent(event: ChannelEvent, key: EventKey): boolean {
-  return event.channelId === key.channelId && event.platformMessageId === key.platformMessageId;
+/** Adds a task to one bucket of an index, creating the bucket on first use. */
+function indexAdd(index: Map<string, Map<string, TaskRecord>>, key: string, task: TaskRecord): void {
+  const bucket = index.get(key) ?? new Map<string, TaskRecord>();
+  bucket.set(task.taskId, task);
+  index.set(key, bucket);
+}
+
+/** Removes a task from one bucket. An empty bucket is dropped, so the index holds only open work. */
+function indexRemove(index: Map<string, Map<string, TaskRecord>>, key: string, taskId: string): void {
+  const bucket = index.get(key);
+  if (bucket === undefined) return;
+  bucket.delete(taskId);
+  if (bucket.size === 0) index.delete(key);
 }
 
 /** Internal subject reference: the channel plus the sender reference, as in the moderation module (自定). */
@@ -267,10 +293,15 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
   };
   const clock = options.clock ?? (() => new Date());
   const newId = options.newId ?? (() => globalThis.crypto.randomUUID());
+  /** Every task accepted by this process, by id. Settled records stay for status queries. */
   const tasks = new Map<string, TaskRecord>();
+  /** One event maps to at most one task, so a repeated event never runs twice. */
   const taskByEvent = new Map<string, string>();
-  /** Batches that hold a concurrency slot, with their lane. A slot is released by `finishBatch`. */
-  const slots = new Map<string, TaskLane>();
+  /** Open tasks (QUEUED or RUNNING), by lane and by channel. Scheduling reads these, never the settled history. */
+  const openByLane = new Map<string, Map<string, TaskRecord>>();
+  const openByChannel = new Map<string, Map<string, TaskRecord>>();
+  /** Batches that hold a concurrency slot, with their lane and tasks. A slot is released by `finishBatch`. */
+  const slots = new Map<string, { readonly lane: TaskLane; readonly tasks: readonly TaskRecord[] }>();
 
   const nowMs = (): number => clock().getTime();
 
@@ -281,13 +312,13 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
   }
 
   function queuedTasks(lane: TaskLane): TaskRecord[] {
-    return [...tasks.values()].filter((task) => task.lane === lane && task.status === "QUEUED");
+    return [...(openByLane.get(lane)?.values() ?? [])].filter((task) => task.status === "QUEUED");
   }
 
   function usage(): SlotUsage {
     let background = 0;
-    for (const lane of slots.values()) {
-      if (lane === "BACKGROUND") background += 1;
+    for (const slot of slots.values()) {
+      if (slot.lane === "BACKGROUND") background += 1;
     }
     return { total: slots.size, background };
   }
@@ -298,8 +329,21 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
     return limit;
   }
 
-  function hasRunningTask(batchId: string): boolean {
-    return [...tasks.values()].some((task) => task.batchId === batchId && task.status === "RUNNING");
+  /** Whether a batch still has a task running under it. A task that moved to a later batch does not count. */
+  function batchIsRunning(batchId: string, batchTasks: readonly TaskRecord[]): boolean {
+    return batchTasks.some((task) => task.batchId === batchId && task.status === "RUNNING");
+  }
+
+  function openTask(task: TaskRecord): void {
+    indexAdd(openByLane, task.lane, task);
+    indexAdd(openByChannel, task.channelId, task);
+  }
+
+  /** A settled task leaves the open indexes and releases its message text. The record stays for queries. */
+  function closeTask(task: TaskRecord): void {
+    indexRemove(openByLane, task.lane, task.taskId);
+    indexRemove(openByChannel, task.channelId, task.taskId);
+    task.body = "";
   }
 
   function refOf(task: TaskRecord): TaskRef {
@@ -315,15 +359,16 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
   function orderedOf(task: TaskRecord): OrderedTask {
     return {
       taskId: task.taskId,
-      channelId: task.event.channelId,
-      platformOrder: task.event.platformOrder,
+      channelId: task.channelId,
+      lane: task.lane,
+      platformOrder: task.platformOrder,
       status: task.status,
       deadlineMs: task.deadlineMs,
     };
   }
 
   function orderedTasksOf(channelId: string): OrderedTask[] {
-    return [...tasks.values()].filter((task) => task.event.channelId === channelId).map(orderedOf);
+    return [...(openByChannel.get(channelId)?.values() ?? [])].map(orderedOf);
   }
 
   /** Why a task that is no longer running cannot take a result. */
@@ -345,12 +390,12 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
     options.technicalLog?.record({
       contractVersion: CONTRACT_VERSION,
       kind: "TECHNICAL",
-      channelId: task.event.channelId,
-      correlationId: task.event.correlationId,
+      channelId: task.channelId,
+      correlationId: task.correlationId,
       stage,
       status,
       level,
-      subjectRef: subjectRefOf(task.event),
+      subjectRef: task.subjectRef,
       batchId: task.batchId,
       taskId: task.taskId,
       attempt: task.attempts > 0 ? task.attempts : null,
@@ -377,6 +422,7 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
   ): void {
     task.status = status;
     task.reason = reason;
+    closeTask(task);
     if (reason === "DEADLINE_EXCEEDED") {
       log(task, stage, "TIMED_OUT", "WARN", "DEADLINE_EXCEEDED", { reason }, []);
       return;
@@ -411,11 +457,12 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
   /** Expired tasks go to the human queue. Nothing is allowed and nothing is deducted. */
   function sweepExpired(now: number): number {
     let moved = 0;
-    for (const task of tasks.values()) {
-      if (task.status !== "QUEUED" && task.status !== "RUNNING") continue;
-      if (!isExpired(task.deadlineMs, now)) continue;
-      settleAs(task, "PENDING_REVIEW", "DEADLINE_EXCEEDED", "ERROR");
-      moved += 1;
+    for (const bucket of openByLane.values()) {
+      for (const task of [...bucket.values()]) {
+        if (!isExpired(task.deadlineMs, now)) continue;
+        settleAs(task, "PENDING_REVIEW", "DEADLINE_EXCEEDED", "ERROR");
+        moved += 1;
+      }
     }
     return moved;
   }
@@ -436,13 +483,18 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
     const task: TaskRecord = {
       taskId: newId(),
       lane,
-      event: { ...event },
+      channelId: event.channelId,
+      platformMessageId: event.platformMessageId,
+      platformOrder: event.platformOrder,
+      correlationId: event.correlationId,
+      subjectRef: subjectRefOf(event),
       deadlineAt,
       deadlineMs,
       enqueuedMs: now,
       bytes,
       eventVersion: current.eventVersion,
       processingGeneration: current.processingGeneration,
+      body: event.body,
       status: "QUEUED",
       attempts: 0,
       notBeforeMs: 0,
@@ -452,7 +504,11 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
     };
     tasks.set(task.taskId, task);
     taskByEvent.set(eventIndexOf(key), task.taskId);
-    if (refusal !== null) settleAs(task, refusal.status, refusal.reason, "INGEST");
+    if (refusal === null) {
+      openTask(task);
+    } else {
+      settleAs(task, refusal.status, refusal.reason, "INGEST");
+    }
     return refOf(task);
   }
 
@@ -473,7 +529,7 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
 
       const picked = eligible.slice(0, decision.count);
       const batchId = newId();
-      slots.set(batchId, lane);
+      slots.set(batchId, { lane, tasks: picked });
       for (const task of picked) {
         task.status = "RUNNING";
         task.attempts += 1;
@@ -484,8 +540,8 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
         lane,
         tasks: picked.map((task) => ({
           taskId: task.taskId,
-          correlationId: task.event.correlationId,
-          text: task.event.body,
+          correlationId: task.correlationId,
+          text: task.body,
           attempt: task.attempts,
         })),
       };
@@ -530,17 +586,18 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
 
     const now = nowMs();
     if (isExpired(task.deadlineMs, now)) {
-      settleAs(task, "DISCARDED", "DEADLINE_EXCEEDED", "COMMIT");
+      // Same outcome as the expiry sweep: nothing is written, and the task goes to human review (N1).
+      settleAs(task, "PENDING_REVIEW", "DEADLINE_EXCEEDED", "COMMIT");
       return { status: "discarded", reason: "DEADLINE_EXCEEDED" };
     }
 
-    const gate = orderGate(orderedOf(task), orderedTasksOf(task.event.channelId), now);
+    const gate = orderGate(orderedOf(task), orderedTasksOf(task.channelId), now);
     if (gate.kind === "wait") return { status: "waiting", waitingOn: gate.waitingOn };
     if (gate.kind === "advanced") task.orderNote = `PREDECESSOR_UNFINISHED:${gate.unfinished}`;
 
     let outcome: CommitOutcome;
     try {
-      outcome = facts.commitIfCurrent(keyOf(task.event), expectedFactsOf(task), result.apply);
+      outcome = facts.commitIfCurrent(keyOfTask(task), expectedFactsOf(task), result.apply);
     } catch {
       settleAs(task, "PENDING_REVIEW", "COMMIT_FAILED", "COMMIT");
       return { status: "failed", reason: "COMMIT_FAILED" };
@@ -550,25 +607,24 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
       return { status: "discarded", reason: outcome.reason };
     }
     task.status = "DONE";
+    closeTask(task);
     log(task, "COMMIT", "OK", "INFO", null, orderDataOf(task), result.evidence);
     return { status: "committed" };
   }
 
   async function cancelEvent(key: EventKey): Promise<{ readonly cancelledTaskIds: readonly string[] }> {
-    const cancelledTaskIds: string[] = [];
-    for (const task of tasks.values()) {
-      if (!sameEvent(task.event, key)) continue;
-      if (task.status !== "QUEUED" && task.status !== "RUNNING") continue;
-      settleAs(task, "DISCARDED", "CANCELLED", "COMMIT");
-      cancelledTaskIds.push(task.taskId);
-    }
-    return { cancelledTaskIds };
+    const taskId = taskByEvent.get(eventIndexOf(key));
+    if (taskId === undefined) return { cancelledTaskIds: [] };
+    const task = requireTask(taskId);
+    if (task.status !== "QUEUED" && task.status !== "RUNNING") return { cancelledTaskIds: [] };
+    settleAs(task, "DISCARDED", "CANCELLED", "COMMIT");
+    return { cancelledTaskIds: [task.taskId] };
   }
 
   async function idleBatchIds(): Promise<readonly string[]> {
     const idle: string[] = [];
-    for (const batchId of slots.keys()) {
-      if (!hasRunningTask(batchId)) idle.push(batchId);
+    for (const [batchId, slot] of slots) {
+      if (!batchIsRunning(batchId, slot.tasks)) idle.push(batchId);
     }
     return idle;
   }

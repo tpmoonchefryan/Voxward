@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { orderGate, type OrderedTask } from "../../src/modules/task-coordinator/ordering.js";
+import type { TaskLane } from "../../src/modules/task-coordinator/priority.js";
 import { backoffMs, decideRetry, type RetryPolicy } from "../../src/modules/task-coordinator/retry.js";
 
 const POLICY: RetryPolicy = { maxAttempts: 3, backoffBaseMs: 1000, backoffCapMs: 3000 };
@@ -32,8 +33,15 @@ describe("decideRetry", () => {
   });
 });
 
-function task(taskId: string, platformOrder: number, status: OrderedTask["status"], deadlineMs: number, channelId = "ch-1") {
-  return { taskId, channelId, platformOrder, status, deadlineMs };
+function task(
+  taskId: string,
+  platformOrder: number,
+  status: OrderedTask["status"],
+  deadlineMs: number,
+  channelId = "ch-1",
+  lane: TaskLane = "REALTIME",
+): OrderedTask {
+  return { taskId, channelId, lane, platformOrder, status, deadlineMs };
 }
 
 describe("orderGate", () => {
@@ -66,5 +74,29 @@ describe("orderGate", () => {
     const later = task("m3", 3, "RUNNING", NOW + 5000);
     const channel = [task("m1", 1, "PENDING_REVIEW", NOW - 1), task("m2", 2, "DISCARDED", NOW - 1), later];
     expect(orderGate(later, channel, NOW)).toEqual({ kind: "clear" });
+  });
+});
+
+describe("orderGate across lanes (B4)", () => {
+  const NOW = 10_000;
+
+  it("a queued or running background task never holds back a real-time task of the same channel", () => {
+    const later = task("m2", 2, "RUNNING", NOW + 5000);
+    const queued = task("bg1", 1, "QUEUED", NOW + 600_000, "ch-1", "BACKGROUND");
+    const running = task("bg1", 1, "RUNNING", NOW + 600_000, "ch-1", "BACKGROUND");
+    expect(orderGate(later, [queued, later], NOW)).toEqual({ kind: "clear" });
+    expect(orderGate(later, [running, later], NOW)).toEqual({ kind: "clear" });
+  });
+
+  it("a real-time task never holds back a paid task of the same channel", () => {
+    const paid = task("p2", 2, "RUNNING", NOW + 5000, "ch-1", "PAID");
+    const realtime = task("m1", 1, "RUNNING", NOW + 5000, "ch-1", "REALTIME");
+    expect(orderGate(paid, [realtime, paid], NOW)).toEqual({ kind: "clear" });
+  });
+
+  it("still holds a task behind an earlier open task of its own lane", () => {
+    const later = task("m2", 2, "RUNNING", NOW + 5000);
+    const earlier = task("m1", 1, "QUEUED", NOW + 5000);
+    expect(orderGate(later, [earlier, later], NOW)).toEqual({ kind: "wait", waitingOn: "m1" });
   });
 });
