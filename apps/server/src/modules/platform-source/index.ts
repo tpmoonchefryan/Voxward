@@ -13,3 +13,7 @@ export * from "./youtube/credentials.js";
 export * from "./youtube/oauth.js";
 export * from "./youtube/auth-status.js";
 export * from "./youtube/routes.js";
+export * from "./youtube/config.js";
+export * from "./youtube/dedup.js";
+export * from "./youtube/replay-age.js";
+export * from "./youtube/stream-list.js";
