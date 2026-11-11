@@ -64,7 +64,7 @@ function commitInTransaction(
   const decision = request.decide(state);
   if (decision.kind === "no_effect") return { status: "no_effect", subjectRef: subjectId, reason: decision.reason };
   if (decision.kind === "refused") return { status: "refused", subjectRef: subjectId, reason: decision.reason };
-  return persistWrite(tx, request, subjectId, state.version, decision.write, newId);
+  return persistWrite(tx, request, subjectId, state, decision.write, newId);
 }
 
 function findOrCreateSubject(tx: ShortTransaction, request: ScoreCommitRequest, newId: () => string): string {
@@ -132,16 +132,18 @@ function persistWrite(
   tx: ShortTransaction,
   request: ScoreCommitRequest,
   subjectId: string,
-  expectedVersion: number,
+  before: ScoreSubjectState,
   write: ScoreWrite,
   newId: () => string,
 ): ScoreCommitResult {
   let ledgerId: string | null = null;
-  // Only an effective change touches the score row and the ledger. A zero change writes nothing here.
-  if (write.actualDelta !== 0) {
+  // The score row and the ledger change when the total moves. They also change when the identity base moves at a limit:
+  // the total stays put, but the base must be stored, or a later expiry would deduct points that were never added.
+  const identityBaseMoved = write.nextIdentityBaseScore !== before.identityBaseScore;
+  if (write.actualDelta !== 0 || identityBaseMoved) {
     const stored = SubjectStore.compareAndSetScore(tx, {
       subjectId,
-      expectedVersion,
+      expectedVersion: before.version,
       identityBaseScore: write.nextIdentityBaseScore,
       behaviorAdjustTotal: write.nextBehaviorAdjustTotal,
       currentScore: write.nextCurrentScore,

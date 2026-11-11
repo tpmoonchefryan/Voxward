@@ -1,5 +1,5 @@
 import type { IdentityKind, ScoreDecision, ScoreSubjectState } from "@voxward/contracts";
-import { applyClampedDelta } from "./clamp.js";
+import { clampScore } from "./clamp.js";
 import type { ScoringConfig } from "./config.js";
 import { identityBaseDelta } from "./identity-delta.js";
 
@@ -19,9 +19,13 @@ export function identityIdempotencyKey(sourceEventRef: string): string {
 }
 
 /**
- * Pure decision for an identity change. The identity base score moves by the configured difference, through the same
- * running clamp as every other change. A repeated identity is no change. The identity fact is recorded even when
- * the score does not move, so the next transition is computed from the true previous identity.
+ * Pure decision for an identity change (proposal §5.2). The identity base score takes the whole configured difference,
+ * even when a limit is reached. The current score is then the clamped sum of the identity base and the behavior
+ * adjustment, and the behavior adjustment is not touched. So a member who is upgraded at the upper limit and later
+ * expires returns to the score they had before the upgrade, with no deduction from nothing.
+ *
+ * A repeated identity is no change. The identity fact is recorded even when the score does not move, so the next
+ * transition is computed from the true previous identity.
  */
 export function decideIdentityTransition(
   transition: IdentityTransition,
@@ -33,20 +37,19 @@ export function decideIdentityTransition(
   const requested = config.enabled
     ? identityBaseDelta(state.identityKind, transition.nextKind, config.identityBaseScores)
     : 0;
-  const change =
-    requested === 0
-      ? { nextScore: state.currentScore, actualDelta: 0 }
-      : applyClampedDelta(state.currentScore, requested, config);
+  const nextIdentityBaseScore = state.identityBaseScore + requested;
+  const nextCurrentScore =
+    requested === 0 ? state.currentScore : clampScore(nextIdentityBaseScore + state.behaviorAdjustTotal, config);
 
   return {
     kind: "write",
     write: {
       reasonCode: "IDENTITY_BASE_CHANGE",
       requestedDelta: requested,
-      actualDelta: change.actualDelta,
-      nextIdentityBaseScore: state.identityBaseScore + change.actualDelta,
+      actualDelta: nextCurrentScore - state.currentScore,
+      nextIdentityBaseScore,
       nextBehaviorAdjustTotal: state.behaviorAdjustTotal,
-      nextCurrentScore: change.nextScore,
+      nextCurrentScore,
       lastRewardAt: state.lastRewardAt,
       ruleVersion: null,
       verdictRef: null,

@@ -32,6 +32,11 @@ export interface CredentialVault {
   reveal(ref: string, purpose: VaultPurpose): string;
   describe(ref: string): CredentialDescriptor | undefined;
   list(): readonly CredentialDescriptor[];
+  /**
+   * Deletes the sealed value. Returns false when the reference is unknown, so a second delete is harmless. A caller that
+   * names the wrong purpose gets CredentialPurposeError and the value stays.
+   */
+  remove(ref: string, purpose: VaultPurpose): boolean;
 }
 
 interface SealedEntry {
@@ -76,6 +81,15 @@ export function createCredentialVault(options: { readonly key: Buffer }): Creden
       decipher.setAAD(associatedData(ref, purpose));
       decipher.setAuthTag(entry.tag);
       return Buffer.concat([decipher.update(entry.ciphertext), decipher.final()]).toString("utf8");
+    },
+
+    remove(ref, purpose) {
+      const entry = entries.get(ref);
+      if (entry === undefined) return false;
+      if (entry.descriptor.purpose !== purpose) throw new CredentialPurposeError();
+      entry.ciphertext.fill(0);
+      entries.delete(ref);
+      return true;
     },
 
     describe(ref) {

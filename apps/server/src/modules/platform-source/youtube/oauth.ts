@@ -2,6 +2,9 @@
  * Google OAuth 2.0 for web server applications: authorization URL, code exchange, refresh and revocation.
  * Endpoints and parameters follow https://developers.google.com/identity/protocols/oauth2/web-server (read 2026-11-10).
  * The HTTP client is injected, so tests point it at a local fake authorization server.
+ *
+ * Authorization requests use PKCE with the S256 method (RFC 7636). The verifier stays on the server, in the pending
+ * authorization record, and is sent only with the code exchange. Only its challenge goes to the provider.
  */
 
 export const GOOGLE_AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -36,6 +39,8 @@ export interface AuthorizationRequest {
   readonly redirectUri: string;
   readonly scopes: readonly string[];
   readonly state: string;
+  /** S256 challenge of the PKCE verifier that the server keeps for this attempt. */
+  readonly codeChallenge: string;
 }
 
 /**
@@ -51,6 +56,8 @@ export function buildAuthorizationUrl(request: AuthorizationRequest): string {
     state: request.state,
     access_type: "offline",
     prompt: "consent",
+    code_challenge: request.codeChallenge,
+    code_challenge_method: "S256",
   });
   return `${GOOGLE_AUTHORIZATION_ENDPOINT}?${query.toString()}`;
 }
@@ -104,15 +111,20 @@ export interface CodeExchange {
   readonly clientSecret: string;
   readonly redirectUri: string;
   readonly code: string;
+  /** The PKCE verifier of the attempt that asked for this code. Empty means the attempt has none. */
+  readonly codeVerifier: string;
 }
 
 export async function exchangeAuthorizationCode(http: OAuthHttp, input: CodeExchange): Promise<TokenOutcome> {
+  // Without a verifier the code cannot be tied to this attempt. Refuse before any request is sent.
+  if (input.codeVerifier === "") return { ok: false, error: "invalid_request" };
   const response = await http.postForm(GOOGLE_TOKEN_ENDPOINT, {
     code: input.code,
     client_id: input.clientId,
     client_secret: input.clientSecret,
     redirect_uri: input.redirectUri,
     grant_type: "authorization_code",
+    code_verifier: input.codeVerifier,
   });
   return tokenOutcomeOf(response);
 }
@@ -142,20 +154,49 @@ export function randomToken(byteLength: number): string {
   return Buffer.from(bytes).toString("base64url");
 }
 
+/** A PKCE code verifier. 32 random bytes give 43 base64url characters, the RFC 7636 minimum length. */
+export function pkceVerifier(): string {
+  return randomToken(32);
+}
+
+/** The S256 code challenge: BASE64URL(SHA-256(ASCII(verifier))). */
+export async function pkceChallenge(verifier: string): Promise<string> {
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  return Buffer.from(digest).toString("base64url");
+}
+
 export interface PendingAuthorization {
   readonly channelId: string;
   readonly accountId: string;
   readonly operation: string;
+  /** PKCE verifier. It is sent only in the code exchange, never in a URL or a response. */
+  readonly codeVerifier: string;
 }
 
 export interface AuthorizationStates {
   issue(pending: PendingAuthorization): string;
+  /**
+   * Reads an entry without removing it. A caller who is not the entry's owner gets null and leaves the entry in
+   * place, so a failed attempt by someone else cannot consume it.
+   */
+  peek(state: string): PendingAuthorization | null;
   /** Single use. The entry is removed on the first call, even when it has expired. */
   consume(state: string): PendingAuthorization | null;
 }
 
 export function createAuthorizationStates(options: { readonly now: () => number; readonly ttlMs: number }): AuthorizationStates {
   const pending = new Map<string, PendingAuthorization & { readonly expiresAt: number }>();
+
+  function liveEntry(state: string): PendingAuthorization | null {
+    const stored = pending.get(state);
+    if (stored === undefined || stored.expiresAt <= options.now()) return null;
+    return {
+      channelId: stored.channelId,
+      accountId: stored.accountId,
+      operation: stored.operation,
+      codeVerifier: stored.codeVerifier,
+    };
+  }
 
   return {
     issue(entry) {
@@ -168,11 +209,14 @@ export function createAuthorizationStates(options: { readonly now: () => number;
       return state;
     },
 
+    peek(state) {
+      return liveEntry(state);
+    },
+
     consume(state) {
-      const stored = pending.get(state);
+      const found = liveEntry(state);
       pending.delete(state);
-      if (stored === undefined || stored.expiresAt <= options.now()) return null;
-      return { channelId: stored.channelId, accountId: stored.accountId, operation: stored.operation };
+      return found;
     },
   };
 }
