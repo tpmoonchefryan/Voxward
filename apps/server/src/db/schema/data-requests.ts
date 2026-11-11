@@ -4,7 +4,7 @@ import { inList, inListOrNull } from "./checks.js";
 import { channels } from "./channels.js";
 import { subjects } from "./subjects.js";
 
-export const DATA_REQUEST_KINDS = ["ACCESS", "CORRECTION", "DELETE", "STOP_SCORING"] as const;
+export const DATA_REQUEST_KINDS = ["ACCESS", "CORRECTION", "DELETE", "STOP_SCORING", "RESUME_SCORING"] as const;
 export const DATA_REQUEST_SOURCES = ["VIEWER_REQUEST", "OPERATOR_INITIATED"] as const;
 export const VERIFICATION_STATES = ["PENDING", "VERIFIED", "REJECTED"] as const;
 export const VERIFICATION_METHODS = ["ACCOUNT_OWNERSHIP", "REQUEST_AUTHORIZATION"] as const;
@@ -19,6 +19,7 @@ export const DELETION_TARGET_KINDS = [
   "SUBJECT_IDENTITY",
   "SUBJECT_SCORE",
   "SCORE_LEDGER",
+  "SCORE_OUTCOME",
   "NICKNAME_CHECK",
   "NICKNAME_CHANGE",
   "LIST_ENTRY",
@@ -26,6 +27,8 @@ export const DELETION_TARGET_KINDS = [
   "TECHNICAL_LOG",
   "TECHNICAL_LOG_EVIDENCE",
   "CHANGE_LOG",
+  "CANDIDATE_CARD",
+  "CACHE",
 ] as const;
 export const DELETION_ITEM_STATES = ["PENDING", "DONE", "FAILED"] as const;
 

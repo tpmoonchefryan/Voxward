@@ -58,6 +58,11 @@ export interface IdentityObservationInput {
 export interface IdentityTracker {
   /** Returns a change only for a certain observation that differs from the last certain kind seen for the subject. */
   observe(input: IdentityObservationInput): PlatformIdentityChange | null;
+  /**
+   * Forgets the last kind of one subject, so its next certain observation is reported again. Returns 1 when an entry was
+   * dropped, else 0. A deletion calls it (Q42).
+   */
+  forget(subjectKey: string): number;
 }
 
 /**
@@ -88,6 +93,9 @@ export function createIdentityTracker(options: { readonly capacity: number }): I
         effectiveFrom: input.effectiveFrom,
         nextKind: input.observation.kind,
       };
+    },
+    forget(subjectKey) {
+      return lastKind.delete(subjectKey) ? 1 : 0;
     },
   };
 }

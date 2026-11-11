@@ -26,6 +26,7 @@ export interface DataRouteHandlers {
   getRequest(actor: DataRouteActor, requestId: unknown): DataRouteResponse;
   createRequest(actor: DataRouteActor, body: unknown): DataRouteResponse;
   decideVerification(actor: DataRouteActor, requestId: unknown, body: unknown): DataRouteResponse;
+  execute(actor: DataRouteActor, requestId: unknown): DataRouteResponse;
 }
 
 export interface DataLifecycleRoutesOptions {
@@ -127,6 +128,14 @@ export const dataLifecycleRoutes: FastifyPluginAsync<DataLifecycleRoutesOptions>
     async (request, reply) => {
       const actor = actorFor(database, request, request.params.channelId);
       return send(reply, routes.decideVerification(actor, request.params.requestId, request.body));
+    },
+  );
+
+  app.post<{ Params: { channelId: string; requestId: string } }>(
+    "/channels/:channelId/data/requests/:requestId/execute",
+    async (request, reply) => {
+      const actor = actorFor(database, request, request.params.channelId);
+      return send(reply, routes.execute(actor, request.params.requestId));
     },
   );
 };

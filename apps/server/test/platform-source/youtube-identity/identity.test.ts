@@ -98,3 +98,27 @@ describe("identity tracker", () => {
     expect(() => createIdentityTracker({ capacity: 0 })).toThrow(RangeError);
   });
 });
+
+/* VW-SUB036 Q42: a deletion forgets the identity the tracker holds, so the next certain identity is reported again. */
+describe("identity tracker, forgetting one subject (Q42)", () => {
+  it("reports the same certain identity again after the subject is forgotten, and only that subject", () => {
+    const tracker = createIdentityTracker({ capacity: 10 });
+    const moderator: AuthorFlags = { ...NONE, isChatModerator: true };
+    const observe = (subjectKey: string, messageId: string) =>
+      tracker.observe({
+        channelId: "channel-a",
+        subjectKey,
+        observation: observeIdentity(moderator),
+        sourceEventRef: `youtube:${messageId}`,
+        effectiveFrom: T0,
+      });
+    observe("sender-1", "m1");
+    observe("sender-2", "m2");
+    expect(observe("sender-1", "m3")).toBeNull();
+
+    expect(tracker.forget("sender-1")).toBe(1);
+    expect(observe("sender-1", "m4")).not.toBeNull();
+    expect(observe("sender-2", "m5")).toBeNull();
+    expect(tracker.forget("sender-3")).toBe(0);
+  });
+});

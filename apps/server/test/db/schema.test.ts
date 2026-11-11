@@ -106,8 +106,14 @@ describe("generated migration matches the schema", () => {
     expect([...surviving].sort()).toEqual([...configs.keys()].sort());
     // Dropped on purpose: the old nickname-checks table, and the rebuild of data_requests (migration 0004) with its
     // temporary copy.
+    // Migration 0006 (S019) rebuilds data_request_items and data_requests with a temporary copy of each, so the new
+    // CHECK values (RESUME_SCORING, SCORE_OUTCOME, CANDIDATE_CARD, CACHE) take effect.
     expect(events.filter(([kind]) => kind === "DROP TABLE").map(([, name]) => name)).toEqual([
       "subject_nickname_checks",
+      "data_requests",
+      "data_requests_copy",
+      "data_request_items",
+      "data_request_items_copy",
       "data_requests",
       "data_requests_copy",
     ]);

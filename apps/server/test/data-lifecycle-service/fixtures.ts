@@ -12,9 +12,11 @@ import {
   subjectNicknameChanges,
   subjectScores,
 } from "../../src/db/schema/index.js";
+import { createSubjectCleanupPort } from "../../src/db/subject-cleanup.js";
 import { createSubjectReadPort } from "../../src/db/subject-read.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { RETENTION_DAYS } from "../../src/modules/audit-store/content-policy.js";
+import { CERTIFICATE_SUMMARY } from "../../src/modules/audit-store/index.js";
 import { createDataRoutes, type DataActor, type DataDeps, type DataRoutes } from "../../src/modules/data-lifecycle-service/index.js";
 import { capabilitiesOf, type ChannelRole } from "../../src/auth/permissions.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
@@ -48,9 +50,13 @@ export function dataDepsFor(database: VoxwardDatabase): DataDeps {
     requests: createDataRequestPort(database),
     subjects: createSubjectReadPort(database),
     logs: createAuditLogPort(database),
+    cleanup: createSubjectCleanupPort(database),
+    publishInvalidation: () => undefined,
+    certificateSummary: CERTIFICATE_SUMMARY,
     newId: () => `id-${++counter}`,
     now: () => new Date(FIXED_NOW),
     retentionDays: RETENTION_DAYS,
+    caches: { names: [], forgetSubject: () => 0 },
   };
 }
 

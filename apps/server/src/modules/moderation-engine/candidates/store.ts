@@ -60,6 +60,11 @@ export interface CandidateStore extends CandidateProposalPort {
   confirm(input: { readonly cardId: string; readonly channelId: string; readonly actorRef: string }): ConfirmResult;
   /** Rejects one pending card of the channel. The card stays on record, so the same term is not proposed again. */
   reject(input: { readonly cardId: string; readonly channelId: string; readonly actorRef: string }): RejectResult;
+  /**
+   * Removes every card of the channel whose source chain is in `correlationIds`, whatever its status (S019, Q51). A term
+   * is free to be proposed again after its card is removed. Returns how many cards were removed.
+   */
+  removeBySourceCorrelations(channelId: string, correlationIds: readonly string[]): number;
 }
 
 interface MutableCard {
@@ -142,6 +147,19 @@ export function createCandidateStore(options: CandidateStoreOptions): CandidateS
       card.decidedByRef = actorRef;
       card.decidedAt = options.now().toISOString();
       return { status: "REJECTED", card: snapshotOf(card) };
+    },
+
+    removeBySourceCorrelations(channelId, correlationIds) {
+      const chains = new Set(correlationIds);
+      let removed = 0;
+      for (const card of [...cards.values()]) {
+        if (card.channelId !== channelId || !chains.has(card.sourceCorrelationId)) continue;
+        cards.delete(card.id);
+        const key = termKeyOf(card.channelId, card.term);
+        if (cardByTerm.get(key) === card.id) cardByTerm.delete(key);
+        removed += 1;
+      }
+      return removed;
     },
   };
 }

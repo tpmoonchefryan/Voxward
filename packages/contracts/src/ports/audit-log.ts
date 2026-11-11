@@ -191,6 +191,22 @@ export interface AuditLogPort {
    * the Change Log rows on the same correlation ids with `certificateSummary`. Other subjects are untouched.
    */
   removeSubjectLogs(subjectId: string, certificateSummary: string): SubjectLogScope;
+  /**
+   * One short transaction, one evidence kind (S019, SUB-036). Removes that kind of evidence from the subject's technical
+   * log rows and returns the scope it found. Other kinds stay until their own step. Other subjects are untouched.
+   */
+  removeSubjectEvidence(subjectId: string, kind: EvidenceKind): SubjectLogScope;
+  /**
+   * One short transaction (S019, SUB-036). Removes the subject's technical log rows with any evidence still attached, and
+   * returns the scope it found. A row counts when it belongs to the subject or to one of the subject's tasks.
+   */
+  removeSubjectTechnicalRows(subjectId: string): SubjectLogScope;
+  /**
+   * One short transaction (S019, SUB-036). Replaces the summary of the subject's Change Log rows with `certificateSummary`
+   * and returns the scope it found. A row counts when its correlation id is one of the subject's chains, or when it is on
+   * `subject:<subjectId>` (S014 convention). Rows with no technical log are included.
+   */
+  certifySubjectChangeLogs(subjectId: string, certificateSummary: string): SubjectLogScope;
   /** Read only. One page of Change Log rows of one channel, newest first, optionally of one processing chain. */
   pageChangeLogs(channelId: string, query: ChangeLogPageQuery): readonly ChangeLogRow[];
   /** Read only. One page of Technical Log rows of one channel, newest first. Evidence is not loaded. */

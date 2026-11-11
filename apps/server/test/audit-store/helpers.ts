@@ -117,6 +117,9 @@ export function recordingPort(): AuditLogPort & { readonly calls: string[] } {
     pageChain: () => [],
     locateSubjectLogs: () => ({ logIds: [], correlationIds: [], evidenceIds: [], changeLogIds: [] }),
     removeSubjectLogs: () => ({ logIds: [], correlationIds: [], evidenceIds: [], changeLogIds: [] }),
+    removeSubjectEvidence: () => ({ logIds: [], correlationIds: [], evidenceIds: [], changeLogIds: [] }),
+    removeSubjectTechnicalRows: () => ({ logIds: [], correlationIds: [], evidenceIds: [], changeLogIds: [] }),
+    certifySubjectChangeLogs: () => ({ logIds: [], correlationIds: [], evidenceIds: [], changeLogIds: [] }),
   };
 }
 

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:7f0ac0774bc508523d09b5f1",
+  "workRevision": 4,
+  "sourceDigest": "2cef8b13f3e13a963688c186a5933c4c0de61c0ba1f6bb92e1fb14d2d5eebda5",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:7f0ac0774bc508523d09b5f1",
+    "workRevision": 4,
+    "sourceDigest": "2cef8b13f3e13a963688c186a5933c4c0de61c0ba1f6bb92e1fb14d2d5eebda5",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:7f0ac0774bc508523d09b5f1",
+        "externalKey": "VOXWARD-STORY-019",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现删除并加入例外的原子流程",
+        "summary": "实现删除并加入例外的原子流程；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:18aaac72724b30c2ee9be8b6",
+        "scopeDigest": "cc8d5a41ac10d70b700cbd4207f0e9b15f4e7472e907ed7675df9d68122bd1ef",
+        "relations": {
+          "blockedBy": [
+            "work:210958ccce508a7abf314287",
+            "work:2d989e13eeb4a9b2a8bde05d",
+            "work:4c1238d3c3d98f2cc2f7d756",
+            "work:685ad243ec946eb7f628c93e",
+            "work:8f928245aa79a29f26ad28a6"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:18aaac72724b30c2ee9be8b6",
+          "supersedes": []
+        },
+        "fieldSha256": "065bf02925a4046d666dea504c8094db24192036aae1701701bc9765d5cc5789",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "c9c2b2690aa4a38cbcaa27f74f92fcde17a378ba9a89f6deebd1ac877d173120",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "850c24db964c54a653c6edc368243d9ede76d19bdb56d3ca2cbf88dae65b6104",
+    "design.md": "3974eb3cb57f67177928963b596d37f0410ffb9bc61dc67ea1ff8e3a8a4f31b0",
+    "tasks.md": "647a419ef4bf112032782a6eae90d27e68f7b8af85f65935909db0637d450691"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "288d03737035c4b630d182cbfb88453e9a1dd880d39b787443a228787201f19d"
+}

@@ -20,6 +20,8 @@ export interface NicknameVerdictCacheOptions {
 export interface NicknameVerdictCache {
   lookup(subject: SubjectRef, digest: string, ruleVersion: string): ScopeCheck | undefined;
   store(subject: SubjectRef, digest: string, ruleVersion: string, scope: ScopeCheck): void;
+  /** Drops the stored result of one subject, whatever its digest or rule version. Returns 1 when one was dropped, else 0. */
+  forget(subject: SubjectRef): number;
   size(): number;
 }
 
@@ -68,6 +70,9 @@ export function createNicknameVerdictCache(options: NicknameVerdictCacheOptions)
     },
     size() {
       return entries.size;
+    },
+    forget(subject) {
+      return entries.delete(subjectKey(subject)) ? 1 : 0;
     },
   };
 }
