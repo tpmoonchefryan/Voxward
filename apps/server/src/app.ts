@@ -56,7 +56,6 @@ export function buildApp({ modules, logger = true, logStream, database, invalida
   return app;
 }
 
-
 function loggerOptions(logStream: AppOptions["logStream"]) {
   return {
     serializers: { req: serializeRequest },
