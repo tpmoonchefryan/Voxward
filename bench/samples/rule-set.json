@@ -1,0 +1,53 @@
+{
+  "schema": "voxward.bench.rule-set.v1",
+  "version": "bench-synth-v1",
+  "provenance": "synthetic-authored; placeholder terms only (禁词甲, 禁語乙/丙, bannedalpha, badword, 扣分词丁); no real slurs",
+  "normalization": { "stripCombiningMarks": true },
+  "readings": {
+    "进": "jin",
+    "词": "ci",
+    "典": "dian",
+    "查": "zha",
+    "一": "yi",
+    "下": "xia",
+    "步": "bu",
+    "条": "tiao",
+    "是": "shi",
+    "什": "shen",
+    "么": "me",
+    "这": "zhe",
+    "里": "li",
+    "区": "qu",
+    "谐": "xie",
+    "音": "yin",
+    "梗": "geng",
+    "很": "hen",
+    "快": "kuai"
+  },
+  "groups": [
+    {
+      "id": "G-BLOCK-PLACEHOLDER",
+      "action": { "kind": "BLOCK" },
+      "rules": [
+        { "id": "R-NORM-ZH-A", "kind": "normalized", "text": "禁词甲" },
+        { "id": "R-NORM-EN-A", "kind": "normalized", "text": "bannedalpha" },
+        { "id": "R-NORM-EN-B", "kind": "normalized", "text": "badword" },
+        { "id": "R-REGEX-JA-A", "kind": "regex", "source": "禁語[乙丙]" }
+      ]
+    },
+    {
+      "id": "G-REVIEW-HOMOPHONE",
+      "action": { "kind": "REVIEW" },
+      "rules": [
+        { "id": "R-READ-A", "kind": "reading", "text": "jinci" }
+      ]
+    },
+    {
+      "id": "G-DEDUCT-MILD",
+      "action": { "kind": "DEDUCT", "deduction": 3 },
+      "rules": [
+        { "id": "R-EXACT-A", "kind": "exact", "text": "扣分词丁" }
+      ]
+    }
+  ]
+}
