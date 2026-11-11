@@ -181,7 +181,7 @@ export interface TaskCoordinatorService extends TaskCoordinator {
 
 ## 8. 通道内有限保序（提案 §6.3）
 
-- 门控只作用于同一 `channelId` 内 `platformOrder` 更小、仍为 QUEUED 或 RUNNING 的前序任务。跨通道不互相等待。
+- 门控只作用于同一频道（`channelId`）且同一车道（`lane`）内 `platformOrder` 更小、仍为 QUEUED 或 RUNNING 的前序任务。提案「在各自通道内」指处理车道，不指 YouTube 频道（B4）。不同车道互不等待：后台任务不挡实时与付费任务，付费任务不被同频道实时任务挡住。不同频道互不等待。
 - 前序任务未过截止时间：返回 `waiting`，等待对象为最早的未过期前序任务。
 - 前序任务已过截止时间但仍未结束：门控放行，并在本任务上记录 `PREDECESSOR_UNFINISHED:<taskId>`（自定，写入技术日志的 `data`）。
 - 门控只约束提交顺序，派工不按通道排序。

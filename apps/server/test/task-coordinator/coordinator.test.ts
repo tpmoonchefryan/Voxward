@@ -298,3 +298,46 @@ describe("configuration", () => {
     expect(batch.tasks).toHaveLength(DEFAULT_COORDINATOR_LIMITS.maxBatchItems);
   });
 });
+
+describe("commit order across lanes (B4)", () => {
+  it("a queued background task does not hold back a real-time commit in the same channel", async () => {
+    const h = harnessWith({ limit: 1 });
+    await h.coordinator.enqueueInLane("BACKGROUND", eventOf({ platformMessageId: "bg", platformOrder: 1 }), h.clock.at(60_000));
+    const live = await h.coordinator.enqueue(eventOf({ platformMessageId: "live", platformOrder: 2 }), h.clock.at(60_000));
+    expect((await mustTake(h.coordinator)).lane).toBe("REALTIME");
+    expect(await h.coordinator.commitResult(live.taskId, resultFor(live.taskId))).toEqual({ status: "committed" });
+  });
+
+  it("a running background task does not hold back a real-time commit in the same channel", async () => {
+    const h = harnessWith({ limit: 2, limits: { maxBatchItems: 1 } });
+    const background = await h.coordinator.enqueueInLane(
+      "BACKGROUND",
+      eventOf({ platformMessageId: "bg", platformOrder: 1 }),
+      h.clock.at(60_000),
+    );
+    const live = await h.coordinator.enqueue(eventOf({ platformMessageId: "live", platformOrder: 2 }), h.clock.at(60_000));
+    expect((await mustTake(h.coordinator)).lane).toBe("REALTIME");
+    expect((await mustTake(h.coordinator)).lane).toBe("BACKGROUND");
+    expect(await h.coordinator.statusOf(background.taskId)).toBe("RUNNING");
+    expect(await h.coordinator.commitResult(live.taskId, resultFor(live.taskId))).toEqual({ status: "committed" });
+  });
+
+  it("a paid commit does not wait for an earlier real-time task of the same channel", async () => {
+    const h = harnessWith({ limit: 1 });
+    await h.coordinator.enqueueInLane("REALTIME", eventOf({ platformMessageId: "rt", platformOrder: 1 }), h.clock.at(60_000));
+    const paid = await h.coordinator.enqueueInLane("PAID", eventOf({ platformMessageId: "paid", platformOrder: 2 }), h.clock.at(60_000));
+    expect((await mustTake(h.coordinator)).lane).toBe("PAID");
+    expect(await h.coordinator.commitResult(paid.taskId, resultFor(paid.taskId))).toEqual({ status: "committed" });
+  });
+
+  it("keeps the commit order inside one lane", async () => {
+    const h = harnessWith({ limit: 1 });
+    const first = await h.coordinator.enqueue(eventOf({ platformMessageId: "m1", platformOrder: 1 }), h.clock.at(60_000));
+    const second = await h.coordinator.enqueue(eventOf({ platformMessageId: "m2", platformOrder: 2 }), h.clock.at(60_000));
+    await mustTake(h.coordinator);
+    expect(await h.coordinator.commitResult(second.taskId, resultFor(second.taskId))).toEqual({
+      status: "waiting",
+      waitingOn: first.taskId,
+    });
+  });
+});

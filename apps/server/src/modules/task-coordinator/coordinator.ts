@@ -316,6 +316,7 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
     return {
       taskId: task.taskId,
       channelId: task.event.channelId,
+      lane: task.lane,
       platformOrder: task.event.platformOrder,
       status: task.status,
       deadlineMs: task.deadlineMs,
