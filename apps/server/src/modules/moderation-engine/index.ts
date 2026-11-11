@@ -222,7 +222,7 @@ export {
   type StoredSettlementState,
 } from "./review/ports.js";
 
-/* Candidate-term cards (S011, VW-SUB022). Confirmation needs `review.decide`; a proposal never changes the rule set. */
+/* Candidate-term cards (S011, VW-SUB022). Confirming or rejecting needs `list.edit`; a proposal never changes the rule set. */
 export {
   CANDIDATE_STATUSES,
   type CandidateCard,
