@@ -1,11 +1,12 @@
 import { randomBytes } from "node:crypto";
+import http from "node:http";
 import net from "node:net";
 import type { AddressInfo } from "node:net";
 import type { FastifyInstance } from "fastify";
-import { createVerdict, NATIVE_FRAME_FIELDS } from "@voxward/contracts";
+import { createVerdict, NATIVE_FRAME_FIELDS, type OutputGrantPort } from "@voxward/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
-import type { NativeOutputTiming } from "../../../src/adapters/native-output/socket.js";
+import { attachNativeOutput, type NativeOutputTiming } from "../../../src/adapters/native-output/socket.js";
 import { buildApp } from "../../../src/app.js";
 import { createAccount } from "../../../src/auth/login.js";
 import { grantMembership } from "../../../src/auth/members.js";
@@ -13,6 +14,7 @@ import { issueNativeGrant } from "../../../src/auth/output-grants.js";
 import type { ServerConfig } from "../../../src/config/schema.js";
 import { revokeOutputGrant } from "../../../src/db/output-store.js";
 import { runShortTransaction } from "../../../src/db/transaction.js";
+import { createSubscriptionRegistry } from "../../../src/modules/output-adapter/subscription.js";
 import { buildRegistry } from "../../../src/modules/registry.js";
 import { T0 } from "../../db/helpers.js";
 import { type OpenDatabase, openDecisionDatabase, seedChannel } from "../../decision-service/fixtures.js";
@@ -393,5 +395,46 @@ describe("native output endpoint (VW-SUB039-AC001, Q16, Q18)", () => {
     expect(secondFrames.map((frame) => frame.type)).toEqual(["HELLO"]);
     expect(statusOf(h.db, "d-1")).toBe("SENT");
     expect(statusOf(h.db, "d-3")).toBe("EXPIRED");
+  });
+});
+
+describe("native output endpoint with a failing grant store", () => {
+  it("refuses an upgrade with 500 when the credential lookup throws, and closes a consumer as revoked when its grant cannot be re-read", async () => {
+    let lookupFails = true;
+    let checkFails = false;
+    const closed: Array<{ grantId: string; code: number }> = [];
+    const grants: OutputGrantPort = {
+      resolveCredential() {
+        if (lookupFails) throw new Error("database is busy");
+        return { grantId: "grant-f", channelId: "channel-a" };
+      },
+      isActive() {
+        if (checkFails) throw new Error("database is busy");
+        return true;
+      },
+    };
+    const server = http.createServer();
+    const endpoint = attachNativeOutput(server, {
+      grants,
+      subscribers: createSubscriptionRegistry(),
+      timing: FAST,
+      onClosed: (entry) => void closed.push(entry),
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
+    const port = (server.address() as AddressInfo).port;
+    try {
+      const credential = `vwo_${"B".repeat(43)}`;
+      expect(await refusalStatus(consumer(port, credential))).toBe(500);
+
+      lookupFails = false;
+      checkFails = true;
+      const admitted = consumer(port, credential);
+      const closing = closeOf(admitted);
+      expect(await closing).toEqual({ code: 4403, reason: "GRANT_REVOKED" });
+      expect(closed).toEqual([{ grantId: "grant-f", code: 4403 }]);
+    } finally {
+      endpoint.close();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 });

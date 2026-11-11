@@ -64,7 +64,7 @@ export interface NativeOutputEndpoint {
 /** A credential is the `vwo_` prefix and 32 random bytes in base64url, which is 43 characters. */
 const CREDENTIAL_SHAPE = /^vwo_[A-Za-z0-9_-]{43}$/;
 
-const REFUSAL_STATUS_TEXT = { 401: "Unauthorized", 404: "Not Found" } as const;
+const REFUSAL_STATUS_TEXT = { 401: "Unauthorized", 404: "Not Found", 500: "Internal Server Error" } as const;
 
 /**
  * Serves the native output room on an HTTP server. A consumer proves its grant in the WebSocket subprotocol list as
@@ -76,11 +76,24 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
   const timing: NativeOutputTiming = { ...DEFAULT_NATIVE_OUTPUT_TIMING, ...options.timing };
   const socketServer = new WebSocketServer({ noServer: true, handleProtocols: () => NATIVE_OUTPUT_PROTOCOL });
 
-  function refuse(socket: Duplex, status: 401 | 404, reason: string): void {
+  function refuse(socket: Duplex, status: 401 | 404 | 500, reason: string): void {
     // A client may drop the connection while the refusal is being written. That is not a server failure.
     socket.on("error", () => undefined);
     socket.end(`HTTP/1.1 ${status} ${REFUSAL_STATUS_TEXT[status]}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
     options.log?.warn({ status, reason }, "native output upgrade refused");
+  }
+
+  /**
+   * Re-reads a grant. A read that fails counts as revoked, so a consumer is kept only while its grant is confirmed. An
+   * exception here would otherwise escape a timer or an event listener and stop the process.
+   */
+  function grantIsActive(grantId: string): boolean {
+    try {
+      return options.grants.isActive(grantId);
+    } catch (error) {
+      options.log?.warn({ errorCode: errorCodeOf(error) }, "native output grant check failed");
+      return false;
+    }
   }
 
   function onUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): void {
@@ -94,7 +107,14 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
       refuse(socket, 401, "NO_CREDENTIAL");
       return;
     }
-    const grant = options.grants.resolveCredential(credential);
+    let grant: GrantFacts | undefined;
+    try {
+      grant = options.grants.resolveCredential(credential);
+    } catch (error) {
+      options.log?.warn({ errorCode: errorCodeOf(error) }, "native output credential lookup failed");
+      refuse(socket, 500, "LOOKUP_FAILED");
+      return;
+    }
     if (grant === undefined) {
       refuse(socket, 401, "CREDENTIAL_REJECTED");
       return;
@@ -180,7 +200,7 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
 
     heartbeat = setInterval(() => {
       // Every tick reads the grant again, so a revocation made anywhere else still closes the connection.
-      if (!options.grants.isActive(grant.grantId)) {
+      if (!grantIsActive(grant.grantId)) {
         shutDown(NATIVE_CLOSE.GRANT_REVOKED);
         return;
       }
@@ -194,7 +214,7 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
     }, timing.heartbeatMs);
 
     // A revocation that landed between the credential lookup and the handshake must not leave a live consumer.
-    if (!options.grants.isActive(grant.grantId)) {
+    if (!grantIsActive(grant.grantId)) {
       shutDown(NATIVE_CLOSE.GRANT_REVOKED);
       return;
     }
