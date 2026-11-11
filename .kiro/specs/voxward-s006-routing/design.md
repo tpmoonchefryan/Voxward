@@ -97,6 +97,7 @@ No design authority is configured for the resolved work context. No authority wa
 
 - 不新增表。`tasks.status` 仍只取 `TASK_STATUSES`。系统失败存为 `PENDING_REVIEW`，人工接管存为 `RUNNING`（自定，见第 4.5 节映射）。
 - 迁移 0003 删除 `subject_nickname_checks`（Q8）。编号 0003 是因为 0002 已是审计字段迁移 `0002_audit_log_fields`（N9）。选择进程内缓存的理由：S004 设计 §8 只规定进程内缓存；提案 §10 的数据组没有列该表；持久化摘要超出已列数据范围（自定）。缓存保存期限沿用 S004：TTL 1 小时，最多 10000 项，进程重启即清空。
+- 开发库（N10）：drizzle 的 SQLite 迁移器只执行 `when` 晚于库中最新 `created_at` 的条目。若开发库由改编号前的迁移链建成（本表的删除迁移曾记为 `0002`），升级时会跳过审计字段迁移，并在 `0003` 报错回滚。这类开发库应删除后重建。迁移本身不改；部署环境未受影响。
 - UNSETTLED_FAST_PASS 的当次裁决在 `verdicts` 中记为分类 `ALLOW_NOISE`、来源 `FAST_PASS`、下游 `ALLOW`（自定）。这样满足现有 CHECK，且不加分。
 
 ## 4. 接口
