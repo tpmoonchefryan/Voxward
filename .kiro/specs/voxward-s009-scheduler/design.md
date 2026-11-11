@@ -192,19 +192,22 @@ export interface TaskCoordinatorService extends TaskCoordinator {
 - CRITICAL：空闲内存比 < 0.10 或每核负载 ≥ 2.0。
 - TIGHT：空闲内存比 < 0.25 或每核负载 ≥ 1.0。
 - NORMAL：其余情况。
-- 数值为NaN或为负时视为 CRITICAL（保守收缩）。阈值为自定。
+- 非有限数、负数，或空闲内存比超过 1 时视为 CRITICAL（保守收缩）。阈值为自定。
 
 目标并发：NORMAL → max；TIGHT → `max(min, floor(max / 2))`；CRITICAL → min。结果始终夹在 [min, max] 内。`min ≥ 1`，因此不会出现零并发的全局屏障。无滞后，每次读取即时生效（自定）。
 
 Crew 执行器（`createCrewExecutor`）：
 - `CrewPort.start(job)` 返回 `{ crewRef, done }`。`start` 抛出即视为 Crew 不可用。
 - `done` 解析为 `completed`（带校验后的条目）或 `failed`（带错误码）。
-- 不可用或 `failed`：每个任务 `reportFailure`，不默认放行。
+- 不可用或 `failed`：每个任务 `reportFailure`，不默认放行。`failed` 的错误码格式不合法时记为 CREW_FAILED。
+- `done` 被拒绝（会话中途失联）记为 CREW_UNAVAILABLE。执行器内部未预期的异常使本批次整体明确失败（CREW_FAILED），槽位释放。
+- 同一任务出现两条以上对应条目时同样报 INVALID_OUTPUT。
 - 会话 `completed` 但某任务没有对应条目：该任务报 INVALID_OUTPUT。Crew 会话状态不是业务裁决，裁决只来自校验后的条目。
 - 有条目：`commitResult`，`apply` 调用 `writeVerdict(taskId, item)`，evidence 为 ITEM_ID_MAP 与 VALIDATED_JSON（每个任务各一条）。
 - `waiting` 的提交放入待重试列表，下一次 `pump` 再试。
-- `pump()`：先 `sweep`，再对无 RUNNING 任务的空闲批次取消 Crew 任务并 `finishBatch`，然后按并发上限取批启动。返回启动的批次数。
-- `cancelEvent(key)`：调用 `coordinator.cancelEvent`，再执行一次回收，使运行中的 Crew 任务及时取消。
+- `pump()`：先 `sweep`，再对无 RUNNING 任务的空闲批次取消 Crew 任务并 `finishBatch`，重试暂存的提交，然后按并发上限取批启动。返回启动的批次数。`pump` 不等待会话结束。
+- `drain()`：等待已启动的会话全部报告。供测试与停机使用。
+- `cancelEvent(key)`：调用 `coordinator.cancelEvent`，再执行一次回收，使运行中的 Crew 任务及时取消。取消失败的会话保留槽位，下一次 `pump` 再试。
 
 ## 10. 测试与验收对应
 
@@ -212,15 +215,15 @@ Crew 执行器（`createCrewExecutor`）：
 | --- | --- | --- |
 | VW-SUB017-AC001 | `micro-batch.test.ts` | 条数、字节、等待、截止时间四种取批条件；超大单条被拒 |
 | VW-SUB017-AC001 | `priority.test.ts` | 派工顺序；后台余量；并发降到最小时后台暂停 |
-| VW-SUB017-AC001 | `deadline.test.ts` | 慢请求超时转 PENDING_REVIEW，不放行不扣分；迟到结果丢弃，不恢复 |
-| VW-SUB017-AC001 | `retry.test.ts` | 限流退避递增且有上限；不可重试直接转人工；次数与时间预算耗尽后转人工；取消后不再重试 |
+| VW-SUB017-AC001 | `micro-batch.test.ts`（截止时间部分）、`acceptance.test.ts` | 慢请求超时转 PENDING_REVIEW，不放行不扣分；迟到结果丢弃，不恢复 |
+| VW-SUB017-AC001 | `ordering.test.ts`（重试部分）、`coordinator.test.ts` | 限流退避递增且有上限；不可重试直接转人工；次数与时间预算耗尽后转人工；取消后迟到的失败报告被忽略，不再重试 |
 | VW-SUB017-AC001 | `coordinator.test.ts` | 队列满明确转人工，队列长度有界；取消立即生效，即使车道排队已满 |
 | VW-SUB017-AC001 | `generation.test.ts` | 版本被替代、数据已删除、代次变化、已结算各自被拒；重复提交不重复写入 |
 | VW-SUB017-AC001 | `ordering.test.ts` | 前序慢请求时等待至其截止时间，之后推进并记录原因；跨通道不等待 |
 | VW-SUB017-AC001 | `acceptance.test.ts` | 慢请求、限流、队列满、进程重启、删除取消、前序超时六类故障注入 |
 | VW-SUB017-STORY | 同上 | 本单承担的 VW-S009-R001 中「微批、付费优先、重试、取消、保序」部分 |
 | VW-SUB018-AC001 | `crew/capacity.test.ts` | 资源收缩与恢复；并发不超过上限、不低于下限；未知信号收缩 |
-| VW-SUB018-AC001 | `crew/adapter.test.ts` | Crew 可用、不可用（明确失败）、会话完成但无条目（不是裁决）、取消、重启后丢弃；并发随资源收缩 |
+| VW-SUB018-AC001 | `crew/adapter.test.ts` | Crew 可用、不可用（明确失败）、会话完成但无条目（不是裁决）、取消、重启后新进程不接管旧会话（未知任务的丢弃见 `acceptance.test.ts`）；并发随资源收缩 |
 | VW-SUB018-STORY | 同上 | 本单承担的 VW-S009-R001 中「Crew 适配与动态并发」部分 |
 | VW-S009-INHERIT-* | `scripts/check-deps.mjs`、契约包 `typecheck` | 依赖方向、契约不变；其余继承行为的完整验证由 EPIC-006 承接，本包不宣称 |
 
