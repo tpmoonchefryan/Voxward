@@ -1,6 +1,6 @@
 import { createScoringEngine } from "../../../src/modules/scoring-engine/index.js";
 import type { ScoringPort } from "../../../src/modules/moderation-engine/review/ports.js";
-import { keyOfEvent, START } from "../../task-coordinator/helpers.js";
+import { eventOf, keyOfEvent, START } from "../../task-coordinator/helpers.js";
 import { FakeLedger } from "../../scoring-engine/fake-ledger.js";
 import { describe, expect, it } from "vitest";
 import { messageOf, MemoryReviewStore, reviewHarness } from "./fixtures.js";
@@ -281,5 +281,20 @@ describe("two writers of one message", () => {
     h.clock.advance(1000);
 
     expect(await runner.runCycle(CHANNEL)).toMatchObject({ trigger: null, enqueued: 0 });
+  });
+});
+
+describe("lanes shared with the coordinator (VW-R-006)", () => {
+  it("takes only background tasks, and leaves a queued realtime task to the realtime path", async () => {
+    const { h, store, runner } = reviewHarness();
+    const realtime = await h.coordinator.enqueueInLane("REALTIME", eventOf({ platformMessageId: "rt-1", platformOrder: 9 }), h.clock.at(60_000));
+    store.seed({ eventId: "e-m1", event: messageOf("m1") });
+    await runner.runCycle(CHANNEL);
+
+    const outcome = await runner.runBatch();
+
+    expect(outcome?.items).toEqual([expect.objectContaining({ status: "SETTLED", eventId: "e-m1" })]);
+    expect(await h.coordinator.statusOf(realtime.taskId)).toBe("QUEUED");
+    expect(await h.coordinator.reasonOf(realtime.taskId)).toBeNull();
   });
 });

@@ -427,3 +427,34 @@ describe("hung Crew calls (B5)", () => {
     expect(crew.maxOpen).toBe(1);
   });
 });
+
+/** VW-R-006: the Crew executor serves PAID and REALTIME. The review runner takes the BACKGROUND lane. */
+describe("lanes shared with the review runner", () => {
+  it("never starts a session for a background review task", async () => {
+    const h = harnessWith({ limit: 4 });
+    const crew = new FakeCrew();
+    const { executor, written } = executorFor(h, crew);
+    const review = await h.coordinator.enqueueInLane("BACKGROUND", eventOf({ platformMessageId: "bg" }), h.clock.at(60_000));
+
+    expect(await executor.pump()).toBe(0);
+    expect(crew.started).toEqual([]);
+    expect(written).toEqual([]);
+    expect(await h.coordinator.statusOf(review.taskId)).toBe("QUEUED");
+  });
+
+  it("starts realtime work and leaves a background review task queued in the same pump", async () => {
+    const h = harnessWith({ limit: 4 });
+    const crew = new FakeCrew();
+    const { executor } = executorFor(h, crew);
+    const realtime = await h.coordinator.enqueue(eventOf({ platformMessageId: "rt" }), h.clock.at(60_000));
+    const review = await h.coordinator.enqueueInLane("BACKGROUND", eventOf({ platformMessageId: "bg", platformOrder: 2 }), h.clock.at(60_000));
+
+    expect(await executor.pump()).toBe(1);
+    const job = firstJob(crew);
+    expect(job.items.map((item) => item.taskId)).toEqual([realtime.taskId]);
+    expect(await h.coordinator.statusOf(review.taskId)).toBe("QUEUED");
+
+    crew.finish(crew.refFor(job.batchId), completedFor(job));
+    await executor.drain();
+  });
+});

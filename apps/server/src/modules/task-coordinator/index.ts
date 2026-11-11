@@ -13,6 +13,7 @@ export {
   type CoordinatorLimits,
   type EventKey,
   type FailureOutcome,
+  type TakeBatchOptions,
   type TaskBatch,
   type TaskCoordinatorOptions,
   type TaskCoordinatorService,

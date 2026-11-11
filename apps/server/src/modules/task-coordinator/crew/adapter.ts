@@ -1,5 +1,6 @@
 import type { InferenceResultItem } from "@voxward/contracts";
 import type { EventKey, TaskBatch, TaskCoordinatorService, TaskResult } from "../coordinator.js";
+import type { TaskLane } from "../priority.js";
 
 /** One task as Crew receives it. */
 export interface CrewJobItem {
@@ -58,8 +59,8 @@ export interface CrewExecutorOptions {
 export interface CrewExecutor {
   /**
    * Settles finished work, cancels sessions that no longer serve a live task, retries waiting commits, and then starts
-   * batches within the concurrency limit. Returns how many sessions it started. It waits neither for those sessions nor
-   * for the cancels it sends.
+   * PAID and REALTIME batches within the concurrency limit. Returns how many sessions it started. It waits neither for
+   * those sessions nor for the cancels it sends.
    */
   pump(): Promise<number>;
   /** Cancels an event's work now, and cancels the sessions that have nothing left to serve. */
@@ -72,6 +73,8 @@ export interface CrewExecutor {
 const CREW_UNAVAILABLE = "CREW_UNAVAILABLE";
 /** A session finished, but a task has no single validated item. The session status is not a verdict. */
 const INVALID_OUTPUT = "INVALID_OUTPUT";
+/** The lanes this executor serves. BACKGROUND review batches are taken by the review runner (VW-R-006). */
+const SERVED_LANES: readonly TaskLane[] = ["PAID", "REALTIME"];
 /** Crew reported a code the Technical Log cannot record. */
 const CREW_FAILED = "CREW_FAILED";
 const ERROR_CODE = /^[A-Z][A-Z0-9_]{0,63}$/;
@@ -270,11 +273,11 @@ export function createCrewExecutor(options: CrewExecutorOptions): CrewExecutor {
     await reapIdle();
     await retryParked();
     let started = 0;
-    let batch = await coordinator.takeBatch();
+    let batch = await coordinator.takeBatch({ lanes: SERVED_LANES });
     while (batch !== null) {
       started += 1;
       trackRun(runSession(batch));
-      batch = await coordinator.takeBatch();
+      batch = await coordinator.takeBatch({ lanes: SERVED_LANES });
     }
     return started;
   }

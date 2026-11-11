@@ -222,7 +222,7 @@ export {
   type StoredSettlementState,
 } from "./review/ports.js";
 
-/* Candidate-term cards (S011, VW-SUB022). Confirmation needs `review.decide`; a proposal never changes the rule set. */
+/* Candidate-term cards (S011, VW-SUB022). Confirming or rejecting needs `list.edit`; a proposal never changes the rule set. */
 export {
   CANDIDATE_STATUSES,
   type CandidateCard,
@@ -232,12 +232,13 @@ export {
   type CandidateStoreOptions,
   type ConfirmResult,
   createCandidateStore,
+  type RejectResult,
 } from "./candidates/store.js";
 export {
   type CandidateActor,
   type CandidateRouteResponse,
   type CandidateRoutes,
   createCandidateRoutes,
+  LIST_EDIT_CAPABILITY,
   QUEUE_READ_CAPABILITY,
-  REVIEW_DECIDE_CAPABILITY,
 } from "./candidates/routes.js";

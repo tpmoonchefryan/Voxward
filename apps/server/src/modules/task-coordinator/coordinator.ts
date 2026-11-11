@@ -108,6 +108,11 @@ export interface TaskBatch {
   readonly tasks: readonly BatchTask[];
 }
 
+/** The lanes one caller takes from. Omitted, every lane is taken. Dispatch order is always PAID, REALTIME, BACKGROUND. */
+export interface TakeBatchOptions {
+  readonly lanes?: readonly TaskLane[];
+}
+
 /** The outcome of one task, held by the caller until commit. */
 export interface TaskResult {
   /** Runs inside the fact store's transaction, and only after the expected facts still hold. */
@@ -131,7 +136,11 @@ export type FailureOutcome =
 export interface TaskCoordinatorService extends TaskCoordinator {
   enqueueInLane(lane: TaskLane, event: ChannelEvent, deadlineAt: string): Promise<TaskRef>;
   reasonOf(taskId: string): Promise<string | null>;
-  takeBatch(): Promise<TaskBatch | null>;
+  /**
+   * Takes the next batch from the lanes asked for. Each caller names the lanes it serves (VW-R-006): the Crew executor
+   * takes PAID and REALTIME, the review runner takes BACKGROUND. The lanes share the slots and the background reserve.
+   */
+  takeBatch(options?: TakeBatchOptions): Promise<TaskBatch | null>;
   reportFailure(taskId: string, errorCode: string): Promise<FailureOutcome>;
   commitResult(taskId: string, result: TaskResult): Promise<CommitResult>;
   finishBatch(batchId: string): Promise<void>;
@@ -543,12 +552,13 @@ export function createCoordinator(options: TaskCoordinatorOptions): TaskCoordina
     return refOf(task);
   }
 
-  async function takeBatch(): Promise<TaskBatch | null> {
+  async function takeBatch(options?: TakeBatchOptions): Promise<TaskBatch | null> {
     const now = nowMs();
     sweepExpired(now);
     const limit = currentLimit();
+    const wanted: readonly TaskLane[] = options?.lanes ?? TASK_LANES;
     for (const lane of TASK_LANES) {
-      if (!laneMayStart(lane, usage(), limit)) continue;
+      if (!wanted.includes(lane) || !laneMayStart(lane, usage(), limit)) continue;
       const eligible = queuedTasks(lane).filter((task) => task.notBeforeMs <= now);
       const candidates: BatchCandidate[] = eligible.map((task) => ({
         bytes: task.bytes,
