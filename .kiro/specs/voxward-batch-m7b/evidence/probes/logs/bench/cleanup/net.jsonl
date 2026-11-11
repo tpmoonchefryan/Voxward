@@ -1,0 +1,10 @@
+{"pid":544829,"kind":"loaded","argv":["/usr/local/bin/pnpm","bench:cleanup"]}
+{"pid":544853,"kind":"loaded","argv":["/usr/local/bin/pnpm","--filter"]}
+{"pid":544876,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/cli.mjs","../../bench/scripts/cleanup-observe.ts"]}
+{"pid":544895,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/bench/scripts/cleanup-observe.ts","--out"]}
+{"pid":544895,"kind":"ipc"}
+{"pid":544895,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/lib/main.js"]}
+{"pid":544979,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/bench/lib/crash-child.ts","/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-accept-m7b-work/tmp-bench/bench/cleanup-restart-9ad8po/runs"]}
+{"pid":544979,"kind":"ipc"}
+{"pid":544979,"kind":"ipc"}
+{"pid":544979,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/lib/main.js"]}

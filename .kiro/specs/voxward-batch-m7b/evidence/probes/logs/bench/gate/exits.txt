@@ -1,0 +1,7 @@
+plain exit=0
+env-only exit=0
+flag-only exit=2
+both exit=2
+bogus exit=2
+both latency-capacity.ts exit=2
+both cleanup-observe.ts exit=2

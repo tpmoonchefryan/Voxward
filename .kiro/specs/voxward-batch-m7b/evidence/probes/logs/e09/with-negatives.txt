@@ -1,0 +1,7 @@
+packages/contracts/src/output/zz-negative.ts:1: contracts may not import "../../../../apps/server/src/db/output-store.js" (db)
+apps/server/src/adapters/native-output/zz-negative.ts:1: adapter may not import "../../modules/output-adapter/index.js" (module output-adapter)
+apps/server/src/adapters/native-output/zz-negative.ts:2: adapter may not import "../../db/output-store.js" (db)
+apps/server/src/db/zz-negative.ts:1: db may not import "../modules/output-adapter/subscription.js" (module output-adapter)
+apps/server/src/modules/output-adapter/zz-negative.ts:1: module output-adapter may not import "ws" (package ws)
+apps/server/src/modules/output-adapter/zz-negative.ts:2: module output-adapter may not import "../../db/output-store.js" (db)
+check-deps: 6 violation(s) across 217 files

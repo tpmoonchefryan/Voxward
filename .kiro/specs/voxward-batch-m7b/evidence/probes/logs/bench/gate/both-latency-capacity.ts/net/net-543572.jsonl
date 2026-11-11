@@ -1,0 +1,3 @@
+{"pid":543572,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/bench/scripts/latency-capacity.ts","--real-model"]}
+{"pid":543572,"kind":"ipc"}
+{"pid":543572,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/lib/main.js"]}

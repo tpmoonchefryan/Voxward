@@ -1,0 +1,11 @@
+
+## R1 real app: overturn of row 2 while row 1 is written to a slow consumer
+OK   R1 after the overturn to BLOCK is committed, the pump does not send row 2's approved text (design §6 and protocol §6: only rows of the current verdict; VW-R-018: a block yields only WARD_BLOCKED) :: {"heldBefore":{"row1":"PENDING","row2":"PENDING","watcherHasRow2":false},"overturn":"overturned","verdictsAfterOverturn":[{"id":"verdict-event-channel-a-2","downstream":"ALLOW","is_current":0},{"id":"overturn:channel-a:op-block-2","downstream":"BLOCK","is_current":1}],"receivedRow2":null,"row2Status":"PENDING","frames":["HELLO","DELIVER:row-1","WARD_BLOCKED:overturn-delivery:channel-a:op-block-2"]}
+NOTE R1b the slow consumer also received row 2's text after the overturn :: false
+
+## R2-R4 controlled pass: a change to row 2 while row 1 is held
+OK   R2 overturn of row 2 to BLOCK while row 1 is held: row 2's text is not sent :: {"change":"overturned","report":{"expired":0,"sent":1,"retried":0,"failed":0},"watcherGotRow2":[],"slowGotRow2":false,"row2":{"status":"PENDING","attempts":0,"valid_until":"2026-11-10T10:05:00.000Z"},"verdicts":[{"id":"verdict-event-channel-a-2","downstream":"ALLOW","is_current":0},{"id":"overturn:channel-a:op-block-2","downstream":"BLOCK","is_current":1}]}
+OK   R3 row 2 marked CANCELLED while row 1 is held: row 2 is not sent :: {"change":"CANCELLED","report":{"expired":0,"sent":1,"retried":0,"failed":0},"watcherGotRow2":[],"slowGotRow2":false,"row2":{"status":"CANCELLED","attempts":0,"valid_until":"2026-11-10T10:05:00.000Z"},"verdicts":[{"id":"verdict-event-channel-a-2","downstream":"ALLOW","is_current":1}]}
+OK   R4 control: the clock passes row 2's validity while row 1 is held: the pump's own time check skips row 2 :: {"change":"2026-11-10T10:06:00.000Z","report":{"expired":0,"sent":0,"retried":0,"failed":0},"watcherGotRow2":[],"slowGotRow2":false,"row2":{"status":"PENDING","attempts":0,"valid_until":"2026-11-10T10:05:00.000Z"},"verdicts":[{"id":"verdict-event-channel-a-2","downstream":"ALLOW","is_current":1}]}
+
+checks 4, failures 0

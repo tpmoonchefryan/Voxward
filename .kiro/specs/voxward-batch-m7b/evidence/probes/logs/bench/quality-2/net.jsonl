@@ -1,0 +1,5 @@
+{"pid":542547,"kind":"loaded","argv":["/usr/local/bin/pnpm","bench:quality"]}
+{"pid":542571,"kind":"loaded","argv":["/usr/local/bin/pnpm","--filter"]}
+{"pid":542594,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/cli.mjs","../../bench/scripts/quality.ts"]}
+{"pid":542613,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/bench/scripts/quality.ts","--out"]}
+{"pid":542613,"kind":"ipc"}

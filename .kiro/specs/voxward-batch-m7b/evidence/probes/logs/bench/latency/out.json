@@ -1,0 +1,83 @@
+{
+  "schema": "voxward.bench.latency-capacity.v1",
+  "bench": "VOXWARD-SUB-049",
+  "mode": "doubles-only",
+  "note": "Times measure this machine running the rule engine and the Kiro CLI adapter against the fake CLI. They do not measure a model.",
+  "environment": {
+    "generatedAt": "2026-11-11T19:22:22.075Z",
+    "platform": "linux",
+    "release": "7.0.0-42-generic",
+    "arch": "x64",
+    "cpuModel": "AMD Ryzen 7 5800X 8-Core Processor",
+    "cpuCount": 8,
+    "memoryGiB": 30.3,
+    "node": "v24.16.0"
+  },
+  "parameters": {
+    "samples": 73,
+    "staticRounds": 20,
+    "batchSize": 10,
+    "concurrencyLevels": [
+      1,
+      2,
+      4
+    ],
+    "passesPerLevel": 3,
+    "realtimeDouble": "kiro-cli adapter + fake CLI (mode ok); no model runs"
+  },
+  "staticRules": {
+    "observations": 1460,
+    "p50Ms": 0.16,
+    "p95Ms": 0.244,
+    "firstRoundP50Ms": 0.217,
+    "firstRoundP95Ms": 0.748,
+    "cacheNote": "rounds after the first reuse the nickname verdict cache"
+  },
+  "endToEnd": [
+    {
+      "concurrency": 1,
+      "batches": 24,
+      "p50Ms": 62.178,
+      "p95Ms": 64.858,
+      "wallMs": 1496.582,
+      "throughputBatchesPerSec": 16.037,
+      "refusedBatches": {}
+    },
+    {
+      "concurrency": 2,
+      "batches": 24,
+      "p50Ms": 64.786,
+      "p95Ms": 68.828,
+      "wallMs": 782.144,
+      "throughputBatchesPerSec": 30.685,
+      "refusedBatches": {}
+    },
+    {
+      "concurrency": 4,
+      "batches": 24,
+      "p50Ms": 73.114,
+      "p95Ms": 81.752,
+      "wallMs": 446.145,
+      "throughputBatchesPerSec": 53.794,
+      "refusedBatches": {}
+    }
+  ],
+  "probes": {
+    "timeout": {
+      "timeoutMs": 500,
+      "outcome": "REFUSED",
+      "errorCode": "RUN_TIMEOUT",
+      "elapsedMs": 539.855
+    },
+    "hugeOutput": {
+      "outcome": "REFUSED",
+      "errorCode": "RUN_OUTPUT_TOO_LARGE",
+      "elapsedMs": 46.795
+    }
+  },
+  "notMeasured": [
+    "queue age of the oldest message: needs the task coordinator and the review loop wired (S011, S014); not measured here",
+    "real model latency and per-stream cost: SUB-050 with the Owner account",
+    "model structure failure rate on a real model: doubles return valid output by design; the fault rows are in quality.json"
+  ]
+}

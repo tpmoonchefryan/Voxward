@@ -1,0 +1,110 @@
+{
+  "schema": "voxward.bench.cleanup-observe.v1",
+  "bench": "VOXWARD-SUB-049",
+  "mode": "doubles-only",
+  "note": "Observations of the Kiro CLI adapter against the fake CLI. They show what this machine left behind. They do not prove what a real Kiro CLI retains.",
+  "environment": {
+    "generatedAt": "2026-11-11T19:22:23.979Z",
+    "platform": "linux",
+    "release": "7.0.0-42-generic",
+    "arch": "x64",
+    "cpuModel": "AMD Ryzen 7 5800X 8-Core Processor",
+    "cpuCount": 8,
+    "memoryGiB": 30.3,
+    "node": "v24.16.0"
+  },
+  "criteria": "after each scenario: residualRunDirs = 0 and processesAlive = 0. The exit code is 0 when the observation completes, not when cleanup passes; read the clean fields.",
+  "scenarios": [
+    {
+      "scenario": "success",
+      "outcome": "COMPLETED",
+      "errorCode": null,
+      "exitCode": null,
+      "validationCodes": [],
+      "stderrMarkerLeaked": false,
+      "residualRunDirs": 0,
+      "processesAlive": 0,
+      "sessionDeleteRequests": 1,
+      "clean": true
+    },
+    {
+      "scenario": "failure",
+      "outcome": "REFUSED",
+      "errorCode": "RUN_FAILED",
+      "exitCode": 2,
+      "validationCodes": [],
+      "stderrMarkerLeaked": false,
+      "residualRunDirs": 0,
+      "processesAlive": 0,
+      "sessionDeleteRequests": 0,
+      "clean": true
+    },
+    {
+      "scenario": "invalid-output",
+      "outcome": "REFUSED",
+      "errorCode": "RUN_OUTPUT_INVALID",
+      "exitCode": null,
+      "validationCodes": [
+        "OUTPUT_TOO_MANY_ITEMS"
+      ],
+      "stderrMarkerLeaked": false,
+      "residualRunDirs": 0,
+      "processesAlive": 0,
+      "sessionDeleteRequests": 1,
+      "clean": true
+    },
+    {
+      "scenario": "cancel",
+      "outcome": "REFUSED",
+      "errorCode": "RUN_CANCELLED",
+      "exitCode": null,
+      "validationCodes": [],
+      "stderrMarkerLeaked": false,
+      "residualRunDirs": 0,
+      "processesAlive": 0,
+      "sessionDeleteRequests": 1,
+      "clean": true
+    },
+    {
+      "scenario": "timeout",
+      "outcome": "REFUSED",
+      "errorCode": "RUN_TIMEOUT",
+      "exitCode": null,
+      "validationCodes": [],
+      "stderrMarkerLeaked": false,
+      "residualRunDirs": 0,
+      "processesAlive": 0,
+      "sessionDeleteRequests": 1,
+      "clean": true
+    }
+  ],
+  "restart": {
+    "scenario": "restart-after-kill",
+    "beforeSweep": {
+      "residualRunDirs": 1,
+      "processesAlive": 1
+    },
+    "orphanSweep": {
+      "removed": 1,
+      "skipped": 0,
+      "refused": 0,
+      "terminated": 1,
+      "manualAction": 0,
+      "kiroSessions": {
+        "requested": 1,
+        "failed": 0,
+        "notObserved": 0
+      }
+    },
+    "afterSweep": {
+      "residualRunDirs": 0,
+      "processesAlive": 0,
+      "sessionDeleteRequests": 1,
+      "clean": true
+    }
+  },
+  "notMeasured": [
+    "retention of sessions inside a real Kiro CLI account: needs the Owner account (SUB-050, Q60)",
+    "behaviour of a real kiro-cli session delete command: the fake CLI answers every delete request"
+  ]
+}

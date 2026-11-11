@@ -1,0 +1,6 @@
+OK   V1 the shipped set passes its own check: 73 samples, every group at least 5 :: {"zh":11,"ja":7,"en":8,"mixed":6,"homophone":6,"nickname-combo":8,"cross-line":8,"noise":6,"evasion":7,"false-positive":6}
+OK   V2 each mutation is refused with a named issue :: {"provenance":["provenance: expected synthetic-authored"],"realViewerFlag":["contains_real_viewer_data: must be false"],"duplicateId":["samples[73]: duplicate id zh-01"],"crossLineWithoutThread":["samples[46].thread: cross-line samples need a thread id"],"threadOutsideCrossLine":["samples[0].thread: only cross-line samples carry one"],"unknownRoute":["samples[1].expected.route: unknown route"],"emptyBody":["samples[2].body: required"],"thinGroup":["coverage: group ja has 4, needs at least 5"]}
+OK   V3 no sample carries a YouTube channel id, URL, e-mail, @handle, long digit run or live-chat id; every senderRef is a bench- placeholder :: {"hits":[],"senderRefPrefixOk":true}
+NOTE V4 rule set bench-synth-v1; group kinds [["G-BLOCK-PLACEHOLDER",{"kind":"BLOCK"},4],["G-REVIEW-HOMOPHONE",{"kind":"REVIEW"},1],["G-DEDUCT-MILD",{"kind":"DEDUCT","deduction":3},1]]
+
+checks 3, failures 0

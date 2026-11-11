@@ -1,0 +1,85 @@
+[
+ {
+  "subject": "逐行等待发送的投递泵不能只在轮次开头读一次可发送行：慢写让出事件循环时，后面的行被改判或取消也照样发出",
+  "summary": "VoxWard 的原生输出投递泵每轮对一个频道调用一次 readSendable，然后逐行 await 发送。只要某个消费者的套接字不能立即写完，这一轮就让出事件循环；期间提交的改判（旧裁决 is_current=0）或 CANCELLED 不会被这一轮看到，后面的行按旧读数以 DELIVER 和原文发出，markSent 只比较 status 与 valid_until，于是还被标为 SENT。比较状态的 markSent 只保护正在发送的那一行。",
+  "snippet": "每行发送前在同一同步段里重读该行是否仍可发送（PENDING、未过期、所属裁决仍是当前裁决），markSent 也带上当前裁决条件。验收时挂起一次发送（假订阅者，或暂停读取的 TCP 消费者加一个大帧），挂起期间改判或取消后面的行，再放行，看后面的行是否发出。",
+  "body": "第 m7b 批 E61：真实 buildApp、真实投递泵与真实 ws，一个消费者暂停读取、第 1 行 8 MiB；房管经 S014 把第 2 行改判为 BLOCK 并提交后 26 ms，正常消费者收到第 2 行的原文，该行 SENT，之后才收到 WARD_BLOCKED。受控挂起与 CANCELLED 两种变化结果相同；时钟越过有效期时会被跳过（泵只复查了时间）。副本中每行发送前重读一次可发送行后三种情形都不再发出。实施方的「a row that changed while its frame was in flight」测试只覆盖正在发送的那一行。",
+  "tags": ["voxward", "output-adapter", "delivery", "race", "acceptance-probes"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/output-adapter/delivery.ts",
+    "apps/server/src/db/output-store.ts",
+    "apps/server/test/output-adapter/delivery/pump.test.ts",
+    ".kiro/specs/voxward-batch-m7b/evidence/acceptance.md",
+    ".kiro/specs/voxward-batch-m7b/evidence/probes/probe-m7b-s021-race.mts"
+   ]
+  }
+ },
+ {
+  "subject": "Fastify 应用上挂 ws 端点时，在 onClose 里关端点会让 app.close() 卡住：要放在 preClose",
+  "summary": "avvio 的 onClose 处理按登记逆序执行。Fastify 关 HTTP 服务器的处理在 preReady 时登记，比 buildApp 里 addHook('onClose') 晚，所以最先执行；server.close() 要等所有连接结束，升级后的 WebSocket 连接也算在内。消费者一直在线时，关端点、停计时器的 onClose 钩子永远轮不到，app.close() 不返回，计时器继续工作，SIGTERM 不能让进程退出。",
+  "snippet": "关闭 WebSocket 服务、停止依赖连接的计时器，用 app.addHook('preClose', …)。测试要有「消费者在线时调用 app.close()」的用例；afterEach 先 terminate 客户端再 close 会掩盖这个问题。",
+  "body": "第 m7b 批 E60 Z1：两个消费者在线时 app.close() 3 s 后仍未完成，期间新写入的投递照样发给消费者，新连接被拒；消费者自己断开后 1 ms 内完成。把同一个钩子改为 preClose 的副本中 Z1 立即完成。依据 avvio 9.3.1 index.js 的 _closeQ.unshift 与 Fastify 5.12.8 fastify.js 在 preReady 里登记的 server.close 处理。",
+  "tags": ["voxward", "fastify", "websocket", "shutdown", "testing"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/app.ts",
+    "apps/server/src/main.ts",
+    "apps/server/test/output-adapter/protocol/socket.test.ts",
+    ".kiro/specs/voxward-batch-m7b/evidence/acceptance.md",
+    ".kiro/specs/voxward-batch-m7b/evidence/probes/variants/fix-preclose.diff"
+   ]
+  }
+ },
+ {
+  "subject": "只读的 ws 端点也要设 maxPayload：ws 默认 100 MiB，收完整个消息才触发 message 事件",
+  "summary": "协议规定消费者只能回 pong、任何数据帧就断开，但 ws 的 WebSocketServer 仍按默认 maxPayload 100 MiB 缓存客户端消息，整条收完才发出 message 事件，断开发生在缓存之后。持有凭据的消费者因此能让服务端先占用一个大帧的内存；同一凭据的连接数也没有上限。没有凭据时升级在 HTTP 层被拒，ws 不解析帧。",
+  "snippet": "消费者不该发数据的 WebSocket 端点，把 maxPayload 设成很小的值（例如 1 KiB），需要时加每个凭据的连接上限。验收时发一个大的客户端文本帧，看关闭发生在读完之前还是之后。",
+  "body": "第 m7b 批 E60 M1：16 MiB 的客户端文本帧，服务端读完后 663 ms 才以 4400 关闭；M2：同一凭据 20 个连接全部被接受。ws 8.22.2 的 WebSocketServer 默认 maxPayload 为 104857600，perMessageDeflate 默认关闭。",
+  "tags": ["voxward", "websocket", "ws", "hardening", "output-adapter"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/adapters/native-output/socket.ts",
+    ".kiro/specs/voxward-batch-m7b/evidence/acceptance.md",
+    ".kiro/specs/voxward-batch-m7b/evidence/probes/probe-m7b-s021.mts"
+   ]
+  }
+ },
+ {
+  "subject": "VoxWard 有两种 vwo_ 前缀的输出凭据：只有 output_grants 能订阅原生端点，S003 的 Bearer 输出令牌现在打不开任何接口",
+  "summary": "S003 的 auth_output_tokens（POST /channels/:id/output-tokens 签发，Bearer，能力 output.feed）与 S021 的 output_grants + credential_refs（POST /channels/:id/output-grants 签发，WebSocket 子协议 vw-cred.<凭据>）形状相同。原生端点只认后者；HTTP 鉴权只认前者与会话，而没有路由要求 output.feed，所以前者现在什么都打不开，后者也打不开任何 HTTP 路由。协议文档说前者「仍服务既有接口」不准确。",
+  "snippet": "检查输出凭据时先分清是哪一种：订阅原生房间用 output-grants 签发的凭据放进子协议列表；S003 的 output-tokens 目前没有消费方，是否保留由 S023 决定。",
+  "body": "第 m7b 批 E60：S003 令牌放进子协议得 401，放进 Bearer 调签发路由得 403；原生凭据当 Bearer 调成员列表与 Change Log 查看器得 401。permissions.ts 的 DOWNSTREAM_CAPABILITIES 只有 output.feed，源码里没有任何路由要求它。",
+  "tags": ["voxward", "auth", "downstream", "credentials", "output-adapter"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/auth/downstream-tokens.ts",
+    "apps/server/src/auth/output-grants.ts",
+    "apps/server/src/auth/guard.ts",
+    "apps/server/src/auth/permissions.ts",
+    "docs/protocol/output-native-v1.md"
+   ]
+  }
+ },
+ {
+  "subject": "VoxWard 基准的质量输出不含时间与环境，sha256 可以跨工作树复现；SUB-050 还缺限流替身与费用、配额的采集位置",
+  "summary": "SUB-049 的 bench:quality 输出只依赖样本集、规则集与替身，在实施方工作树和合并后的候选上 sha256 都是 a50a0c39…9463，可以当作替身管线的基线。延迟与清理输出另带环境与时间。真实模型闸门要参数加 VOXWARD_BENCH_REAL_MODEL=1，本包两者都给也拒绝。假 CLI 只有 ok、hang、fail、huge、no-text、not-json、invalid 模式，没有限流；费用、配额、队列最老消息年龄都列为未测。",
+  "snippet": "改 bench 前后各跑一次 bench:quality 比较 sha256：变了要能用规则集、样本或替身的改动解释。SUB-050 接真实模型时保留「可复现摘要」与「环境记录」分开，另加限流模式与费用、配额字段。",
+  "body": "第 m7b 批 E70：两次 pnpm bench:quality --out 与在 apps/server 下 tsx 直接运行的 stdout sha256 相同，也与 S027 自测证据记录的值相同；只设环境变量时输出不变；只给 --real-model、两者都给、未知参数都以 2 退出。所有基准运行在拦截下只有 IPC，没有网络连接，垫片 0 次调用，scratch 运行后为空。",
+  "tags": ["voxward", "bench", "reproducibility", "sub-050", "acceptance-probes"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "bench/scripts/quality.ts",
+    "bench/lib/gate.ts",
+    "bench/fixtures/fake-kiro-cli.mjs",
+    "bench/README.md",
+    ".kiro/specs/voxward-s027-bench/evidence/self-check.md"
+   ]
+  }
+ }
+]

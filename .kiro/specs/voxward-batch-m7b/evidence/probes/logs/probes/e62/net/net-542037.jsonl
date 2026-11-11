@@ -1,0 +1,3 @@
+{"pid":542037,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/examples/consumer-dedup/consumer.mjs"]}
+{"pid":542037,"kind":"loopback","host":"127.0.0.1","port":43083}
+{"pid":542037,"kind":"loopback","host":"127.0.0.1","port":43083}

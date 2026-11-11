@@ -1,0 +1,300 @@
+{
+  "schema": "voxward.bench.quality.v1",
+  "bench": "VOXWARD-SUB-049",
+  "mode": "doubles-only",
+  "note": "Doubles show that the pipeline runs and is reproducible. They are not a measurement of any model's quality.",
+  "samples": {
+    "total": 73,
+    "groups": {
+      "zh": 11,
+      "ja": 7,
+      "en": 8,
+      "mixed": 6,
+      "homophone": 6,
+      "nickname-combo": 8,
+      "cross-line": 8,
+      "noise": 6,
+      "evasion": 7,
+      "false-positive": 6
+    },
+    "provenance": "synthetic-authored",
+    "containsRealViewerData": false
+  },
+  "ruleSet": {
+    "version": "bench-synth-v1",
+    "groups": 3,
+    "rules": 6,
+    "readings": 19
+  },
+  "rules": {
+    "engine": "moderation-engine",
+    "qualityMeaningful": false,
+    "total": 73,
+    "correct": 73,
+    "falseBlock": 0,
+    "miss": 0,
+    "falseReview": 0,
+    "missedReview": 0,
+    "byGroup": {
+      "zh": {
+        "total": 11,
+        "correct": 11
+      },
+      "ja": {
+        "total": 7,
+        "correct": 7
+      },
+      "en": {
+        "total": 8,
+        "correct": 8
+      },
+      "mixed": {
+        "total": 6,
+        "correct": 6
+      },
+      "homophone": {
+        "total": 6,
+        "correct": 6
+      },
+      "nickname-combo": {
+        "total": 8,
+        "correct": 8
+      },
+      "cross-line": {
+        "total": 8,
+        "correct": 8
+      },
+      "noise": {
+        "total": 6,
+        "correct": 6
+      },
+      "evasion": {
+        "total": 7,
+        "correct": 7
+      },
+      "false-positive": {
+        "total": 6,
+        "correct": 6
+      }
+    },
+    "mismatches": []
+  },
+  "realtime": {
+    "synthetic": {
+      "double": "synthetic",
+      "qualityMeaningful": false,
+      "batches": 8,
+      "refusedBatches": {},
+      "total": 73,
+      "classified": 73,
+      "unclassified": 0,
+      "downstreamCorrect": 57,
+      "classCorrect": 49,
+      "falseBlock": 0,
+      "miss": 16,
+      "mismatches": [
+        "zh-09:BLOCK->ALLOW_MEANINGFUL",
+        "zh-10:BLOCK->ALLOW_MEANINGFUL",
+        "ja-06:BLOCK->ALLOW_MEANINGFUL",
+        "ja-07:BLOCK->ALLOW_MEANINGFUL",
+        "en-05:BLOCK->ALLOW_MEANINGFUL",
+        "en-06:BLOCK->ALLOW_MEANINGFUL",
+        "en-07:BLOCK->ALLOW_MEANINGFUL",
+        "mixed-06:BLOCK->ALLOW_MEANINGFUL",
+        "homo-06:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "nick-02:BLOCK->ALLOW_MEANINGFUL",
+        "cl-a3:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-01:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-02:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-03:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-04:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-05:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-06:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "ev-01:BLOCK->ALLOW_MEANINGFUL",
+        "ev-02:BLOCK->ALLOW_MEANINGFUL",
+        "ev-03:BLOCK->ALLOW_MEANINGFUL",
+        "ev-04:BLOCK->ALLOW_MEANINGFUL",
+        "ev-05:BLOCK->ALLOW_MEANINGFUL",
+        "ev-06:BLOCK->ALLOW_MEANINGFUL",
+        "ev-07:BLOCK->ALLOW_MEANINGFUL"
+      ]
+    },
+    "fakeCli": {
+      "double": "fake-cli",
+      "qualityMeaningful": false,
+      "batches": 8,
+      "refusedBatches": {},
+      "total": 73,
+      "classified": 73,
+      "unclassified": 0,
+      "downstreamCorrect": 57,
+      "classCorrect": 49,
+      "falseBlock": 1,
+      "miss": 15,
+      "mismatches": [
+        "zh-09:BLOCK->ALLOW_MEANINGFUL",
+        "zh-10:BLOCK->ALLOW_MEANINGFUL",
+        "ja-06:BLOCK->ALLOW_MEANINGFUL",
+        "ja-07:BLOCK->ALLOW_MEANINGFUL",
+        "en-05:BLOCK->ALLOW_MEANINGFUL",
+        "en-06:BLOCK->ALLOW_MEANINGFUL",
+        "en-08:ALLOW_MEANINGFUL->BLOCK",
+        "mixed-06:BLOCK->ALLOW_MEANINGFUL",
+        "homo-06:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "nick-02:BLOCK->ALLOW_MEANINGFUL",
+        "cl-a3:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-01:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-02:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-03:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-04:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-05:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-06:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "ev-01:BLOCK->ALLOW_MEANINGFUL",
+        "ev-02:BLOCK->ALLOW_MEANINGFUL",
+        "ev-03:BLOCK->ALLOW_MEANINGFUL",
+        "ev-04:BLOCK->ALLOW_MEANINGFUL",
+        "ev-05:BLOCK->ALLOW_MEANINGFUL",
+        "ev-06:BLOCK->ALLOW_MEANINGFUL",
+        "ev-07:BLOCK->ALLOW_MEANINGFUL"
+      ]
+    }
+  },
+  "sc": {
+    "translationOff": {
+      "double": "off",
+      "qualityMeaningful": false,
+      "translationEnabled": false,
+      "batches": 8,
+      "refusedBatches": {},
+      "shownCues": 0,
+      "generatedTextRejected": 0,
+      "withheld": {
+        "TRANSLATION_OFF": 71,
+        "VERDICT_BLOCK": 2
+      },
+      "total": 73,
+      "classified": 73,
+      "unclassified": 0,
+      "downstreamCorrect": 57,
+      "classCorrect": 49,
+      "falseBlock": 1,
+      "miss": 15,
+      "mismatches": [
+        "zh-09:BLOCK->ALLOW_MEANINGFUL",
+        "zh-10:BLOCK->ALLOW_MEANINGFUL",
+        "ja-06:BLOCK->ALLOW_MEANINGFUL",
+        "ja-07:BLOCK->ALLOW_MEANINGFUL",
+        "en-05:BLOCK->ALLOW_MEANINGFUL",
+        "en-06:BLOCK->ALLOW_MEANINGFUL",
+        "en-08:ALLOW_MEANINGFUL->BLOCK",
+        "mixed-06:BLOCK->ALLOW_MEANINGFUL",
+        "homo-06:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "nick-02:BLOCK->ALLOW_MEANINGFUL",
+        "cl-a3:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-01:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-02:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-03:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-04:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-05:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-06:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "ev-01:BLOCK->ALLOW_MEANINGFUL",
+        "ev-02:BLOCK->ALLOW_MEANINGFUL",
+        "ev-03:BLOCK->ALLOW_MEANINGFUL",
+        "ev-04:BLOCK->ALLOW_MEANINGFUL",
+        "ev-05:BLOCK->ALLOW_MEANINGFUL",
+        "ev-06:BLOCK->ALLOW_MEANINGFUL",
+        "ev-07:BLOCK->ALLOW_MEANINGFUL"
+      ]
+    },
+    "translationOnNoFault": {
+      "double": "on-none",
+      "qualityMeaningful": false,
+      "translationEnabled": true,
+      "batches": 8,
+      "refusedBatches": {},
+      "shownCues": 48,
+      "generatedTextRejected": 8,
+      "withheld": {
+        "VERDICT_BLOCK": 17,
+        "GENERATED_TEXT_REJECTED": 8
+      },
+      "total": 73,
+      "classified": 73,
+      "unclassified": 0,
+      "downstreamCorrect": 72,
+      "classCorrect": 64,
+      "falseBlock": 1,
+      "miss": 0,
+      "mismatches": [
+        "en-08:ALLOW_MEANINGFUL->BLOCK",
+        "homo-06:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "cl-a3:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-01:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-02:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-03:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-04:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-05:ALLOW_NOISE->ALLOW_MEANINGFUL",
+        "noise-06:ALLOW_NOISE->ALLOW_MEANINGFUL"
+      ]
+    },
+    "translationOnExtraItemFault": {
+      "double": "on-extra",
+      "qualityMeaningful": false,
+      "translationEnabled": true,
+      "batches": 8,
+      "refusedBatches": {
+        "OUTPUT_TOO_MANY_ITEMS": 8
+      },
+      "shownCues": 0,
+      "generatedTextRejected": 0,
+      "withheld": {},
+      "total": 73,
+      "classified": 0,
+      "unclassified": 73,
+      "downstreamCorrect": 0,
+      "classCorrect": 0,
+      "falseBlock": 0,
+      "miss": 0,
+      "mismatches": []
+    }
+  },
+  "review": {
+    "double": "synthetic-review-model",
+    "qualityMeaningful": false,
+    "batches": 8,
+    "contractRefusals": {},
+    "candidateTerms": 8,
+    "total": 73,
+    "classified": 73,
+    "unclassified": 0,
+    "downstreamCorrect": 72,
+    "classCorrect": 64,
+    "falseBlock": 1,
+    "miss": 0,
+    "mismatches": [
+      "en-08:ALLOW_MEANINGFUL->BLOCK",
+      "homo-06:ALLOW_NOISE->ALLOW_MEANINGFUL",
+      "cl-a3:ALLOW_NOISE->ALLOW_MEANINGFUL",
+      "noise-01:ALLOW_NOISE->ALLOW_MEANINGFUL",
+      "noise-02:ALLOW_NOISE->ALLOW_MEANINGFUL",
+      "noise-03:ALLOW_NOISE->ALLOW_MEANINGFUL",
+      "noise-04:ALLOW_NOISE->ALLOW_MEANINGFUL",
+      "noise-05:ALLOW_NOISE->ALLOW_MEANINGFUL",
+      "noise-06:ALLOW_NOISE->ALLOW_MEANINGFUL"
+    ]
+  },
+  "crossLine": {
+    "threads": 3,
+    "lines": 8,
+    "jointBlockThreads": 2,
+    "jointPassThreads": 1,
+    "scored": false,
+    "reason": "the engine judges each message alone; joint thread expectations are counted, not scored"
+  },
+  "notMeasured": [
+    "human overturn rate: the doubles have no human reviewer",
+    "API quota and per-stream model cost: no real model runs in this package (SUB-050)",
+    "joint verdict of cross-line threads: the engine judges each message alone, so thread expectations are only counted",
+    "review settlement loop (review store and task coordinator): not wired; only the review model contract and verdict agreement are measured"
+  ]
+}

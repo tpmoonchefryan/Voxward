@@ -1,0 +1,86 @@
+## shortstat outside .kiro
+ 50 files changed, 4545 insertions(+), 13 deletions(-)
+## name-status outside .kiro
+M	apps/server/package.json
+A	apps/server/src/adapters/native-output/socket.ts
+M	apps/server/src/app.ts
+A	apps/server/src/auth/output-grants.ts
+M	apps/server/src/auth/routes.ts
+A	apps/server/src/db/output-store.ts
+A	apps/server/src/modules/output-adapter/delivery.ts
+M	apps/server/src/modules/output-adapter/index.ts
+A	apps/server/src/modules/output-adapter/native-protocol.ts
+A	apps/server/src/modules/output-adapter/resend.ts
+A	apps/server/src/modules/output-adapter/subscription.ts
+M	apps/server/src/security/redaction.ts
+A	apps/server/test/app/error-responses.test.ts
+A	apps/server/test/auth/output-grants.test.ts
+A	apps/server/test/db/output-store.test.ts
+A	apps/server/test/output-adapter/delivery/consumer-dedup.test.ts
+A	apps/server/test/output-adapter/delivery/helpers.ts
+A	apps/server/test/output-adapter/delivery/pump.test.ts
+A	apps/server/test/output-adapter/delivery/resend-contract.test.ts
+A	apps/server/test/output-adapter/protocol/frames.test.ts
+A	apps/server/test/output-adapter/protocol/socket.test.ts
+A	apps/server/test/output-adapter/protocol/subscription-registry.test.ts
+A	apps/server/test/security/url-redaction.test.ts
+A	bench/README.md
+A	bench/fixtures/fake-kiro-cli.mjs
+A	bench/lib/crash-child.ts
+A	bench/lib/doubles.ts
+A	bench/lib/fake-log.ts
+A	bench/lib/gate.ts
+A	bench/lib/metrics.ts
+A	bench/lib/paths.ts
+A	bench/lib/rules.ts
+A	bench/lib/samples.ts
+A	bench/samples/SOURCES.md
+A	bench/samples/moderation-samples.json
+A	bench/samples/rule-set.json
+A	bench/scripts/cleanup-observe.ts
+A	bench/scripts/latency-capacity.ts
+A	bench/scripts/quality.ts
+A	bench/tsconfig.json
+A	docs/protocol/output-native-v1.md
+A	examples/consumer-dedup/README.md
+A	examples/consumer-dedup/consumer.mjs
+A	examples/consumer-dedup/dedupe.d.mts
+A	examples/consumer-dedup/dedupe.mjs
+M	package.json
+M	packages/contracts/src/index.ts
+A	packages/contracts/src/output/native-v1.ts
+A	packages/contracts/src/ports/output-port.ts
+M	pnpm-lock.yaml
+## must be unchanged (empty = unchanged)
+apps/server/src/modules/decision-service changed_files=0
+apps/server/src/modules/scoring-engine changed_files=0
+apps/server/src/modules/task-coordinator changed_files=0
+apps/server/src/modules/moderation-engine changed_files=0
+apps/server/src/modules/inference-provider changed_files=0
+apps/server/src/modules/platform-source changed_files=0
+apps/server/src/modules/audit-store changed_files=0
+apps/server/src/modules/data-lifecycle-service changed_files=0
+apps/server/src/modules/registry.ts changed_files=0
+apps/server/src/db/schema changed_files=0
+apps/server/src/db/migrations changed_files=0
+apps/server/src/db/decision-store.ts changed_files=0
+apps/server/src/db/transaction.ts changed_files=0
+apps/server/src/config changed_files=0
+apps/server/src/main.ts changed_files=0
+apps/server/src/adapters/kiro-cli changed_files=0
+apps/server/src/adapters/synthetic changed_files=0
+apps/web changed_files=0
+scripts changed_files=0
+packages/contracts/src/version.ts changed_files=0
+packages/contracts/src/modules changed_files=0
+pnpm-workspace.yaml changed_files=0
+vitest.workspace.ts changed_files=0
+.kiro/steering changed_files=0
+.kiro/skills changed_files=0
+## CONTRACT_VERSION
+packages/contracts/src/version.ts:2:export const CONTRACT_VERSION = "1";
+## contracts index diff
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
++export * from "./output/native-v1.js";
++export * from "./ports/output-port.js";

@@ -1,0 +1,10 @@
+
+## E example consumer against the live endpoint
+OK   E1 the example connects with the credential from the environment, prints HELLO, the approved text, and WARD_BLOCKED without the blocked wording :: ["connected: vw-output.v1, heartbeat every 60000 ms","d-r1 approved text from the reproduction","d-r2 WARD_BLOCKED"]
+OK   E2 a delivery the server sent twice (one failed attempt for the stalled consumer) is shown once by deliveryId :: {"row":{"status":"SENT","attempts":1,"valid_until":"2099-01-01T00:00:00.000Z"},"printedLines":1}
+OK   E3 revoking the grant closes the example with 4403 GRANT_REVOKED and it exits 0 :: {"revoked":204,"last":"closed 4403 GRANT_REVOKED","exitCode":0}
+OK   E4 the credential appears in no output or log line; the blocked wording and the expired row are not printed :: null
+OK   E5 an unknown credential: 'connection failed', exit 1; a URL with a query, a host other than 127.0.0.1, or no credential: refused before connecting, exit 2 :: {"wrongExit":1,"queryExit":2,"remoteExit":2,"noneExit":2,"remoteErr":"this example connects to 127.0.0.1 only"}
+NOTE E6 example stdout (long lines shortened) :: ["connected: vw-output.v1, heartbeat every 60000 ms","d-r1 approved text from the reproduction","d-r2 WARD_BLOCKED","d-r4 BIG:zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz…(4194313 chars)","closed 4403 GRANT_REVOKED"]
+
+checks 5, failures 0

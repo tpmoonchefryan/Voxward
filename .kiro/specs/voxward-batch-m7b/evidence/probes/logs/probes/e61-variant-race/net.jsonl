@@ -1,0 +1,9 @@
+{"pid":541604,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/cli.mjs","/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-accept-m7b-work/probes/probe-m7b-s021-race.mts"]}
+{"pid":541622,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-accept-m7b-work/probes/probe-m7b-s021-race.mts","/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-accept-m7b-work/variants/fix-recheck"]}
+{"pid":541622,"kind":"ipc"}
+{"pid":541622,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/lib/main.js"]}
+{"pid":541622,"kind":"loopback","host":"127.0.0.1","port":43955}
+{"pid":541622,"kind":"loopback","host":"127.0.0.1","port":43955}
+{"pid":541622,"kind":"loopback","host":"127.0.0.1","port":44191}
+{"pid":541622,"kind":"loopback","host":"127.0.0.1","port":43155}
+{"pid":541622,"kind":"loopback","host":"127.0.0.1","port":37493}

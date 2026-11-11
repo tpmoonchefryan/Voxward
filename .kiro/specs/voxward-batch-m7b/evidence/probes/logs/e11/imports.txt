@@ -1,0 +1,59 @@
+## imports per file
+# apps/server/src/adapters/native-output/socket.ts
+from "@voxward/contracts"
+from "node:http"
+from "node:stream"
+from "ws"
+# apps/server/src/auth/output-grants.ts
+from "../db/output-store.js"
+from "../db/transaction.js"
+from "./downstream-tokens.js"
+from "./session.js"
+from "node:crypto"
+# apps/server/src/db/output-store.ts
+from "./client.js"
+from "./schema/index.js"
+from "./transaction.js"
+from "@voxward/contracts"
+from "drizzle-orm"
+from "node:crypto"
+# apps/server/src/modules/output-adapter/delivery.ts
+from "./native-protocol.js"
+from "./resend.js"
+from "@voxward/contracts"
+# apps/server/src/modules/output-adapter/index.ts
+from "./delivery.js"
+from "./native-protocol.js"
+from "./resend.js"
+from "./subscription.js"
+from "@voxward/contracts"
+# apps/server/src/modules/output-adapter/native-protocol.ts
+from "@voxward/contracts"
+# apps/server/src/modules/output-adapter/resend.ts
+from "@voxward/contracts"
+# apps/server/src/modules/output-adapter/subscription.ts
+from "@voxward/contracts"
+# packages/contracts/src/output/native-v1.ts
+# packages/contracts/src/ports/output-port.ts
+from "../decisions/verdict.js"
+from "../output/native-v1.js"
+## sensitive calls (require/dynamic import/fetch/child_process/process.env/timers/dns/dgram/http.request/console)
+apps/server/src/adapters/native-output/socket.ts:154:      graceTimer = setTimeout(() => ws.terminate(), timing.closeGraceMs);
+apps/server/src/adapters/native-output/socket.ts:165:        const timer = setTimeout(() => {
+apps/server/src/adapters/native-output/socket.ts:201:    heartbeat = setInterval(() => {
+apps/server/src/adapters/native-output/socket.ts:210:      pongTimer = setTimeout(() => {
+## app.ts and routes.ts added lines with timers/env
++  const timer = setInterval(() => {
++  timer.unref();
+## log calls in new code and their fields
+apps/server/src/adapters/native-output/socket.ts:83:    options.log?.warn({ status, reason }, "native output upgrade refused");
+apps/server/src/adapters/native-output/socket.ts:94:      options.log?.warn({ errorCode: errorCodeOf(error) }, "native output grant check failed");
+apps/server/src/adapters/native-output/socket.ts:114:      options.log?.warn({ errorCode: errorCodeOf(error) }, "native output credential lookup failed");
+apps/server/src/adapters/native-output/socket.ts:184:    ws.on("error", (error) => options.log?.warn({ errorCode: errorCodeOf(error) }, "native output connection failed"));
+apps/server/src/app.ts:122:      .catch((error: unknown) => app.log.error({ errorName: errorNameOf(error) }, "delivery pass failed"))
+## examples imports
+      1 from "./dedupe.mjs"
+      1 process.env.VOXWARD_OUTPUT_CREDENTIAL
+      1 process.env.VOXWARD_OUTPUT_URL
+      1 ws://127.0.0.1:3000/output/v1/room
+      1 ws://127.0.0.1:3000/output/v1/room)

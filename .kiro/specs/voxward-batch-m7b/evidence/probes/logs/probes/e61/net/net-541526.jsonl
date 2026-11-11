@@ -1,0 +1,8 @@
+{"pid":541526,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-accept-m7b-work/probes/probe-m7b-s021-race.mts","/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b"]}
+{"pid":541526,"kind":"ipc"}
+{"pid":541526,"kind":"loaded","argv":["/home/ryanlan/.kiro/crew/scratch/runtime-3ea67d28/vw-int-m7b/node_modules/.pnpm/esbuild@0.28.2/node_modules/esbuild/lib/main.js"]}
+{"pid":541526,"kind":"loopback","host":"127.0.0.1","port":36371}
+{"pid":541526,"kind":"loopback","host":"127.0.0.1","port":36371}
+{"pid":541526,"kind":"loopback","host":"127.0.0.1","port":33523}
+{"pid":541526,"kind":"loopback","host":"127.0.0.1","port":44607}
+{"pid":541526,"kind":"loopback","host":"127.0.0.1","port":46807}

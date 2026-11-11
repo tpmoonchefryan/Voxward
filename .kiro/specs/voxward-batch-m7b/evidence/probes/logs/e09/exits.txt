@@ -1,0 +1,3 @@
+base exit=0
+with-negatives exit=1
+after exit=0

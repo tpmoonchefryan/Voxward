@@ -1,0 +1,12 @@
+{
+ "processesWithGuard": 2,
+ "recordsByKind": {
+  "loaded": 2,
+  "ipc": 1
+ },
+ "externalRefused": 0,
+ "refusedTargets": {},
+ "loopbackTargets": {},
+ "dnsRefused": {},
+ "kiroShimCalls": 0
+}

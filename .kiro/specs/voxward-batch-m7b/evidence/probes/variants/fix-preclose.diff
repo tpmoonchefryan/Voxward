@@ -1,0 +1,12 @@
+--- app.orig.ts	2026-11-11 19:19:23.385019326 +0000
++++ fix-preclose/apps/server/src/app.ts	2026-11-11 19:19:23.394331777 +0000
+@@ -125,7 +125,8 @@
+       });
+   }, settings?.passIntervalMs ?? DEFAULT_PASS_INTERVAL_MS);
+   timer.unref();
+-  app.addHook("onClose", async () => {
++  // Variant fix-preclose (acceptance control only): stop the pump and drop consumers before Fastify closes the server.
++  app.addHook("preClose", async () => {
+     clearInterval(timer);
+     endpoint.close();
+   });
