@@ -213,11 +213,11 @@ Crew 执行器（`createCrewExecutor`）：
 
 | 验收行 | 测试文件 | 证明内容 |
 | --- | --- | --- |
-| VW-SUB017-AC001 | `micro-batch.test.ts` | 条数、字节、等待、截止时间四种取批条件；超大单条被拒 |
+| VW-SUB017-AC001 | `micro-batch.test.ts` | 条数、字节、等待、截止时间四种取批条件 |
 | VW-SUB017-AC001 | `priority.test.ts` | 派工顺序；后台余量；并发降到最小时后台暂停 |
 | VW-SUB017-AC001 | `micro-batch.test.ts`（截止时间部分）、`acceptance.test.ts` | 慢请求超时转 PENDING_REVIEW，不放行不扣分；迟到结果丢弃，不恢复 |
 | VW-SUB017-AC001 | `ordering.test.ts`（重试部分）、`coordinator.test.ts` | 限流退避递增且有上限；不可重试直接转人工；次数与时间预算耗尽后转人工；取消后迟到的失败报告被忽略，不再重试 |
-| VW-SUB017-AC001 | `coordinator.test.ts` | 队列满明确转人工，队列长度有界；取消立即生效，即使车道排队已满 |
+| VW-SUB017-AC001 | `coordinator.test.ts` | 超过字节上限的正文转人工；队列满明确转人工，队列长度有界；取消立即生效，即使车道排队已满 |
 | VW-SUB017-AC001 | `generation.test.ts` | 版本被替代、数据已删除、代次变化、已结算各自被拒；重复提交不重复写入 |
 | VW-SUB017-AC001 | `ordering.test.ts` | 前序慢请求时等待至其截止时间，之后推进并记录原因；跨通道不等待 |
 | VW-SUB017-AC001 | `acceptance.test.ts` | 慢请求、限流、队列满、进程重启、删除取消、前序超时六类故障注入 |
