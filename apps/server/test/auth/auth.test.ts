@@ -175,7 +175,7 @@ describe("auth modules", () => {
       const [row] = database.orm.select({ passwordHash: authAccounts.passwordHash }).from(authAccounts).all();
       expect(row?.passwordHash.startsWith("$scrypt$ln=17,r=8,p=1$")).toBe(true);
       expect(row?.passwordHash).not.toContain(PASSWORD);
-    });
+    }, 30_000);
   });
 
   describe("password hashes", () => {

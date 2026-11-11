@@ -18,3 +18,4 @@ export * from "./ports/scoring-ledger.js";
 export * from "./ports/audit-log.js";
 export * from "./viewer/log-viewer.js";
 export * from "./ai/index.js";
+export * from "./ports/data-request.js";

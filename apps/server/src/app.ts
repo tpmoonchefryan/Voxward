@@ -1,15 +1,21 @@
+import { randomUUID } from "node:crypto";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
+import { dataLifecycleRoutes } from "./auth/data-routes.js";
 import { databaseViewerAccess } from "./auth/log-viewer-access.js";
 import { logViewerRoutes } from "./auth/log-viewer-routes.js";
 import { authRoutes } from "./auth/routes.js";
 import { createAuditLogPort } from "./db/audit-log.js";
 import type { VoxwardDatabase } from "./db/client.js";
+import { createDataRequestPort } from "./db/data-request-store.js";
+import { createSubjectReadPort } from "./db/subject-read.js";
+import { RETENTION_DAYS } from "./modules/audit-store/content-policy.js";
 import {
   createInvalidationBus,
   createLogViewer,
   createViewerCache,
   type InvalidationBus,
 } from "./modules/audit-store/index.js";
+import { createDataRoutes, type DataDeps } from "./modules/data-lifecycle-service/index.js";
 import type { ModuleRegistry } from "./modules/registry.js";
 import { redactText } from "./security/redaction.js";
 
@@ -52,8 +58,21 @@ export function buildApp({ modules, logger = true, logStream, database, invalida
     app.addHook("onClose", async () => {
       cache.dispose();
     });
+    app.register(dataLifecycleRoutes, { database, routes: createDataRoutes(dataDepsFor(database)) });
   }
   return app;
+}
+
+/** Binds the data module to the database. Each port is one database layer, and the module sees only the ports. */
+function dataDepsFor(database: VoxwardDatabase): DataDeps {
+  return {
+    requests: createDataRequestPort(database),
+    subjects: createSubjectReadPort(database),
+    logs: createAuditLogPort(database),
+    newId: () => randomUUID(),
+    now: () => new Date(),
+    retentionDays: RETENTION_DAYS,
+  };
 }
 
 function loggerOptions(logStream: AppOptions["logStream"]) {

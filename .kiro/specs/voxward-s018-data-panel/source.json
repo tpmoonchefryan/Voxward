@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:2d989e13eeb4a9b2a8bde05d",
+  "workRevision": 4,
+  "sourceDigest": "74bf9dac8dd3b47ab3d59e4f10135492246e58212b861d32ffee8f9950b7775b",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:2d989e13eeb4a9b2a8bde05d",
+    "workRevision": 4,
+    "sourceDigest": "74bf9dac8dd3b47ab3d59e4f10135492246e58212b861d32ffee8f9950b7775b",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:2d989e13eeb4a9b2a8bde05d",
+        "externalKey": "VOXWARD-STORY-018",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现用户数据面板与请求核验流程",
+        "summary": "实现用户数据面板与请求核验流程；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:18aaac72724b30c2ee9be8b6",
+        "scopeDigest": "006d7502a1105526eb47aa54633c1d9ea5e1b24ab86055f32a484140c53287d7",
+        "relations": {
+          "blockedBy": [
+            "work:4c1238d3c3d98f2cc2f7d756",
+            "work:c07537a238d62efa3b9779f6",
+            "work:fd4f81864ddb33703517e12f"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:18aaac72724b30c2ee9be8b6",
+          "supersedes": []
+        },
+        "fieldSha256": "6d4593cea252e6f27a14cf1a01b72f464ec801f841b670f36290d2a3fefff77b",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "117ebc3c8b96dd2b9768e9cf0f041f2ae9857bf60f1b57688f36ec00deb2b04c",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "5a211e524fc671adf20edca1096c25e80708802c80bac7c3f1bab03afb0c65f2",
+    "design.md": "1bb000b6428c9f454b12112dbd98abc981e59581463cdfecabf405bffeda1c37",
+    "tasks.md": "98122935bc5c40c403e8bdae602594d87c8e43802c6b2f1c35ca33b4d950806e"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "7768b55eba874e1af7cac78fd7148563e980176a2cde72bfac4587ac3fe52b2f"
+}

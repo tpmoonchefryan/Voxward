@@ -16,4 +16,6 @@ coverage/
 !.env.example
 # Local SQLite data (default VOXWARD_DATABASE_FILE) and test scratch databases
 data/
+# The data-panel page is source code (apps/web/src/pages/data), not local data.
+!apps/web/src/pages/data/
 .tmp/
