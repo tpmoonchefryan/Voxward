@@ -17,3 +17,6 @@ export * from "./youtube/config.js";
 export * from "./youtube/dedup.js";
 export * from "./youtube/replay-age.js";
 export * from "./youtube/stream-list.js";
+export * from "./youtube/identity.js";
+export * from "./youtube/quota.js";
+export * from "./youtube/to-business-event.js";
