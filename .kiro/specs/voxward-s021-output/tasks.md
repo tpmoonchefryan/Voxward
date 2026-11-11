@@ -44,10 +44,10 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] 2.5 文档：`docs/protocol/output-native-v1.md`（字段、版本、鉴权、心跳、断连、去重、过期与补发）。
 - [x] 2.6 样例：`examples/consumer-dedup/`（按投递 ID 去重；只连 127.0.0.1；凭据只从环境变量读取）。
 - [x] 2.7 测试：`test/output-adapter/delivery/pump.test.ts`、`resend-contract.test.ts`、`consumer-dedup.test.ts`（ALREADY_SENT 经真实决策存储）。
-- [ ] 2.8 自测与证据：`.kiro/specs/voxward-s021-output/evidence/self-check.md`，随最后一个提交。
+- [x] 2.8 自测与证据：`.kiro/specs/voxward-s021-output/evidence/self-check.md`，随最后一个提交。
 
 ### 自测门禁（两张子单完成后）
 
-- [ ] 3.1 `pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps` 退出 0。
-- [ ] 3.2 `kiro-specs.mjs check` 返回 SPEC_CURRENT。
-- [ ] 3.3 `tools/smoke.sh` 冒烟通过（不设 `VOXWARD_DATABASE_FILE`）。
+- [x] 3.1 `pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps` 退出 0。
+- [x] 3.2 `kiro-specs.mjs check` 返回 SPEC_CURRENT。
+- [x] 3.3 `tools/smoke.sh` 冒烟通过（不设 `VOXWARD_DATABASE_FILE`）。
