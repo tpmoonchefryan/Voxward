@@ -23,6 +23,27 @@ export {
 } from "./coordinator.js";
 export { STALE_REASONS, type CommitOutcome, type ExpectedFacts, type StaleReason } from "./generation.js";
 export { TASK_LANES, type TaskLane } from "./priority.js";
+export {
+  createCrewExecutor,
+  type CrewExecutor,
+  type CrewExecutorOptions,
+  type CrewHandle,
+  type CrewJob,
+  type CrewJobItem,
+  type CrewPort,
+  type CrewReport,
+  type VerdictWriter,
+} from "./crew/adapter.js";
+export {
+  createDynamicConcurrency,
+  PRESSURE_THRESHOLDS,
+  pressureOf,
+  targetConcurrency,
+  type ConcurrencyBounds,
+  type HostPressure,
+  type HostResourceSignal,
+  type ResourceSignalPort,
+} from "./crew/capacity.js";
 
 /**
  * Creates the task coordinator. Without options the module stays unwired, and every entry point rejects with the

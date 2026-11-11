@@ -27,9 +27,9 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 结果提交的代次与事务确认
   - [x] 通道内有限保序
   - [x] 测试 VW-SUB017-AC001
-- [ ] SUB-018 TaskCoordinator 的 Crew 适配与动态并发（VOXWARD-SUB-018）
-  - [ ] 动态并发上限
-  - [ ] Crew 执行器、不可用明确失败、取消与回收
-  - [ ] 测试 VW-SUB018-AC001
+- [x] SUB-018 TaskCoordinator 的 Crew 适配与动态并发（VOXWARD-SUB-018）
+  - [x] 动态并发上限
+  - [x] Crew 执行器、不可用明确失败、取消与回收
+  - [x] 测试 VW-SUB018-AC001
 - [ ] S009-SELF 自测：install、build、typecheck、test、check:deps、kiro-specs check，pnpm dev 与 /healthz
 - [ ] S009-EVID 证据：evidence/self-check.md
