@@ -117,10 +117,14 @@ apps/server/test/task-coordinator/
 ## 4. 接口
 
 ```ts
+export interface TakeBatchOptions {
+  readonly lanes?: readonly TaskLane[];                       // 调用方服务的车道；缺省取全部车道
+}
+
 export interface TaskCoordinatorService extends TaskCoordinator {
   enqueueInLane(lane: TaskLane, event: ChannelEvent, deadlineAt: string): Promise<TaskRef>;
   reasonOf(taskId: string): Promise<string | null>;
-  takeBatch(): Promise<TaskBatch | null>;                    // 先扫描截止时间，再按车道取批
+  takeBatch(options?: TakeBatchOptions): Promise<TaskBatch | null>; // 先扫描截止时间，再按车道取批；车道与跨调用方的顺序见 §5
   reportFailure(taskId: string, errorCode: string): Promise<FailureOutcome>;
   commitResult(taskId: string, result: TaskResult): Promise<CommitResult>;
   finishBatch(batchId: string): Promise<void>;                // 释放并发槽位
@@ -159,7 +163,9 @@ export interface TaskCoordinatorService extends TaskCoordinator {
 - 派工顺序 PAID > REALTIME > BACKGROUND。PAID 与 REALTIME 可用全部槽位。
 - 后台余量：`reserve = min(limit, max(1, ceil(limit / 4)))`，BACKGROUND 批次数不得超过 `limit - reserve`。当前并发上限为 1 时后台暂停（自定）。上限大于 1 时，即使并发降到配置的最小值，后台仍保留 `limit - reserve` 个槽位（N8，与代码一致）。
 - 每个批次占一个并发槽位，直到 `finishBatch` 释放。槽位由执行器在 Crew 接受取消、或会话已报告后释放（§9）。截止时间到期后，执行器对仍在运行的会话发起取消。
-- 取批按车道（B2，S011 返工）：`takeBatch({ lanes })` 只取调用方指定的车道，派工顺序仍是 PAID、REALTIME、BACKGROUND。Crew 执行器只取 PAID 与 REALTIME；复盘运行器（S011）只取 BACKGROUND。两者共用同一套槽位与后台余量。未指定车道时取全部车道（与原行为相同）。
+- 取批按车道（B2，S011 返工）：`takeBatch({ lanes })` 只取调用方指定的车道。Crew 执行器只取 PAID 与 REALTIME；复盘运行器（S011）只取 BACKGROUND。两者共用同一套槽位与后台余量。未指定车道时取全部车道（与原行为相同）。
+- 跨调用方的派工顺序（B6，S011 第二次返工）：每次 `takeBatch` 都按 PAID、REALTIME、BACKGROUND 逐个车道检查，不因调用方没请求某个车道就跳过它。一个车道「就绪」是指 `laneMayStart` 通过（有空槽位，后台还没到上限）且微批判定为取批（`decideBatch` 返回 flush）。遇到第一个就绪的车道：调用方请求了它，就取走；调用方没请求它，就返回 null，不再往下取低车道，因为这个批次属于另一个调用方，低车道先取会占掉它要用的槽位。车道还在等微批窗口、任务在退避、或没有排队任务时不算就绪，不挡低车道。因此只取 BACKGROUND 的调用，在 PAID 或 REALTIME 有就绪批次时拿到 null（复盘运行器的 `runBatch()` 随之返回 null），要等执行器取走它们；它们被取走或还没就绪时才拿到后台批次。每个周期启动的批次因此与单一调用方的 `takeBatch()` 相同，与哪个调用方先调用无关（`lanes.test.ts` 的两调用方积压用例：上限 4，每批一条，8 条实时（截止 2.5 s）与 8 条后台同时排队，实时 8/8 完成、0 条转人工；B6 之前复盘先取时只完成 2 条、6 条转人工）。
+- 后果：实时或付费积压期间后台不前进；执行器的 `pump()` 没有人调用时，后台也不前进，直到这些任务到期转人工。后台复盘使用剩余容量（提案 §6.2），复盘任务的截止时间是结算期限，延后的代价小。谁来定时调用 `pump()` 与 `runBatch()` 属接线 Story（S011 设计 R10）。
 
 ## 6. 重试与退避（自定）
 
@@ -233,6 +239,7 @@ Crew 执行器（`createCrewExecutor`）：
 | VW-SUB017-AC001（N1） | `acceptance.test.ts`（慢请求） | 提交时已过截止时间的结果进入人工队列，返回 discarded，不写裁决 |
 | VW-SUB017-AC001（N2） | `coordinator.test.ts`（结算记录） | 结算后仍可查询、去重；调度只见未结任务 |
 | VW-SUB017-AC001（N3） | `acceptance.test.ts`（前序超时） | 前序已被扫描转入人工队列时，后一条不记录缺口 |
+| VW-SUB017-AC001（B2、B6，S011 返工） | `lanes.test.ts`、`crew/adapter.test.ts`（车道共用部分） | 调用方只取自己的车道；调用方没请求、但已就绪的更高车道使本次调用返回 null（只取 BACKGROUND 的调用在 PAID、REALTIME 就绪时拿不到批次，它们被取走或还在微批窗口时才拿到）；后台上限与共用槽位不变；两个调用方的积压无论谁先调用，每个周期启动的批次与单一调用方相同，实时 8/8 完成、0 条转人工 |
 | VW-SUB018-AC001（B5） | `crew/adapter.test.ts`（挂起替身 `crew/hung-crew.ts`） | cancel、start、done 各自永不返回时，pump 与 cancelEvent 按时返回，其它频道照常派工，会话数不超过上限；取消被拒后下一次 pump 再发 |
 | VW-SUB018-AC001（N7） | `crew/capacity.test.ts` | 资源信号读取抛异常按 CRITICAL 收缩到下限 |
 | VW-S009-INHERIT-* | `scripts/check-deps.mjs`、契约包 `typecheck` | 依赖方向、契约不变；其余继承行为的完整验证由 EPIC-006 承接，本包不宣称 |
@@ -264,4 +271,5 @@ Crew 执行器（`createCrewExecutor`）：
 - 提案所列的 250 ms 与 2 ms 数值。
 - 微批默认值在真实模型与消息量下的表现。
 - 与 S019 删除索引、S008 适配器、S011 决定提交的实际对接。
+- 跨调用方的派工顺序（B6）只在模块层用假时钟按周期回放过（`lanes.test.ts`），说明机制与量级，不是对真实负载的测量。生产里谁来驱动 `pump()` 与 `runBatch()`、以什么顺序，还没有实现（接线 Story）。
 - 长时间运行后的内存：结算后的轻量记录数已由 Q38 窗口封顶，窗口内的占用未在长时间运行下实测。第 6 批探针 E34 在 5482e5d 上测得每条结算记录约 54 字节（`.kiro/specs/voxward-batch-m6/evidence/acceptance.md` E34），这不是长时间运行的测量。

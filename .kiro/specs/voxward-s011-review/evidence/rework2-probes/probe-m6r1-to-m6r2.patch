@@ -1,0 +1,66 @@
+--- a/probe-m6r1-s011.mts
++++ b/probe-m6r2-s011.mts
+@@ -1,9 +1,15 @@
++// Batch m6 round 3 (m6r2) recheck copy of probe-m6r1-s011.mts (E60) for STORY-011, after the B6 fix of P-S011-fix2.
++// Changes against the m6r1 probe, every other line byte for byte: §A2 expects the order B6 requires (with PAID and REALTIME
++// ready, the first review take returns null and touches neither task; the review task settles after the Crew executor has
++// taken the interactive batches); §A6 is a check instead of an observation (a review caller that asks first gets no batch
++// while 3 REALTIME batches are ready, and the executor then starts all 3).
++// Original header of probe-m6r1-s011.mts follows.
+ // Batch m6 round 2 (m6r1) acceptance probe for STORY-011 (review lane, aliases, unified settlement, Q27 front half, Q38,
+ // candidate cards, review output contract). Copied from probe-m6-s011.mts. Changes: the coordinator spy passes the take
+ // options through (the real port does); §A and §G are expected to pass (B2, B3), with stricter conditions; §A4–§A6 check
+ // the shared slots, the reserve and the order across callers; §F8–§F10 cover rejection and list.edit (N5). §B–§E unchanged.
+ // Imports checkout sources by absolute path; synthetic data only; no network, no real model.
+-// Usage: tsx probe-m6r1-s011.mts <checkout> <scratch> <label>
++// Usage: tsx probe-m6r2-s011.mts <checkout> <scratch> <label>
+ // A check line states the contract it encodes; "FAIL" means the candidate does not meet it. The script only counts.
+ import { rmSync } from "node:fs";
+ import { join } from "node:path";
+@@ -110,17 +116,12 @@
+   const paidRef = await h.coordinator.enqueueInLane("PAID", paid, deadline);
+   r.store.seed({ eventId: "ev-b3", event: fx.messageOf("b3", { order: 3 }) });
+   await r.runner.runCycle({ channelId: CH, streamEnded: true });
++  // m6r2 (B6): PAID and REALTIME batches are ready, so the review take comes first and gets nothing.
+   const first = await r.runner.runBatch();
+-  const second = await r.runner.runBatch();
+   const rtStatus = await h.coordinator.statusOf(rtRef.taskId);
+   const paidStatus = await h.coordinator.statusOf(paidRef.taskId);
+   const rtLog = h.log.forTask(rtRef.taskId).map((e: any) => `${e.stage}/${e.status}/${e.errorCode ?? ""}`);
+-  note("A2 runBatch() items (first, second)", { first: first?.items, second: second?.items, takeLanes: r.takeLanes });
+-  check(
+-    "A2 runBatch() on a shared coordinator takes only BACKGROUND: the queued REALTIME and PAID tasks stay QUEUED, the review task settles (contract: 复盘只走 BACKGROUND、让出实时容量) — B2 recheck, expected to pass",
+-    rtStatus === "QUEUED" && paidStatus === "QUEUED" && first?.items.length === 1 && first.items[0].status === "SETTLED" && second === null && r.takeLanes.every((l: any) => JSON.stringify(l) === '["BACKGROUND"]'),
+-    { realtimeStatus: rtStatus, paidStatus, realtimeLog: rtLog },
+-  );
++  const reviewStateBefore = r.store.stateOf("ev-b3");
+   // The Crew executor then takes both interactive tasks; it is the only path that settles them.
+   const crew = new crewFx.FakeCrew();
+   const written: string[] = [];
+@@ -130,6 +131,15 @@
+   await crewFx.flush();
+   await executor.drain();
+   await executor.pump();
++  // m6r2 (B6): with the interactive batches taken, the review runner takes its own batch.
++  const second = await r.runner.runBatch();
++  const third = await r.runner.runBatch();
++  note("A2 runBatch() items (first, second, third)", { first: first?.items ?? null, second: second?.items, third: third?.items ?? null, takeLanes: r.takeLanes });
++  check(
++    "A2 (m6r2, B6) with PAID and REALTIME ready, runBatch() on a shared coordinator returns null and leaves both QUEUED and the review task unsettled; after the Crew executor has taken them it takes only BACKGROUND and settles the review task (contract: 复盘只走 BACKGROUND、让出实时容量)",
++    first === null && rtStatus === "QUEUED" && paidStatus === "QUEUED" && reviewStateBefore === "UNSETTLED_FAST_PASS" && second?.items.length === 1 && second.items[0].status === "SETTLED" && third === null && r.takeLanes.every((l: any) => JSON.stringify(l) === '["BACKGROUND"]'),
++    { realtimeStatus: rtStatus, paidStatus, reviewStateBefore, realtimeLog: rtLog },
++  );
+   check("A2b the Crew executor sharing the coordinator settles the PAID and REALTIME tasks through writeVerdict", started >= 1 && written.includes(rtRef.taskId) && written.includes(paidRef.taskId) && (await h.coordinator.statusOf(rtRef.taskId)) === "DONE", { started, written, jobs: crew.started.map((j: any) => j.items.map((i: any) => i.correlationId)) });
+ }
+ {
+@@ -191,7 +201,9 @@
+   const crew = new crewFx.FakeCrew();
+   const executor = tcMod.createCrewExecutor({ coordinator: h.coordinator, crew, writeVerdict: () => {} });
+   const rtStarted = await executor.pump();
+-  note("A6 limit 4, 3 REALTIME batches ready: a review caller that takes first holds", { backgroundBatches: bgTaken.filter((n) => n > 0).length, realtimeStartedAfter: rtStarted, realtimeStillQueued: 3 - rtStarted });
++  const backgroundBatches = bgTaken.filter((n) => n > 0).length;
++  note("A6 limit 4, 3 REALTIME batches ready: a review caller that takes first holds", { backgroundBatches, realtimeStartedAfter: rtStarted, realtimeStillQueued: 3 - rtStarted });
++  check("A6 (m6r2, B6) limit 4, 3 REALTIME batches ready: a review caller that asks first gets no batch, and the executor then starts all 3", backgroundBatches === 0 && rtStarted === 3, { backgroundBatches, realtimeStartedAfter: rtStarted });
+ }
+ {
+   // Observation: two review runners on one coordinator. A batch can hold the other runner's task, which the taker skips
