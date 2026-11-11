@@ -72,6 +72,11 @@ export class MemoryReviewStore implements ReviewStorePort {
     this.rowOf(eventId).deletionInProgress = true;
   }
 
+  /** The message row leaves the database, as a deletion removes it. */
+  forget(eventId: string): void {
+    this.rows.delete(eventId);
+  }
+
   stateOf(eventId: string): StoredSettlementState {
     return this.rowOf(eventId).state;
   }

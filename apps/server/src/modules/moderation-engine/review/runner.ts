@@ -69,11 +69,16 @@ export interface ReviewRunner {
   runBatch(): Promise<BatchOutcome | null>;
   /** Applies the score of settled items whose scoring is still pending. Returns how many were attempted. */
   resumePendingScoring(): Promise<number>;
+  /** Entries held for review tasks that are still open. Observation for operations and tests (B4). */
+  retainedEntries(): number;
 }
+
+/** A message without its text. The coordinator holds the text until the task ends and hands it out in each batch (B4). */
+type EventFacts = Omit<ChannelEvent, "body">;
 
 interface TaskEntry {
   readonly eventId: string;
-  readonly event: ChannelEvent;
+  readonly event: EventFacts;
 }
 
 interface KnownTask {
@@ -101,6 +106,7 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
   const entries = new Map<string, TaskEntry>();
 
   async function runCycle({ channelId, streamEnded }: { readonly channelId: string; readonly streamEnded: boolean }): Promise<CycleOutcome> {
+    await forgetFinishedEntries();
     const nowMs = deps.now().getTime();
     const nowIso = new Date(nowMs).toISOString();
     const open = deps.store.listOpenCandidates(channelId);
@@ -119,7 +125,7 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
       // The coordinator returns the existing task for an event it already holds. Only a task still waiting or running is
       // worked here, so a finished one does not keep an entry.
       const status = await deps.coordinator.statusOf(ref.taskId);
-      if (status === "QUEUED" || status === "RUNNING") entries.set(ref.taskId, { eventId: candidate.eventId, event: candidate.event });
+      if (status === "QUEUED" || status === "RUNNING") entries.set(ref.taskId, { eventId: candidate.eventId, event: factsOf(candidate.event) });
     }
     return {
       trigger,
@@ -130,6 +136,7 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
   }
 
   async function runBatch(): Promise<BatchOutcome | null> {
+    await forgetFinishedEntries();
     const batch: ReviewBatchLease | null = await deps.coordinator.takeBatch({ lanes: ["BACKGROUND"] });
     if (batch === null) return null;
 
@@ -198,7 +205,9 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
   }
 
   async function settle(task: KnownTask, item: ReviewItemResult): Promise<ItemOutcome> {
-    const { event, eventId } = task.entry;
+    const { eventId } = task.entry;
+    // The text comes from the batch, which holds it only while this settlement runs.
+    const event: ChannelEvent = { ...task.entry.event, body: task.text };
     const nowIso = deps.now().toISOString();
     const state: SettleState = { reason: null };
     const commit = await deps.coordinator.commitResult(task.taskId, {
@@ -273,6 +282,26 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
     return "APPLIED";
   }
 
+  /**
+   * Ends the entries of tasks the coordinator no longer holds open: settled, cancelled, expired, or evicted from its settled
+   * window (Q38). A finished task keeps no entry (B4).
+   */
+  async function forgetFinishedEntries(): Promise<void> {
+    for (const taskId of [...entries.keys()]) {
+      if (!(await isOpen(taskId))) entries.delete(taskId);
+    }
+  }
+
+  async function isOpen(taskId: string): Promise<boolean> {
+    try {
+      const status = await deps.coordinator.statusOf(taskId);
+      return status === "QUEUED" || status === "RUNNING";
+    } catch (error) {
+      if (isTaskNotFound(error)) return false;
+      throw error;
+    }
+  }
+
   async function resumePendingScoring(): Promise<number> {
     let attempted = 0;
     for (const pending of deps.store.listPendingScoring()) {
@@ -299,10 +328,29 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
     if (status !== "retry_scheduled") entries.delete(taskId);
   }
 
-  return { runCycle, runBatch, resumePendingScoring };
+  return { runCycle, runBatch, resumePendingScoring, retainedEntries: () => entries.size };
 }
 
-function subjectRefOf(event: ChannelEvent): string {
+/** The fields a settlement reads from a message. The text is left out. */
+function factsOf(event: ChannelEvent): EventFacts {
+  return {
+    contractVersion: event.contractVersion,
+    platform: event.platform,
+    channelId: event.channelId,
+    platformMessageId: event.platformMessageId,
+    platformOrder: event.platformOrder,
+    receivedAt: event.receivedAt,
+    correlationId: event.correlationId,
+    sender: event.sender,
+  };
+}
+
+/** The coordinator no longer holds the task: it was evicted from the settled window (Q38). */
+function isTaskNotFound(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: unknown }).code === "TASK_NOT_FOUND";
+}
+
+function subjectRefOf(event: EventFacts): string {
   return `${event.channelId}/${event.sender.senderRef}`;
 }
 
