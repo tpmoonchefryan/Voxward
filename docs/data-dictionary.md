@@ -1,6 +1,6 @@
 # 数据字典（VoxWard SQLite）
 
-范围：`apps/server/src/db/schema/` 中的 26 张表。其中 24 张由初始迁移 `apps/server/src/db/migrations/0000_initial.sql` 创建，页面账号与会话的 3 张由迁移 `apps/server/src/db/migrations/0001_auth_sessions.sql` 创建。迁移 `apps/server/src/db/migrations/0003_drop_subject_nickname_checks.sql` 删除了初始迁移创建的 `subject_nickname_checks`：昵称检查只保留进程内缓存（S006 Q8）。`apps/server/test/db/schema.test.ts` 会核对本文件：每张表的列名、可空性、索引与 CHECK 名称必须与 schema 一致。
+范围：`apps/server/src/db/schema/` 中的 27 张表。其中 24 张由初始迁移 `apps/server/src/db/migrations/0000_initial.sql` 创建，页面账号与会话的 3 张由迁移 `apps/server/src/db/migrations/0001_auth_sessions.sql` 创建，计分无效果幂等记录的 `score_outcomes` 由迁移 `apps/server/src/db/migrations/0005_score_outcomes.sql` 创建。迁移 `apps/server/src/db/migrations/0003_drop_subject_nickname_checks.sql` 删除了初始迁移创建的 `subject_nickname_checks`：昵称检查只保留进程内缓存（S006 Q8）。`apps/server/test/db/schema.test.ts` 会核对本文件：每张表的列名、可空性、索引与 CHECK 名称必须与 schema 一致。
 
 约定：
 
@@ -235,6 +235,28 @@
 | `score_ledger_idempotency_uq` | 唯一索引 | `idempotency_key` 唯一。 |
 | `score_ledger_subject_idx` | 索引 | `(subject_id, created_at)`。 |
 | `ck_score_ledger_reason` | CHECK | `reason_code` 只能取上列四个值。 |
+
+### `score_outcomes`
+
+- 用途：计分请求没有改变分数时的幂等记录，包括无计分、冷却、钳制为零、禁用和例外拒绝。同一键再次到达时返回 `duplicate`，因此冷却结束或例外取消后不会对同一事件补计分（S014 Q19①、Q21）。
+- 内容分类：无正文。
+- 保留：随主体删除（后续 Story 实现）。
+
+#### 列
+
+| 列 | 类型 | 可空 | 说明 |
+| --- | --- | --- | --- |
+| `idempotency_key` | TEXT | 否 | 主键，即计分幂等键。 |
+| `subject_id` | TEXT | 否 | 外键，指向 `subjects.id`。 |
+| `outcome` | TEXT | 否 | 取值 `NO_EFFECT`、`REFUSED`。 |
+| `reason_code` | TEXT | 否 | 无计分或拒绝的原因，例如 `COOLDOWN`、`EXCEPTION_ACTIVE`。 |
+| `created_at` | TEXT | 否 | 记录时间。 |
+
+#### 索引与约束
+
+| 名称 | 类别 | 说明 |
+| --- | --- | --- |
+| `ck_score_outcomes_kind` | CHECK | `outcome` 只能取上列两个值。 |
 
 ### `subject_nickname_changes`
 

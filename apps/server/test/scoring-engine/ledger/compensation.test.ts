@@ -42,7 +42,7 @@ describe("manual compensation on SQLite", () => {
     expect(first.delta).toBe(3);
     expect(again).toEqual(first);
     expect(ledgerRows(database, "channel-a", "viewer-1")).toMatchObject([
-      { reason_code: "MANUAL_CORRECTION", requested_delta: 3, actual_delta: 3, idempotency_key: "manual:op-1" },
+      { reason_code: "MANUAL_CORRECTION", requested_delta: 3, actual_delta: 3, idempotency_key: "manual:channel-a:viewer-1:op-1" },
     ]);
     expect(scoreOf(database, "channel-a", "viewer-1")).toMatchObject({ current: 3, behavior: 3, identity: 0 });
   });

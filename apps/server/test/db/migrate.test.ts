@@ -5,7 +5,7 @@ import { openDatabase, type VoxwardDatabase } from "../../src/db/client.js";
 import { runMigrations, DEFAULT_MIGRATIONS_FOLDER } from "../../src/db/migrate.js";
 import { seedChannelAndSubject, countRows, migratedDatabase, removeDirectory, scratchDirectory, T0 } from "./helpers.js";
 
-const SCHEMA_TABLE_COUNT = 26;
+const SCHEMA_TABLE_COUNT = 27;
 
 /** Number of migrations in the journal. Read from the journal so a new migration does not break this test. */
 const JOURNAL_ENTRIES: readonly { readonly tag: string }[] = JSON.parse(
@@ -27,7 +27,7 @@ describe("migrations", () => {
     removeDirectory(directory);
   });
 
-  it("creates all 26 schema tables on an empty file", () => {
+  it("creates all 27 schema tables on an empty file", () => {
     database = migratedDatabase(directory);
     const names = database.sqlite
       .prepare("select name from sqlite_master where type = 'table' and name not like 'sqlite_%' and name <> '__drizzle_migrations' order by name")

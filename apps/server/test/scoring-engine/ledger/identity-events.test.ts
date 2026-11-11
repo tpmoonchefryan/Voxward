@@ -54,7 +54,7 @@ describe("identity events on SQLite", () => {
       ["IDENTITY_BASE_CHANGE", 10],
     ]);
     expect(scoreOf(database, "channel-a", "viewer-1")).toMatchObject({ current: 10, identity: 10 });
-    expect(identityRows(database)).toEqual([{ kind: "PAID_MEMBER", sourceEventRef: "evt-1", effectiveTo: null }]);
+    expect(identityRows(database)).toEqual([{ kind: "PAID_MEMBER", sourceEventRef: "identity:channel-a:viewer-1:evt-1", effectiveTo: null }]);
   });
 
   it("gives nothing when an existing member is identified again by a new event", async () => {
@@ -152,7 +152,7 @@ describe("identity events on SQLite", () => {
     const change = await engine.applyIdentityTransition(upgrade("evt-off", "PAID_MEMBER"));
 
     expect(change.delta).toBe(0);
-    expect(identityRows(database)).toEqual([{ kind: "PAID_MEMBER", sourceEventRef: "evt-off", effectiveTo: null }]);
+    expect(identityRows(database)).toEqual([{ kind: "PAID_MEMBER", sourceEventRef: "identity:channel-a:viewer-1:evt-off", effectiveTo: null }]);
     expect(ledgerRows(database, "channel-a", "viewer-1")).toHaveLength(0);
     expect(scoreOf(database, "channel-a", "viewer-1")?.current).toBe(0);
   });

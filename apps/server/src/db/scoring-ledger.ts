@@ -11,7 +11,7 @@ import type {
 import { and, desc, eq, isNull } from "drizzle-orm";
 import type { VoxwardDatabase } from "./client.js";
 import { ScoreLedgerStore, SubjectStore } from "./repository.js";
-import { scoreExceptions, scoreLedger, subjectIdentities, subjectScores, subjects } from "./schema/index.js";
+import { scoreExceptions, scoreLedger, scoreOutcomes, subjectIdentities, subjectScores, subjects } from "./schema/index.js";
 import { runShortTransaction, type ShortTransaction } from "./transaction.js";
 
 export interface ScoringLedgerBindingOptions {
@@ -36,10 +36,14 @@ export function createScoringLedgerPort(
   };
 }
 
-function commitInTransaction(
+/**
+ * Runs one scoring request inside a transaction the caller already holds. A decision module that commits a verdict and
+ * its score together calls this with its own transaction handle, so both writes succeed or fail as one.
+ */
+export function commitInTransaction(
   tx: ShortTransaction,
   request: ScoreCommitRequest,
-  newId: () => string,
+  newId: () => string = randomUUID,
 ): ScoreCommitResult {
   const earlier = tx
     .select({ subjectId: scoreLedger.subjectId, actualDelta: scoreLedger.actualDelta })
@@ -59,12 +63,51 @@ function commitInTransaction(
     if (fact !== undefined) return { status: "duplicate", subjectRef: fact.subjectId, actualDelta: 0 };
   }
 
+  // A request that changed no score before still counts as decided. Without this record, a retry after a cooldown ends
+  // or an exception is lifted would score the same event.
+  const earlierOutcome = tx
+    .select({ subjectId: scoreOutcomes.subjectId })
+    .from(scoreOutcomes)
+    .where(eq(scoreOutcomes.idempotencyKey, request.idempotencyKey))
+    .get();
+  if (earlierOutcome !== undefined) return { status: "duplicate", subjectRef: earlierOutcome.subjectId, actualDelta: 0 };
+
   const subjectId = findOrCreateSubject(tx, request, newId);
   const state = readState(tx, request.subject.channelId, subjectId);
+  // The port refuses a subject on the exception list itself. A caller that skips the module guard still writes nothing.
+  if (state.exceptionActive) {
+    recordOutcome(tx, request, subjectId, "REFUSED", "EXCEPTION_ACTIVE");
+    return { status: "refused", subjectRef: subjectId, reason: "EXCEPTION_ACTIVE" };
+  }
+
   const decision = request.decide(state);
-  if (decision.kind === "no_effect") return { status: "no_effect", subjectRef: subjectId, reason: decision.reason };
-  if (decision.kind === "refused") return { status: "refused", subjectRef: subjectId, reason: decision.reason };
+  if (decision.kind === "no_effect") {
+    recordOutcome(tx, request, subjectId, "NO_EFFECT", decision.reason);
+    return { status: "no_effect", subjectRef: subjectId, reason: decision.reason };
+  }
+  if (decision.kind === "refused") {
+    recordOutcome(tx, request, subjectId, "REFUSED", decision.reason);
+    return { status: "refused", subjectRef: subjectId, reason: decision.reason };
+  }
   return persistWrite(tx, request, subjectId, state, decision.write, newId);
+}
+
+function recordOutcome(
+  tx: ShortTransaction,
+  request: ScoreCommitRequest,
+  subjectId: string,
+  outcome: "NO_EFFECT" | "REFUSED",
+  reasonCode: string,
+): void {
+  tx.insert(scoreOutcomes)
+    .values({
+      idempotencyKey: request.idempotencyKey,
+      subjectId,
+      outcome,
+      reasonCode,
+      createdAt: request.committedAt,
+    })
+    .run();
 }
 
 function findOrCreateSubject(tx: ShortTransaction, request: ScoreCommitRequest, newId: () => string): string {
