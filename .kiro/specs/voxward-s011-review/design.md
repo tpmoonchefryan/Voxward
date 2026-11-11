@@ -66,14 +66,15 @@ No design authority is configured for the resolved work context. No authority wa
 | `apps/server/test/moderation/review/` | `apps/server/test/moderation-engine/review/` | 测试目录同理 |
 | `apps/server/test/moderation/candidates/` | `apps/server/test/moderation-engine/candidates/` | 同上 |
 | 子单交付清单未列 | `moderation-engine/review/ports.ts`、`review/runner.ts` | 新增。端口类型集中定义；批次运行器把已有接口串成复盘流程（自定） |
-| 子单交付清单未列 | `task-coordinator/coordinator.ts`、`index.ts`（Q38） | 主线程指定的唯一例外，单独提交（自定：窗口淘汰与接口观察方法） |
+| 子单交付清单未列 | `task-coordinator/coordinator.ts`、`index.ts`（Q38） | 主线程指定的唯一例外，单独提交（自定：窗口淘汰与接口观察方法）。返工 B2、B6 另改该文件的取批，见 §1.1 |
 
-#### 1.1 返工偏离（rework1，N5、B2–B4）
+#### 1.1 返工偏离（rework1 与 rework2：N5、B2–B4、B6）
 
 - `moderation-engine/review/membership.ts`（新增）：批内 itemId 整批校验（B3）。`check:deps` 禁止 moderation-engine 导入 inference-provider，所以同一规则在本模块写一份（R8）。
 - 候选词驳回（SUB-022 范围写「确认与驳回 API」，原实现只有确认）：`CandidateStatus` 增加 `REJECTED`，`createCandidateRoutes` 增加 `reject`（N5）。
 - 确认与驳回的能力由 `review.decide` 改为 `list.edit`（N5）。理由：提案 §2.1 写房管做「获准的名单与词条操作」；S014 的词条入库已用 `list.edit`。`auth/permissions.ts` 中频道所有者与房管同时持有两者，改动不改变能拿到该操作的角色；数据管理员两者都没有。导出名 `REVIEW_DECIDE_CAPABILITY` 改为 `LIST_EDIT_CAPABILITY`。
 - 取批按车道（B2）：`takeBatch` 接收 `lanes`，见 §3 与 §6。
+- 取批的跨调用方顺序（B6，rework2）：协调器的 `takeBatch` 遇到调用方没请求、但已就绪的更高车道时返回 null，所以复盘运行器的 `runBatch()` 在 PAID 或 REALTIME 有就绪批次时返回 null，等执行器取走它们之后才取到后台批次（S009 设计 §5，R10）。运行器代码不变；`review/ports.ts` 只改了端口注释，`runner.test.ts` 的车道用例随之改写。
 
 ### 2. 布局
 
@@ -99,7 +100,7 @@ apps/server/src/modules/task-coordinator/coordinator.ts   Q38：已结算记录�
 
 - `ReviewStorePort`（`review/ports.ts`，模块内端口）：`listOpenCandidates(channelId)`、`readCandidate(eventId)`、`markExpired(eventId)`、`commitSettlement(write)`（同步；一次短事务内做状态比较交换并写入裁决，同时把计分状态置为 PENDING）、`markScoring(eventId, state)`、`listPendingScoring()`。复核记录与候选词由运行器在同一个同步 `apply` 内写入对应端口。
 - `ReviewModelPort`：`reviewBatch(input: AiBatchInput): Promise<unknown>`。输入只有 `itemId` 与 `text`（`text` 含任务别名前缀），输出先经 `validateReviewBatchResult`。推理一律用替身。
-- `BackgroundCoordinatorPort`（`review/ports.ts`）：`enqueueInLane("BACKGROUND", event, deadlineAt): Promise<TaskRef>`、`takeBatch({ lanes: ["BACKGROUND"] })`（B2：只取后台车道）、`commitResult`、`reportFailure`、`statusOf`、`finishBatch`，由 task-coordinator 的已导出接口结构匹配。模块不导入 task-coordinator。`ReviewRunner.retainedEntries()` 观察运行器持有的条目数（B4）。
+- `BackgroundCoordinatorPort`（`review/ports.ts`）：`enqueueInLane("BACKGROUND", event, deadlineAt): Promise<TaskRef>`、`takeBatch({ lanes: ["BACKGROUND"] })`（B2：只取后台车道；B6：PAID 或 REALTIME 有就绪批次时返回 null）、`commitResult`、`reportFailure`、`statusOf`、`finishBatch`，由 task-coordinator 的已导出接口结构匹配。模块不导入 task-coordinator。`ReviewRunner.retainedEntries()` 观察运行器持有的条目数（B4）。
 - `ScoringPort`：`Pick<ScoringEngine, "applyVerdict">`（合约）。`ScoringRefusedError` 的识别只读 `code`，与 router 的做法一致。
 - `ReviewQueuePort`：`append(record)`，人工复核列表（Q27）。
 - `CandidateRulePort`（`candidates/store.ts`）：`publishConfirmedTerm({channelId, term, candidateId, actorRef}): number`，同步返回新规则版本号。
@@ -127,7 +128,7 @@ apps/server/src/modules/task-coordinator/coordinator.ts   Q38：已结算记录�
 1. 触发（`decideReviewTrigger`）：下播 > 累计条数 >= 阈值 > 周期到期。没有待复盘项时不触发。
 2. 选择（`selectForReview`）：先排除已删除、非 `UNSETTLED_FAST_PASS`、记分例外、已有人工裁决的项；再判定到期（证据到期或复盘截止已过）并标记 `UNSETTLED_EXPIRED`，到期项不计分；按同一 `(频道, 平台消息)` 去重；按平台顺序取前 N 条（自定 N=50）。未入选的项留给下一周期。
 3. 入队：每条入选消息调用一次 `enqueueInLane("BACKGROUND", event, deadlineAt)`。协调器对同一事件的去重使重复周期安全。截止时间取 `settlement_deadline_at`，缺省时取证据到期时刻（自定）。运行器只为自己入队的任务保存条目，条目不含正文（B4）；每次 `runCycle` 与 `runBatch` 开始时释放协调器已结束或已淘汰任务的条目。
-4. 批次：`takeBatch({ lanes: ["BACKGROUND"] })` 取得批次后（B2），为每条任务生成批内 `itemId`（`i0`、`i1`…）；作者别名按批次生成，一次模型调用内同一作者共用一个别名（自定，别名的作用范围是一次模型调用），调用模型替身，结果经 `validateReviewBatchResult`，再由 `batchMembershipErrorOf` 检查 itemId 集合（B3）：每个批内 itemId 恰好返回一次；批外或重复的 id 为 `AI_OUTPUT_INVALID`，缺项为 `AI_OUTPUT_INCOMPLETE`。任一失败时对批内每个任务调用 `reportFailure(taskId, <错误码>)`，不结算、不计分、不建卡片。
+4. 批次：`takeBatch({ lanes: ["BACKGROUND"] })` 取得批次后（B2），为每条任务生成批内 `itemId`（`i0`、`i1`…）。PAID 或 REALTIME 有就绪批次时 `takeBatch` 返回 null（B6），`runBatch()` 随之返回 null，不报失败，等执行器取走这些批次后再取。作者别名按批次生成，一次模型调用内同一作者共用一个别名（自定，别名的作用范围是一次模型调用），调用模型替身，结果经 `validateReviewBatchResult`，再由 `batchMembershipErrorOf` 检查 itemId 集合（B3）：每个批内 itemId 恰好返回一次；批外或重复的 id 为 `AI_OUTPUT_INVALID`，缺项为 `AI_OUTPUT_INCOMPLETE`。任一失败时对批内每个任务调用 `reportFailure(taskId, <错误码>)`，不结算、不计分、不建卡片。
 5. 结算：对每条合法条目调用 `commitResult(taskId, { apply, evidence })`。`apply` 在协调器的事实事务内同步运行：先做状态比较交换（当前仍为 `UNSETTLED_FAST_PASS` 才写），再写 `SETTLED` 与裁决；`BLOCK` 同时写复核记录并入人工队列（Q27）；候选词写入卡片，不写规则。已被他人处理的任务返回 `NOT_ELIGIBLE` 并正常结束。提交返回 waiting 时，调用 `reportFailure(taskId, "PREDECESSOR_PENDING")` 让任务重新排队，结果记为 `DEFERRED`（自定）。
 6. 计分：只有提交成功且状态比较交换成功的项才调用 `applyVerdict`。成功记 `APPLIED`；`EXCEPTION_ACTIVE` 拒绝记 `REFUSED`；其它异常记 `PENDING`。`resumePendingScoring` 对 `PENDING` 项重放 `applyVerdict`，账本幂等键保证不重复计分。
 7. 结束：每个批次都以 `finishBatch` 释放槽位。
@@ -140,6 +141,7 @@ apps/server/src/modules/task-coordinator/coordinator.ts   Q38：已结算记录�
 | VW-SUB021-AC001（Q27 前半） | `runner.test.ts` | BLOCK 结算写复核记录并入人工队列；ALLOW 不写 |
 | VW-SUB022-AC001（候选词确认与权限） | `candidates/store.test.ts`、`routes.test.ts` | 未确认不进规则；无 `list.edit` 返回 403 且不发布；确认后版本号增加；重复确认返回 409；驳回后不发布、不再提出、不能再确认（N5）；候选词保留来源与状态；AI 输出不直接发布 |
 | Q38（记录数有上限） | `test/task-coordinator/retention.test.ts` | 结算数超过上限后，最旧记录 `statusOf` 抛 `TaskNotFoundError`，窗口内记录仍可查；未结算任务不被淘汰 |
+| VW-R-006（B2、B6，INHERIT-006） | `test/task-coordinator/lanes.test.ts`、`test/moderation-engine/review/runner.test.ts`、`test/task-coordinator/crew/adapter.test.ts` | 复盘只取 BACKGROUND，执行器只取 PAID 与 REALTIME；PAID、REALTIME 有就绪批次时复盘取不到批次（`runBatch()` 返回 null），它们被取走或还在微批窗口时才取到；后台上限与共用槽位不变；两个调用方的积压（8 条实时、8 条后台，上限 4）无论谁先调用，每个周期启动的批次与单一调用方相同，实时 8/8 完成、0 条转人工 |
 | INHERIT 行（VW-R-001/005/006/008/009/010/011/012/017） | 无单独测试 | 仅记录本单触及部分；运行时完整验证由责任单承接 |
 
 ### 8. 不做的事（自定）
@@ -156,5 +158,9 @@ apps/server/src/modules/task-coordinator/coordinator.ts   Q38：已结算记录�
 - R2：Q38 的窗口淘汰后，窗口外的同一事件若再次入队，会新建协调器任务。计分仍由账本幂等键保证不重复，但模型可能重跑。
 - R3：数据库绑定的事务原子性未在本包验证，只在内存替身上验证。
 - R4：真实 Kiro/Crew 行为未验证。
-- R5：协调器按事件去重。若同一消息已有其它车道的任务（例如实时车道已结算），`enqueueInLane` 返回该任务，后台车道不会再处理它。消息进入哪条车道由组合层决定，本包未接线，需在接线时确认。取批按车道已由 B2 修复：运行器只取 BACKGROUND，Crew 执行器只取 PAID 与 REALTIME。
+- R5：协调器按事件去重。若同一消息已有其它车道的任务（例如实时车道已结算），`enqueueInLane` 返回该任务，后台车道不会再处理它。消息进入哪条车道由组合层决定，本包未接线，需在接线时确认。取批按车道已由 B2 修复：运行器只取 BACKGROUND，Crew 执行器只取 PAID 与 REALTIME；B6 起复盘取批还让位于已就绪的 PAID 与 REALTIME 批次（R10）。
 - R6：`apply` 的原子性由数据库绑定的事务保证。内存替身不回滚，测试只验证写入顺序与比较交换。
+- R7（B2）：运行器遇到批次里不是自己入队的任务（条目表里没有它）时跳过这条任务，不结算也不报失败，因为用不可重试的错误码结算别人的任务会把它转入人工队列。运行器仍对整批调用 `finishBatch` 释放槽位，被跳过的任务留在 `RUNNING`，直到协调器的截止时间扫描把它转入人工队列（`DEADLINE_EXCEEDED`）。两种情形会走到这里：取批的端口忽略车道参数，使批次带着实时或付费任务；两个复盘运行器共用一个协调器（R9）。生产接线按车道取批，且只建一个复盘运行器，此路径不可达。它是防御行为，不是可接受的运行状态。
+- R8（B3）：批内 itemId 的整批校验在 `review/membership.ts` 与 inference-provider 的 `validateReviewBatch` 里各有一份，因为 `check:deps` 禁止 moderation-engine 导入 inference-provider。两份各有自己的测试（`runner-batch-contract.test.ts`、`inference-provider/validation/batch-contract.test.ts`），没有用例让两者读同一组输入。改其中一份的规则时要同步另一份。
+- R9（N3）：一个协调器只接一个复盘运行器。运行器的条目表只含它自己入队的任务；两个运行器共用一个协调器时，一个运行器的批次会带着另一个运行器入队的任务，它按 R7 跳过，该任务留在 `RUNNING` 直到截止时间转人工，另一个运行器也取不到它（E60 A7）。接线 Story 在组合根只建一个复盘运行器，或让条目表与协调器共享。
+- R10（B6）：复盘运行器只在 PAID 与 REALTIME 没有就绪批次时取到批次（S009 设计 §5）。实时或付费积压期间 `runBatch()` 返回 null，后台复盘延后；复盘任务的截止时间是结算期限，延后的代价小（提案 §6.2）。执行器的 `pump()` 没有人定时调用时，后台复盘也不前进，直到这些任务到期转人工。谁来驱动 `pump()` 与 `runBatch()`、以什么顺序，属接线 Story；本包只在模块层用假时钟回放验证了顺序。
