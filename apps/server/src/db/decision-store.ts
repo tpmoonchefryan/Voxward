@@ -309,8 +309,9 @@ function commitOverturnInTransaction(
       outputGrantId: null,
       deliverySequence,
       platformOrder: event.platformOrder,
-      validUntil: input.validUntil,
-      status: "PENDING",
+      // A release is written as expired: a resend can name the row, but nothing sends it on its own.
+      validUntil: input.deliverable ? input.validUntil : input.decidedAt,
+      status: input.deliverable ? "PENDING" : "EXPIRED",
       attempts: 0,
       updatedAt: input.decidedAt,
     })
@@ -389,6 +390,10 @@ function commitResendInTransaction(
   if (current.taskGeneration !== readSubjectGeneration(tx, event.subjectId)) {
     return { status: "refused", reason: "STALE_GENERATION" };
   }
+
+  // A delivery the output already marked SENT has reached the downstream. Sending it again would deliver it twice.
+  const sent = tx.select({ status: deliveries.status }).from(deliveries).where(eq(deliveries.id, input.deliveryId)).get();
+  if (sent?.status === "SENT") return { status: "refused", reason: "ALREADY_SENT" };
 
   const deliverySequence = nextDeliverySequence(tx, event.id);
   tx.insert(deliveries)

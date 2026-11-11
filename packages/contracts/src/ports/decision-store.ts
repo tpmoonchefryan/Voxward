@@ -119,6 +119,11 @@ export interface OverturnStoreInput {
   readonly actorRef: string;
   readonly decidedAt: string;
   readonly validUntil: string;
+  /**
+   * Whether the new verdict's delivery is sent now. A release is not: its delivery row is written as expired, and only
+   * an explicit resend delivers it.
+   */
+  readonly deliverable: boolean;
 }
 
 export type OverturnStoreResult =
@@ -154,7 +159,7 @@ export type ResendStoreResult =
       readonly validUntil: string;
     }
   | { readonly status: "duplicate"; readonly deliveryId: string }
-  | { readonly status: "refused"; readonly reason: "NOT_FOUND" | "NOT_CURRENT" | "STALE_GENERATION" };
+  | { readonly status: "refused"; readonly reason: "NOT_FOUND" | "NOT_CURRENT" | "STALE_GENERATION" | "ALREADY_SENT" };
 
 /** Blacklist or whitelist change for one subject. `listKind` null removes the active entry. */
 export interface SubjectListEdit {
@@ -202,11 +207,12 @@ export interface DecisionStorePort {
   /** Read only. Undefined when the delivery does not exist. */
   readDelivery(deliveryId: string): DeliveryFacts | undefined;
   /**
-   * One short transaction. Replaces the current verdict with a new one, and writes the delivery intent and the score
-   * correction of the original scoring once. Stale facts are refused, and a repeated operation is a duplicate.
+   * One short transaction. Replaces the current verdict with a new one, writes the new verdict's delivery row (pending
+   * when deliverable, otherwise expired) and the score correction of the original scoring once. Stale facts are refused,
+   * and a repeated operation is a duplicate.
    */
   commitOverturn(input: OverturnStoreInput): OverturnStoreResult;
-  /** One short transaction. Adds a delivery for an expired verdict. A repeated operation is a duplicate. */
+  /** One short transaction. Adds a delivery for an expired verdict. A repeated operation is a duplicate; a delivery already marked SENT is refused. */
   commitResend(input: ResendStoreInput): ResendStoreResult;
   /** One short transaction. Changes the subject's list entry, with its Change Log row, when the state differs. */
   applySubjectList(input: SubjectListEdit): SubjectListEditResult;

@@ -55,9 +55,10 @@ describe("review corrects the score from the ledger (VW-SUB027-AC001)", () => {
     expect(outcome).toMatchObject({
       status: "overturned",
       seq: 2,
+      downstream: "ALLOW",
       compensation: "applied",
       compensationDelta: 3,
-      intent: { verdict: "ALLOW", deliverySequence: 2 },
+      intent: null,
     });
     expect(scoreOf(db.database, "channel-a", "viewer-1")).toBe(0);
     expect(countWhere(db.database, "SELECT COUNT(*) AS n FROM verdicts WHERE is_current = 1")).toBe(1);
@@ -166,6 +167,7 @@ describe("review corrects the score from the ledger (VW-SUB027-AC001)", () => {
       actorRef: "mod-2",
       decidedAt: "2026-11-10T10:00:20.000Z",
       validUntil: CHANGE_EXPIRES_AT,
+      deliverable: true,
     });
 
     expect(stale).toMatchObject({ status: "conflict", reason: "CHANGED_BY_OTHER", current: { seq: 1 } });
@@ -181,6 +183,72 @@ describe("review corrects the score from the ledger (VW-SUB027-AC001)", () => {
     expect(outcome).toMatchObject({ status: "overturned", compensation: "no_effect", compensationDelta: 0 });
     expect(scoreOf(db.database, "channel-a", "viewer-1")).toBe(0);
     expect(countWhere(db.database, "SELECT COUNT(*) AS n FROM change_logs WHERE change_kind = 'SCORE_CHANGED'")).toBe(0);
+  });
+
+  it("a release made by review produces no deliverable intent, so nothing is sent without the resend action", async () => {
+    await decisionService(db.database).commit("task-1", createVerdict("BLOCK"), { kind: "HUMAN", actor: moderator("mod-1") });
+
+    const late = await decisionService(db.database, { now: "2026-11-10T12:00:00.000Z" }).overturn({
+      eventId: "event-1",
+      operationId: "op-late",
+      verdict: createVerdict("ALLOW_MEANINGFUL"),
+      actor: moderator("mod-1"),
+    });
+
+    expect(late).toMatchObject({ status: "overturned", downstream: "ALLOW", intent: null });
+    expect(countWhere(db.database, "SELECT COUNT(*) AS n FROM deliveries WHERE status = 'PENDING' AND valid_until > '2026-11-10T12:00:00.000Z'")).toBe(0);
+    // The new verdict keeps a delivery row that is already expired, so an explicit resend can name it.
+    expect(db.database.sqlite.prepare("SELECT status, valid_until FROM deliveries WHERE id = 'overturn-delivery:channel-a:op-late'").get()).toEqual({
+      status: "EXPIRED",
+      valid_until: "2026-11-10T12:00:00.000Z",
+    });
+  });
+
+  it("a released message is resent inside the resend window", async () => {
+    await decisionService(db.database).commit("task-1", createVerdict("BLOCK"), { kind: "HUMAN", actor: moderator("mod-1") });
+    const review = await decisionService(db.database, { now: "2026-11-10T10:00:20.000Z" }).overturn({
+      eventId: "event-1",
+      operationId: "op-1",
+      verdict: createVerdict("ALLOW_MEANINGFUL"),
+      actor: moderator("mod-1"),
+    });
+    expect(review).toMatchObject({ status: "overturned", intent: null });
+
+    const inside = await decisionService(db.database, { now: "2026-11-10T10:03:00.000Z" }).resend({
+      deliveryId: "overturn-delivery:channel-a:op-1",
+      operationId: "resend-1",
+      actor: moderator("mod-1"),
+    });
+
+    expect(inside).toMatchObject({ status: "resent", intent: { verdict: "ALLOW", validUntil: "2026-11-10T10:04:00.000Z" } });
+  });
+
+  it("a release reviewed two hours after the message arrived cannot be resent: the time limit refuses it", async () => {
+    await decisionService(db.database).commit("task-1", createVerdict("BLOCK"), { kind: "HUMAN", actor: moderator("mod-1") });
+    await decisionService(db.database, { now: "2026-11-10T12:00:00.000Z" }).overturn({
+      eventId: "event-1",
+      operationId: "op-late",
+      verdict: createVerdict("ALLOW_MEANINGFUL"),
+      actor: moderator("mod-1"),
+    });
+
+    const outcome = await decisionService(db.database, { now: "2026-11-10T12:00:30.000Z" }).resend({
+      deliveryId: "overturn-delivery:channel-a:op-late",
+      operationId: "resend-1",
+      actor: moderator("mod-1"),
+    });
+
+    expect(outcome).toEqual({ status: "refused", reason: "WINDOW_CLOSED" });
+  });
+
+  it("a review that makes a block keeps the block delivery, so the output can take the old content off", async () => {
+    const service = decisionService(db.database);
+    await service.commit("task-1", createVerdict("ALLOW_MEANINGFUL"), { kind: "HUMAN", actor: moderator("mod-1") });
+
+    const outcome = await service.overturn({ eventId: "event-1", operationId: "op-1", verdict: createVerdict("BLOCK"), actor: moderator("mod-1") });
+
+    expect(outcome).toMatchObject({ status: "overturned", downstream: "BLOCK", intent: { verdict: "BLOCK", validUntil: "2026-11-10T10:05:10.000Z" } });
+    expect(db.database.sqlite.prepare("SELECT status FROM deliveries WHERE id = 'overturn-delivery:channel-a:op-1'").get()).toEqual({ status: "PENDING" });
   });
 
   it("a data admin is denied, and an unknown event is a conflict", async () => {

@@ -20,6 +20,11 @@ export function overturnEvent(deps: DecisionDeps, request: OverturnRequest): Ove
   if (facts.current === null) return { status: "conflict", reason: "NO_CURRENT_VERDICT", current: null };
 
   const decidedAt = deps.now();
+  const downstream = toDownstreamVerdict(request.verdict.classification);
+  // A block is sent at once, so the output can take the old content off. A release is not sent by the review: an
+  // explicit resend is the only way to send it (proposal 6.3 and 7.1).
+  const deliverable = downstream === "BLOCK";
+  const validUntil = new Date(decidedAt.getTime() + deps.limits.overturnValidityMs).toISOString();
   const result = deps.store.commitOverturn({
     eventId: request.eventId,
     operationId: request.operationId,
@@ -28,7 +33,8 @@ export function overturnEvent(deps: DecisionDeps, request: OverturnRequest): Ove
     verdict: request.verdict,
     actorRef: request.actor.accountRef,
     decidedAt: decidedAt.toISOString(),
-    validUntil: new Date(decidedAt.getTime() + deps.limits.overturnValidityMs).toISOString(),
+    validUntil,
+    deliverable,
   });
 
   switch (result.status) {
@@ -37,14 +43,17 @@ export function overturnEvent(deps: DecisionDeps, request: OverturnRequest): Ove
         status: "overturned",
         seq: result.seq,
         verdictId: result.verdictId,
-        intent: {
-          contractVersion: CONTRACT_VERSION,
-          eventRef: result.eventRef,
-          verdict: toDownstreamVerdict(request.verdict.classification),
-          platformOrder: result.platformOrder,
-          deliverySequence: result.deliverySequence,
-          validUntil: new Date(decidedAt.getTime() + deps.limits.overturnValidityMs).toISOString(),
-        },
+        downstream,
+        intent: deliverable
+          ? {
+              contractVersion: CONTRACT_VERSION,
+              eventRef: result.eventRef,
+              verdict: downstream,
+              platformOrder: result.platformOrder,
+              deliverySequence: result.deliverySequence,
+              validUntil,
+            }
+          : null,
         compensation: result.compensation,
         compensationDelta: result.compensationDelta,
       };
