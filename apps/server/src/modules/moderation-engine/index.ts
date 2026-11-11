@@ -174,3 +174,50 @@ export {
   type SettlementState,
   type TaskKind,
 } from "./routing/truth-table.js";
+
+/* Fast-lane review (S011, VW-SUB021). The runner receives the coordinator, the model, the scoring port and the storage. */
+export {
+  type BatchOutcome,
+  createReviewRunner,
+  type CycleOutcome,
+  type ItemOutcome,
+  type ReviewRunner,
+  type ReviewRunnerDeps,
+} from "./review/runner.js";
+export {
+  DEFAULT_REVIEW_POLICY,
+  decideReviewTrigger,
+  REVIEW_TRIGGERS,
+  ReviewConfigError,
+  resolveReviewPolicy,
+  type ReviewPolicy,
+  type ReviewTrigger,
+  type TriggerFacts,
+} from "./review/triggers.js";
+export {
+  eligibilityOf,
+  INELIGIBLE_REASONS,
+  type IneligibleReason,
+  selectForReview,
+  type Selection,
+  type SelectionSkip,
+} from "./review/selection.js";
+export { createTaskAliasTable, type TaskAliasTable } from "./review/author-alias.js";
+export {
+  type BackgroundCoordinatorPort,
+  type CandidateProposal,
+  type CandidateProposalPort,
+  type PendingScoring,
+  type ReviewBatchLease,
+  type ReviewCandidate,
+  type ReviewModelPort,
+  type ReviewQueuePort,
+  type ReviewRecord,
+  type ReviewStorePort,
+  SCORING_STATES,
+  type ScoringState,
+  SETTLEMENT_STATES,
+  type SettlementCommit,
+  type SettlementWrite,
+  type StoredSettlementState,
+} from "./review/ports.js";
