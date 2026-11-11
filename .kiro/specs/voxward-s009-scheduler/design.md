@@ -158,7 +158,7 @@ export interface TaskCoordinatorService extends TaskCoordinator {
 车道：
 - 派工顺序 PAID > REALTIME > BACKGROUND。PAID 与 REALTIME 可用全部槽位。
 - 后台余量：`reserve = min(limit, max(1, ceil(limit / 4)))`，BACKGROUND 批次数不得超过 `limit - reserve`。并发降到最小值时后台暂停（自定）。
-- 每个批次占一个并发槽位，直到 `finishBatch` 释放。槽位释放由执行器负责，截止时间到期后由执行器取消 Crew 任务并释放。
+- 每个批次占一个并发槽位，直到 `finishBatch` 释放。槽位由执行器在 Crew 接受取消、或会话已报告后释放（§9）。截止时间到期后，执行器对仍在运行的会话发起取消。
 
 ## 6. 重试与退避（自定）
 
@@ -205,9 +205,11 @@ Crew 执行器（`createCrewExecutor`）：
 - 会话 `completed` 但某任务没有对应条目：该任务报 INVALID_OUTPUT。Crew 会话状态不是业务裁决，裁决只来自校验后的条目。
 - 有条目：`commitResult`，`apply` 调用 `writeVerdict(taskId, item)`，evidence 为 ITEM_ID_MAP 与 VALIDATED_JSON（每个任务各一条）。
 - `waiting` 的提交放入待重试列表，下一次 `pump` 再试。
-- `pump()`：先 `sweep`，再对无 RUNNING 任务的空闲批次取消 Crew 任务并 `finishBatch`，重试暂存的提交，然后按并发上限取批启动。返回启动的批次数。`pump` 不等待会话结束。
+- `pump()`：先 `sweep`，再对无 RUNNING 任务的空闲批次发起 Crew 取消，重试暂存的提交，然后按并发上限取批启动。返回启动的批次数。`pump` 不等待会话结束，也不等待取消返回（B5）。
+- 取消不在主路径上等待（B5）：发起取消后，该批次保留槽位，直到 Crew 接受取消才 `finishBatch`。被拒绝的取消保留槽位，下一次 `pump` 再发。取消一直不返回时，该槽位一直保留，其它批次照常派工。若并发上限为 1，派工暂停直到 Crew 应答。这是残留风险：执行器侧不设上限，因为提前释放会让 Crew 侧的会话数超过上限；有界取消须由真实绑定保证（S029）。
+- start 尚未返回时批次已空闲：槽位立即释放，因为此时还没有可取消的 Crew 会话。若 start 之后才返回，执行器立即发起取消且不等待；被拒绝则由下一次 `pump` 再发。在取消被接受前，Crew 侧可能短暂多出一个会话（残留风险，未测量）。
 - `drain()`：等待已启动的会话全部报告。供测试与停机使用。
-- `cancelEvent(key)`：调用 `coordinator.cancelEvent`，再执行一次回收，使运行中的 Crew 任务及时取消。取消失败的会话保留槽位，下一次 `pump` 再试。
+- `cancelEvent(key)`：调用 `coordinator.cancelEvent`，再执行一次回收，使运行中的 Crew 任务及时取消，然后立即返回，不等待 Crew（B5）。取消被拒绝的会话保留槽位，下一次 `pump` 再试。
 
 ## 10. 测试与验收对应
 

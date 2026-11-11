@@ -9,7 +9,21 @@ import {
 } from "../../../src/modules/task-coordinator/index.js";
 import { FakeFacts, FakeClock, MutableConcurrency, eventOf, harnessWith, keyOfEvent, sequentialIds, type Harness } from "../helpers.js";
 import { completedFor, firstJob, FakeCrew, flush } from "./fake-crew.js";
+import { HungCrew } from "./hung-crew.js";
 import type { CrewReport } from "../../../src/modules/task-coordinator/index.js";
+
+/** Resolves with the work's value, or rejects when the work has not settled within `ms`. A hang fails here, not in the run. */
+async function withinMs<T>(work: Promise<T>, ms = 500): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(`did not return within ${ms} ms`)), ms);
+  });
+  try {
+    return await Promise.race([work, late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 import type { InferenceResultItem } from "@voxward/contracts";
 
 interface Written {
@@ -297,5 +311,119 @@ describe("restart", () => {
     expect(await fresh.pump()).toBe(0);
     expect(freshCrew.started).toEqual([]);
     expect(await before.coordinator.statusOf(ref.taskId)).toBe("RUNNING");
+  });
+});
+
+describe("hung Crew calls (B5)", () => {
+  it("returns from cancelEvent while a cancel never answers, and other channels keep dispatching", async () => {
+    const h = harnessWith({ limit: 2 });
+    const crew = new HungCrew("cancel");
+    const { executor } = executorFor(h, crew);
+    const stuck = eventOf({ channelId: "ch-a", platformMessageId: "a1" });
+    await h.coordinator.enqueue(stuck, h.clock.at(60_000));
+    expect(await withinMs(executor.pump())).toBe(1);
+
+    await withinMs(executor.cancelEvent(keyOfEvent(stuck)));
+    expect(crew.cancelled).toHaveLength(1);
+
+    const other = await h.coordinator.enqueue(eventOf({ channelId: "ch-b", platformMessageId: "b1" }), h.clock.at(60_000));
+    expect(await withinMs(executor.pump())).toBe(1);
+    expect(await h.coordinator.statusOf(other.taskId)).toBe("RUNNING");
+    expect(crew.maxOpen).toBe(2);
+  });
+
+  it("returns from pump when an expired batch's cancel never answers, and other channels keep dispatching", async () => {
+    const h = harnessWith({ limit: 2 });
+    const crew = new HungCrew("cancel");
+    const { executor } = executorFor(h, crew);
+    const expiring = await h.coordinator.enqueue(eventOf({ channelId: "ch-a", platformMessageId: "a1" }), h.clock.at(1000));
+    expect(await withinMs(executor.pump())).toBe(1);
+    h.clock.advance(1000);
+
+    expect(await withinMs(executor.pump())).toBe(0);
+    expect(await h.coordinator.statusOf(expiring.taskId)).toBe("PENDING_REVIEW");
+    expect(crew.cancelled).toHaveLength(1);
+
+    const other = await h.coordinator.enqueue(eventOf({ channelId: "ch-b", platformMessageId: "b1" }), h.clock.at(60_000));
+    expect(await withinMs(executor.pump())).toBe(1);
+    expect(await h.coordinator.statusOf(other.taskId)).toBe("RUNNING");
+    expect(crew.maxOpen).toBe(2);
+  });
+
+  it("holds the slot of a batch whose cancel never answers, so the host never runs more sessions than the limit", async () => {
+    const h = harnessWith({ limit: 1 });
+    const crew = new HungCrew("cancel");
+    const { executor } = executorFor(h, crew);
+    const stuck = eventOf({ platformMessageId: "a1" });
+    await h.coordinator.enqueue(stuck, h.clock.at(60_000));
+    expect(await withinMs(executor.pump())).toBe(1);
+    await withinMs(executor.cancelEvent(keyOfEvent(stuck)));
+
+    const next = await h.coordinator.enqueue(eventOf({ platformMessageId: "b1" }), h.clock.at(60_000));
+    expect(await withinMs(executor.pump())).toBe(0);
+    expect(await h.coordinator.statusOf(next.taskId)).toBe("QUEUED");
+
+    crew.answerHungCancels();
+    await flush();
+    expect(await withinMs(executor.pump())).toBe(1);
+    expect(await h.coordinator.statusOf(next.taskId)).toBe("RUNNING");
+    expect(crew.maxOpen).toBe(1);
+  });
+
+  it("keeps the slot when Crew refuses a cancel, and sends the cancel again on the next pump", async () => {
+    const h = harnessWith({ limit: 1 });
+    const crew = new HungCrew("cancel");
+    const { executor } = executorFor(h, crew);
+    const stuck = eventOf({ platformMessageId: "a1" });
+    await h.coordinator.enqueue(stuck, h.clock.at(60_000));
+    expect(await withinMs(executor.pump())).toBe(1);
+
+    crew.refuseNextCancel = true;
+    await withinMs(executor.cancelEvent(keyOfEvent(stuck)));
+    await flush();
+    expect(crew.cancelled).toHaveLength(1);
+
+    const next = await h.coordinator.enqueue(eventOf({ platformMessageId: "b1" }), h.clock.at(60_000));
+    expect(await withinMs(executor.pump())).toBe(0);
+    expect(crew.cancelled).toHaveLength(2);
+    expect(await h.coordinator.statusOf(next.taskId)).toBe("QUEUED");
+
+    crew.answerHungCancels();
+    await flush();
+    expect(await withinMs(executor.pump())).toBe(1);
+    expect(crew.maxOpen).toBe(1);
+  });
+
+  it("dispatches other channels while one start never answers, and returns from pump on time", async () => {
+    const h = harnessWith({ limit: 2 });
+    const crew = new HungCrew("start");
+    const { executor } = executorFor(h, crew);
+    const hung = await h.coordinator.enqueue(eventOf({ channelId: "ch-a", platformMessageId: "a1" }), h.clock.at(1000));
+    expect(await withinMs(executor.pump())).toBe(1);
+
+    const other = await h.coordinator.enqueue(eventOf({ channelId: "ch-b", platformMessageId: "b1" }), h.clock.at(60_000));
+    expect(await withinMs(executor.pump())).toBe(1);
+    expect(await h.coordinator.statusOf(other.taskId)).toBe("RUNNING");
+
+    h.clock.advance(1000);
+    expect(await withinMs(executor.pump())).toBe(0);
+    expect(await h.coordinator.reasonOf(hung.taskId)).toBe("DEADLINE_EXCEEDED");
+    expect(crew.maxOpen).toBe(1);
+  });
+
+  it("frees the slot once Crew accepts a cancel, even though the session never reports", async () => {
+    const h = harnessWith({ limit: 1 });
+    const crew = new HungCrew("done");
+    const { executor } = executorFor(h, crew);
+    const first = eventOf({ platformMessageId: "a1" });
+    await h.coordinator.enqueue(first, h.clock.at(60_000));
+    expect(await withinMs(executor.pump())).toBe(1);
+    await withinMs(executor.cancelEvent(keyOfEvent(first)));
+    await flush();
+
+    const next = await h.coordinator.enqueue(eventOf({ platformMessageId: "b1" }), h.clock.at(60_000));
+    expect(await withinMs(executor.pump())).toBe(1);
+    expect(await h.coordinator.statusOf(next.taskId)).toBe("RUNNING");
+    expect(crew.maxOpen).toBe(1);
   });
 });
