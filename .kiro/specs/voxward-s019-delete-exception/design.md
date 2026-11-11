@@ -1,0 +1,191 @@
+<!-- EINZBERN-SPEC:MANAGED-START -->
+# Design
+
+<!-- Einzbern source: work=work:7f0ac0774bc508523d09b5f1 revision=4 sha256=2cef8b13f3e13a963688c186a5933c4c0de61c0ba1f6bb92e1fb14d2d5eebda5 -->
+
+This file records design-source availability. It does not establish a new design authority or claim publication/build evidence.
+
+Resolution: unconfigured.
+
+No design authority is configured for the resolved work context. No authority was inferred.
+
+## Effective design context
+
+`design.authority`: not configured.
+
+> {"status":"unconfigured","targets":[{"authoritySetting":null,"design":null,"reason":"coordination-is-not-development","reference":{"libraryId":"workspace:7732a51de4c38afb83bb77cf","projectId":"project:f824c7861e6888255132af42"},"status":"unconfigured"}]}
+
+## Cited decisions
+
+### minutes:92f6353f4d2e04aa552ea04e
+
+#### D1
+
+> Owner 原话：“同意，开Voxward新链，然后落INIT-001”。据此在现有共享总库 workspace:7732a51de4c38afb83bb77cf 中建立独立 VoxWard 产品项目 project:f824c7861e6888255132af42（externalKey VOXWARD，无父项目），绑定已经迁移的服务器 Voxward 仓库；复用现有同步和服务器工作方式，不新建或复制第二套治理库，不搬移或重开既有历史。实际记录者为 agent:codex。
+
+#### D2
+
+> 采用 VoxWard 仓库相对路径 docs/proposal/y3_project_proposal.md 的 2026-11-09 对话决策整合版作为 INIT-001 产品基线，SHA-256 cad909c1f8e839bfef64b5e2b7ba0569059cef953e4e652d8dda734750a133ee。完整继承 Middleware 定位、频道评分核心、平台直接输入、远端自托管与浏览器多人协作、统一裁决、Kiro/Crew 可替换适配器、SQLite、一次性 AI 会话与校验后 JSON、两种删除选项及记分例外、Change Log/Technical Log 和 correlationId 关联查看器、自有 OBS 路径及版本化指引；只参加 Frankenstein 主赛道，不申请附加奖项。旧稿冲突设计不恢复。
+
+#### D3
+
+> 创建 VOXWARD-INIT-001，状态 planned，承载完整 MVP 的目标、来源、需求、范围、验收、后续拆分方向及未决依赖。本次执行范围是新链与 Initiative 落单，不据此宣称已开发、验收、部署或提交，也不批量创建或启动 Epic/Story。YouTube 逐观众评分用途与保存期限、自托管审核覆盖、Cloud/隐私/申请材料、第三方兼容性、Kiro/Crew 清理和模型性能继续按 proposal 记为未确认或待验证；无真实许可证据时使用明确标识的合成演示，保留评分实现目标。
+
+### minutes:a791ac5683fc0b966d851c2f
+
+#### D1
+
+> Owner 原话：“拆Epic+Story”。本次在 VoxWard 已有 INIT-001 下继续拆分 Epic 与 Story，沿用 2026-11-09 proposal 及 VW-R-001 至 VW-R-022 的有效版本，不重新立项、不替换或删除已定产品需求。前次开链记录描述前次执行范围，本次指令明确授权后续拆单。
+
+#### D2
+
+> 据本次授权，以 7 个 Epic、33 个 Story 承接既定 MVP：核心契约/存储/权限/规则评分；Kiro/Crew/JSON/调度/精翻复盘；YouTube 与人工操作；数据生命周期和两类日志；浏览器/OBS/协议与隔离演示；集成验收/性能/部署；政策及 Frankenstein 材料。Story 按可验收产出划分，建立真实前置依赖，政策草案可提前推进；第三方候选、许可和性能未验证状态不被计划掩盖。
+
+#### D3
+
+> 补齐 INIT→Epic→Story 的版本化需求、实施/验证责任与验收引用；Story 的自测材料不冒充独立验收，跨模块验证由验证交付 Epic 承接，材料审查在对应政策/参赛 Story 内明确。所有新增工单及 INIT 保持 planned；验收证据留空，不记录实现或验收已通过。本次可通过原生引擎更新 INIT 的拆分说明和责任分配，保留原文来源与决策历史；不据此发起产品开发、真实平台操作、公开发布或参赛提交。
+
+### minutes:be2ce03bcd6fda69f1db9839
+
+#### D2
+
+> 据 D1 授权，在每个 Story 的内容中写入需求分配：Story 的每条 required 需求分配给其每张直属 Subtask，各一条 implementation 与一条 verification 责任。实施子代理只做最小自测；独立验收与跨模块验证仍按 Subtask verificationOwner 与 EPIC-006 验证 Story 执行。Story 的需求、来源、约束与验收文本不变，仅新增分配。
+<!-- EINZBERN-SPEC:MANAGED-END -->
+
+
+---
+
+## 实施设计（自定，受管段之外）
+
+本段由实施子代理在写代码之前写入。来源没有规定的选择标「自定」。受管段不改。
+
+### 1. 范围
+
+- SUB-035（VOXWARD-SUB-035，`work:de64f4522b4c54f1d76ede8f`，先做）：删除请求在一个短事务内确认记分例外、提升主体代次、登记删除项；偏好只保留最小标记；恢复计分只接受明确的请求。
+- SUB-036（VOXWARD-SUB-036，`work:11fe17ddd33774eb6ef1ed6b`，后做）：按存储面逐个清理，部分失败可续作，两部分都完成才报告成功。
+- 问题清单（`tasks.md` 末尾）本包处理：Q7、Q29、Q35、Q42、Q51。Q30 归 S020，不做。
+
+### 2. 偏离表（拆单名 → 实际）
+
+| 项 | 子单交付清单 | 实际 | 理由 |
+| --- | --- | --- | --- |
+| 模块目录 | `apps/server/src/modules/data-lifecycle/` | `apps/server/src/modules/data-lifecycle-service/` | 骨架 S001 已有该模块并被注册表绑定；主线程批次说明给出的映射（`data-lifecycle` → `data-lifecycle-service`） |
+| 测试目录 | `apps/server/test/data-lifecycle/` | `apps/server/test/data-lifecycle-service/` | 同上，测试目录同理 |
+| 模块目录（决策） | `decision/` | 不涉及 S019 | S019 不改决策模块的文件，只读引用其代次语义 |
+| 偏好标记 | 「HMAC 偏好最小标记」 | 见第 8 节「来源缺口」：本包不实现 HMAC 派生，只保留主体行与例外行 | 仓库内没有 HMAC 密钥来源，`senderRefOf` 由平台适配器注入、无密钥配置；不新增密钥配置项 |
+
+### 3. 依赖方向（check-deps 不改规则）
+
+- `modules/data-lifecycle-service/**` 只导入 `@voxward/contracts` 与本模块文件。时间、随机 ID、缓存与 HMAC 都经端口或注入函数进入。
+- 端口定义在 `packages/contracts/src/ports/data-request.ts`（扩展）与 `ports/audit-log.ts`（扩展）。
+- `apps/server/src/db/**` 实现端口，只导入 contracts、db 与 drizzle。新文件 `db/subject-cleanup.ts` 属于 db 区。
+- 组合根 `apps/server/src/app.ts` 与 `auth/data-routes.ts` 绑定端口与路由。两者的分区不变。
+- 进程内缓存（昵称、身份、候选卡片）只通过模块自己的方法失效。组合根通过 `SubjectCacheHub` 端口调用它们。
+- 不改 `scripts/check-deps.mjs`，因此不需要负面对照。
+
+### 4. 数据
+
+- 迁移 `0006`（drizzle-kit 生成，重建表方式同 `0004_data_request_kinds`）：
+  - `data_requests.request_kind` CHECK 增加 `RESUME_SCORING`（自定：明确恢复计分请求作为一种请求，而非另建表）。
+  - `data_request_items.target_kind` CHECK 增加 `SCORE_OUTCOME`、`CANDIDATE_CARD`、`CACHE`（Q51 与缓存面需要）。
+  - 同步 `docs/data-dictionary.md` 中两张表的 CHECK 取值，`test/db/schema.test.ts` 核对字典。
+- `score_exceptions` 与 `change_logs` 不改列。
+- 主体级变更日志的关联标识沿用 S014 约定 `subject:<subjectId>`（`db/decision-store.ts` 名单写入已采用）。删除索引按此值定位（Q29）。
+
+### 5. 接口
+
+契约（`packages/contracts/src/ports/data-request.ts`）新增：
+
+- `DELETION_TARGET_KINDS`：与 `db/schema/data-requests.ts` 同值，新增 `SCORE_OUTCOME`、`CANDIDATE_CARD`、`CACHE`。
+- `DataRequestPort.startDeletion(start)`：一个短事务。依次：校验请求属于频道、是 VERIFIED 的 DELETE 且执行态为 PENDING；`DELETE_AND_EXCEPT` 时执行 `ScoreExceptionStore.ensureActive` 并在新建时写 `SCORE_EXCEPTION_CHANGED` 日志；`SubjectStore.bumpGeneration`；写入全部 `data_request_items`（PENDING）；请求执行态改为 RUNNING；写 `DATA_REQUEST_CHANGED` 日志。返回 `STARTED`（含新代次与是否新建例外）、`ALREADY_STARTED`（不做任何写入）、`NOT_ELIGIBLE`（含原因）或 `NOT_FOUND`。
+- `DataRequestPort.markItem(input)`：把一个存储面标记为 DONE 或 FAILED（含错误码，不含内容）。
+- `DataRequestPort.finishExecution(input)`：把请求置为 COMPLETED 或 PARTIAL_FAILED，并写 Change Log。
+- `DataRequestPort.resumeException(input)`：只在 RESUME_SCORING 的已验证请求存在时，给主体的生效例外写 `removed_at` 与原因码 `RESUME_REQUESTED`，并写 Change Log。其他任何路径不移除例外。
+- `SubjectCleanupPort`（新）：
+  - `readCleanupFacts(channelId, subjectId)`：返回主体的 `platformSubjectKey` 与其事件、技术日志的 `correlationId` 列表（只读，用于候选卡片与缓存失效）。
+  - `cleanSurface(input)`：对一个 DB 存储面执行一次幂等删除或重置，返回删除行数。调用方随后再 `markItem`。
+- `AuditLogPort` 新增（`ports/audit-log.ts`）：
+  - `removeSubjectEvidence(subjectId, kind)`：删除该主体日志的某一种证据行，返回行数。
+  - `removeSubjectTechnicalRows(subjectId)`：删除该主体的技术日志行（证据已先清），返回行数。
+  - `certifySubjectChangeLogs(subjectId, summary)`：把按技术日志关联或 `subject:<id>` 关联的 Change Log 行改成证书文本。
+- `SubjectCacheHub`（新，组合根注入）：`names: readonly string[]`；`forgetSubject(name, channelId, platformSubjectKey, correlationIds): number`。`name` 之一是 `NICKNAME_VERDICT`、`IDENTITY_TRACKER`、`CANDIDATE_CARD`。
+
+模块（`apps/server/src/modules/data-lifecycle-service/`）新增：
+
+- `delete-with-exception.ts`：SUB-035 的编排。校验入参，计算存储面清单（来自 `cleanup-targets.ts`），调用 `startDeletion`。
+- `preference-marker.ts`：偏好最小标记的形状。只有 `purpose`（固定为 `SCORING_EXCEPTION_PREFERENCE`）与主体键；不含旧分数、昵称或正文。
+- `resume-scoring.ts`：恢复计分的入口。调用 `resumeException`，结果只有 `RESUMED`、`NO_ACTIVE_EXCEPTION` 或 `REQUEST_NOT_ELIGIBLE`。
+- `cleanup-targets.ts`：固定顺序的存储面清单（见第 6 节）。
+- `cleanup-executor.ts`：SUB-036 的执行器。按清单顺序执行；第一个失败的步骤之后停止，请求置 PARTIAL_FAILED；续作时从第一个非 DONE 的项开始；全部 DONE 且（若 `DELETE_AND_EXCEPT`）例外仍生效时才 COMPLETED。
+- `requests.ts`、`routes.ts`、`validate.ts`、`types.ts`：接入 `RESUME_SCORING` 与 `execute` 路由。`DataDeps` 增加 `cleanup`、`caches`、`publishInvalidation`、`logs` 的新方法。
+
+HTTP（`auth/data-routes.ts`，组合）：
+
+- `POST /channels/:channelId/data/requests/:requestId/execute`：执行或续作（SUB-035 + SUB-036）。
+- 既有的 `POST /channels/:channelId/data/requests` 接受 `kind: "RESUME_SCORING"`（`mode` 必须为空）。
+
+### 6. 清理顺序（固定，`cleanup-targets.ts`）
+
+依赖关系决定顺序：关联值来自事件与日志，必须先读取；外键要求先删子行。
+
+1. `CHANGE_LOG`（主体）：证书化按技术日志关联或 `subject:<id>` 关联的 Change Log。必须最先执行，之后才删日志行。
+2. `TECHNICAL_LOG_EVIDENCE` 四个种类（`MESSAGE_TEXT`、`TRANSLATION`、`VALIDATED_JSON`、`ITEM_ID_MAP`，其中 `ITEM_ID_MAP` 即「映射」）。
+3. `TECHNICAL_LOG`（主体）：删除技术日志行。
+4. `CANDIDATE_CARD`（经 `SubjectCacheHub`）：按事件与日志的关联值删除候选卡片（随来源删除，二选一的结论见第 7 节）。必须在 `CHANNEL_EVENT` 之前。
+5. `SCORE_OUTCOME`（主体）：删除 `score_outcomes` 中按 `subject_id` 的行（Q51）。
+6. `SCORE_LEDGER`（主体）：删除评分账本行。
+7. `SUBJECT_IDENTITY`（主体）：删除身份事实行。
+8. `NICKNAME_CHANGE`（主体）：删除昵称变更行（只含摘要）。
+9. `SUBJECT_SCORE`（主体）：把分数行重置为 0（版本号加一，不删行）。原因：`commitInTransaction` 在读状态时要求分数行存在；删行会让后续消息抛错而不是被拒。
+10. `DELIVERY`（主体）：删除该主体事件的投递行。
+11. `VERDICT`（主体）：删除该主体事件的裁决行。
+12. `TASK`（主体）：先删除挂在这些任务上的技术日志与证据，再删任务行。
+13. `CHANNEL_EVENT`（主体）：删除事件引用行（事件表不含正文）。
+14. `CACHE` 的 `NICKNAME_VERDICT`、`IDENTITY_TRACKER`（经 `SubjectCacheHub`）。
+
+不删除：`subjects` 行（代次与平台键，外键锚点）、`score_exceptions` 行（例外的最小标记，`DELETE_AND_EXCEPT` 才有）、`list_entries`（名单，见第 8 节）、`data_requests` 与 `data_request_items`（删除本身的记录）。
+
+### 7. 决定
+
+- **代次与例外的先后**：在同一事务中先例外、后代次，然后登记项。之后任何旧任务的结果在 `commitVerdict` 与 `commitInTransaction` 中都会被拒（代次不符或例外生效）。
+- **幂等**：`startDeletion` 对已 RUNNING、COMPLETED、PARTIAL_FAILED 的请求返回 `ALREADY_STARTED`，不再提升代次，也不再新建例外行。`ensureActive` 已有活动行时复用它。
+- **续作**：每一步是幂等操作。先执行清理，再 `markItem`。两者不在同一事务中。崩溃后重跑未标记的步骤，删除结果不变（删到零行或重置为相同值）。
+- **两部分完成**：`COMPLETED` 的条件是全部存储面 DONE，并且（`DELETE_AND_EXCEPT` 时）`subjects.readSubject` 显示例外仍生效。否则为 `PARTIAL_FAILED`，原因码 `EXCEPTION_NOT_CONFIRMED`。
+- **候选卡片：随来源删除**（二选一结论）。卡片只在进程内保存，且与主体的事件或日志共享关联值。随来源删除能让卡片不再保留观众文本；去关联则保留卡片文本。选前者。
+- **例外与新消息**：例外只阻止计分（`commitInTransaction` 与 `withExceptionGuard`）。消息的审核与任务创建不受影响。
+- **恢复计分**：只接受 `RESUME_SCORING` 的已验证请求。名单同步、重连、普通房管改分都不移除例外。
+- **证书**：删除后 Change Log 只留 `DATA_REQUEST_CERTIFICATE` 文本，不留正文与分数（沿用 S016 的 `CERTIFICATE_SUMMARY`）。
+- **失效总线**：组合根只创建一条 `InvalidationBus`，同时交给查看器缓存与数据删除路径（Q35）。每个日志步骤在提交后发布一次 `DELETED` 事件（只含标识）。
+
+### 8. 来源缺口与未满足项（需在报告中写明）
+
+- **HMAC 偏好标记未满足**：来源要求偏好只保留 HMAC 最小标记。仓库内没有 HMAC 密钥来源或派生函数（`senderRefOf` 由平台适配器注入，代码中没有密钥配置）。本包不新增配置项，只保留 `subjects` 行的 `platform_subject_key` 与 `score_exceptions` 行。需要 Owner 决定密钥来源（配置项或保险箱）后再接线。
+- **名单（`list_entries`）不删除（自定）**：名单属于频道的审核决定，删除它会解除黑名单。来源没有规定名单是否属于「删除数据」。本包不删除名单行，但按 Q29 把名单相关 Change Log 证书化。需要 Owner 确认。
+- **本地 AI 会话未清理**：`adapters/kiro-cli` 的会话目录不按主体标识，删除路径无法定位。它们由 S008 的会话生命周期清理。第三方模型提供方的留存不由本包证明（提案 §12.4）。
+- **昵称缓存、身份跟踪器、候选存储的实例未挂载**：这些对象由平台与审核模块的工厂创建，组合根当前没有实例。本包提供失效方法、`SubjectCacheHub` 注册点与测试。删除路径调用的是注册表中的对象；注册表为空时这些项直接 DONE（无对象需要清理），不伪造成已清理。接线在挂载对应模块时完成。
+- **在途模型请求不取消**：`task-coordinator` 只导出 `TaskCoordinator` 的接口，没有按主体取消的入口。本包不改其内部实现。在途结果依靠代次校验被丢弃（来源要求「无法取消的晚到结果丢弃」）。
+- **Q30 与到期清理不做**：归 S020。
+
+### 9. 验收映射（子单 AC001 → 测试文件）
+
+| 验收行 | 测试文件 | 证明什么 |
+| --- | --- | --- |
+| VW-SUB035-AC001（主） | `test/data-lifecycle-service/delete-with-exception/transaction.test.ts` | 启动事务中途失败（注入违反约束的日志行）时，例外、代次、登记项全部不落库；成功时三者同时存在；重复请求不重复提升代次与例外行；普通删除不新增也不撤销已有例外；例外生效时旧任务结果被代次拒绝（`commitVerdict` 返回 STALE_GENERATION）与新计分被拒（EXCEPTION_ACTIVE） |
+| VW-SUB035-STORY、VW-SUB035-PARENT | 同上，加 `preference-marker.test.ts` | 偏好标记不含旧分数与昵称；`RESUME_SCORING` 是唯一移除例外的路径（名单同步、身份事件、人工改分后例外仍在） |
+| VW-SUB036-AC001（主） | `test/data-lifecycle-service/cleanup/executor.test.ts` | 第 N 步注入失败后请求为 PARTIAL_FAILED 且 COMPLETED 不出现；续作从失败项开始并幂等；全部完成后只剩证书、标记与分数零行；另一主体的数据不变 |
+| VW-SUB036-STORY、VW-SUB036-PARENT | 同上 | 每个存储面都有对应的 DONE 项；`score_outcomes`、候选卡片、缓存各有断言 |
+| Q7 | `test/moderation-engine/nickname-cache/cache.test.ts`（新增用例） | `forgetSubject` 后同一主体的旧结果不再命中 |
+| Q42 | `test/platform-source/youtube-identity/identity.test.ts`（新增用例） | `forget` 后同一主体的身份变化重新报告 |
+| Q51 | `test/moderation-engine/candidates/store.test.ts`（新增用例）与 cleanup 测试 | `removeBySourceCorrelations` 删除来源卡片；`score_outcomes` 行被删 |
+| Q29 | `test/data-lifecycle-service/cleanup/executor.test.ts` 与 `test/audit-store/deletion-index/subject-removal.test.ts`（新增） | 无技术日志关联的 `subject:` 变更日志被找到并证书化 |
+| Q35 | `test/data-lifecycle-service/cleanup/executor.test.ts` | 删除路径发布的事件使查看器缓存的条目被丢弃（同一条总线） |
+| 迁移与字典 | `test/db/schema.test.ts`、`test/db/migrate.test.ts`、`test/db/constraints.test.ts`（补充新 CHECK 值） | 新 CHECK 取值生效；字典与 schema 一致 |
+
+### 10. 不做的事
+
+- 不改 `task-coordinator/` 内部，不写引擎工单，不推送，不改主工作区与 `.kiro/steering`、skills。
+- 不接线 S021 的传输层文件（`app.ts` 的输出适配器部分与 `auth/routes.ts`）。本包只改 `buildApp` 中与数据删除和查看器缓存相关的几行。
+- 不做 Q30（SQLite 空闲页）与到期清理（S020）。
+- 不创建 HMAC 密钥，不新增配置项。
+- 不删除名单条目（见第 8 节）。
+- 不发明来源没有的产品功能；不派子代理。
