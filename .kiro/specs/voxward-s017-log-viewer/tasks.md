@@ -28,13 +28,13 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ### 步骤 B：VOXWARD-SUB-031（服务端查询、权限、缓存）
 
-- [ ] B1. 契约：扩展 `ports/audit-log.ts` 的读端口；新增 `viewer/log-viewer.ts`（视图类型、`LogViewer`、`ViewerResult`）；从 `index.ts` 导出。
-- [ ] B2. 数据库：在 `db/audit-log.ts` 实现 `pageChangeLogs`、`pageTechnicalLogs`、`readTechnicalLog`、`pageChain`，并过滤到期元数据。
-- [ ] B3. 模块：`viewer/paging.ts`（游标与页大小）、`viewer/evidence-view.ts`（字段权限与到期状态）、`viewer/cache.ts`（失效订阅）、`viewer/queries.ts`（`createLogViewer`）。从 `audit-store/index.ts` 导出。
-- [ ] B4. 认证：`members.ts` 增加按账号列出有效成员关系；`permissions.ts` 增加按成员关系列出能力；新增 `log-viewer-access.ts`（`AuditAccess` 的实现）与 `log-viewer-routes.ts`（四个 GET 路由）。
-- [ ] B5. 装配：`app.ts` 接受可选的 `invalidation`，创建查看器并注册路由。
-- [ ] B6. 测试：更新 `test/audit-store/helpers.ts` 中的 `recordingPort`；新增 `queries`、`permissions`、`cache`、`log-viewer-routes` 四组测试。覆盖分页、微批、越权、跨频道、到期、删除后失效。
-- [ ] B7. 类型检查、测试、分区检查通过。提交 `VOXWARD-SUB-031: ...`，并在本清单打勾。
+- [x] B1. 契约：扩展 `ports/audit-log.ts` 的读端口；新增 `viewer/log-viewer.ts`（视图类型、`LogViewer`、`ViewerResult`）；从 `index.ts` 导出。
+- [x] B2. 数据库：在 `db/audit-log.ts` 实现 `pageChangeLogs`、`pageTechnicalLogs`、`readTechnicalLog`、`pageChain`，并过滤到期元数据。
+- [x] B3. 模块：`viewer/paging.ts`（游标与页大小）、`viewer/evidence-view.ts`（字段权限与到期状态）、`viewer/cache.ts`（失效订阅）、`viewer/queries.ts`（`createLogViewer`）。从 `audit-store/index.ts` 导出。
+- [x] B4. 认证：`members.ts` 增加按账号列出有效成员关系；`permissions.ts` 增加按成员关系列出能力；新增 `log-viewer-access.ts`（查看器的能力查询，只提供 `capabilitiesFor`）与 `log-viewer-routes.ts`（四个 GET 路由）。
+- [x] B5. 装配：`app.ts` 接受可选的 `invalidation`，创建查看器并注册路由。
+- [x] B6. 测试：更新 `test/audit-store/helpers.ts` 中的 `recordingPort`；新增 `queries`、`permissions`、`cache`、`log-viewer-routes` 四组测试。覆盖分页、微批、越权、跨频道、到期、删除后失效。
+- [x] B7. 类型检查、测试、分区检查通过。提交 `VOXWARD-SUB-031: ...`，并在本清单打勾。
 
 ### 步骤 C：VOXWARD-SUB-032（网页）
 

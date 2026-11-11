@@ -62,6 +62,11 @@ export function membershipAllows(rights: MembershipRights, capability: Capabilit
   return rights.logAccess && LOG_ACCESS_CAPABILITIES.has(capability);
 }
 
+/** Every capability one membership holds, the role's and the log-access grant together. */
+export function capabilitiesOfMembership(rights: MembershipRights): readonly Capability[] {
+  return CAPABILITIES.filter((capability) => membershipAllows(rights, capability));
+}
+
 export function downstreamAllows(capability: Capability): boolean {
   return DOWNSTREAM_CAPABILITIES.has(capability);
 }

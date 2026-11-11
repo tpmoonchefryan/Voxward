@@ -15,7 +15,7 @@ import type {
   TechnicalStage,
   TechnicalStatus,
 } from "@voxward/contracts";
-import { and, asc, eq, inArray, max } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, max, sql, type SQL, type SQLWrapper } from "drizzle-orm";
 import type { VoxwardDatabase, VoxwardOrm } from "./client.js";
 import { changeLogs, subjects, technicalLogEvidence, technicalLogs } from "./schema/index.js";
 import { runShortTransaction, type ShortTransaction } from "./transaction.js";
@@ -76,6 +76,70 @@ export function createAuditLogPort(database: VoxwardDatabase): AuditLogPort {
         .map(toChangeLogRow);
     },
 
+    pageChangeLogs(channelId, query) {
+      const conditions: SQL[] = [eq(changeLogs.channelId, channelId), gt(changeLogs.expiresAt, query.notExpiredAt)];
+      if (query.correlationId !== null) conditions.push(eq(changeLogs.correlationId, query.correlationId));
+      if (query.after !== null) {
+        conditions.push(keysetBefore(changeLogs.occurredAt, changeLogs.id, query.after.occurredAt, query.after.id));
+      }
+      return database.orm
+        .select()
+        .from(changeLogs)
+        .where(and(...conditions))
+        .orderBy(desc(changeLogs.occurredAt), desc(changeLogs.id))
+        .limit(query.limit)
+        .all()
+        .map(toChangeLogRow);
+    },
+
+    pageTechnicalLogs(channelId, query) {
+      const conditions: SQL[] = [eq(technicalLogs.channelId, channelId), gt(technicalLogs.expiresAt, query.notExpiredAt)];
+      if (query.after !== null) {
+        conditions.push(keysetBefore(technicalLogs.createdAt, technicalLogs.id, query.after.createdAt, query.after.id));
+      }
+      return database.orm
+        .select()
+        .from(technicalLogs)
+        .where(and(...conditions))
+        .orderBy(desc(technicalLogs.createdAt), desc(technicalLogs.id))
+        .limit(query.limit)
+        .all()
+        .map(toStoredRow);
+    },
+
+    readTechnicalLog(channelId, logId, notExpiredAt) {
+      const row = database.orm
+        .select()
+        .from(technicalLogs)
+        .where(
+          and(
+            eq(technicalLogs.id, logId),
+            eq(technicalLogs.channelId, channelId),
+            gt(technicalLogs.expiresAt, notExpiredAt),
+          ),
+        )
+        .get();
+      if (row === undefined) return undefined;
+      return attachEvidence(database.orm, [row])[0];
+    },
+
+    pageChain(channelId, correlationId, query) {
+      const conditions: SQL[] = [
+        eq(technicalLogs.channelId, channelId),
+        eq(technicalLogs.correlationId, correlationId),
+        gt(technicalLogs.expiresAt, query.notExpiredAt),
+      ];
+      if (query.afterSequence !== null) conditions.push(gt(technicalLogs.sequence, query.afterSequence));
+      return database.orm
+        .select()
+        .from(technicalLogs)
+        .where(and(...conditions))
+        .orderBy(asc(technicalLogs.sequence))
+        .limit(query.limit)
+        .all()
+        .map(toStoredRow);
+    },
+
     locateSubjectLogs(subjectId) {
       return locateScope(database.orm, subjectId);
     },
@@ -97,6 +161,14 @@ export function createAuditLogPort(database: VoxwardDatabase): AuditLogPort {
       });
     },
   };
+}
+
+/**
+ * Rows that come after a keyset position in (time DESC, id DESC) order. The values are bound as parameters. The
+ * column names are fixed by the schema.
+ */
+function keysetBefore(time: SQLWrapper, id: SQLWrapper, timeValue: string, idValue: string): SQL {
+  return sql`(${time} < ${timeValue} or (${time} = ${timeValue} and ${id} < ${idValue}))`;
 }
 
 function assertSubjectInChannel(tx: ShortTransaction, row: TechnicalLogRow): void {

@@ -159,7 +159,7 @@ type ViewerResult<T> = { ok: true; value: T } | { ok: false; code: "FORBIDDEN" |
 
 ### 7. 缓存与失效
 
-- `createViewerCache(bus, maxEntries)` 缓存的是数据库读取的原始行（单条详情与链页）。权限在每次请求时重新判断，缓存不保存已裁剪的结果。（自定）
+- `createViewerCache(bus, maxEntries)` 只缓存单条详情的原始行。链页与列表不缓存：关联链可能随时新增条目，本模块没有写入事件可以失效它们。权限在每次请求时先于缓存判断，缓存不保存已裁剪的结果。（自定）
 - 缓存在创建时订阅 S016 的 `InvalidationBus`。收到事件后，删除 `logIds` 或 `correlationIds` 与条目相交的缓存项。
 - 每个缓存项的过期时间取其中最早的 `expires_at`（元数据或证据）。到期后不再命中，也不返回旧值。
 - 超过 `maxEntries`（默认 256，自定）时，淘汰最早写入的项。
@@ -198,7 +198,8 @@ type ViewerResult<T> = { ok: true; value: T } | { ok: false; code: "FORBIDDEN" |
 - 查看器放在 `audit-store/viewer/`，见第 3 节。
 - 频道不存在与无权限都返回 403，且空链返回 200 与空页，见第 4 节。
 - 分页默认 50，最多 100；游标格式见第 6 节。
-- 缓存只存原始行，不设 TTL，见第 7 节。
+- 缓存只存单条详情的原始行，不设 TTL，见第 7 节。
+- 访问适配器 `databaseViewerAccess` 只实现 `capabilitiesFor`，因为查看器只读这一项，不需要频道列表。（自定）
 - 前端路由 `/logs/:channelId`；JSON 解析失败时原文显示；开发代理，见第 8 节。
 - 枚举值（如 `changeKind`、`stage`）原样显示，不翻译。
 

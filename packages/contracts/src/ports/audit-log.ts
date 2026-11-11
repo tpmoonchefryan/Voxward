@@ -131,6 +131,43 @@ export interface SubjectLogScope {
   readonly changeLogIds: readonly string[];
 }
 
+/** Keyset position of a Change Log row. The next page starts after this row in (occurredAt DESC, id DESC) order. */
+export interface ChangeLogCursor {
+  readonly occurredAt: string;
+  readonly id: string;
+}
+
+/** Keyset position of a Technical Log row. The next page starts after this row in (createdAt DESC, id DESC) order. */
+export interface TechnicalLogCursor {
+  readonly createdAt: string;
+  readonly id: string;
+}
+
+/**
+ * One page of Change Log rows. `notExpiredAt` is the reader's current time: rows whose metadata expired at or before
+ * it are left out. `correlationId`, when set, keeps only the rows of that processing chain.
+ */
+export interface ChangeLogPageQuery {
+  readonly after: ChangeLogCursor | null;
+  readonly correlationId: string | null;
+  readonly limit: number;
+  readonly notExpiredAt: string;
+}
+
+/** One page of Technical Log rows, newest first. `notExpiredAt` works as in {@link ChangeLogPageQuery}. */
+export interface TechnicalLogPageQuery {
+  readonly after: TechnicalLogCursor | null;
+  readonly limit: number;
+  readonly notExpiredAt: string;
+}
+
+/** One page of a correlation chain in sequence order. `afterSequence` is exclusive; null starts at the first entry. */
+export interface ChainPageQuery {
+  readonly afterSequence: number | null;
+  readonly limit: number;
+  readonly notExpiredAt: string;
+}
+
 /**
  * Log persistence for the audit module. Every read takes the channel scope as an argument, so a caller cannot
  * read outside the channels it was given.
@@ -154,4 +191,12 @@ export interface AuditLogPort {
    * the Change Log rows on the same correlation ids with `certificateSummary`. Other subjects are untouched.
    */
   removeSubjectLogs(subjectId: string, certificateSummary: string): SubjectLogScope;
+  /** Read only. One page of Change Log rows of one channel, newest first, optionally of one processing chain. */
+  pageChangeLogs(channelId: string, query: ChangeLogPageQuery): readonly ChangeLogRow[];
+  /** Read only. One page of Technical Log rows of one channel, newest first. Evidence is not loaded. */
+  pageTechnicalLogs(channelId: string, query: TechnicalLogPageQuery): readonly StoredTechnicalLogRow[];
+  /** Read only. One Technical Log row with its evidence. Undefined when it is in another channel or has expired. */
+  readTechnicalLog(channelId: string, logId: string, notExpiredAt: string): StoredTechnicalLog | undefined;
+  /** Read only. One page of a correlation chain in one channel, in sequence order. Evidence is not loaded. */
+  pageChain(channelId: string, correlationId: string, query: ChainPageQuery): readonly StoredTechnicalLogRow[];
 }
