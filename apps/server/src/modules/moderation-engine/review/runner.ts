@@ -7,6 +7,7 @@ import {
   validateReviewBatchResult,
 } from "@voxward/contracts";
 import { createTaskAliasTable } from "./author-alias.js";
+import { batchMembershipErrorOf } from "./membership.js";
 import type {
   BackgroundCoordinatorPort,
   CandidateProposalPort,
@@ -168,7 +169,10 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
     return { batchId: batch.batchId, items };
   }
 
-  /** One model call for the batch. The author alias is the only identity the model sees, and only inside the text. */
+  /**
+   * One model call for the batch. The author alias is the only identity the model sees, and only inside the text. The answer
+   * must name every item of the batch exactly once, or the whole batch fails (VW-R-008, B3).
+   */
   async function reviewWithModel(known: readonly KnownTask[]): Promise<ModelReview> {
     const aliases = createTaskAliasTable(deps.newNonce());
     const input: AiBatchInput = {
@@ -185,6 +189,11 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
     }
     const checked = validateReviewBatchResult(raw);
     if (!checked.ok) return { ok: false, errorCode: "AI_OUTPUT_INVALID" };
+    const membershipError = batchMembershipErrorOf(
+      checked.value.items.map((item) => item.itemId),
+      known.map((task) => task.itemId),
+    );
+    if (membershipError !== null) return { ok: false, errorCode: membershipError };
     return { ok: true, byItemId: new Map(checked.value.items.map((item) => [item.itemId, item])) };
   }
 
