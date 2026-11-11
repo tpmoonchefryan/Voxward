@@ -1,0 +1,1702 @@
+{
+ "VOXWARD-STORY-006": {
+  "id": "work:685ad243ec946eb7f628c93e",
+  "rev": 6,
+  "status": "active",
+  "kind": "Story",
+  "title": "实现统一审核路由与快速通道",
+  "parentId": "work:4359ebe518ff3530a3338d00",
+  "acceptance": [
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。",
+    "id": "VW-S006-AC001",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-S006-R001",
+     "version": 1,
+     "workId": "work:685ad243ec946eb7f628c93e"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。",
+    "id": "VW-S006-PARENT",
+    "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-E001-R006",
+     "version": 1,
+     "workId": "work:4359ebe518ff3530a3338d00"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。",
+    "version": 1
+   },
+   {
+    "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-S006-INHERIT-001",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-001",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单产出的接口、说明及依赖方向。",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。 继续遵守 VW-R-003 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-S006-INHERIT-003",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-R-003",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。（本单对 VW-R-003 的贡献）",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。 继续遵守 VW-R-004 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-S006-INHERIT-004",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-R-004",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。（本单对 VW-R-004 的贡献）",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。 继续遵守 VW-R-005 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-S006-INHERIT-005",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-R-005",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。（本单对 VW-R-005 的贡献）",
+    "version": 1
+   },
+   {
+    "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-S006-INHERIT-009",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-009",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。",
+    "version": 1
+   },
+   {
+    "expected": "写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-S006-INHERIT-011",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-011",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单使用的仓储接口、数据字段、事务或部署说明。",
+    "version": 1
+   },
+   {
+    "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-S006-INHERIT-012",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-012",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。 继续遵守 VW-R-014 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-S006-INHERIT-014",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-R-014",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。（本单对 VW-R-014 的贡献）",
+    "version": 1
+   },
+   {
+    "expected": "删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-S006-INHERIT-017",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-017",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单涉及的数据、缓存、任务、关联或恢复说明。",
+    "version": 1
+   }
+  ],
+  "requirements": [
+   {
+    "disposition": "required",
+    "id": "VW-S006-R001",
+    "shared": false,
+    "sourceIds": [
+     "S-PARENT",
+     "S-SPLIT"
+    ],
+    "text": "消息按基础检查、例外、付费安全审核及普通快速分流进入统一裁决流程。\n交付：名单/例外队列登记；付费文本审核不可跳过；meaningful/noise 内部分类；UNSETTLED_FAST_PASS；系统失败和人工接管状态。",
+    "version": 1
+   }
+  ],
+  "body": "交付物：名单/例外队列登记；付费文本审核不可跳过；meaningful/noise 内部分类；UNSETTLED_FAST_PASS；系统失败和人工接管状态。\n前置：VOXWARD-STORY-003,VOXWARD-STORY-004,VOXWARD-STORY-005\n根需求关联：VW-R-003,VW-R-004,VW-R-005,VW-R-014。\n本单验收只证明声明的贡献和继承约束合规性，父级完整判据保持。其它模块的实现与最终验证不因本单完成而自动通过。证据需记录候选版本、输入、实际结果和未验证范围；继承引用不是已执行证明。\n当前 planned；本次仅拆单。实际派工读取项目/宿主当前配置，暂无执行人、完成证据或发布/平台操作回执。",
+  "goal": "消息按基础检查、例外、付费安全审核及普通快速分流进入统一裁决流程。",
+  "details": {
+   "behavior": "白名单/会员/高分/噪声与付费或例外条件交叉组合。\n预期：例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。",
+   "discretion": "可在已定接口/数据范围内决定目录、内部实现与最小必要验证方法；需根据实际仓库补齐代码/Specs，不假定已有产品代码。不得删除父需求、固定新模型/子代理数量、扩大对外数据或私自改变判据；不把自测等同于独立验收或外部批准。"
+  },
+  "evidenceCount": 22,
+  "evidence": [
+   {
+    "acceptanceId": "VW-S006-AC001",
+    "acceptanceVersion": 1,
+    "actual": "候选 c67db24 检出：install --frozen-lockfile、build、typecheck、test（67 个文件 770 项）、check:deps（123 个文件 0 违规）均退出 0（E02–E06）。真值表穷举 96 种组合（基础 PASS/REVIEW/BLOCK × 例外 × 付费 × 白名单 × 噪声 × 达到阈值），不变式全部成立：基础 BLOCK 一律由 BASE_RULE 终结为 BLOCK；基础未拒绝时，例外一律 REVIEW 且携带例外标记，付费文本一律 PAID_TEXT_REVIEW；基础 REVIEW 从不快速放行；快速放行只在基础 PASS、非例外、非付费时出现，分类为 ALLOW_NOISE，评分达阈值者标 UNSETTLED_FAST_PASS，白名单与噪声标 NONE（E20 §1；truth-table.test 105 项）。路由器接真实基础检查与真实计分引擎：例外消息在基础检查执行前已登记队列；例外加基础 BLOCK 直接终结，队列项以 BASE_BLOCK 结算，计分被例外守卫拒绝并报告 REFUSED；例外加噪声、白名单、分数 99 仍为 REVIEW；噪声、白名单、高分三种快速放行均下发 ALLOW，计分调用 0 次；系统失败不产生裁决也不计分，可 RETRY 或 ESCALATE；人工接管后只接受 MANUAL 完成，模型完成被拒；丢弃以 DISCARDED 结算队列项且不产生裁决（E20 §2；router.test 15 项、states.test 19 项、exception-queue.test 6 项）。下游只有 ALLOW 或 BLOCK：三种内部分类分别映射为 ALLOW、ALLOW、BLOCK，未决项 downstream 为 null（E20）。与提案 §4 流程图相比，16 种「例外 ∧ 付费 ∧ 基础未拒绝」组合在流程图中走「AI 或人工审核」，真值表走 PAID_TEXT_REVIEW 并携带例外标记；两者都是 AI/人工路径，不构成快速放行（N1）。expected 各部分在 c67db24 上成立。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-ac001",
+    "meaningDigest": "80669990958ddb285bf6e2332a93b48f54458300e0f410fc9310f41615e789e5",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-S006-R001",
+     "version": 1,
+     "workId": "work:685ad243ec946eb7f628c93e"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-PARENT",
+    "acceptanceVersion": 1,
+    "actual": "复用 VW-S006-AC001 在 c67db24 上的同次执行（E02–E06、E20）。例外每条登记、基础拒绝可终结、其余进入 AI/人工、快速放行不预先加分、下游只有 ALLOW/BLOCK 均成立；与提案 §4 流程图相比，16 种「例外 ∧ 付费 ∧ 基础未拒绝」组合在流程图中走「AI 或人工审核」，真值表走 PAID_TEXT_REVIEW 并携带例外标记；两者都是 AI/人工路径，不构成快速放行（N1）。S006 的贡献是统一路由真值表、例外队列、处理状态与 Q22 计分接线。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-parent",
+    "meaningDigest": "2efd3a25d13c754b8fa1fc807b51587035bd8ae27b115be1cecee5526b1080df",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-E001-R006",
+     "version": 1,
+     "workId": "work:4359ebe518ff3530a3338d00"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-001",
+    "acceptanceVersion": 1,
+    "actual": "候选 c67db24 审查：bd0ad05..c67db24 没有改任何 package.json、pnpm-lock.yaml、scripts/check-deps.mjs、modules/registry.ts、app.ts、main.ts 与配置 schema；栈不变。路由放在 moderation-engine 模块内，只导入 @voxward/contracts 与本模块文件，计分经契约 ScoringEngine.applyVerdict 接入，例外拒绝按错误码识别而不导入计分模块（check:deps 123 个文件 0 违规，E06）。契约 Verdict 增加 penaltyHits，CONTRACT_VERSION 仍为 \"1\"，仓库外没有消费者。路由不含供应商对象。HTTPS/WSS 远端部署本单未触及。",
+    "codeVersion": "c67db24",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-inherit-001",
+    "meaningDigest": "e2e584b4b928d9c36acbcb47845f03b33bdafe946f7ab78e577b61bdc162ae48",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-001",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-003",
+    "acceptanceVersion": 1,
+    "actual": "路由部分成立：例外先入队列，付费文本始终进入安全审核，白名单与噪声先经基础检查，下游统一 ALLOW/BLOCK（同 VW-S006-AC001，E20）。「继续遵守 VW-R-003」不成立：本包为 Q6 在默认归一化里先 NFKD 再删除全部 \\p{M}，基础检查的归一化、读音/转写与有界正则对可分解字符退化（E20 §3，同一输入对照 f4808fb）。正则规则 ばか、バカ、café 在 f4808fb 对原文 BLOCK，在 c67db24 默认设置下 PASS；归一化规则 ばか 命中无辜文本「はかまいりにいく」，バカ 命中「ハカセ」，由 PASS 变为 BLOCK；含 が 键的转写表在构造时抛 TypeError，が 按 か 读音且标为完整。见 B1，归属 SUB-012。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-inherit-003",
+    "meaningDigest": "233ad85543286a7ce391c0848a47f73c0fdef3f205dfa3f4e084b426faeab36d",
+    "outcome": "failed",
+    "requirement": {
+     "requirementId": "VW-R-003",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-004",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-004 中本单触及的部分成立：Q22 让 BLOCK 携带命中的扣分组，计分取违规分与各组扣分中的最大值，实测两组扣分 9 与 2、违规分 5 时扣 −9，只有 BLOCK 组时扣 −5（E20 §2）；noise 与三种快速放行不调用计分；系统失败不计分；同一事件重复完成不重复扣分（幂等键 event:<频道>:<消息>）。penaltyHits 校验非负安全整数，非法时不调用账本（scoring-engine index.test 14 项、rules.test 8 项）。经数据库账本实测同样扣 −9（E70）。B1 的误命中会让无辜消息按规则扣分，该问题归 VW-R-003，不在本行重复判定。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-inherit-004",
+    "meaningDigest": "548034f9d9ae067110f118cee34dbfa375b6940b3129ef7bdb5d8519bf1cfdbc",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-004",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-005",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-005 中本单触及的部分成立：UNSETTLED_FAST_PASS 只标在评分达阈值的普通消息上，白名单与噪声短路不标（E20）；例外主体从不快速放行，不会成为复盘对象；Q8 保留进程内昵称缓存（键含主体、昵称哈希、规则版本与期限，沿用 S004），删除持久表 subject_nickname_checks（迁移 0003，E60）。复盘结算、跨条别名与候选词确认本单未触及，由 STORY-011 承接。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-inherit-005",
+    "meaningDigest": "f3d5ec40e8e66d2023d7b0ca47b41c07e36c630880918cec83d9480235b35c8c",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-005",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-009",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由不构造 AI 输入，不保存会话、提示或工具轨迹；例外队列项只含（channelId, platformMessageId）键、correlationId 与结算结果，不含正文（routing/exception-queue.ts）。AI 输入与会话清理本单未触及，由 STORY-008 承接。",
+    "codeVersion": "c67db24",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-inherit-009",
+    "meaningDigest": "c8847608d8c9fce48f1ddce15352a4812e0197071a38ee3f7816ac08dfcb35ff",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-009",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-011",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由不读写数据库（S006 设计 §3），处理状态按 toStoredTaskStatus 映射到 tasks.status 现有取值；例外队列不复制正文；Q8 删除持久昵称检查表，昵称检查只保留进程内缓存（E60 空库与升级库均无该表）。短事务提交、verdicts 与 deliveries 写入本单未触及，由 STORY-014 承接。",
+    "codeVersion": "c67db24",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-inherit-011",
+    "meaningDigest": "b65d4127618cb28e61a23164687e3f0913242a702e75ad189812b9c0297665a5",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-011",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-012",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由只消费调用方给出的事实，不暴露接口、页面或运行权限，不把待审正文交给任何工具；频道范围取自事件本身。Q12 的准入提示是固定文案，错误信息为 RULE_SET_INVALID: REGEX_GROUP_ALTERNATION at alt (hint: …)，不回显模式原文（E20 §4）。鉴权与输出凭据本单未触及（STORY-003 已验收）。",
+    "codeVersion": "c67db24",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-inherit-012",
+    "meaningDigest": "668934f388618a87087e2b32ebde2ccc42cb93b872ea8a18b120141da113e817",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-012",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-014",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-014 中本单触及的部分成立：例外消息在任何短路前登记；基础明确拒绝可直接结束；其余进入 REVIEW，含付费时进入 PAID_TEXT_REVIEW；白名单、噪声、高分对例外一律无效（96 组合不变式与路由实测，E20）；实时 BLOCK 与模型完成的计分都被例外守卫拒绝并报告 REFUSED（E20；E70 用数据库 score_exceptions 行复现）。身份、复盘与人工调分的守卫属 STORY-005（已验收），恢复计分本单未触及。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-inherit-014",
+    "meaningDigest": "d208f96b037ba9f08466a3ca61439e1abbd95a9eb9f6bc3b762a5ea5cd3f6abf",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-014",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-017",
+    "acceptanceVersion": 1,
+    "actual": "审查与实测：DISCARD 用于过期代次或已删除，任一非终态可转 DISCARDED，不产生裁决，例外队列项以 DISCARDED 结算；系统失败有 RETRY 与 ESCALATE 两个去向；终态拒绝后续步骤（E20；states.test 19 项）。例外队列只有进程内实现，重启后丢失，S006 设计 §9 已列为缺口。删除编排、到期与恢复本单未触及，由 STORY-019、STORY-020 承接。",
+    "codeVersion": "c67db24",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-s006-inherit-017",
+    "meaningDigest": "927967c83646369aabdde394d0469d6076e486222cfc8b3b6941f2c26ce25537",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-017",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-AC001",
+    "acceptanceVersion": 1,
+    "actual": "候选 b1a1471 检出：install --frozen-lockfile、build、typecheck、test（88 个文件 941 项）、check:deps（162 个文件 0 违规）均退出 0（E02–E06），外连与真实 CLI 拦截下全量测试同样通过（E31）。真值表 96 种组合（基础 PASS/REVIEW/BLOCK × 例外 × 付费 × 白名单 × 噪声 × 达到阈值）与按提案 §4.2 流程图独立建立的期望 96/96 一致：例外 ∧ 付费 ∧ 基础未拒绝 现在走 REALTIME_REVIEW 且例外标记为是（第 4 批 N1 已按流程图修正）；快速放行从不出现在例外、付费或基础未通过的组合；评分达阈值者标 UNSETTLED_FAST_PASS，白名单与噪声标 NONE（E20 §3；truth-table.test 106 项）。路由器接真实基础检查与真实计分引擎：例外消息在基础检查之前已登记；例外加基础 BLOCK 直接终结，队列项 BASE_BLOCK，计分 REFUSED；例外加噪声、白名单、分数 99 仍为 REVIEW；例外加付费为 REALTIME_REVIEW，模型完成后下游 ALLOW、计分 REFUSED、账本 0 行、队列项 MODEL；普通付费文本在白名单、分数 99 时仍进入 PAID_TEXT_REVIEW；噪声、白名单、高分三种快速放行下发 ALLOW 且账本调用 0 次，分数 9 进入审核；系统失败不产生裁决、不计分，可 RETRY 与 ESCALATE；人工接管后模型完成被拒（PROCESSING_TRANSITION_INVALID），人工 BLOCK 记 −5；丢弃以 DISCARDED 结算队列项（E20 §4；router.test 15 项、states.test 19 项、exception-queue.test 6 项）。下游只有 ALLOW 或 BLOCK，未决项 downstream 为 null。expected 各部分在 b1a1471 上成立。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-ac001",
+    "meaningDigest": "80669990958ddb285bf6e2332a93b48f54458300e0f410fc9310f41615e789e5",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-S006-R001",
+     "version": 1,
+     "workId": "work:685ad243ec946eb7f628c93e"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-PARENT",
+    "acceptanceVersion": 1,
+    "actual": "复用 VW-S006-AC001 在 b1a1471 上的同次执行（E02–E06、E20、E31）。例外每条登记、基础拒绝可终结、其余进入 AI/人工、快速放行不预先加分、下游只有 ALLOW/BLOCK 均成立；例外 ∧ 付费 的分支顺序已与提案 §4 流程图一致（96/96）。S006 的贡献是统一路由真值表、例外队列、处理状态与 Q22 计分接线。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-parent",
+    "meaningDigest": "2efd3a25d13c754b8fa1fc807b51587035bd8ae27b115be1cecee5526b1080df",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-E001-R006",
+     "version": 1,
+     "workId": "work:4359ebe518ff3530a3338d00"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-001",
+    "acceptanceVersion": 1,
+    "actual": "候选 b1a1471 审查：fa5dc19..b1a1471 中 S006 返工只改 moderation-engine 的 rules/（normalize、transliterate、groups、engine）、routing/truth-table.ts、index.ts 与对应测试；没有改 package.json、check-deps 分区或契约，模块只导入 @voxward/contracts 与本模块文件（check:deps 162 个文件 0 违规，E06）。新增问题码 NORMALIZATION_MISMATCH 是模块内类型；CONTRACT_VERSION 仍为 1；路由不含供应商对象。HTTPS/WSS 远端部署本单未触及。",
+    "codeVersion": "b1a1471",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-inherit-001",
+    "meaningDigest": "e2e584b4b928d9c36acbcb47845f03b33bdafe946f7ab78e577b61bdc162ae48",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-001",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-003",
+    "acceptanceVersion": 1,
+    "actual": "路由部分成立：例外先入队列，付费文本始终进入安全审核，白名单与噪声先经基础检查，下游统一 ALLOW/BLOCK（同 VW-S006-AC001，E20）。第 4 批 B1 的复验输入全部符合（E20 §1）：拉丁字母绕过仍被拦截；ば/は、バ/ハ 的全角写法不再互相命中；正则 ばか、バカ、café 命中原文；含 が 键的转写表能构建并把 がか 读作 gaka。「继续遵守 VW-R-003」仍不成立：匹配副本逐单元做 NFKC，半角浊点与半浊点 U+FF9E、U+FF9F 各自成单元，变成组合浊点后无法与前一个假名组合，随后被删除；格式字符 U+200B、U+2060、U+00AD 夹在假名与组合浊点之间时浊点同样丢失（E20 §1–2、E21）。结果：归一化规则 バカ、ブス、デブ、ハゲ、ポンコツ 对半角的 ﾊﾞｶ、ﾌﾞｽ、ﾃﾞﾌﾞ、ﾊｹﾞ、ﾎﾟﾝｺﾂ 全部 PASS，正则 バカ 对 ﾊﾞｶ PASS，归一化规则 ばか 对上述三种夹格式字符的写法 PASS；反向，归一化规则 ハカ 命中 ﾊﾞｶ，扣分规则 カス 命中「ｶﾞｽ代が高い」；转写表 {ガ: ga, カ: ka} 把 ｶﾞｶ 读成 kaka 且标为完整。即 B1 的浊点丢失、バ/ハ 互相命中与转写误读，在 NFKC 等价的写法下仍在。S004 基线 f4808fb 结果相同，c67db24 只因两侧都删全部标记而偶然命中。见 B3，归属 SUB-012。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-inherit-003",
+    "meaningDigest": "233ad85543286a7ce391c0848a47f73c0fdef3f205dfa3f4e084b426faeab36d",
+    "outcome": "failed",
+    "requirement": {
+     "requirementId": "VW-R-003",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-004",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-004 中本单触及的部分成立：Q22 让 BLOCK 携带命中的扣分组，两组扣分 9 与 2、违规分 5 时记 −9；人工完成的 BLOCK 记 −5；noise 与三种快速放行不调用计分；系统失败不计分（E20 §4；scoring-engine index.test 14 项、rules.test 8 项）。B3 的误命中（例如归一化扣分规则 カス 命中半角的「ｶﾞｽ代が高い」，E21）会让无辜消息按规则扣分，该问题归 VW-R-003，不在本行重复判定。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-inherit-004",
+    "meaningDigest": "548034f9d9ae067110f118cee34dbfa375b6940b3129ef7bdb5d8519bf1cfdbc",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-004",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-005",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-005 中本单触及的部分成立：UNSETTLED_FAST_PASS 只标在评分达阈值的普通消息上，白名单与噪声短路不标（E20 §3–4）；例外主体从不快速放行，不会成为复盘对象；Q8 的持久表 subject_nickname_checks 在空库与 0000–0003 各状态升级到 0004 后都不存在（E60），昵称检查保留 S004 的进程内缓存。复盘结算、跨条别名与候选词确认本单未触及，由 STORY-011 承接。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-inherit-005",
+    "meaningDigest": "f3d5ec40e8e66d2023d7b0ca47b41c07e36c630880918cec83d9480235b35c8c",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-005",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-009",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由与基础检查不构造 AI 输入，不保存会话、提示或工具轨迹；例外队列项只含（channelId, platformMessageId）键、correlationId 与结算结果，不含正文（routing/exception-queue.ts，本轮未改）。AI 输入与会话清理本单未触及，由 STORY-008 承接。",
+    "codeVersion": "b1a1471",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-inherit-009",
+    "meaningDigest": "c8847608d8c9fce48f1ddce15352a4812e0197071a38ee3f7816ac08dfcb35ff",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-009",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-011",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由不读写数据库，处理状态经 toStoredTaskStatus 映射到 tasks.status 现有取值；例外队列不复制正文；Q8 删除持久昵称检查表（E60：空库与各前驱状态升级后都没有该表）。短事务提交、verdicts 与 deliveries 写入本单未触及，由 STORY-014 承接。",
+    "codeVersion": "b1a1471",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-inherit-011",
+    "meaningDigest": "b65d4127618cb28e61a23164687e3f0913242a702e75ad189812b9c0297665a5",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-011",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-012",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由只消费调用方给出的事实，不暴露接口、页面或运行权限，不把待审正文交给任何工具；频道范围取自事件本身。Q12 的准入错误为 RULE_SET_INVALID: REGEX_GROUP_ALTERNATION at alt 加固定提示，不回显模式原文（E20 §4）。鉴权与输出凭据本单未触及（STORY-003 已验收）。",
+    "codeVersion": "b1a1471",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-inherit-012",
+    "meaningDigest": "668934f388618a87087e2b32ebde2ccc42cb93b872ea8a18b120141da113e817",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-012",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-014",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-014 中本单触及的部分成立：例外消息在任何短路之前登记；基础明确拒绝可直接结束；其余进入 REVIEW，例外 ∧ 付费按流程图走 REALTIME_REVIEW；白名单、噪声、高分对例外一律无效（96 组合与路由实测，E20 §3–4）；实时 BLOCK 与模型完成的计分都被例外守卫拒绝（REFUSED）。身份、复盘与人工调分的守卫属 STORY-005（已验收），恢复计分本单未触及。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-inherit-014",
+    "meaningDigest": "d208f96b037ba9f08466a3ca61439e1abbd95a9eb9f6bc3b762a5ea5cd3f6abf",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-014",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-S006-INHERIT-017",
+    "acceptanceVersion": 1,
+    "actual": "审查与实测：DISCARD 用于过期代次或已删除，非终态可转 DISCARDED，不产生裁决，例外队列项以 DISCARDED 结算；系统失败有 RETRY 与 ESCALATE 两个去向；终态拒绝后续步骤（E20 §4；states.test 19 项）。例外队列只有进程内实现，重启后丢失，S006 设计 §9 已列为缺口。删除编排、到期与恢复本单未触及，由 STORY-019、STORY-020 承接。",
+    "codeVersion": "b1a1471",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-s006-inherit-017",
+    "meaningDigest": "927967c83646369aabdde394d0469d6076e486222cfc8b3b6941f2c26ce25537",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-017",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   }
+  ],
+  "constraints": [],
+  "scope": "名单/例外队列登记；付费文本审核不可跳过；meaningful/noise 内部分类；UNSETTLED_FAST_PASS；系统失败和人工接管状态。",
+  "sources": [
+   {
+    "extraction": "complete",
+    "id": "S-PARENT",
+    "kind": "parent-work",
+    "locator": "work:4359ebe518ff3530a3338d00#VW-E001-R006",
+    "text": "消息按基础检查、例外、付费安全审核及普通快速分流进入统一裁决流程。\n交付：名单/例外队列登记；付费文本审核不可跳过；meaningful/noise 内部分类；UNSETTLED_FAST_PASS；系统失败和人工接管状态。",
+    "version": "requirement@1"
+   },
+   {
+    "extraction": "complete",
+    "id": "S-SPLIT",
+    "kind": "decision",
+    "locator": "minutes:a791ac5683fc0b966d851c2f#D2",
+    "text": "据本次授权，以 7 个 Epic、33 个 Story 承接既定 MVP：核心契约/存储/权限/规则评分；Kiro/Crew/JSON/调度/精翻复盘；YouTube 与人工操作；数据生命周期和两类日志；浏览器/OBS/协议与隔离演示；集成验收/性能/部署；政策及 Frankenstein 材料。Story 按可验收产出划分，建立真实前置依赖，政策草案可提前推进；第三方候选、许可和性能未验证状态不被计划掩盖。",
+    "version": "1"
+   }
+  ],
+  "changeDecision": "minutes:be2ce03bcd6fda69f1db9839#D2",
+  "allocations": [
+   {
+    "childId": "work:a52cf35dff7b3e04ede8e970",
+    "requirementId": "VW-S006-R001",
+    "responsibility": "implementation",
+    "version": 1,
+    "workId": "work:685ad243ec946eb7f628c93e"
+   },
+   {
+    "childId": "work:a52cf35dff7b3e04ede8e970",
+    "requirementId": "VW-S006-R001",
+    "responsibility": "verification",
+    "version": 1,
+    "workId": "work:685ad243ec946eb7f628c93e"
+   }
+  ]
+ },
+ "VOXWARD-SUB-012": {
+  "id": "work:a52cf35dff7b3e04ede8e970",
+  "rev": 5,
+  "status": "active",
+  "kind": "Subtask",
+  "title": "实现统一审核路由真值表、快速通道与处理状态",
+  "parentId": "work:685ad243ec946eb7f628c93e",
+  "acceptance": [
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。",
+    "id": "VW-SUB012-AC001",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-SUB012-R001",
+     "version": 1,
+     "workId": "work:a52cf35dff7b3e04ede8e970"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。 本单只证明所承担部分；VOXWARD-STORY-006 的完整判据（VW-S006-AC001@1）保持。",
+    "id": "VW-SUB012-STORY",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-S006-R001",
+     "version": 1,
+     "workId": "work:685ad243ec946eb7f628c93e"
+    },
+    "scenario": "本单承担 VW-S006-R001@1 中「名单/例外队列登记；付费文本审核不可跳过；meaningful/noise 内部分类；UNSETTLED_FAST_PASS；系统失败和人工接管状态」：白名单/会员/高分/噪声与付费或例外条件交叉组合。",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。",
+    "id": "VW-SUB012-PARENT",
+    "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-E001-R006",
+     "version": 1,
+     "workId": "work:4359ebe518ff3530a3338d00"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。（继承自 VOXWARD-STORY-006 VW-S006-PARENT@1）",
+    "version": 1
+   },
+   {
+    "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB012-INHERIT-001",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-001",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单产出的接口、说明及依赖方向。（继承自 VOXWARD-STORY-006 VW-S006-INHERIT-001@1）",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。 继续遵守 VW-R-003 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB012-INHERIT-003",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-R-003",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。（本单对 VW-R-003 的贡献）（继承自 VOXWARD-STORY-006 VW-S006-INHERIT-003@1）",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。 继续遵守 VW-R-004 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB012-INHERIT-004",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-R-004",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。（本单对 VW-R-004 的贡献）（继承自 VOXWARD-STORY-006 VW-S006-INHERIT-004@1）",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。 继续遵守 VW-R-005 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB012-INHERIT-005",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-R-005",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。（本单对 VW-R-005 的贡献）（继承自 VOXWARD-STORY-006 VW-S006-INHERIT-005@1）",
+    "version": 1
+   },
+   {
+    "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB012-INHERIT-009",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-009",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。（继承自 VOXWARD-STORY-006 VW-S006-INHERIT-009@1）",
+    "version": 1
+   },
+   {
+    "expected": "写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB012-INHERIT-011",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-011",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单使用的仓储接口、数据字段、事务或部署说明。（继承自 VOXWARD-STORY-006 VW-S006-INHERIT-011@1）",
+    "version": 1
+   },
+   {
+    "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB012-INHERIT-012",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-012",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。（继承自 VOXWARD-STORY-006 VW-S006-INHERIT-012@1）",
+    "version": 1
+   },
+   {
+    "expected": "例外每条登记审核，基础拒绝可终结，其余 AI/人工；快速放行不预先加分；下游仅 ALLOW/BLOCK。 继续遵守 VW-R-014 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB012-INHERIT-014",
+    "method": "路由真值表、事件状态及所有短路边界测试。",
+    "requirement": {
+     "requirementId": "VW-R-014",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "白名单/会员/高分/噪声与付费或例外条件交叉组合。（本单对 VW-R-014 的贡献）（继承自 VOXWARD-STORY-006 VW-S006-INHERIT-014@1）",
+    "version": 1
+   },
+   {
+    "expected": "删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB012-INHERIT-017",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-017",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单涉及的数据、缓存、任务、关联或恢复说明。（继承自 VOXWARD-STORY-006 VW-S006-INHERIT-017@1）",
+    "version": 1
+   }
+  ],
+  "requirements": [
+   {
+    "disposition": "required",
+    "id": "VW-SUB012-R001",
+    "shared": false,
+    "sourceIds": [
+     "S-PARENT",
+     "S-DISPATCH"
+    ],
+    "text": "承担 VW-S006-R001@1 的全部交付：名单/例外队列登记；付费文本审核不可跳过；meaningful/noise 内部分类；UNSETTLED_FAST_PASS；系统失败和人工接管状态。",
+    "version": 1
+   }
+  ],
+  "body": "拆单来源：VOXWARD-STORY-006（VW-S006-R001@1）；本单为该 Story 的第 1/1 张 Subtask。\n交付物路径为本次拆单规划：提案未规定仓库目录结构，实施可在 Story discretion 内调整，但须同步更新本单 deliverables 并保持包内文件归属。\n来源缺口：本单未发现新增缺口；Story 与 INIT 已列的未验证项保持。\n责任分配：截至拆单，VOXWARD-STORY-006 未对本单写 allocations；VW-SUB012-STORY 验收行在 Story 把 VW-S006-R001@1 分配给本单后生效，转 ready 前需补齐（Story 内容受批准来源保护，变更需 Owner 决定作为 changeDecision）。\n当前 planned；仅拆单，未实施，无执行人与完成证据。",
+  "goal": "消息按基础检查、记分例外、付费安全审核与普通快速分流进入统一裁决流程，快速放行标记 UNSETTLED_FAST_PASS 且不预先加分，下游只得到 ALLOW/BLOCK。",
+  "details": {
+   "assignedRequirements": "实现：VOXWARD-STORY-006 的 VW-S006-R001@1 中「名单/例外队列登记；付费文本审核不可跳过；meaningful/noise 内部分类；UNSETTLED_FAST_PASS；系统失败和人工接管状态」（本单细化需求 VW-SUB012-R001@1）。继承须遵守：VW-E001-R006@1（VOXWARD-EPIC-001 分配给 VOXWARD-STORY-006）；INIT VW-R-001@1、VW-R-003@1、VW-R-004@1、VW-R-005@1、VW-R-009@1、VW-R-011@1、VW-R-012@1、VW-R-014@1、VW-R-017@1（共享或经 VOXWARD-EPIC-001 分配）。继承约束以 work-content-context 为准，本单不改写。",
+   "deliverables": "apps/server/src/modules/moderation/routing/truth-table.ts；apps/server/src/modules/moderation/routing/router.ts；apps/server/src/modules/moderation/routing/states.ts；apps/server/src/modules/moderation/routing/exception-queue.ts；apps/server/src/modules/moderation/routing/classification.ts（meaningful/noise 内部分类，不形成第二裁决）；apps/server/src/modules/moderation/index.ts；apps/server/test/moderation/routing/。",
+   "dependencies": "前置（blockedBy）：VOXWARD-STORY-004、VOXWARD-STORY-005、VOXWARD-STORY-003（沿用 VOXWARD-STORY-006 的 Story 依赖链）。\n使用：使用 VOXWARD-SUB-008/009 的规则与昵称缓存、VOXWARD-SUB-010/011 的评分与例外守卫、VOXWARD-SUB-006 的权限；处理顺序按提案 §4.2。",
+   "verificationOwner": "实现自测：所在实施包子代理在交付前运行与本单改动直接相关的最小构建/类型检查/测试，交付命令、结果与未验证项。验收判定：批末独立验收代理（main 档，不验收自己实施的改动）按本单验收行核对。跨模块完整验证：VOXWARD-EPIC-006（VOXWARD-STORY-026 核心闭环、VOXWARD-STORY-030 整体验收）。"
+  },
+  "evidenceCount": 24,
+  "evidence": [
+   {
+    "acceptanceId": "VW-SUB012-AC001",
+    "acceptanceVersion": 1,
+    "actual": "候选 c67db24 检出：install --frozen-lockfile、build、typecheck、test（67 个文件 770 项）、check:deps（123 个文件 0 违规）均退出 0（E02–E06）。真值表穷举 96 种组合（基础 PASS/REVIEW/BLOCK × 例外 × 付费 × 白名单 × 噪声 × 达到阈值），不变式全部成立：基础 BLOCK 一律由 BASE_RULE 终结为 BLOCK；基础未拒绝时，例外一律 REVIEW 且携带例外标记，付费文本一律 PAID_TEXT_REVIEW；基础 REVIEW 从不快速放行；快速放行只在基础 PASS、非例外、非付费时出现，分类为 ALLOW_NOISE，评分达阈值者标 UNSETTLED_FAST_PASS，白名单与噪声标 NONE（E20 §1；truth-table.test 105 项）。路由器接真实基础检查与真实计分引擎：例外消息在基础检查执行前已登记队列；例外加基础 BLOCK 直接终结，队列项以 BASE_BLOCK 结算，计分被例外守卫拒绝并报告 REFUSED；例外加噪声、白名单、分数 99 仍为 REVIEW；噪声、白名单、高分三种快速放行均下发 ALLOW，计分调用 0 次；系统失败不产生裁决也不计分，可 RETRY 或 ESCALATE；人工接管后只接受 MANUAL 完成，模型完成被拒；丢弃以 DISCARDED 结算队列项且不产生裁决（E20 §2；router.test 15 项、states.test 19 项、exception-queue.test 6 项）。下游只有 ALLOW 或 BLOCK：三种内部分类分别映射为 ALLOW、ALLOW、BLOCK，未决项 downstream 为 null（E20）。与提案 §4 流程图相比，16 种「例外 ∧ 付费 ∧ 基础未拒绝」组合在流程图中走「AI 或人工审核」，真值表走 PAID_TEXT_REVIEW 并携带例外标记；两者都是 AI/人工路径，不构成快速放行（N1）。expected 各部分在 c67db24 上成立。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-ac001",
+    "meaningDigest": "e46c96e0fc7b70c10cd897df30b63e1a73d382ed7d4527aa32bbcc8a78379bf6",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-SUB012-R001",
+     "version": 1,
+     "workId": "work:a52cf35dff7b3e04ede8e970"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-STORY",
+    "acceptanceVersion": 1,
+    "actual": "复用 VW-SUB012-AC001 的同次执行（E02–E06、E20）。SUB-012 承担的名单与例外队列登记、付费文本审核不可跳过、meaningful/noise 内部分类、UNSETTLED_FAST_PASS、系统失败与人工接管状态都成立；与提案 §4 流程图相比，16 种「例外 ∧ 付费 ∧ 基础未拒绝」组合在流程图中走「AI 或人工审核」，真值表走 PAID_TEXT_REVIEW 并携带例外标记；两者都是 AI/人工路径，不构成快速放行（N1）。本行只证明 SUB-012 承担的部分；VOXWARD-STORY-006 的完整判据 VW-S006-AC001 另行判定为 satisfied。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-story",
+    "meaningDigest": "34c8a2d815a1c37ea2499ddd743aef6b3977760c7843e8497214b5efe5fe9123",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-S006-R001",
+     "version": 1,
+     "workId": "work:685ad243ec946eb7f628c93e"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-PARENT",
+    "acceptanceVersion": 1,
+    "actual": "复用 VW-S006-AC001 在 c67db24 上的同次执行（E02–E06、E20）。例外每条登记、基础拒绝可终结、其余进入 AI/人工、快速放行不预先加分、下游只有 ALLOW/BLOCK 均成立；与提案 §4 流程图相比，16 种「例外 ∧ 付费 ∧ 基础未拒绝」组合在流程图中走「AI 或人工审核」，真值表走 PAID_TEXT_REVIEW 并携带例外标记；两者都是 AI/人工路径，不构成快速放行（N1）。S006 的贡献是统一路由真值表、例外队列、处理状态与 Q22 计分接线。SUB-012 是 STORY-006 唯一的子单，承担全部交付。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-parent",
+    "meaningDigest": "a8ab0b5dc0340d0151845fb1753c6c03b7f3446ac129252c371db88193335b3c",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-E001-R006",
+     "version": 1,
+     "workId": "work:4359ebe518ff3530a3338d00"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-001",
+    "acceptanceVersion": 1,
+    "actual": "候选 c67db24 审查：bd0ad05..c67db24 没有改任何 package.json、pnpm-lock.yaml、scripts/check-deps.mjs、modules/registry.ts、app.ts、main.ts 与配置 schema；栈不变。路由放在 moderation-engine 模块内，只导入 @voxward/contracts 与本模块文件，计分经契约 ScoringEngine.applyVerdict 接入，例外拒绝按错误码识别而不导入计分模块（check:deps 123 个文件 0 违规，E06）。契约 Verdict 增加 penaltyHits，CONTRACT_VERSION 仍为 \"1\"，仓库外没有消费者。路由不含供应商对象。HTTPS/WSS 远端部署本单未触及。SUB-012 承担其中的路由、Q6、Q8、Q12、Q22 改动，不改变其它模块职责。",
+    "codeVersion": "c67db24",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-inherit-001",
+    "meaningDigest": "3cacb1398ec1d428269e1e752336d61c46f10c16d07718af2f125d9014823734",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-001",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-003",
+    "acceptanceVersion": 1,
+    "actual": "路由部分成立：例外先入队列，付费文本始终进入安全审核，白名单与噪声先经基础检查，下游统一 ALLOW/BLOCK（同 VW-S006-AC001，E20）。「继续遵守 VW-R-003」不成立：本包为 Q6 在默认归一化里先 NFKD 再删除全部 \\p{M}，基础检查的归一化、读音/转写与有界正则对可分解字符退化（E20 §3，同一输入对照 f4808fb）。正则规则 ばか、バカ、café 在 f4808fb 对原文 BLOCK，在 c67db24 默认设置下 PASS；归一化规则 ばか 命中无辜文本「はかまいりにいく」，バカ 命中「ハカセ」，由 PASS 变为 BLOCK；含 が 键的转写表在构造时抛 TypeError，が 按 か 读音且标为完整。见 B1，归属 SUB-012。Q6 改动在提交 6b6cb86（VOXWARD-SUB-012）。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-inherit-003",
+    "meaningDigest": "965e0f03c10d2ecac0f6f5dddfb99550a5ba649ac53c1f6591831d66af969eab",
+    "outcome": "failed",
+    "requirement": {
+     "requirementId": "VW-R-003",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-004",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-004 中本单触及的部分成立：Q22 让 BLOCK 携带命中的扣分组，计分取违规分与各组扣分中的最大值，实测两组扣分 9 与 2、违规分 5 时扣 −9，只有 BLOCK 组时扣 −5（E20 §2）；noise 与三种快速放行不调用计分；系统失败不计分；同一事件重复完成不重复扣分（幂等键 event:<频道>:<消息>）。penaltyHits 校验非负安全整数，非法时不调用账本（scoring-engine index.test 14 项、rules.test 8 项）。经数据库账本实测同样扣 −9（E70）。B1 的误命中会让无辜消息按规则扣分，该问题归 VW-R-003，不在本行重复判定。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-inherit-004",
+    "meaningDigest": "0a14f28ad8e78f20aaf0bdeb4c3db7f6f2b03cd7f876c1744394c11dc36ef853",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-004",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-005",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-005 中本单触及的部分成立：UNSETTLED_FAST_PASS 只标在评分达阈值的普通消息上，白名单与噪声短路不标（E20）；例外主体从不快速放行，不会成为复盘对象；Q8 保留进程内昵称缓存（键含主体、昵称哈希、规则版本与期限，沿用 S004），删除持久表 subject_nickname_checks（迁移 0003，E60）。复盘结算、跨条别名与候选词确认本单未触及，由 STORY-011 承接。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-inherit-005",
+    "meaningDigest": "c9086f66b04510afe639a664a1a7f3d2636b9a695cf03ad5c782f883486acd2f",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-005",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-009",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由不构造 AI 输入，不保存会话、提示或工具轨迹；例外队列项只含（channelId, platformMessageId）键、correlationId 与结算结果，不含正文（routing/exception-queue.ts）。AI 输入与会话清理本单未触及，由 STORY-008 承接。",
+    "codeVersion": "c67db24",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-inherit-009",
+    "meaningDigest": "fe865a3f88a96b82ef201545158da25f3093c5cf2432767141d13cc348201516",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-009",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-011",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由不读写数据库（S006 设计 §3），处理状态按 toStoredTaskStatus 映射到 tasks.status 现有取值；例外队列不复制正文；Q8 删除持久昵称检查表，昵称检查只保留进程内缓存（E60 空库与升级库均无该表）。短事务提交、verdicts 与 deliveries 写入本单未触及，由 STORY-014 承接。",
+    "codeVersion": "c67db24",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-inherit-011",
+    "meaningDigest": "352eb25871da300fb06dee3232697b68155c7f6e8f2402f5dfa20344dbd4d23d",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-011",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-012",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由只消费调用方给出的事实，不暴露接口、页面或运行权限，不把待审正文交给任何工具；频道范围取自事件本身。Q12 的准入提示是固定文案，错误信息为 RULE_SET_INVALID: REGEX_GROUP_ALTERNATION at alt (hint: …)，不回显模式原文（E20 §4）。鉴权与输出凭据本单未触及（STORY-003 已验收）。",
+    "codeVersion": "c67db24",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-inherit-012",
+    "meaningDigest": "6b884bd02b4f884a9cdfc894f5789a70809b1045267a6d892aab496be8df2b2d",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-012",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-014",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-014 中本单触及的部分成立：例外消息在任何短路前登记；基础明确拒绝可直接结束；其余进入 REVIEW，含付费时进入 PAID_TEXT_REVIEW；白名单、噪声、高分对例外一律无效（96 组合不变式与路由实测，E20）；实时 BLOCK 与模型完成的计分都被例外守卫拒绝并报告 REFUSED（E20；E70 用数据库 score_exceptions 行复现）。身份、复盘与人工调分的守卫属 STORY-005（已验收），恢复计分本单未触及。",
+    "codeVersion": "c67db24",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-inherit-014",
+    "meaningDigest": "6c91d1ca8e213875be7134d9c5670b6392e532cca533955b21d9041f5d4a0ae8",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-014",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-017",
+    "acceptanceVersion": 1,
+    "actual": "审查与实测：DISCARD 用于过期代次或已删除，任一非终态可转 DISCARDED，不产生裁决，例外队列项以 DISCARDED 结算；系统失败有 RETRY 与 ESCALATE 两个去向；终态拒绝后续步骤（E20；states.test 19 项）。例外队列只有进程内实现，重启后丢失，S006 设计 §9 已列为缺口。删除编排、到期与恢复本单未触及，由 STORY-019、STORY-020 承接。",
+    "codeVersion": "c67db24",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch4/evidence/acceptance.md#vw-sub012-inherit-017",
+    "meaningDigest": "9bd18b56ddc5ad2c255ca66d5ae44021623924a224c4ce0f356eb5514f6cfdbf",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-017",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-AC001",
+    "acceptanceVersion": 1,
+    "actual": "候选 b1a1471 检出：install --frozen-lockfile、build、typecheck、test（88 个文件 941 项）、check:deps（162 个文件 0 违规）均退出 0（E02–E06），外连与真实 CLI 拦截下全量测试同样通过（E31）。真值表 96 种组合（基础 PASS/REVIEW/BLOCK × 例外 × 付费 × 白名单 × 噪声 × 达到阈值）与按提案 §4.2 流程图独立建立的期望 96/96 一致：例外 ∧ 付费 ∧ 基础未拒绝 现在走 REALTIME_REVIEW 且例外标记为是（第 4 批 N1 已按流程图修正）；快速放行从不出现在例外、付费或基础未通过的组合；评分达阈值者标 UNSETTLED_FAST_PASS，白名单与噪声标 NONE（E20 §3；truth-table.test 106 项）。路由器接真实基础检查与真实计分引擎：例外消息在基础检查之前已登记；例外加基础 BLOCK 直接终结，队列项 BASE_BLOCK，计分 REFUSED；例外加噪声、白名单、分数 99 仍为 REVIEW；例外加付费为 REALTIME_REVIEW，模型完成后下游 ALLOW、计分 REFUSED、账本 0 行、队列项 MODEL；普通付费文本在白名单、分数 99 时仍进入 PAID_TEXT_REVIEW；噪声、白名单、高分三种快速放行下发 ALLOW 且账本调用 0 次，分数 9 进入审核；系统失败不产生裁决、不计分，可 RETRY 与 ESCALATE；人工接管后模型完成被拒（PROCESSING_TRANSITION_INVALID），人工 BLOCK 记 −5；丢弃以 DISCARDED 结算队列项（E20 §4；router.test 15 项、states.test 19 项、exception-queue.test 6 项）。下游只有 ALLOW 或 BLOCK，未决项 downstream 为 null。expected 各部分在 b1a1471 上成立。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-ac001",
+    "meaningDigest": "e46c96e0fc7b70c10cd897df30b63e1a73d382ed7d4527aa32bbcc8a78379bf6",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-SUB012-R001",
+     "version": 1,
+     "workId": "work:a52cf35dff7b3e04ede8e970"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-STORY",
+    "acceptanceVersion": 1,
+    "actual": "复用 VW-SUB012-AC001 的同次执行（E02–E06、E20）。SUB-012 承担的名单与例外队列登记、付费文本审核不可跳过、meaningful/noise 内部分类、UNSETTLED_FAST_PASS、系统失败与人工接管状态都成立。本行只证明 SUB-012 承担的部分；VOXWARD-STORY-006 的完整判据 VW-S006-AC001 另行判定为 satisfied。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-story",
+    "meaningDigest": "34c8a2d815a1c37ea2499ddd743aef6b3977760c7843e8497214b5efe5fe9123",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-S006-R001",
+     "version": 1,
+     "workId": "work:685ad243ec946eb7f628c93e"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-PARENT",
+    "acceptanceVersion": 1,
+    "actual": "复用 VW-S006-AC001 在 b1a1471 上的同次执行（E02–E06、E20、E31）。例外每条登记、基础拒绝可终结、其余进入 AI/人工、快速放行不预先加分、下游只有 ALLOW/BLOCK 均成立；例外 ∧ 付费 的分支顺序已与提案 §4 流程图一致（96/96）。S006 的贡献是统一路由真值表、例外队列、处理状态与 Q22 计分接线。SUB-012 是 STORY-006 唯一的子单，承担全部交付。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-parent",
+    "meaningDigest": "a8ab0b5dc0340d0151845fb1753c6c03b7f3446ac129252c371db88193335b3c",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-E001-R006",
+     "version": 1,
+     "workId": "work:4359ebe518ff3530a3338d00"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-001",
+    "acceptanceVersion": 1,
+    "actual": "候选 b1a1471 审查：fa5dc19..b1a1471 中 S006 返工只改 moderation-engine 的 rules/（normalize、transliterate、groups、engine）、routing/truth-table.ts、index.ts 与对应测试；没有改 package.json、check-deps 分区或契约，模块只导入 @voxward/contracts 与本模块文件（check:deps 162 个文件 0 违规，E06）。新增问题码 NORMALIZATION_MISMATCH 是模块内类型；CONTRACT_VERSION 仍为 1；路由不含供应商对象。HTTPS/WSS 远端部署本单未触及。",
+    "codeVersion": "b1a1471",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-inherit-001",
+    "meaningDigest": "3cacb1398ec1d428269e1e752336d61c46f10c16d07718af2f125d9014823734",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-001",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-003",
+    "acceptanceVersion": 1,
+    "actual": "路由部分成立：例外先入队列，付费文本始终进入安全审核，白名单与噪声先经基础检查，下游统一 ALLOW/BLOCK（同 VW-S006-AC001，E20）。第 4 批 B1 的复验输入全部符合（E20 §1）：拉丁字母绕过仍被拦截；ば/は、バ/ハ 的全角写法不再互相命中；正则 ばか、バカ、café 命中原文；含 が 键的转写表能构建并把 がか 读作 gaka。「继续遵守 VW-R-003」仍不成立：匹配副本逐单元做 NFKC，半角浊点与半浊点 U+FF9E、U+FF9F 各自成单元，变成组合浊点后无法与前一个假名组合，随后被删除；格式字符 U+200B、U+2060、U+00AD 夹在假名与组合浊点之间时浊点同样丢失（E20 §1–2、E21）。结果：归一化规则 バカ、ブス、デブ、ハゲ、ポンコツ 对半角的 ﾊﾞｶ、ﾌﾞｽ、ﾃﾞﾌﾞ、ﾊｹﾞ、ﾎﾟﾝｺﾂ 全部 PASS，正则 バカ 对 ﾊﾞｶ PASS，归一化规则 ばか 对上述三种夹格式字符的写法 PASS；反向，归一化规则 ハカ 命中 ﾊﾞｶ，扣分规则 カス 命中「ｶﾞｽ代が高い」；转写表 {ガ: ga, カ: ka} 把 ｶﾞｶ 读成 kaka 且标为完整。即 B1 的浊点丢失、バ/ハ 互相命中与转写误读，在 NFKC 等价的写法下仍在。S004 基线 f4808fb 结果相同，c67db24 只因两侧都删全部标记而偶然命中。见 B3，归属 SUB-012。Q6 与 B1 的修改在提交 58e2ced（VOXWARD-SUB-012）。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-inherit-003",
+    "meaningDigest": "965e0f03c10d2ecac0f6f5dddfb99550a5ba649ac53c1f6591831d66af969eab",
+    "outcome": "failed",
+    "requirement": {
+     "requirementId": "VW-R-003",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-004",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-004 中本单触及的部分成立：Q22 让 BLOCK 携带命中的扣分组，两组扣分 9 与 2、违规分 5 时记 −9；人工完成的 BLOCK 记 −5；noise 与三种快速放行不调用计分；系统失败不计分（E20 §4；scoring-engine index.test 14 项、rules.test 8 项）。B3 的误命中（例如归一化扣分规则 カス 命中半角的「ｶﾞｽ代が高い」，E21）会让无辜消息按规则扣分，该问题归 VW-R-003，不在本行重复判定。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-inherit-004",
+    "meaningDigest": "0a14f28ad8e78f20aaf0bdeb4c3db7f6f2b03cd7f876c1744394c11dc36ef853",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-004",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-005",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-005 中本单触及的部分成立：UNSETTLED_FAST_PASS 只标在评分达阈值的普通消息上，白名单与噪声短路不标（E20 §3–4）；例外主体从不快速放行，不会成为复盘对象；Q8 的持久表 subject_nickname_checks 在空库与 0000–0003 各状态升级到 0004 后都不存在（E60），昵称检查保留 S004 的进程内缓存。复盘结算、跨条别名与候选词确认本单未触及，由 STORY-011 承接。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-inherit-005",
+    "meaningDigest": "c9086f66b04510afe639a664a1a7f3d2636b9a695cf03ad5c782f883486acd2f",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-005",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-009",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由与基础检查不构造 AI 输入，不保存会话、提示或工具轨迹；例外队列项只含（channelId, platformMessageId）键、correlationId 与结算结果，不含正文（routing/exception-queue.ts，本轮未改）。AI 输入与会话清理本单未触及，由 STORY-008 承接。",
+    "codeVersion": "b1a1471",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-inherit-009",
+    "meaningDigest": "fe865a3f88a96b82ef201545158da25f3093c5cf2432767141d13cc348201516",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-009",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-011",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由不读写数据库，处理状态经 toStoredTaskStatus 映射到 tasks.status 现有取值；例外队列不复制正文；Q8 删除持久昵称检查表（E60：空库与各前驱状态升级后都没有该表）。短事务提交、verdicts 与 deliveries 写入本单未触及，由 STORY-014 承接。",
+    "codeVersion": "b1a1471",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-inherit-011",
+    "meaningDigest": "352eb25871da300fb06dee3232697b68155c7f6e8f2402f5dfa20344dbd4d23d",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-011",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-012",
+    "acceptanceVersion": 1,
+    "actual": "审查：路由只消费调用方给出的事实，不暴露接口、页面或运行权限，不把待审正文交给任何工具；频道范围取自事件本身。Q12 的准入错误为 RULE_SET_INVALID: REGEX_GROUP_ALTERNATION at alt 加固定提示，不回显模式原文（E20 §4）。鉴权与输出凭据本单未触及（STORY-003 已验收）。",
+    "codeVersion": "b1a1471",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-inherit-012",
+    "meaningDigest": "6b884bd02b4f884a9cdfc894f5789a70809b1045267a6d892aab496be8df2b2d",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-012",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-014",
+    "acceptanceVersion": 1,
+    "actual": "VW-R-014 中本单触及的部分成立：例外消息在任何短路之前登记；基础明确拒绝可直接结束；其余进入 REVIEW，例外 ∧ 付费按流程图走 REALTIME_REVIEW；白名单、噪声、高分对例外一律无效（96 组合与路由实测，E20 §3–4）；实时 BLOCK 与模型完成的计分都被例外守卫拒绝（REFUSED）。身份、复盘与人工调分的守卫属 STORY-005（已验收），恢复计分本单未触及。",
+    "codeVersion": "b1a1471",
+    "kind": "machine",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-inherit-014",
+    "meaningDigest": "6c91d1ca8e213875be7134d9c5670b6392e532cca533955b21d9041f5d4a0ae8",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-014",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   },
+   {
+    "acceptanceId": "VW-SUB012-INHERIT-017",
+    "acceptanceVersion": 1,
+    "actual": "审查与实测：DISCARD 用于过期代次或已删除，非终态可转 DISCARDED，不产生裁决，例外队列项以 DISCARDED 结算；系统失败有 RETRY 与 ESCALATE 两个去向；终态拒绝后续步骤（E20 §4；states.test 19 项）。例外队列只有进程内实现，重启后丢失，S006 设计 §9 已列为缺口。删除编排、到期与恢复本单未触及，由 STORY-019、STORY-020 承接。",
+    "codeVersion": "b1a1471",
+    "kind": "source-behavior-review",
+    "locator": ".kiro/specs/voxward-batch5a/evidence/acceptance.md#vw-sub012-inherit-017",
+    "meaningDigest": "9bd18b56ddc5ad2c255ca66d5ae44021623924a224c4ce0f356eb5514f6cfdbf",
+    "outcome": "satisfied",
+    "requirement": {
+     "requirementId": "VW-R-017",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    }
+   }
+  ],
+  "constraints": [],
+  "scope": "路由真值表与状态机、名单与例外队列登记、付费文本审核不可跳过、meaningful/noise 内部分类、UNSETTLED_FAST_PASS、系统失败与人工接管状态。",
+  "sources": [
+   {
+    "extraction": "complete",
+    "id": "S-PARENT",
+    "kind": "parent-work",
+    "locator": "work:685ad243ec946eb7f628c93e#VW-S006-R001",
+    "text": "消息按基础检查、例外、付费安全审核及普通快速分流进入统一裁决流程。\n交付：名单/例外队列登记；付费文本审核不可跳过；meaningful/noise 内部分类；UNSETTLED_FAST_PASS；系统失败和人工接管状态。",
+    "version": "requirement@1"
+   },
+   {
+    "extraction": "complete",
+    "id": "S-DISPATCH",
+    "kind": "user-request",
+    "locator": "kirocrew 主线程派工至拆单子代理 / 2026-11-10 /「目标」段与「要求」第 1 条",
+    "text": "目标：把 VOXWARD-INIT-001 下全部 33 个 Story（S001..S033，均 planned）一次拆成 Subtask 工单，经 Einzbern 引擎写入并读回。不写代码，不写 spec，不派子代理。\n每个 Story 拆成必要的最少 Subtask（不凑数），parentId 指向该 Story，标题清晰；每张写：assignedRequirements（引用 Story/上层真实需求 id@版本）、deliverables（具体仓库相对文件/目录路径）、dependencies（引用其他 Subtask 或 Story）、verificationOwner、对应验收（acceptance id/版本、场景、期望、方法）。不发明来源里没有的需求；来源缺口在内容里如实标出。",
+    "version": "1"
+   }
+  ],
+  "allocations": []
+ },
+ "VOXWARD-STORY-009": {
+  "id": "work:ac2a8c1b963085361cf086f0",
+  "rev": 4,
+  "status": "active",
+  "kind": "Story",
+  "title": "实现有界调度、动态并发和截止时间",
+  "parentId": "work:8980504408e4d156c130a8f9",
+  "acceptance": [
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。",
+    "id": "VW-S009-AC001",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-S009-R001",
+     "version": 1,
+     "workId": "work:ac2a8c1b963085361cf086f0"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。",
+    "id": "VW-S009-PARENT",
+    "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-E002-R009",
+     "version": 1,
+     "workId": "work:8980504408e4d156c130a8f9"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。",
+    "version": 1
+   },
+   {
+    "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-S009-INHERIT-001",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-001",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单产出的接口、说明及依赖方向。",
+    "version": 1
+   },
+   {
+    "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-001,VOXWARD-EPIC-002；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+    "id": "VW-S009-INHERIT-005",
+    "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-005 承载。",
+    "requirement": {
+     "requirementId": "VW-R-005",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "核对本单与 VW-R-005 对应模块的接口、前置和实际影响。",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-006 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-S009-INHERIT-006",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-006",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-006 的贡献）",
+    "version": 1
+   },
+   {
+    "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+    "id": "VW-S009-INHERIT-008",
+    "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-008 承载。",
+    "requirement": {
+     "requirementId": "VW-R-008",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "核对本单与 VW-R-008 对应模块的接口、前置和实际影响。",
+    "version": 1
+   },
+   {
+    "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-S009-INHERIT-009",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-009",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-010 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-S009-INHERIT-010",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-010",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-010 的贡献）",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-011 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-S009-INHERIT-011",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-011",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-011 的贡献）",
+    "version": 1
+   },
+   {
+    "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-S009-INHERIT-012",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-012",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-017 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-S009-INHERIT-017",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-017",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-017 的贡献）",
+    "version": 1
+   }
+  ],
+  "requirements": [
+   {
+    "disposition": "required",
+    "id": "VW-S009-R001",
+    "shared": false,
+    "sourceIds": [
+     "S-PARENT",
+     "S-SPLIT"
+    ],
+    "text": "实时、付费和后台任务共享受资源约束的并发容量，并有明确过载及超时行为。\n交付：TaskCoordinator/Crew 适配；微批条数/大小/等待上限；付费优先、后台余量；有限重试退避；取消/代次；按通道有限保序。",
+    "version": 1
+   }
+  ],
+  "body": "交付物：TaskCoordinator/Crew 适配；微批条数/大小/等待上限；付费优先、后台余量；有限重试退避；取消/代次；按通道有限保序。\n前置：VOXWARD-STORY-002,VOXWARD-STORY-007,VOXWARD-STORY-008\n根需求关联：VW-R-006,VW-R-010,VW-R-011,VW-R-017。\n本单验收只证明声明的贡献和继承约束合规性，父级完整判据保持。其它模块的实现与最终验证不因本单完成而自动通过。证据需记录候选版本、输入、实际结果和未验证范围；继承引用不是已执行证明。\n当前 planned；本次仅拆单。实际派工读取项目/宿主当前配置，暂无执行人、完成证据或发布/平台操作回执。",
+  "goal": "实时、付费和后台任务共享受资源约束的并发容量，并有明确过载及超时行为。",
+  "details": {
+   "behavior": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。\n预期：无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。",
+   "discretion": "可在已定接口/数据范围内决定目录、内部实现与最小必要验证方法；需根据实际仓库补齐代码/Specs，不假定已有产品代码。不得删除父需求、固定新模型/子代理数量、扩大对外数据或私自改变判据；不把自测等同于独立验收或外部批准。"
+  },
+  "evidenceCount": 0,
+  "evidence": [],
+  "constraints": [],
+  "scope": "TaskCoordinator/Crew 适配；微批条数/大小/等待上限；付费优先、后台余量；有限重试退避；取消/代次；按通道有限保序。",
+  "sources": [
+   {
+    "extraction": "complete",
+    "id": "S-PARENT",
+    "kind": "parent-work",
+    "locator": "work:8980504408e4d156c130a8f9#VW-E002-R009",
+    "text": "实时、付费和后台任务共享受资源约束的并发容量，并有明确过载及超时行为。\n交付：TaskCoordinator/Crew 适配；微批条数/大小/等待上限；付费优先、后台余量；有限重试退避；取消/代次；按通道有限保序。",
+    "version": "requirement@1"
+   },
+   {
+    "extraction": "complete",
+    "id": "S-SPLIT",
+    "kind": "decision",
+    "locator": "minutes:a791ac5683fc0b966d851c2f#D2",
+    "text": "据本次授权，以 7 个 Epic、33 个 Story 承接既定 MVP：核心契约/存储/权限/规则评分；Kiro/Crew/JSON/调度/精翻复盘；YouTube 与人工操作；数据生命周期和两类日志；浏览器/OBS/协议与隔离演示；集成验收/性能/部署；政策及 Frankenstein 材料。Story 按可验收产出划分，建立真实前置依赖，政策草案可提前推进；第三方候选、许可和性能未验证状态不被计划掩盖。",
+    "version": "1"
+   }
+  ],
+  "changeDecision": "minutes:be2ce03bcd6fda69f1db9839#D2",
+  "allocations": [
+   {
+    "childId": "work:98811c5dc9e7282c8f3ab9b5",
+    "requirementId": "VW-S009-R001",
+    "responsibility": "implementation",
+    "version": 1,
+    "workId": "work:ac2a8c1b963085361cf086f0"
+   },
+   {
+    "childId": "work:98811c5dc9e7282c8f3ab9b5",
+    "requirementId": "VW-S009-R001",
+    "responsibility": "verification",
+    "version": 1,
+    "workId": "work:ac2a8c1b963085361cf086f0"
+   },
+   {
+    "childId": "work:69b0cc08690c31022d613fc1",
+    "requirementId": "VW-S009-R001",
+    "responsibility": "implementation",
+    "version": 1,
+    "workId": "work:ac2a8c1b963085361cf086f0"
+   },
+   {
+    "childId": "work:69b0cc08690c31022d613fc1",
+    "requirementId": "VW-S009-R001",
+    "responsibility": "verification",
+    "version": 1,
+    "workId": "work:ac2a8c1b963085361cf086f0"
+   }
+  ]
+ },
+ "VOXWARD-SUB-017": {
+  "id": "work:98811c5dc9e7282c8f3ab9b5",
+  "rev": 3,
+  "status": "active",
+  "kind": "Subtask",
+  "title": "实现 TaskCoordinator 有界调度、截止时间与有限重试",
+  "parentId": "work:ac2a8c1b963085361cf086f0",
+  "acceptance": [
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。",
+    "id": "VW-SUB017-AC001",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-SUB017-R001",
+     "version": 1,
+     "workId": "work:98811c5dc9e7282c8f3ab9b5"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 本单只证明所承担部分；VOXWARD-STORY-009 的完整判据（VW-S009-AC001@1）保持。",
+    "id": "VW-SUB017-STORY",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-S009-R001",
+     "version": 1,
+     "workId": "work:ac2a8c1b963085361cf086f0"
+    },
+    "scenario": "本单承担 VW-S009-R001@1 中「微批条数/大小/等待上限；付费优先、后台余量；有限重试退避；取消/代次；按通道有限保序」：慢请求、限流、队列满、进程重启、删除取消与前序任务超时。",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。",
+    "id": "VW-SUB017-PARENT",
+    "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-E002-R009",
+     "version": 1,
+     "workId": "work:8980504408e4d156c130a8f9"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（继承自 VOXWARD-STORY-009 VW-S009-PARENT@1）",
+    "version": 1
+   },
+   {
+    "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB017-INHERIT-001",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-001",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单产出的接口、说明及依赖方向。（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-001@1）",
+    "version": 1
+   },
+   {
+    "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-001,VOXWARD-EPIC-002；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+    "id": "VW-SUB017-INHERIT-005",
+    "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-005 承载。",
+    "requirement": {
+     "requirementId": "VW-R-005",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "核对本单与 VW-R-005 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-005@1）",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-006 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB017-INHERIT-006",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-006",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-006 的贡献）（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-006@1）",
+    "version": 1
+   },
+   {
+    "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+    "id": "VW-SUB017-INHERIT-008",
+    "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-008 承载。",
+    "requirement": {
+     "requirementId": "VW-R-008",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "核对本单与 VW-R-008 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-008@1）",
+    "version": 1
+   },
+   {
+    "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB017-INHERIT-009",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-009",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-009@1）",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-010 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB017-INHERIT-010",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-010",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-010 的贡献）（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-010@1）",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-011 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB017-INHERIT-011",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-011",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-011 的贡献）（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-011@1）",
+    "version": 1
+   },
+   {
+    "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB017-INHERIT-012",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-012",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-012@1）",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-017 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB017-INHERIT-017",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-017",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-017 的贡献）（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-017@1）",
+    "version": 1
+   }
+  ],
+  "requirements": [
+   {
+    "disposition": "required",
+    "id": "VW-SUB017-R001",
+    "shared": false,
+    "sourceIds": [
+     "S-PARENT",
+     "S-DISPATCH"
+    ],
+    "text": "承担 VW-S009-R001@1 交付中的「微批条数/大小/等待上限；付费优先、后台余量；有限重试退避；取消/代次；按通道有限保序」。",
+    "version": 1
+   }
+  ],
+  "body": "拆单来源：VOXWARD-STORY-009（VW-S009-R001@1）；本单为该 Story 的第 1/2 张 Subtask。\n交付物路径为本次拆单规划：提案未规定仓库目录结构，实施可在 Story discretion 内调整，但须同步更新本单 deliverables 并保持包内文件归属。\n来源缺口：队列参数与性能目标待实测确定（INIT 约束），本单只实现可配置上限，不固化数值。\n责任分配：截至拆单，VOXWARD-STORY-009 未对本单写 allocations；VW-SUB017-STORY 验收行在 Story 把 VW-S009-R001@1 分配给本单后生效，转 ready 前需补齐（Story 内容受批准来源保护，变更需 Owner 决定作为 changeDecision）。\n当前 planned；仅拆单，未实施，无执行人与完成证据。",
+  "goal": "实时、付费与后台任务共享受资源约束的并发容量，微批有条数/大小/等待上限，付费优先并保留后台余量，超时与过载行为明确且不默认放行或扣分。",
+  "details": {
+   "assignedRequirements": "实现：VOXWARD-STORY-009 的 VW-S009-R001@1 中「微批条数/大小/等待上限；付费优先、后台余量；有限重试退避；取消/代次；按通道有限保序」（本单细化需求 VW-SUB017-R001@1）。继承须遵守：VW-E002-R009@1（VOXWARD-EPIC-002 分配给 VOXWARD-STORY-009）；INIT VW-R-001@1、VW-R-005@1、VW-R-006@1、VW-R-008@1、VW-R-009@1、VW-R-010@1、VW-R-011@1、VW-R-012@1、VW-R-017@1（共享或经 VOXWARD-EPIC-002 分配）。继承约束以 work-content-context 为准，本单不改写。",
+   "deliverables": "apps/server/src/modules/task-coordinator/coordinator.ts；apps/server/src/modules/task-coordinator/micro-batch.ts；apps/server/src/modules/task-coordinator/priority.ts；apps/server/src/modules/task-coordinator/deadline.ts；apps/server/src/modules/task-coordinator/retry.ts；apps/server/src/modules/task-coordinator/generation.ts；apps/server/src/modules/task-coordinator/ordering.ts；apps/server/src/modules/task-coordinator/index.ts；apps/server/test/task-coordinator/。",
+   "dependencies": "前置（blockedBy）：VOXWARD-STORY-007、VOXWARD-STORY-008、VOXWARD-STORY-002（沿用 VOXWARD-STORY-009 的 Story 依赖链）。\n使用：调度策略按提案 §6.2–§6.3。\n同 Story 后续：VOXWARD-SUB-018 依赖本单。",
+   "verificationOwner": "实现自测：所在实施包子代理在交付前运行与本单改动直接相关的最小构建/类型检查/测试，交付命令、结果与未验证项。验收判定：批末独立验收代理（main 档，不验收自己实施的改动）按本单验收行核对。跨模块完整验证：VOXWARD-EPIC-006（VOXWARD-STORY-027 质量/容量/清理测量、VOXWARD-STORY-026 核心闭环）。真实 Kiro/Crew 行为以固定版本实测为准，无可用环境时标未验证。"
+  },
+  "evidenceCount": 0,
+  "evidence": [],
+  "constraints": [],
+  "scope": "调度核心：微批上限、优先级与后台余量、截止时间、有限重试退避、取消与代次、按通道有限保序、过载拒绝。",
+  "sources": [
+   {
+    "extraction": "complete",
+    "id": "S-PARENT",
+    "kind": "parent-work",
+    "locator": "work:ac2a8c1b963085361cf086f0#VW-S009-R001",
+    "text": "实时、付费和后台任务共享受资源约束的并发容量，并有明确过载及超时行为。\n交付：TaskCoordinator/Crew 适配；微批条数/大小/等待上限；付费优先、后台余量；有限重试退避；取消/代次；按通道有限保序。",
+    "version": "requirement@1"
+   },
+   {
+    "extraction": "complete",
+    "id": "S-DISPATCH",
+    "kind": "user-request",
+    "locator": "kirocrew 主线程派工至拆单子代理 / 2026-11-10 /「目标」段与「要求」第 1 条",
+    "text": "目标：把 VOXWARD-INIT-001 下全部 33 个 Story（S001..S033，均 planned）一次拆成 Subtask 工单，经 Einzbern 引擎写入并读回。不写代码，不写 spec，不派子代理。\n每个 Story 拆成必要的最少 Subtask（不凑数），parentId 指向该 Story，标题清晰；每张写：assignedRequirements（引用 Story/上层真实需求 id@版本）、deliverables（具体仓库相对文件/目录路径）、dependencies（引用其他 Subtask 或 Story）、verificationOwner、对应验收（acceptance id/版本、场景、期望、方法）。不发明来源里没有的需求；来源缺口在内容里如实标出。",
+    "version": "1"
+   }
+  ],
+  "allocations": []
+ },
+ "VOXWARD-SUB-018": {
+  "id": "work:69b0cc08690c31022d613fc1",
+  "rev": 3,
+  "status": "active",
+  "kind": "Subtask",
+  "title": "实现 TaskCoordinator 的 Crew 适配与动态并发",
+  "parentId": "work:ac2a8c1b963085361cf086f0",
+  "acceptance": [
+   {
+    "expected": "并发随资源收缩且不突破上限；Crew 不可用时任务明确失败而非默认放行；Crew 会话状态不作为业务最终裁决。",
+    "id": "VW-SUB018-AC001",
+    "method": "Crew 适配契约测试与固定版本实测；无可用 Crew 环境时标未验证。",
+    "requirement": {
+     "requirementId": "VW-SUB018-R001",
+     "version": 1,
+     "workId": "work:69b0cc08690c31022d613fc1"
+    },
+    "scenario": "Crew 可用与不可用、宿主资源收缩、任务取消与进程重启。",
+    "version": 1
+   },
+   {
+    "expected": "并发随资源收缩且不突破上限；Crew 不可用时任务明确失败而非默认放行；Crew 会话状态不作为业务最终裁决。 本单只证明所承担部分；VOXWARD-STORY-009 的完整判据（VW-S009-AC001@1）保持。",
+    "id": "VW-SUB018-STORY",
+    "method": "Crew 适配契约测试与固定版本实测；无可用 Crew 环境时标未验证。",
+    "requirement": {
+     "requirementId": "VW-S009-R001",
+     "version": 1,
+     "workId": "work:ac2a8c1b963085361cf086f0"
+    },
+    "scenario": "本单承担 VW-S009-R001@1 中「TaskCoordinator/Crew 适配」：Crew 可用与不可用、宿主资源收缩、任务取消与进程重启。",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。",
+    "id": "VW-SUB018-PARENT",
+    "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-E002-R009",
+     "version": 1,
+     "workId": "work:8980504408e4d156c130a8f9"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（继承自 VOXWARD-STORY-009 VW-S009-PARENT@1）",
+    "version": 1
+   },
+   {
+    "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB018-INHERIT-001",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-001",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单产出的接口、说明及依赖方向。（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-001@1）",
+    "version": 1
+   },
+   {
+    "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-001,VOXWARD-EPIC-002；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+    "id": "VW-SUB018-INHERIT-005",
+    "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-005 承载。",
+    "requirement": {
+     "requirementId": "VW-R-005",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "核对本单与 VW-R-005 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-005@1）",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-006 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB018-INHERIT-006",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-006",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-006 的贡献）（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-006@1）",
+    "version": 1
+   },
+   {
+    "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+    "id": "VW-SUB018-INHERIT-008",
+    "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-008 承载。",
+    "requirement": {
+     "requirementId": "VW-R-008",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "核对本单与 VW-R-008 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-008@1）",
+    "version": 1
+   },
+   {
+    "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB018-INHERIT-009",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-009",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-009@1）",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-010 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB018-INHERIT-010",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-010",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-010 的贡献）（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-010@1）",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-011 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB018-INHERIT-011",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-011",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-011 的贡献）（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-011@1）",
+    "version": 1
+   },
+   {
+    "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+    "id": "VW-SUB018-INHERIT-012",
+    "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+    "requirement": {
+     "requirementId": "VW-R-012",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-012@1）",
+    "version": 1
+   },
+   {
+    "expected": "无无限积压/全局无限屏障；超时不默认放行或扣分；过期任务不恢复为有效输出。 继续遵守 VW-R-017 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+    "id": "VW-SUB018-INHERIT-017",
+    "method": "调度故障注入、优先级、容量和恢复测试。",
+    "requirement": {
+     "requirementId": "VW-R-017",
+     "version": 1,
+     "workId": "work:8bd4977aa0770aa2f41229a2"
+    },
+    "scenario": "慢请求、限流、队列满、进程重启、删除取消与前序任务超时。（本单对 VW-R-017 的贡献）（继承自 VOXWARD-STORY-009 VW-S009-INHERIT-017@1）",
+    "version": 1
+   }
+  ],
+  "requirements": [
+   {
+    "disposition": "required",
+    "id": "VW-SUB018-R001",
+    "shared": false,
+    "sourceIds": [
+     "S-PARENT",
+     "S-DISPATCH"
+    ],
+    "text": "承担 VW-S009-R001@1 交付中的「TaskCoordinator/Crew 适配」：实时、付费和后台任务共享受资源约束的并发容量。",
+    "version": 1
+   }
+  ],
+  "body": "拆单来源：VOXWARD-STORY-009（VW-S009-R001@1）；本单为该 Story 的第 2/2 张 Subtask。\n交付物路径为本次拆单规划：提案未规定仓库目录结构，实施可在 Story discretion 内调整，但须同步更新本单 deliverables 并保持包内文件归属。\n来源缺口：Crew 接口与资源信号以实测版本为准，属第三方候选未验证项。\n责任分配：截至拆单，VOXWARD-STORY-009 未对本单写 allocations；VW-SUB018-STORY 验收行在 Story 把 VW-S009-R001@1 分配给本单后生效，转 ready 前需补齐（Story 内容受批准来源保护，变更需 Owner 决定作为 changeDecision）。\n当前 planned；仅拆单，未实施，无执行人与完成证据。",
+  "goal": "默认协调实现可使用 Kiro Crew 执行任务并按宿主资源调整并发，截止时间、业务幂等、频道权限和最终裁决仍由 VoxWard 管理。",
+  "details": {
+   "assignedRequirements": "实现：VOXWARD-STORY-009 的 VW-S009-R001@1 中「TaskCoordinator/Crew 适配」（本单细化需求 VW-SUB018-R001@1）。继承须遵守：VW-E002-R009@1（VOXWARD-EPIC-002 分配给 VOXWARD-STORY-009）；INIT VW-R-001@1、VW-R-005@1、VW-R-006@1、VW-R-008@1、VW-R-009@1、VW-R-010@1、VW-R-011@1、VW-R-012@1、VW-R-017@1（共享或经 VOXWARD-EPIC-002 分配）。继承约束以 work-content-context 为准，本单不改写。",
+   "deliverables": "apps/server/src/modules/task-coordinator/crew/adapter.ts；apps/server/src/modules/task-coordinator/crew/capacity.ts；apps/server/src/modules/task-coordinator/index.ts；apps/server/test/task-coordinator/crew/。",
+   "dependencies": "前置（blockedBy）：VOXWARD-SUB-017（同 Story 内顺序；Story 级前置经同 Story 首张子单承接）。\n使用：Crew 职责边界按提案 §9.2。",
+   "verificationOwner": "实现自测：所在实施包子代理在交付前运行与本单改动直接相关的最小构建/类型检查/测试，交付命令、结果与未验证项。验收判定：批末独立验收代理（main 档，不验收自己实施的改动）按本单验收行核对。跨模块完整验证：VOXWARD-EPIC-006（VOXWARD-STORY-027 质量/容量/清理测量、VOXWARD-STORY-026 核心闭环）。真实 Kiro/Crew 行为以固定版本实测为准，无可用环境时标未验证。"
+  },
+  "evidenceCount": 0,
+  "evidence": [],
+  "constraints": [],
+  "scope": "Crew 适配器（提交、取消、状态）、按宿主资源的动态并发、Crew 会话状态不替代业务裁决。",
+  "sources": [
+   {
+    "extraction": "complete",
+    "id": "S-PARENT",
+    "kind": "parent-work",
+    "locator": "work:ac2a8c1b963085361cf086f0#VW-S009-R001",
+    "text": "实时、付费和后台任务共享受资源约束的并发容量，并有明确过载及超时行为。\n交付：TaskCoordinator/Crew 适配；微批条数/大小/等待上限；付费优先、后台余量；有限重试退避；取消/代次；按通道有限保序。",
+    "version": "requirement@1"
+   },
+   {
+    "extraction": "complete",
+    "id": "S-DISPATCH",
+    "kind": "user-request",
+    "locator": "kirocrew 主线程派工至拆单子代理 / 2026-11-10 /「目标」段与「要求」第 1 条",
+    "text": "目标：把 VOXWARD-INIT-001 下全部 33 个 Story（S001..S033，均 planned）一次拆成 Subtask 工单，经 Einzbern 引擎写入并读回。不写代码，不写 spec，不派子代理。\n每个 Story 拆成必要的最少 Subtask（不凑数），parentId 指向该 Story，标题清晰；每张写：assignedRequirements（引用 Story/上层真实需求 id@版本）、deliverables（具体仓库相对文件/目录路径）、dependencies（引用其他 Subtask 或 Story）、verificationOwner、对应验收（acceptance id/版本、场景、期望、方法）。不发明来源里没有的需求；来源缺口在内容里如实标出。",
+    "version": "1"
+   }
+  ],
+  "allocations": []
+ }
+}

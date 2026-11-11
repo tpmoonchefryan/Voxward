@@ -1,0 +1,2544 @@
+[
+ {
+  "group": "§1",
+  "label": "normalized バカ / half-width ﾊﾞｶ",
+  "body": "x ﾊﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex バカ / half-width ﾊﾞｶ",
+  "body": "x ﾊﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / spacing marks ハ゛カ",
+  "body": "x ハ゛カ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / ハ\\u200B\\u3099カ",
+  "body": "x ハ\\u200B\\u3099カ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / half-width ﾊ\\u200Bﾞｶ",
+  "body": "x ﾊ\\u200Bﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / ハ\\u2060\\u3099カ",
+  "body": "x ハ\\u2060\\u3099カ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / half-width ﾊ\\u2060ﾞｶ",
+  "body": "x ﾊ\\u2060ﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / ハ\\u00AD\\u3099カ",
+  "body": "x ハ\\u00AD\\u3099カ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / half-width ﾊ\\u00ADﾞｶ",
+  "body": "x ﾊ\\u00ADﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / ハ\\uFEFF\\u3099カ",
+  "body": "x ハ\\uFEFF\\u3099カ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / half-width ﾊ\\uFEFFﾞｶ",
+  "body": "x ﾊ\\uFEFFﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / ハ\\u200D\\u3099カ",
+  "body": "x ハ\\u200D\\u3099カ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized バカ / half-width ﾊ\\u200Dﾞｶ",
+  "body": "x ﾊ\\u200Dﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex バカ / ハ\\u200B\\u3099カ",
+  "body": "x ハ\\u200B\\u3099カ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex バカ / half-width ﾊ\\u2060ﾞｶ",
+  "body": "x ﾊ\\u2060ﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ハカ / ﾊﾞｶ",
+  "body": "x ﾊﾞｶ y",
+  "f4808fb": "BLOCK body:body[2,5)",
+  "b1a1471": "BLOCK body:body[2,5)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ハカ / ハ゛カ",
+  "body": "x ハ゛カ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ハカ / ハ\\u200B\\u3099カ",
+  "body": "x ハ\\u200B\\u3099カ y",
+  "f4808fb": "BLOCK body:body[2,6)",
+  "b1a1471": "BLOCK body:body[2,6)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ハカ / ﾊ\\u00ADﾞｶ",
+  "body": "x ﾊ\\u00ADﾞｶ y",
+  "f4808fb": "BLOCK body:body[2,6)",
+  "b1a1471": "BLOCK body:body[2,6)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / half-width ﾌﾞｽ",
+  "body": "x ﾌﾞｽ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex ブス / half-width ﾌﾞｽ",
+  "body": "x ﾌﾞｽ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / spacing marks フ゛ス",
+  "body": "x フ゛ス y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / フ\\u200B\\u3099ス",
+  "body": "x フ\\u200B\\u3099ス y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / half-width ﾌ\\u200Bﾞｽ",
+  "body": "x ﾌ\\u200Bﾞｽ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / フ\\u2060\\u3099ス",
+  "body": "x フ\\u2060\\u3099ス y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / half-width ﾌ\\u2060ﾞｽ",
+  "body": "x ﾌ\\u2060ﾞｽ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / フ\\u00AD\\u3099ス",
+  "body": "x フ\\u00AD\\u3099ス y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / half-width ﾌ\\u00ADﾞｽ",
+  "body": "x ﾌ\\u00ADﾞｽ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / フ\\uFEFF\\u3099ス",
+  "body": "x フ\\uFEFF\\u3099ス y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / half-width ﾌ\\uFEFFﾞｽ",
+  "body": "x ﾌ\\uFEFFﾞｽ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / フ\\u200D\\u3099ス",
+  "body": "x フ\\u200D\\u3099ス y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ブス / half-width ﾌ\\u200Dﾞｽ",
+  "body": "x ﾌ\\u200Dﾞｽ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex ブス / フ\\u200B\\u3099ス",
+  "body": "x フ\\u200B\\u3099ス y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex ブス / half-width ﾌ\\u2060ﾞｽ",
+  "body": "x ﾌ\\u2060ﾞｽ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized フス / ﾌﾞｽ",
+  "body": "x ﾌﾞｽ y",
+  "f4808fb": "BLOCK body:body[2,5)",
+  "b1a1471": "BLOCK body:body[2,5)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized フス / フ゛ス",
+  "body": "x フ゛ス y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized フス / フ\\u200B\\u3099ス",
+  "body": "x フ\\u200B\\u3099ス y",
+  "f4808fb": "BLOCK body:body[2,6)",
+  "b1a1471": "BLOCK body:body[2,6)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized フス / ﾌ\\u00ADﾞｽ",
+  "body": "x ﾌ\\u00ADﾞｽ y",
+  "f4808fb": "BLOCK body:body[2,6)",
+  "b1a1471": "BLOCK body:body[2,6)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / half-width ﾃﾞﾌﾞ",
+  "body": "x ﾃﾞﾌﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex デブ / half-width ﾃﾞﾌﾞ",
+  "body": "x ﾃﾞﾌﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / spacing marks テ゛フ゛",
+  "body": "x テ゛フ゛ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / テ\\u200B\\u3099フ\\u200B\\u3099",
+  "body": "x テ\\u200B\\u3099フ\\u200B\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / half-width ﾃ\\u200Bﾞﾌ\\u200Bﾞ",
+  "body": "x ﾃ\\u200Bﾞﾌ\\u200Bﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / テ\\u2060\\u3099フ\\u2060\\u3099",
+  "body": "x テ\\u2060\\u3099フ\\u2060\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / half-width ﾃ\\u2060ﾞﾌ\\u2060ﾞ",
+  "body": "x ﾃ\\u2060ﾞﾌ\\u2060ﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / テ\\u00AD\\u3099フ\\u00AD\\u3099",
+  "body": "x テ\\u00AD\\u3099フ\\u00AD\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / half-width ﾃ\\u00ADﾞﾌ\\u00ADﾞ",
+  "body": "x ﾃ\\u00ADﾞﾌ\\u00ADﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / テ\\uFEFF\\u3099フ\\uFEFF\\u3099",
+  "body": "x テ\\uFEFF\\u3099フ\\uFEFF\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / half-width ﾃ\\uFEFFﾞﾌ\\uFEFFﾞ",
+  "body": "x ﾃ\\uFEFFﾞﾌ\\uFEFFﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / テ\\u200D\\u3099フ\\u200D\\u3099",
+  "body": "x テ\\u200D\\u3099フ\\u200D\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized デブ / half-width ﾃ\\u200Dﾞﾌ\\u200Dﾞ",
+  "body": "x ﾃ\\u200Dﾞﾌ\\u200Dﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex デブ / テ\\u200B\\u3099フ\\u200B\\u3099",
+  "body": "x テ\\u200B\\u3099フ\\u200B\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex デブ / half-width ﾃ\\u2060ﾞﾌ\\u2060ﾞ",
+  "body": "x ﾃ\\u2060ﾞﾌ\\u2060ﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized テフ / ﾃﾞﾌﾞ",
+  "body": "x ﾃﾞﾌﾞ y",
+  "f4808fb": "BLOCK body:body[2,5)",
+  "b1a1471": "BLOCK body:body[2,5)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized テフ / テ゛フ゛",
+  "body": "x テ゛フ゛ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized テフ / テ\\u200B\\u3099フ\\u200B\\u3099",
+  "body": "x テ\\u200B\\u3099フ\\u200B\\u3099 y",
+  "f4808fb": "BLOCK body:body[2,8)",
+  "b1a1471": "BLOCK body:body[2,8)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized テフ / ﾃ\\u00ADﾞﾌ\\u00ADﾞ",
+  "body": "x ﾃ\\u00ADﾞﾌ\\u00ADﾞ y",
+  "f4808fb": "BLOCK body:body[2,7)",
+  "b1a1471": "BLOCK body:body[2,7)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / half-width ﾊｹﾞ",
+  "body": "x ﾊｹﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex ハゲ / half-width ﾊｹﾞ",
+  "body": "x ﾊｹﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / spacing marks ハケ゛",
+  "body": "x ハケ゛ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / ハケ\\u200B\\u3099",
+  "body": "x ハケ\\u200B\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / half-width ﾊｹ\\u200Bﾞ",
+  "body": "x ﾊｹ\\u200Bﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / ハケ\\u2060\\u3099",
+  "body": "x ハケ\\u2060\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / half-width ﾊｹ\\u2060ﾞ",
+  "body": "x ﾊｹ\\u2060ﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / ハケ\\u00AD\\u3099",
+  "body": "x ハケ\\u00AD\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / half-width ﾊｹ\\u00ADﾞ",
+  "body": "x ﾊｹ\\u00ADﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / ハケ\\uFEFF\\u3099",
+  "body": "x ハケ\\uFEFF\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / half-width ﾊｹ\\uFEFFﾞ",
+  "body": "x ﾊｹ\\uFEFFﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / ハケ\\u200D\\u3099",
+  "body": "x ハケ\\u200D\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ハゲ / half-width ﾊｹ\\u200Dﾞ",
+  "body": "x ﾊｹ\\u200Dﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex ハゲ / ハケ\\u200B\\u3099",
+  "body": "x ハケ\\u200B\\u3099 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex ハゲ / half-width ﾊｹ\\u2060ﾞ",
+  "body": "x ﾊｹ\\u2060ﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ハケ / ﾊｹﾞ",
+  "body": "x ﾊｹﾞ y",
+  "f4808fb": "BLOCK body:body[2,4)",
+  "b1a1471": "BLOCK body:body[2,4)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ハケ / ハケ゛",
+  "body": "x ハケ゛ y",
+  "f4808fb": "BLOCK body:body[2,4)",
+  "b1a1471": "BLOCK body:body[2,4)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ハケ / ハケ\\u200B\\u3099",
+  "body": "x ハケ\\u200B\\u3099 y",
+  "f4808fb": "BLOCK body:body[2,6)",
+  "b1a1471": "BLOCK body:body[2,6)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ハケ / ﾊｹ\\u00ADﾞ",
+  "body": "x ﾊｹ\\u00ADﾞ y",
+  "f4808fb": "BLOCK body:body[2,5)",
+  "b1a1471": "BLOCK body:body[2,5)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / half-width ﾎﾟﾝｺﾂ",
+  "body": "x ﾎﾟﾝｺﾂ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,7)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,7)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex ポンコツ / half-width ﾎﾟﾝｺﾂ",
+  "body": "x ﾎﾟﾝｺﾂ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,7)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,7)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / spacing marks ホ゜ンコツ",
+  "body": "x ホ゜ンコツ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,7)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,7)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / ホ\\u200B\\u309Aンコツ",
+  "body": "x ホ\\u200B\\u309Aンコツ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / half-width ﾎ\\u200Bﾟﾝｺﾂ",
+  "body": "x ﾎ\\u200Bﾟﾝｺﾂ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / ホ\\u2060\\u309Aンコツ",
+  "body": "x ホ\\u2060\\u309Aンコツ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / half-width ﾎ\\u2060ﾟﾝｺﾂ",
+  "body": "x ﾎ\\u2060ﾟﾝｺﾂ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / ホ\\u00AD\\u309Aンコツ",
+  "body": "x ホ\\u00AD\\u309Aンコツ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / half-width ﾎ\\u00ADﾟﾝｺﾂ",
+  "body": "x ﾎ\\u00ADﾟﾝｺﾂ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / ホ\\uFEFF\\u309Aンコツ",
+  "body": "x ホ\\uFEFF\\u309Aンコツ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / half-width ﾎ\\uFEFFﾟﾝｺﾂ",
+  "body": "x ﾎ\\uFEFFﾟﾝｺﾂ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / ホ\\u200D\\u309Aンコツ",
+  "body": "x ホ\\u200D\\u309Aンコツ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "normalized ポンコツ / half-width ﾎ\\u200Dﾟﾝｺﾂ",
+  "body": "x ﾎ\\u200Dﾟﾝｺﾂ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex ポンコツ / ホ\\u200B\\u309Aンコツ",
+  "body": "x ホ\\u200B\\u309Aンコツ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1",
+  "label": "regex ポンコツ / half-width ﾎ\\u2060ﾟﾝｺﾂ",
+  "body": "x ﾎ\\u2060ﾟﾝｺﾂ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ホンコツ / ﾎﾟﾝｺﾂ",
+  "body": "x ﾎﾟﾝｺﾂ y",
+  "f4808fb": "BLOCK body:body[2,7)",
+  "b1a1471": "BLOCK body:body[2,7)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ホンコツ / ホ゜ンコツ",
+  "body": "x ホ゜ンコツ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ホンコツ / ホ\\u200B\\u309Aンコツ",
+  "body": "x ホ\\u200B\\u309Aンコツ y",
+  "f4808fb": "BLOCK body:body[2,8)",
+  "b1a1471": "BLOCK body:body[2,8)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ホンコツ / ﾎ\\u00ADﾟﾝｺﾂ",
+  "body": "x ﾎ\\u00ADﾟﾝｺﾂ y",
+  "f4808fb": "BLOCK body:body[2,8)",
+  "b1a1471": "BLOCK body:body[2,8)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "normalized ハカ / ﾊﾞｶ",
+  "body": "ﾊﾞｶ",
+  "f4808fb": "BLOCK body:body[0,3)",
+  "b1a1471": "BLOCK body:body[0,3)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "deduct カス / ｶﾞｽ代が高い",
+  "body": "ｶﾞｽ代が高い",
+  "f4808fb": "REVIEW body:body[0,3)",
+  "b1a1471": "REVIEW body:body[0,3)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "deduct カス / ｶ\\u200B\\u3099ス代",
+  "body": "ｶ\\u200B\\u3099ス代",
+  "f4808fb": "REVIEW body:body[0,4)",
+  "b1a1471": "REVIEW body:body[0,4)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1r",
+  "label": "deduct カス / カスタード (a true hit)",
+  "body": "カスタード",
+  "f4808fb": "REVIEW body:body[0,2)",
+  "b1a1471": "REVIEW body:body[0,2)",
+  "candidate": "REVIEW body:body[0,2)",
+  "expected": {
+   "route": "REVIEW",
+   "spans": [
+    "body:body[0,2)"
+   ]
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "normalized badword / ba\\u0301dword",
+  "body": "ba\\u0301dword",
+  "f4808fb": "PASS",
+  "b1a1471": "BLOCK body:body[0,8)",
+  "candidate": "BLOCK body:body[0,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,8)"
+   ]
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "normalized badword / bádword",
+  "body": "bádword",
+  "f4808fb": "PASS",
+  "b1a1471": "BLOCK body:body[0,7)",
+  "candidate": "BLOCK body:body[0,7)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,7)"
+   ]
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "normalized ばか / ばか",
+  "body": "ばか",
+  "f4808fb": "BLOCK body:body[0,2)",
+  "b1a1471": "BLOCK body:body[0,2)",
+  "candidate": "BLOCK body:body[0,2)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,2)"
+   ]
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "normalized ばか / はかまいりにいく",
+  "body": "はかまいりにいく",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "normalized バカ / ハカセ",
+  "body": "ハカセ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "regex ばか / ばか",
+  "body": "ばか",
+  "f4808fb": "BLOCK body:body[0,2)",
+  "b1a1471": "BLOCK body:body[0,2)",
+  "candidate": "BLOCK body:body[0,2)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,2)"
+   ]
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "regex バカ / バカ",
+  "body": "バカ",
+  "f4808fb": "BLOCK body:body[0,2)",
+  "b1a1471": "BLOCK body:body[0,2)",
+  "candidate": "BLOCK body:body[0,2)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,2)"
+   ]
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "regex café / café",
+  "body": "café",
+  "f4808fb": "BLOCK body:body[0,4)",
+  "b1a1471": "BLOCK body:body[0,4)",
+  "candidate": "BLOCK body:body[0,4)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,4)"
+   ]
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "regex café / cafe\\u0301",
+  "body": "cafe\\u0301",
+  "f4808fb": "BLOCK body:body[0,5)",
+  "b1a1471": "BLOCK body:body[0,5)",
+  "candidate": "BLOCK body:body[0,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,5)"
+   ]
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "normalized ばか / は\\u3099か",
+  "body": "は\\u3099か",
+  "f4808fb": "BLOCK body:body[0,3)",
+  "b1a1471": "BLOCK body:body[0,3)",
+  "candidate": "BLOCK body:body[0,3)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,3)"
+   ]
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "regex ばか / は\\u3099か",
+  "body": "は\\u3099か",
+  "f4808fb": "BLOCK body:body[0,3)",
+  "b1a1471": "BLOCK body:body[0,3)",
+  "candidate": "BLOCK body:body[0,3)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,3)"
+   ]
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "normalized はか / ばか",
+  "body": "ばか",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "normalized ハカ / バカ",
+  "body": "バカ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "normalized ぱん / はん",
+  "body": "はん",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§1b B1 contrast",
+  "label": "exact ばか / ばか",
+  "body": "ばか",
+  "f4808fb": "BLOCK body:body[0,2)",
+  "b1a1471": "BLOCK body:body[0,2)",
+  "candidate": "BLOCK body:body[0,2)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,2)"
+   ]
+  }
+ },
+ {
+  "group": "§2a mixed widths",
+  "label": "normalized バカ / バｶ",
+  "body": "x バｶ y",
+  "f4808fb": "BLOCK body:body[2,4)",
+  "b1a1471": "BLOCK body:body[2,4)",
+  "candidate": "BLOCK body:body[2,4)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,4)"
+   ]
+  }
+ },
+ {
+  "group": "§2a mixed widths",
+  "label": "normalized バカ / ﾊﾞカ",
+  "body": "x ﾊﾞカ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2a mixed widths",
+  "label": "normalized バカ / ハﾞカ (full-width kana, half-width mark)",
+  "body": "x ハﾞカ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2a mixed widths",
+  "label": "normalized ばか / はﾞか (hiragana, half-width mark)",
+  "body": "x はﾞか y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2a mixed widths",
+  "label": "normalized ポンコツ / ポンｺﾂ",
+  "body": "x ポンｺﾂ y",
+  "f4808fb": "BLOCK body:body[2,6)",
+  "b1a1471": "BLOCK body:body[2,6)",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§2a mixed widths",
+  "label": "normalized ポンコツ / ﾎﾟﾝコツ",
+  "body": "x ﾎﾟﾝコツ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,7)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,7)"
+   ]
+  }
+ },
+ {
+  "group": "§2a mixed widths",
+  "label": "regex デブ / ﾃﾞブ",
+  "body": "x ﾃﾞブ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2a mixed widths",
+  "label": "normalized バカ / ﾊ\\u3099ｶ (half-width kana, combining mark)",
+  "body": "x ﾊ\\u3099ｶ y",
+  "f4808fb": "BLOCK body:body[2,5)",
+  "b1a1471": "BLOCK body:body[2,5)",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2a mixed widths",
+  "label": "normalized バカ / ﾊｶｾ (no mark)",
+  "body": "ﾊｶｾ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2b handakuten",
+  "label": "normalized パン / ﾊﾟﾝ",
+  "body": "x ﾊﾟﾝ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2b handakuten",
+  "label": "regex パン / ﾊﾟﾝ",
+  "body": "x ﾊﾟﾝ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2b handakuten",
+  "label": "normalized パン / ハ\\u309Cン",
+  "body": "x ハ゜ン y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2b handakuten",
+  "label": "normalized パン / ﾊ\\u200Bﾟﾝ",
+  "body": "x ﾊ\\u200Bﾟﾝ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§2b handakuten",
+  "label": "normalized ハン / ﾊﾟﾝ",
+  "body": "x ﾊﾟﾝ y",
+  "f4808fb": "BLOCK body:body[2,5)",
+  "b1a1471": "BLOCK body:body[2,5)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2b handakuten",
+  "label": "normalized バン / ﾊﾟﾝ (voiced vs semi-voiced)",
+  "body": "x ﾊﾟﾝ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2b handakuten",
+  "label": "normalized パン / ﾊﾞﾝ (semi-voiced vs voiced)",
+  "body": "x ﾊﾞﾝ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2c format runs",
+  "label": "normalized バカ / ﾊ\\u200B\\u2060\\uFEFF\\u00ADﾞｶ",
+  "body": "x ﾊ\\u200B\\u2060\\uFEFF\\u00ADﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,9)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,9)"
+   ]
+  }
+ },
+ {
+  "group": "§2c format runs",
+  "label": "normalized ばか / は\\u200B\\u200D\\u2060\\u3099か",
+  "body": "x は\\u200B\\u200D\\u2060\\u3099か y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§2c format runs",
+  "label": "normalized バカ / ﾊﾞ\\u200B\\u200Bｶ (between letters)",
+  "body": "x ﾊﾞ\\u200B\\u200Bｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,7)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,7)"
+   ]
+  }
+ },
+ {
+  "group": "§2c format runs",
+  "label": "regex バカ / ﾊ\\u2060\\u2060ﾞｶ",
+  "body": "x ﾊ\\u2060\\u2060ﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,7)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,7)"
+   ]
+  }
+ },
+ {
+  "group": "§2c format runs",
+  "label": "normalized ばか / は\\u202E\\u3099か (bidi override)",
+  "body": "x は\\u202E\\u3099か y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§2d marks + VS",
+  "label": "normalized ばか / は\\uFE0F\\u3099か",
+  "body": "x は\\uFE0F\\u3099か y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§2d marks + VS",
+  "label": "normalized ばか / は\\u3099\\uFE0Fか",
+  "body": "x は\\u3099\\uFE0Fか y",
+  "f4808fb": "BLOCK body:body[2,6)",
+  "b1a1471": "BLOCK body:body[2,6)",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§2d marks + VS",
+  "label": "normalized ばか / は\\u034F\\u3099か (CGJ)",
+  "body": "x は\\u034F\\u3099か y",
+  "f4808fb": "PASS",
+  "b1a1471": "BLOCK body:body[2,6)",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§2d marks + VS",
+  "label": "normalized バカ / ﾊ\\uFE0Eﾞｶ",
+  "body": "x ﾊ\\uFE0Eﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§2d marks + VS",
+  "label": "regex ばか / は\\uDB40\\uDD00\\u3099か (VS17)",
+  "body": "x は\\uE0100\\u3099か y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,7)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,7)"
+   ]
+  }
+ },
+ {
+  "group": "§2d marks + VS",
+  "label": "normalized badword / ba\\u0301\\uFE0Fdword",
+  "body": "x ba\\u0301\\uFE0Fdword y",
+  "f4808fb": "PASS",
+  "b1a1471": "BLOCK body:body[2,11)",
+  "candidate": "BLOCK body:body[2,11)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,11)"
+   ]
+  }
+ },
+ {
+  "group": "§2d marks + VS",
+  "label": "regex café / cafe\\uFE0F\\u0301",
+  "body": "x cafe\\uFE0F\\u0301 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§2d marks + VS",
+  "label": "regex café / cafe\\u034F\\u0301 (CGJ)",
+  "body": "x cafe\\u034F\\u0301 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§2e latin + ZW",
+  "label": "regex café / cafe\\u200B\\u0301",
+  "body": "x cafe\\u200B\\u0301 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,8)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,8)"
+   ]
+  }
+ },
+ {
+  "group": "§2e latin + ZW",
+  "label": "regex naïve / nai\\u2060\\u0308ve",
+  "body": "x nai\\u2060\\u0308ve y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,9)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,9)"
+   ]
+  }
+ },
+ {
+  "group": "§2e latin + ZW",
+  "label": "normalized badword / b\\u200Bádword",
+  "body": "x b\\u200Bádword y",
+  "f4808fb": "PASS",
+  "b1a1471": "BLOCK body:body[2,10)",
+  "candidate": "BLOCK body:body[2,10)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,10)"
+   ]
+  }
+ },
+ {
+  "group": "§2e latin + ZW",
+  "label": "normalized badword / ba\\uFEFF\\u0301\\u200Bdword",
+  "body": "x ba\\uFEFF\\u0301\\u200Bdword y",
+  "f4808fb": "BLOCK body:body[2,12)",
+  "b1a1471": "BLOCK body:body[2,12)",
+  "candidate": "BLOCK body:body[2,12)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,12)"
+   ]
+  }
+ },
+ {
+  "group": "§2e latin + ZW",
+  "label": "regex café / cafe\\u200B (no accent)",
+  "body": "x cafe\\u200B y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2e latin + ZW",
+  "label": "regex café / cafe\\u200B\\u0300 (other accent)",
+  "body": "x cafe\\u200B\\u0300 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2f korean",
+  "label": "normalized 바보 / \\u1107\\u200B\\u1161보 (jamo split by ZWSP)",
+  "body": "x ᄇ\\u200Bᅡ보 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§2f korean",
+  "label": "regex 바보 / \\u1107\\u2060\\u1161\\u1107\\u1169",
+  "body": "x ᄇ\\u2060ᅡ보 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,7)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,7)"
+   ]
+  }
+ },
+ {
+  "group": "§2f korean",
+  "label": "normalized 밥 / 바\\u200B\\u11B8 (LV + ZWSP + T)",
+  "body": "x 바\\u200Bᆸ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2f korean",
+  "label": "normalized 바보 / 바\\u00AD보",
+  "body": "x 바\\u00AD보 y",
+  "f4808fb": "BLOCK body:body[2,5)",
+  "b1a1471": "BLOCK body:body[2,5)",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2f korean",
+  "label": "normalized 바보 / 파\\u200B보",
+  "body": "x 파\\u200B보 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2f korean",
+  "label": "normalized 바보 / 바\\u200B부",
+  "body": "x 바\\u200B부 y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2g vietnamese",
+  "label": "regex tiếng / tie\\u200B\\u0302\\u0301ng",
+  "body": "x tie\\u200B\\u0302\\u0301ng y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,10)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,10)"
+   ]
+  }
+ },
+ {
+  "group": "§2g vietnamese",
+  "label": "regex tiếng / tiê\\u2060\\u0301ng",
+  "body": "x tiê\\u2060\\u0301ng y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,9)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,9)"
+   ]
+  }
+ },
+ {
+  "group": "§2g vietnamese",
+  "label": "normalized tieng / tiếng (tones folded, design 4.8)",
+  "body": "x tiếng y",
+  "f4808fb": "PASS",
+  "b1a1471": "BLOCK body:body[2,7)",
+  "candidate": "BLOCK body:body[2,7)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,7)"
+   ]
+  }
+ },
+ {
+  "group": "§2g vietnamese",
+  "label": "regex tiếng / tiềng (other tone)",
+  "body": "x tiềng y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2g vietnamese",
+  "label": "regex má / ma",
+  "body": "x ma y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2h japanese",
+  "label": "normalized ヴ / ｳﾞ",
+  "body": "x ｳﾞ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,4)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,4)"
+   ]
+  }
+ },
+ {
+  "group": "§2h japanese",
+  "label": "normalized ヴ / ウ\\u309B",
+  "body": "x ウ゛ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,4)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,4)"
+   ]
+  }
+ },
+ {
+  "group": "§2h japanese",
+  "label": "normalized バーカ / ﾊﾞｰｶ",
+  "body": "x ﾊﾞｰｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§2h japanese",
+  "label": "normalized ばか / は\\u200B\\u309Bか (format char + spacing mark)",
+  "body": "x は\\u200B゛か y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§2h japanese",
+  "label": "normalized ウ / ｳﾞ",
+  "body": "x ｳﾞ y",
+  "f4808fb": "BLOCK body:body[2,3)",
+  "b1a1471": "BLOCK body:body[2,3)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2h japanese",
+  "label": "normalized はか / は\\u2060\\u3099か",
+  "body": "x は\\u2060\\u3099か y",
+  "f4808fb": "BLOCK body:body[2,6)",
+  "b1a1471": "BLOCK body:body[2,6)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2h japanese",
+  "label": "normalized ハカ / ハ\\u200B\\u3099カ",
+  "body": "x ハ\\u200B\\u3099カ y",
+  "f4808fb": "BLOCK body:body[2,6)",
+  "b1a1471": "BLOCK body:body[2,6)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2h japanese",
+  "label": "normalized ばか / はか",
+  "body": "x はか y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2i offsets",
+  "label": "normalized バカ / 😀ﾊﾞｶ ﾊﾞｶ (two hits)",
+  "body": "😀ﾊﾞｶ ﾊﾞｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5) body:body[6,9)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)",
+    "body:body[6,9)"
+   ]
+  }
+ },
+ {
+  "group": "§2i offsets",
+  "label": "normalized バカ / ﾊﾞｶ\\u200Bx (trailing format char joins the last unit)",
+  "body": "ﾊﾞｶ\\u200Bx",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[0,4)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[0,4)"
+   ]
+  }
+ },
+ {
+  "group": "§2i offsets",
+  "label": "normalized バカ / あ\\u200Bﾊﾞｶ (leading format char stays outside)",
+  "body": "あ\\u200Bﾊﾞｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2i offsets",
+  "label": "normalized バカ / \\u200Bﾊﾞｶ (format char at text start)",
+  "body": "\\u200Bﾊﾞｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[1,4)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[1,4)"
+   ]
+  }
+ },
+ {
+  "group": "§2i offsets",
+  "label": "exact ﾊﾞｶ / ﾊﾞｶ (exact copy is the original)",
+  "body": "xﾊﾞｶ",
+  "f4808fb": "BLOCK body:body[1,4)",
+  "b1a1471": "BLOCK body:body[1,4)",
+  "candidate": "BLOCK body:body[1,4)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[1,4)"
+   ]
+  }
+ },
+ {
+  "group": "§2i offsets",
+  "label": "exact バカ / ﾊﾞｶ (exact does not normalize)",
+  "body": "ﾊﾞｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2j fields",
+  "label": "normalized バカ / nickname ﾊﾞ + body ｶ (combined)",
+  "body": "ｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK combined:nickname[0,2)+body[0,1)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "combined:nickname[0,2)+body[0,1)"
+   ]
+  }
+ },
+ {
+  "group": "§2j fields",
+  "label": "normalized バカ / nickname ﾊﾞｶ (nickname scope)",
+  "body": "hello",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK nickname:nickname[0,3)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "nickname:nickname[0,3)"
+   ]
+  }
+ },
+ {
+  "group": "§2j fields",
+  "label": "normalized バカ / nickname ﾊ + body ﾞｶ (mark at body start; units do not cross fields, design 4.11)",
+  "body": "ﾞｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": null
+ },
+ {
+  "group": "§2k reading",
+  "label": "reading gaka / ｶﾞｶ",
+  "body": "ｶﾞｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "REVIEW body:body[0,3)",
+  "expected": {
+   "route": "REVIEW",
+   "spans": [
+    "body:body[0,3)"
+   ]
+  }
+ },
+ {
+  "group": "§2k reading",
+  "label": "reading gaka / ｶ\\u200B\\u3099カ",
+  "body": "ｶ\\u200B\\u3099カ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "REVIEW body:body[0,4)",
+  "expected": {
+   "route": "REVIEW",
+   "spans": [
+    "body:body[0,4)"
+   ]
+  }
+ },
+ {
+  "group": "§2k reading",
+  "label": "reading kaka / ｶﾞｶ (must not hit)",
+  "body": "ｶﾞｶ",
+  "f4808fb": "REVIEW body:body[0,3)",
+  "b1a1471": "REVIEW body:body[0,3)",
+  "candidate": "PASS",
+  "expected": {
+   "route": "PASS",
+   "spans": []
+  }
+ },
+ {
+  "group": "§2k reading",
+  "label": "reading paha / ﾊﾟﾊ",
+  "body": "ﾊﾟﾊ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "REVIEW body:body[0,3)",
+  "expected": {
+   "route": "REVIEW",
+   "spans": [
+    "body:body[0,3)"
+   ]
+  }
+ },
+ {
+  "group": "§2l strip off",
+  "label": "normalized バカ / ﾊﾞｶ with stripCombiningMarks=false",
+  "body": "x ﾊﾞｶ y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,5)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,5)"
+   ]
+  }
+ },
+ {
+  "group": "§2l strip off",
+  "label": "normalized ばか / は\\u200B\\u3099か with stripCombiningMarks=false",
+  "body": "x は\\u200B\\u3099か y",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "BLOCK body:body[2,6)",
+  "expected": {
+   "route": "BLOCK",
+   "spans": [
+    "body:body[2,6)"
+   ]
+  }
+ },
+ {
+  "group": "§3 fillers",
+  "label": "normalized badword / badU+3164 HANGUL FILLERword",
+  "body": "bad\\u3164word",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": null
+ },
+ {
+  "group": "§3 fillers",
+  "label": "normalized バカ / ﾊﾞU+3164 HANGUL FILLERｶ",
+  "body": "ﾊﾞ\\u3164ｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": null
+ },
+ {
+  "group": "§3 fillers",
+  "label": "normalized badword / badU+FFA0 HALFWIDTH HANGUL FILLERword",
+  "body": "bad\\uFFA0word",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": null
+ },
+ {
+  "group": "§3 fillers",
+  "label": "normalized バカ / ﾊﾞU+FFA0 HALFWIDTH HANGUL FILLERｶ",
+  "body": "ﾊﾞ\\uFFA0ｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": null
+ },
+ {
+  "group": "§3 fillers",
+  "label": "normalized badword / badU+115F CHOSEONG FILLERword",
+  "body": "bad\\u115Fword",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": null
+ },
+ {
+  "group": "§3 fillers",
+  "label": "normalized バカ / ﾊﾞU+115F CHOSEONG FILLERｶ",
+  "body": "ﾊﾞ\\u115Fｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": null
+ },
+ {
+  "group": "§3 fillers",
+  "label": "normalized badword / badU+1160 JUNGSEONG FILLERword",
+  "body": "bad\\u1160word",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": null
+ },
+ {
+  "group": "§3 fillers",
+  "label": "normalized バカ / ﾊﾞU+1160 JUNGSEONG FILLERｶ",
+  "body": "ﾊﾞ\\u1160ｶ",
+  "f4808fb": "PASS",
+  "b1a1471": "PASS",
+  "candidate": "PASS",
+  "expected": null
+ }
+]

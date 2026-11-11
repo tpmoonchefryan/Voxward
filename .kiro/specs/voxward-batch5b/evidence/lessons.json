@@ -1,0 +1,83 @@
+[
+ {
+  "subject": "保序门控要按车道限定：只按频道比较 platformOrder，后台复盘会挡住同频道所有实时提交",
+  "summary": "VoxWard 的 TaskCoordinator 在提交前等同一 channelId 内 platformOrder 更小、仍在排队或运行的任务，不看车道。后台复盘的对象是先前已快速放行的消息，platformOrder 必然更小，后台车道又只用剩余容量、截止时间可以很长，于是一条复盘任务就让该频道之后的实时结果全部等到自己到期转人工；付费结果也要等同频道更早的普通任务。",
+  "snippet": "门控只比较同一车道的前序（提案 §6.3「在各自通道内」，提案里「通道」指处理路径，频道写作「频道」）。验收用例：同频道更早的 BACKGROUND 任务分别处于排队与运行时，REALTIME 与 PAID 的结果都应立即提交；同车道内仍保序且只等到前序截止时间。",
+  "body": "第 5b 批候选 5ce5bee（S009 首次验收）实测：BACKGROUND 任务 platformOrder 1、截止 10 分钟、仍在排队，REALTIME 任务 platformOrder 2、截止 5 s，REALTIME 结果提交返回 waiting，5 s 后 REALTIME 任务到期转 PENDING_REVIEW，BACKGROUND 任务仍在排队；PAID 任务按优先级先派工，提交时同样等同频道更早的 REALTIME 任务。原因是 orderGate 只按 channelId 与 platformOrder 选前序，任务记录转给门控时不带车道。这违反 VW-R-006「付费优先、复盘让出实时容量」与提案 §6.2「后台复盘不抢占全部实时处理能力、付费有独立延迟预算」。门控有界（只等到前序截止时间），所以测试里的「跨频道不等待」「前序超时后推进」都通过，发现不了跨车道的问题。本批因此打回 STORY-009（B4）。",
+  "tags": ["voxward", "scheduler", "ordering", "lanes", "task-coordinator"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/task-coordinator/ordering.ts",
+    "apps/server/src/modules/task-coordinator/coordinator.ts",
+    ".kiro/specs/voxward-s009-scheduler/design.md",
+    "docs/proposal/y3_project_proposal.md",
+    ".kiro/specs/voxward-batch5b/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "到期任务只能有一个终态：扫描路径转人工、提交路径转丢弃时，慢请求的去向取决于 pump 的时机",
+  "summary": "TaskCoordinator 有两条路径处理已过截止时间的运行中任务：sweep（由 takeBatch、pump 调用）转 PENDING_REVIEW 进人工队列；commitResult 若先看到结果则转 DISCARDED。DISCARDED 在 S006 的状态语义里只表示过期代次或已删除，不产生复核项，所以先到的晚结果会让超时消息离开人工队列。",
+  "snippet": "两条路径到达同一终态（超时一律 PENDING_REVIEW，原因 DEADLINE_EXCEEDED），对晚到的结果只返回 discarded。验收用例必须包含「到期后、任何扫描之前结果先到」与「经执行器：会话在截止时间后结束、其间没有 pump」两种顺序，断言任务进入人工队列。",
+  "body": "第 5b 批 5ce5bee 实测：运行中的任务截止 5 s，6 s 时直接提交结果，返回 discarded/DEADLINE_EXCEEDED，任务状态 DISCARDED；先 sweep 再提交时任务为 PENDING_REVIEW。经执行器复现：会话在截止时间后 500 ms 完成，其间没有 pump，任务 DISCARDED。实施者的 acceptance.test.ts 把 DISCARDED 写成了期望（slow request 第一例、predecessor timeout），而 S009 设计 §3 与提案 §6.2 都写超时交给人工队列。验收行 expected「超时不默认放行或扣分」两种终态都满足，所以只靠 expected 字面检查会漏掉；要对照提案与设计里写明的去向。本批记为 N1，随 S009 返工修。",
+  "tags": ["voxward", "scheduler", "deadline", "timeout", "acceptance-method"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/task-coordinator/coordinator.ts",
+    "apps/server/test/task-coordinator/acceptance.test.ts",
+    "apps/server/src/modules/moderation-engine/routing/states.ts",
+    ".kiro/specs/voxward-s009-scheduler/design.md",
+    ".kiro/specs/voxward-batch5b/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "调度主循环不能 await 外部取消调用：Crew 的 cancel 不返回时，pump 与 cancelEvent 都停住，所有频道停止派工",
+  "summary": "Crew 执行器在 pump 里先回收空闲批次，对每个会话依次 await crew.cancel，再取新批次；cancelEvent 也 await 这一步。start 与 done 不返回时有截止时间兜底，cancel 不返回时没有：一次无响应的取消就让主循环永久等待。实施者的 Crew 替身的 cancel 总是立即结束，所以测试发现不了。",
+  "snippet": "外部端口的每个调用都要有「永不结束」的替身用例：cancel、start、done 分别返回不结束的 Promise 时，pump 与 cancelEvent 要按时返回，其它频道照常派工，并发仍不超过上限。实现上取消不放在主路径上等待：发起、记待定、保留槽位到取消结束。",
+  "body": "第 5b 批 5ce5bee 实测（替身 cancel 返回 new Promise(() => undefined)）：ch-a 任务到期后的 pump 不返回；为 ch-b 再调 pump 卡在同一个 cancel 上，ch-b 一直 QUEUED，没有新会话；执行器 cancelEvent(ch-c) 先把任务转 DISCARDED，然后也不返回；ch-b 到期后再调 pump，扫描把它转人工，这次 pump 仍不返回。按返回值逐次 await pump 的驱动方会因此永远不再扫描。拒绝的 cancel 有处理（保留槽位、下次重试），不返回的没有。这违反「无全局无限屏障」与「Crew 不可用时任务明确失败」，本批打回 STORY-009（B5）。",
+  "tags": ["voxward", "crew", "executor", "timeouts", "test-doubles"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/task-coordinator/crew/adapter.ts",
+    "apps/server/test/task-coordinator/crew/fake-crew.ts",
+    "apps/server/test/task-coordinator/crew/adapter.test.ts",
+    ".kiro/specs/voxward-batch5b/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "谚文填充字符 U+3164、U+FFA0、U+115F、U+1160 是默认可忽略的字母，删 \\p{Cf} 与 \\p{M} 删不掉，能拆开任何语言的规则词",
+  "summary": "这四个码点属于 \\p{Default_Ignorable_Code_Point}，类别是 \\p{Lo}，不是格式字符也不是标记；NFKC 把 U+3164、U+FFA0 变成 U+1160，仍留在匹配副本里。按 Unicode 对默认可忽略码点的处理建议，渲染时通常不显示（本轮未做渲染实测）。VoxWard 的匹配副本只删 \\p{Cf} 与默认可忽略的标记，所以 bad + U+1160 + word 不命中归一化规则 badword。整段 NFKC 也解决不了。",
+  "snippet": "匹配副本删除全部 \\p{Default_Ignorable_Code_Point}（不只 \\p{Cf} 与其中的标记），测试加入 bad + U+1160 + word、ﾊﾞ + U+3164 + ｶ、U+115F 与 U+FFA0 的同类写法。判断零宽类绕过时按 Unicode 属性取全集，不按类别挑。",
+  "body": "第 5b 批 E22 §3：归一化规则 badword 对 bad + U+3164/U+FFA0/U+115F/U+1160 + word、规则 バカ 对 ﾊﾞ + 同四种之一 + ｶ，在 f4808fb（S004 基线）、b1a1471、5ce5bee 上都是 PASS。S006 B3 的修复把 \\p{Cf} 与「同时属于 \\p{M} 与默认可忽略」的码点在组合前删掉，覆盖了 U+200B、U+2060、U+00AD、U+FEFF、U+200D、bidi 控制符、变体选择符与 CGJ，但这四个填充字母不在其中。它不属 B3 同类（不是浊点丢失，与单元边界无关），本批记为 N4，归下一次修改 rules/normalize.ts 的 Story。",
+  "tags": ["voxward", "unicode", "normalization", "moderation", "evasion"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/moderation-engine/rules/normalize.ts",
+    ".kiro/specs/voxward-s006-routing/design.md",
+    ".kiro/specs/voxward-batch5b/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "实施简报的启动冒烟要指定 tools/smoke.sh：手工起的 pnpm dev 子进程分散在多个进程组，子代理按 PID 停止会被 self-protection-kill 拦截",
+  "summary": "第 5b 批 S009 的简报让实施子代理手工运行 pnpm dev 再确认 /healthz；子代理停止服务的命令被安全策略规则 self-protection-kill 拦截，留下 13 个进程，3000 与 5173 一直被占用，直到主线程处理。同批 S006 的简报指定 tools/smoke.sh，结束时没有残留。",
+  "snippet": "简报写：启动冒烟只用 bash /home/ryanlan/Code/Voxward/.kiro/specs/voxward-master/tools/smoke.sh <工作树> <日志目录>（setsid 启动、按进程组停止、端口已占用时拒绝运行），不要手工起 pnpm dev；子代理交付后主线程仍按 A11 用 ss -ltnp 检查 3000 与 5173。",
+  "body": "S009 的 evidence/self-check.md 记录：停止命令在执行前被安全策略拦截（规则 self-protection-kill），子代理没有绕过；pnpm、启动脚本包装、tsx watch、vite、server、esbuild 共 13 个进程仍在，进程组 140420 只含 pnpm 自己，子进程各在自己的进程组，对 -140420 发信号不够。pnpm dev 还在被忽略的 apps/server/data/ 下生成了 voxward.sqlite3。smoke.sh 用 setsid 启动、按进程组 kill -- -<pid> 停止，端口已占用时拒绝运行；第 5b 批验收两次运行（dev 与 dist）后都无监听、无残留进程。",
+  "tags": ["voxward", "process", "smoke-test", "subagent-brief", "security-policy"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    ".kiro/specs/voxward-s009-scheduler/evidence/self-check.md",
+    ".kiro/specs/voxward-master/tools/smoke.sh",
+    ".kiro/specs/voxward-master/briefs/b5-s009.md",
+    ".kiro/specs/voxward-batch5b/evidence/acceptance.md"
+   ]
+  }
+ }
+]
