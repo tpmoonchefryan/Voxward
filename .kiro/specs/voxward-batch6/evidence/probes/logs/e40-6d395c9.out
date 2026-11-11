@@ -1,0 +1,48 @@
+
+## [6d395c9] Q28-1 authorization request carries an S256 challenge, never the verifier
+OK   start returns 200 with an authorization URL: 200
+FAIL URL has code_challenge_method=S256 and a 43-character challenge: [null,0] (expected ["S256",43])
+OK   neither the URL nor the response body carries a verifier: [false,false]
+OK   the owner's own callback succeeds and stores a grant: [200,"AUTHORIZED","ACTIVE"]
+FAIL the exchange carried a 43-char verifier whose S256 hash is the challenge: [0,false] (expected [43,true])
+FAIL the verifier is in RFC 7636 unreserved characters: false (expected true)
+OK   the same state cannot be used twice: [400,"STATE_INVALID"]
+
+## [6d395c9] Q28-2 another channel's owner pairs their own state with the streamer's code (fake Google consumeOnFailure=true)
+NOTE attacker callback response: {"status":200,"body":{"operation":"AUTHORIZED_DATA_READ","state":"AUTHORIZED","verifiedLive":true,"notices":[],"grantedScopes":["https://www.googleapis.com/auth/youtube.readonly"]}}
+FAIL the injected code does not produce a grant for the attacker's channel, nor touch the streamer's: ["ACTIVE","NONE"] (expected ["NONE","NONE"])
+FAIL the exchange was sent with the attacker attempt's own verifier, which does not match: false (expected true)
+NOTE the streamer's own callback afterwards (depends on whether the provider burns a code after a failed redemption): [200,"REAUTHORIZATION_REQUIRED","NONE"]
+
+## [6d395c9] Q28-2 another channel's owner pairs their own state with the streamer's code (fake Google consumeOnFailure=false)
+NOTE attacker callback response: {"status":200,"body":{"operation":"AUTHORIZED_DATA_READ","state":"AUTHORIZED","verifiedLive":true,"notices":[],"grantedScopes":["https://www.googleapis.com/auth/youtube.readonly"]}}
+FAIL the injected code does not produce a grant for the attacker's channel, nor touch the streamer's: ["ACTIVE","NONE"] (expected ["NONE","NONE"])
+FAIL the exchange was sent with the attacker attempt's own verifier, which does not match: false (expected true)
+NOTE the streamer's own callback afterwards (depends on whether the provider burns a code after a failed redemption): [200,"REAUTHORIZATION_REQUIRED","NONE"]
+
+## [6d395c9] Q28-3 a missing or wrong verifier fails
+FAIL exchange with an empty verifier fails before any request is sent: [false,"invalid_grant",1] (expected [false,"invalid_request",0])
+FAIL callback whose pending entry has no verifier: no grant, no token request: ["ACTIVE",2] (expected ["NONE",0])
+NOTE its response: {"status":200,"body":{"operation":"AUTHORIZED_DATA_READ","state":"AUTHORIZED","verifiedLive":true,"notices":[],"grantedScopes":["https://www.googleapis.com/auth/youtube.readonly"]}}
+FAIL callback with a wrong verifier: the provider refuses, no grant stored: [200,"AUTHORIZED","ACTIVE"] (expected [200,"REAUTHORIZATION_REQUIRED","NONE"])
+
+## [6d395c9] Q28-4 someone else's failed attempt does not use up the owner's state
+OK   refused: another channel's owner, with a code: [400,"STATE_INVALID"]
+OK   refused: another channel's owner, with error=access_denied: [400,"STATE_INVALID"]
+OK   refused: a moderator of the same channel: [400,"STATE_INVALID"]
+OK   refused: an account with no role: [400,"STATE_INVALID"]
+OK   none of those attempts reached the token endpoint: 0
+FAIL the owner then completes with the same state: [400,null,"NONE"] (expected [200,"AUTHORIZED","ACTIVE"])
+
+## [6d395c9] Q28-5 re-authorization retires the old grant: row revoked, sealed value deleted
+FAIL two grant rows: the first revoked, the second active: [false,false] (expected [true,false])
+FAIL the old sealed value is gone from the vault (reveal refuses, describe and list do not show it): [false,false,true] (expected [true,true,false])
+OK   the channel reads the new refresh token: ["ACTIVE",true]
+OK   auth status probes with the new grant: [200,"AUTHORIZED"]
+OK   the status probe used the new refresh token, not the old one: true
+NOTE the old refresh token at the provider after re-authorization (still live = not revoked there): {"oldTokenStillLiveAtProvider":true,"revokeCallsToProvider":0}
+FAIL vault.remove with the wrong purpose refuses and keeps the value: ["TypeError","ACTIVE"] (expected ["CredentialPurposeError","ACTIVE"])
+FAIL vault.remove of an unknown reference is harmless (false): "TypeError" (expected false)
+
+[6d395c9] checks 27, failures 15
+failed: URL has code_challenge_method=S256 and a 43-character challenge | the exchange carried a 43-char verifier whose S256 hash is the challenge | the verifier is in RFC 7636 unreserved characters | the injected code does not produce a grant for the attacker's channel, nor touch the streamer's | the exchange was sent with the attacker attempt's own verifier, which does not match | the injected code does not produce a grant for the attacker's channel, nor touch the streamer's | the exchange was sent with the attacker attempt's own verifier, which does not match | exchange with an empty verifier fails before any request is sent | callback whose pending entry has no verifier: no grant, no token request | callback with a wrong verifier: the provider refuses, no grant stored | the owner then completes with the same state | two grant rows: the first revoked, the second active | the old sealed value is gone from the vault (reveal refuses, describe and list do not show it) | vault.remove with the wrong purpose refuses and keeps the value | vault.remove of an unknown reference is harmless (false)

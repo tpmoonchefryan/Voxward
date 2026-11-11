@@ -1,0 +1,83 @@
+[
+ {
+  "subject": "验证「结算后释放正文」用堆快照检索唯一标记字符串，探针自己持有的批次引用会造成假阳性",
+  "summary": "只看堆增量分不清是正文还是其它记录在增长。给每条正文加唯一前缀（用 Buffer 往返得到扁平字符串），强制 GC 后 v8.writeHeapSnapshot，再按前缀计数，能直接看到哪种结算方式还留着正文。第 6 批第一次运行时有 1 条「晚到结果」的正文残留，原因是探针在模块顶层循环里用 const 保存了最后一个批次，异步模块的帧仍引用它；把每次处理放进函数后为 0。",
+  "snippet": "每种结算方式各 N 条、正文带「标记-方式-序号」前缀；同时保留一组仍在排队的任务作对照（必须全部检出，证明检索有效）；把取批、提交放进 async 函数，避免探针自己持有批次；在上一候选上同跑一次，确认检查能区分修复前后。",
+  "body": "第 6 批 E34 §C：TaskCoordinator 返工后，完成、取消（排队与运行）、提交时过期、失败、到期、晚到与入队被拒 8 种结算方式各 50 条，0b929d3 的堆快照里 0 条正文残留，排队中的 50 条都在；5ce5bee 上 400 条全部残留。同一探针还测了结算后轻量记录约 514 字节/条（正文 56 个字符）。测量前要清空探针自己收集的技术日志条目，否则第 5b 批 E30 §8 那样的「约 1.1 KB/条」会把探针的日志也算进去。",
+  "tags": ["voxward", "acceptance-method", "memory", "heap-snapshot", "task-coordinator"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    ".kiro/specs/voxward-batch6/evidence/probes/probe-s009-b6.mts",
+    "apps/server/src/modules/task-coordinator/coordinator.ts",
+    ".kiro/specs/voxward-batch6/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "Google 撤销接口按「客户端 + 用户授权」整体撤销：同一账号重新授权后撤销旧 refresh token，会让新令牌一起失效",
+  "summary": "VoxWard 的 Q28 修复在重新授权后只撤销本地授权行、删除本地密文，没有调用 Google 撤销接口。社区报告（Stack Overflow 53836992、69484763）称撤销任一令牌会使同一 OAuth 客户端与用户授权下的全部令牌失效；Google 文档另说明 refresh token 按客户端-用户有数量上限，超过后较旧的令牌失效。所以「重新授权就撤销旧令牌」在同账号时会把频道的新授权也撤掉。",
+  "snippet": "重新授权时只在新旧授权属于不同 Google 账号时调用撤销接口（先比对账号或频道身份）；同账号只删本地副本，依赖提供方的令牌上限淘汰旧令牌；显式断开授权时撤销并同时删除本地密文。真实行为在部署演练里用真实账号确认，撤销后再用新令牌刷新一次作为验收。",
+  "body": "第 6 批 E40 Q28-5：重新授权后旧行 revokedAt 已写、旧密文从保险箱删除且不可读，假令牌端点上旧 refresh token 仍有效、撤销请求 0 次。实施方把是否撤销列为「待 Owner 决定」；本批判断为可在现有授权内由 STORY-029 实现，因为它是凭据生命周期的实现选择，真实调用本来就要在 S029 演练。Google 的同授权连带撤销来自社区报告，本批没有直接核对官方页（简报不允许连接 Google，只做了网页搜索摘录，见 acceptance.md R2）。",
+  "tags": ["voxward", "oauth", "google", "token-revocation", "credentials"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/platform-source/youtube/credentials.ts",
+    "apps/server/src/modules/platform-source/youtube/routes.ts",
+    ".kiro/specs/voxward-s013-livestream/design.md",
+    ".kiro/specs/voxward-batch6/evidence/judgment.md"
+   ]
+  }
+ },
+ {
+  "subject": "YouTube Super Chat 的留言在 superChatDetails.userComment，只读 textMessageDetails 会让 SC 正文为空；替身给 superChatEvent 塞 textMessageDetails 会掩盖这个问题",
+  "summary": "liveChatMessage 资源里各类型的详情字段按 snippet.type 分开设置：API 库文档写明 superChatDetails 只在 type 为 superChatEvent 时设置，userComment 是用户在 Super Chat 里写的留言。VoxWard S013 的解析只读 textMessageDetails.messageText，按资源形状给出的 Super Chat 进入流水线时 body 为空字符串，留言不会被审核或精翻。S013 自己的测试替身给 superChatEvent 也写了 textMessageDetails，所以测试全绿。",
+  "snippet": "解析按类型取正文：textMessageEvent 读 textMessageDetails.messageText，superChatEvent 读 superChatDetails.userComment，memberMilestoneChatEvent 读 memberMilestoneChatDetails.userComment，其余类型按 displayMessage 处理或明确不进审核。测试替身按官方资源的字段形状构造，不给非文本类型补 textMessageDetails。",
+  "body": "第 6 批 E42 S7：按资源形状构造的 Super Chat（superChatDetails 带 amountMicros、currency、amountDisplayString、userComment、tier，没有 textMessageDetails）经 toBusinessEvent 后 event.body 为 \"\"。当前没有接线，没有不安全内容被展示；ChannelEvent 契约也还没有金额、币种等 SC 字段，所以修复与 SC 字段一起归 STORY-010。字段说明经网页搜索摘录核对（acceptance.md R1）；textMessageDetails 是否也会出现在真实 Super Chat 条目里，没有逐字核对，S029 真实接入时确认。",
+  "tags": ["voxward", "youtube", "super-chat", "parsing", "test-doubles"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/platform-source/youtube/stream-list.ts",
+    "apps/server/src/modules/platform-source/youtube/to-business-event.ts",
+    "apps/server/test/platform-source/youtube-stream/fixtures.ts",
+    ".kiro/specs/voxward-batch6/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "VoxWard 评分的混合语义：裁决按运行钳制、身份变化按 clamp(基准 + 行为) 重算，上限处有身份盈余时扣分后再变身份，分数会被重算回去",
+  "summary": "Q20 修复后，身份路径把基准分全额记录、最终分取 clamp(基准 + 行为)；裁决与人工补偿仍按提案 §5.1 的运行钳制，行为分累计实际生效值。于是在上限处有身份盈余时，BLOCK 立即扣分（100 → 95，基准加行为却是 105）；下一次身份变化把分数重算回 clamp(基准 + 行为)，可能出现降级加分、升级多于配置差额。所有身份经历结束后，终态与没有身份事件时相同。",
+  "snippet": "验收评分时除了「上限处升级再到期」，还要测「上限处升级、扣分、部分降级、到期」：断言终态等于没有身份事件的同一序列，并把中间态（降级时 actual 与 requested 符号相反）作为写明的语义固定在用例里。",
+  "body": "第 6 批 E41（真实 SQLite）：上限 100、会员 10、房管 30、违规 5。100 → 升级房管 → BLOCK → 降为会员 → 到期，各步 actual 为 0、−5、+5、−5，分数 95、100、95，账本记 requested −20、actual +5。修复前（6d395c9）同一序列最后是 65，上限处升级再到期凭空扣 10，下限处凭空加 10。本批判断这不违反提案 §5.2（两条路径各按 §5.1、§5.2 原文），但「降级加分」要写进设计（judgment N6）。",
+  "tags": ["voxward", "scoring", "clamp", "identity", "semantics"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/scoring-engine/identity-events.ts",
+    "apps/server/src/modules/scoring-engine/engine.ts",
+    "apps/server/src/db/scoring-ledger.ts",
+    "docs/proposal/y3_project_proposal.md",
+    ".kiro/specs/voxward-batch6/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "平台补发的跨重启去重必须在进入计分之前完成：计分账本只对已生效的变化幂等，首次被冷却挡住的消息在重放时会得分",
+  "summary": "VoxWard 的 streamList 接入默认用进程内去重存储，重启后的初连会把补发年龄内的消息再投递一次。计分端的幂等键按平台消息 ID，已生效的奖励不会重复；但首次没有效果的裁决（冷却、钳制）不留幂等记录，重放时接入层给事件打上新的 receivedAt，冷却已过，于是这条消息第一次得分。账本幂等挡不住「历史补发产生新的业务事实」。",
+  "snippet": "接线时把 MessageIdStore 绑定 channel_events_dedupe_uq，并让「占用消息 ID」与事件落库在同一个短事务里（冲突即重复）；不要指望计分账本兜底。验收用例：冷却 60 s 内同一观众两条消息，61 s 后模拟重启重放，断言第二条仍不得分、不再投递。",
+  "body": "第 6 批 E42 S3、S3b：两次运行（第二次换新的进程内存储，模拟重启）都接到真实 SQLite 与计分引擎。已生效的两条奖励与一条身份变化没有重复；冷却设为 60 s 时，同一观众的第二条消息首次 delta 0，61 s 后重放 delta 1，账本出现 event:ch-s3:cool-2 一行。第 3 批 Q19① 已记「首次决策没有效果时不留幂等记录」，本条是它和补发重放叠加后的后果。同一处还有 sink 抛异常时消息 ID 已占用、消息永远不再投递的问题（judgment N3）。",
+  "tags": ["voxward", "youtube", "dedupe", "idempotency", "restart"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/platform-source/youtube/stream-list.ts",
+    "apps/server/src/modules/platform-source/youtube/dedup.ts",
+    "apps/server/src/db/schema/messages.ts",
+    "apps/server/src/modules/scoring-engine/engine.ts",
+    ".kiro/specs/voxward-batch6/evidence/judgment.md"
+   ]
+  }
+ }
+]

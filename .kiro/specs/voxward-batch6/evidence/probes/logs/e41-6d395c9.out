@@ -1,0 +1,27 @@
+
+## [6d395c9] Q20-1 at the upper limit: upgrade then expiry leaves the score and the behavior total unchanged
+NOTE score rows before / after upgrade / after expiry: [{"current":100,"base":0,"behavior":100},{"current":100,"base":0,"behavior":100},{"current":90,"base":-10,"behavior":100}]
+FAIL upgrade at the limit: current stays 100, base +10 stored, behavior untouched: [0,100,0,100] (expected [0,100,10,100])
+FAIL expiry: current stays 100 (no deduction from nothing), base back to 0, behavior untouched: [-10,90,-10,100] (expected [0,100,0,100])
+NOTE ledger rows: [{"reason":"MANUAL_CORRECTION","requested":100,"actual":100},{"reason":"IDENTITY_BASE_CHANGE","requested":-10,"actual":-10}]
+
+## [6d395c9] Q20-2 implementer's residual: upgrade at the limit, a BLOCK, then expiry
+NOTE after BLOCK (current, base, behavior; base+behavior): [95,0,95,95]
+NOTE after expiry: [-10,85,-10,95]
+OK   the BLOCK takes effect at once (-5), as the running clamp of proposal 5.1 says: [-5,95]
+FAIL after expiry the score equals the twin that never had the membership (100 - 5): [85,95] (expected [95,95])
+
+## [6d395c9] Q20-3 a partial downgrade after a BLOCK taken in surplus (re-derivation of the final score)
+NOTE promote MODERATOR(+30) at 100 / BLOCK / demote to PAID_MEMBER(-20) / expire to UNKNOWN(-10): deltas: [0,-5,-20,-10]
+NOTE current after each of BLOCK / demotion / expiry: [95,75,65]
+NOTE ledger rows: [{"reason":"MANUAL_CORRECTION","requested":100,"actual":100},{"reason":"RULE_PENALTY","requested":-5,"actual":-5},{"reason":"IDENTITY_BASE_CHANGE","requested":-20,"actual":-20},{"reason":"IDENTITY_BASE_CHANGE","requested":-10,"actual":-10}]
+
+## [6d395c9] Q20-4 at the lower limit: expiry then re-upgrade adds nothing from nothing
+NOTE rows before / after expiry / after re-upgrade: [{"current":-100,"base":10,"behavior":-110},{"current":-100,"base":10,"behavior":-110},{"current":-90,"base":20,"behavior":-110}]
+FAIL expiry at the floor stores base 0 and keeps -100; re-upgrade restores base 10 and keeps -100: [0,-100,10,10,-90,20] (expected [0,-100,0,0,-100,10])
+
+## [6d395c9] Q20-5 repeated identity and a re-delivered event change nothing
+OK   upgrade +10 once; the same source event again and a new event with the same identity add nothing: [10,10,0,10]
+
+[6d395c9] checks 6, failures 4
+failed: upgrade at the limit: current stays 100, base +10 stored, behavior untouched | expiry: current stays 100 (no deduction from nothing), base back to 0, behavior untouched | after expiry the score equals the twin that never had the membership (100 - 5) | expiry at the floor stores base 0 and keeps -100; re-upgrade restores base 10 and keeps -100

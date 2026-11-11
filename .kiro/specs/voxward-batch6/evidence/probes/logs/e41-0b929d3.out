@@ -1,0 +1,26 @@
+
+## [0b929d3] Q20-1 at the upper limit: upgrade then expiry leaves the score and the behavior total unchanged
+NOTE score rows before / after upgrade / after expiry: [{"current":100,"base":0,"behavior":100},{"current":100,"base":10,"behavior":100},{"current":100,"base":0,"behavior":100}]
+OK   upgrade at the limit: current stays 100, base +10 stored, behavior untouched: [0,100,10,100]
+OK   expiry: current stays 100 (no deduction from nothing), base back to 0, behavior untouched: [0,100,0,100]
+NOTE ledger rows: [{"reason":"MANUAL_CORRECTION","requested":100,"actual":100},{"reason":"IDENTITY_BASE_CHANGE","requested":10,"actual":0},{"reason":"IDENTITY_BASE_CHANGE","requested":-10,"actual":0}]
+
+## [0b929d3] Q20-2 implementer's residual: upgrade at the limit, a BLOCK, then expiry
+NOTE after BLOCK (current, base, behavior; base+behavior): [95,10,95,105]
+NOTE after expiry: [0,95,0,95]
+OK   the BLOCK takes effect at once (-5), as the running clamp of proposal 5.1 says: [-5,95]
+OK   after expiry the score equals the twin that never had the membership (100 - 5): [95,95]
+
+## [0b929d3] Q20-3 a partial downgrade after a BLOCK taken in surplus (re-derivation of the final score)
+NOTE promote MODERATOR(+30) at 100 / BLOCK / demote to PAID_MEMBER(-20) / expire to UNKNOWN(-10): deltas: [0,-5,5,-5]
+NOTE current after each of BLOCK / demotion / expiry: [95,100,95]
+NOTE ledger rows: [{"reason":"MANUAL_CORRECTION","requested":100,"actual":100},{"reason":"IDENTITY_BASE_CHANGE","requested":30,"actual":0},{"reason":"RULE_PENALTY","requested":-5,"actual":-5},{"reason":"IDENTITY_BASE_CHANGE","requested":-20,"actual":5},{"reason":"IDENTITY_BASE_CHANGE","requested":-10,"actual":-5}]
+
+## [0b929d3] Q20-4 at the lower limit: expiry then re-upgrade adds nothing from nothing
+NOTE rows before / after expiry / after re-upgrade: [{"current":-100,"base":10,"behavior":-110},{"current":-100,"base":0,"behavior":-110},{"current":-100,"base":10,"behavior":-110}]
+OK   expiry at the floor stores base 0 and keeps -100; re-upgrade restores base 10 and keeps -100: [0,-100,0,0,-100,10]
+
+## [0b929d3] Q20-5 repeated identity and a re-delivered event change nothing
+OK   upgrade +10 once; the same source event again and a new event with the same identity add nothing: [10,10,0,10]
+
+[0b929d3] checks 6, failures 0

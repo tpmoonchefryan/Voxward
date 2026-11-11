@@ -1,0 +1,7 @@
+.kiro/specs/voxward-master/briefs/b6-s009-fix-prior.txt
+.kiro/specs/voxward-master/briefs/b6-s009-fix-resume.md
+.kiro/specs/voxward-master/briefs/b6-s009-fix.md
+.kiro/specs/voxward-master/briefs/b6-s013-resume.md
+.kiro/specs/voxward-master/briefs/b6-s013.md
+.kiro/specs/voxward-master/briefs/b6-tasks.cjs
+.kiro/specs/voxward-master/briefs/impl-template.md

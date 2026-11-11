@@ -1,0 +1,65 @@
+
+## [0b929d3] S1 platform message ID dedupe: duplicate frames and replay on reconnect
+OK   each message is delivered once; replays and duplicate frames are counted as duplicates: [["sc1","t1","t2","t3"],4]
+OK   resume cursors: initial, tok-1, tok-2: [null,"tok-1","tok-2"]
+OK   the offline time ends the run in ENDED after the last batch: "ENDED"
+
+## [0b929d3] S2 initial connection replays recent history
+OK   initial connection: an SC older than the replay limit (5 min) is not delivered; a recent one is delivered once: [["recent-sc","t-now"],1]
+OK   a second initial connection with the same store delivers only the new message: ["t-new"]
+NOTE after a process restart (fresh in-memory store), the recent replays are delivered again: ["recent-sc","t-now"]
+
+## [0b929d3] S3 restart replay reaching the scoring ledger (real SQLite, real scoring engine)
+NOTE messages delivered by the first run / by the restarted run: [2,2]
+OK   score ledger after both runs: one reward per platform message and one identity change (idempotency keys hold across the restart): ["COMPLIANT_REWARD","COMPLIANT_REWARD","IDENTITY_BASE_CHANGE"]
+OK   scores did not move on the replay: [{"subject":"ref-UC-probe-m-b","current":11},{"subject":"ref-UC-probe-sc-a","current":1}]
+NOTE S3b reward deltas for cool-1, cool-2: first run / replay after a restart 61 s later: [[1,0],[1,1]]
+NOTE S3b ledger rows of that viewer (idempotency key, actual): [{"key":"event:ch-s3:cool-1","actual":1},{"key":"event:ch-s3:cool-2","actual":1}]
+
+## [0b929d3] S4 identity: missing markers are not fabricated, unknown is not a "no"
+OK   sponsor flag true -> PAID_MEMBER, certain, evidence isChatSponsor: {"kind":"PAID_MEMBER","certain":true,"evidence":"isChatSponsor","subscription":"NOT_PROVIDED"}
+OK   flags missing -> UNKNOWN, not certain (never a downgrade): {"kind":"UNKNOWN","certain":false,"evidence":null,"subscription":"NOT_PROVIDED"}
+OK   all four flags false -> UNKNOWN, certain: {"kind":"UNKNOWN","certain":true,"evidence":null,"subscription":"NOT_PROVIDED"}
+OK   a non-boolean flag is dropped, not read as true: [null,null,"UNKNOWN"]
+OK   verified alone -> VERIFIED_ACCOUNT (no subscription meaning): "VERIFIED_ACCOUNT"
+OK   the contract has no subscriber identity kind: ["CHANNEL_OWNER","MODERATOR","PAID_MEMBER","VERIFIED_ACCOUNT","UNKNOWN"]
+OK   tracker: member, repeat (none), missing flags (none), explicit all-false (to UNKNOWN): ["PAID_MEMBER",null,null,"UNKNOWN"]
+
+## [0b929d3] S5 explicit states: ended, quota, permission, unavailable, rejected, give-up
+OK   offlineAt in a response -> ENDED, no further connection: ["ENDED",1]
+OK   liveChatEnded -> ENDED, no further connection: ["ENDED",1]
+OK   forbidden (credential or permission lost) -> PERMISSION_LOST, no further connection: ["PERMISSION_LOST",1]
+OK   quotaExceeded from the platform -> QUOTA_EXHAUSTED, no further connection: ["QUOTA_EXHAUSTED",1]
+OK   liveChatDisabled -> CHAT_UNAVAILABLE, no further connection: ["CHAT_UNAVAILABLE",1]
+OK   liveChatNotFound -> CHAT_UNAVAILABLE, no further connection: ["CHAT_UNAVAILABLE",1]
+OK   invalidArgument -> REQUEST_REJECTED, no further connection: ["REQUEST_REJECTED",1]
+OK   8 consecutive failures -> GAVE_UP; delays 1 s doubling to the 60 s cap: ["GAVE_UP",8,[1000,2000,4000,8000,16000,32000,60000]]
+OK   rateLimitExceeded waits at least 30 s: [30000]
+OK   local budget of 12 units pays two 5-unit connections; the third is refused without connecting: ["QUOTA_EXHAUSTED",2,"EXHAUSTED",10]
+OK   platform quotaExceeded marks the monitor exhausted and visible: ["QUOTA_EXHAUSTED","EXHAUSTED",true,false]
+OK   80 of 100 units used -> WARNING: "WARNING"
+
+## [0b929d3] S6 only the official upstream; no unconditional polling
+OK   only well-formed liveChatMessage items pass; the rest are dropped and counted: [["ok1","ok2"],5]
+NOTE a stream that closes after every batch reconnects with these delays (ms): [1000,1000,1000,1000,1000]
+OK   pageTokenInvalid: the cursor is dropped and one immediate initial reconnect, then backoff: [["stale",null,null],[0,1000]]
+
+## [0b929d3] S7 business event for the pipeline: versioned, no raw platform response
+OK   event keys follow the versioned ChannelEvent contract: ["body","channelId","contractVersion","correlationId","platform","platformMessageId","platformOrder","receivedAt","sender"]
+OK   wrapper is versioned and typed: [true,"CHANNEL_MESSAGE"]
+OK   no raw response fields or platform author IDs leave the module: [false,false,false,false]
+OK   identity change carries the message reference as its idempotent source: {"channelId":"ch-int","subjectKey":"hmac(11)","sourceEventRef":"youtube:m1","effectiveFrom":"2026-11-11T12:00:00.000Z","nextKind":"PAID_MEMBER"}
+NOTE text message body: "synthetic m1"
+NOTE super chat as the resource shapes it (comment in superChatDetails.userComment, no textMessageDetails): event body: ""
+
+## [0b929d3] S8 residuals named by the implementer
+NOTE sink throws on r2: run outcome: {"threw":"synthetic sink failure","result":null,"deliveredBeforeThrow":["r1"]}
+NOTE same store, platform resends r1..r3: all deliveries so far (first run, then the resend): {"delivered":["r1","r3"],"duplicatesOnResend":2,"phase":"ENDED"}
+OK   at most once: r2's ID was taken before the failed delivery, so r2 is never delivered; r3 still arrives: [false,true]
+NOTE in-memory store of capacity 2: e1 forgotten after e3, and redelivered on replay (within the 5 min replay age): ["e1","e2","e3","e1"]
+
+## [0b929d3] S9 replay-age rule inside one live connection (design 5 says INITIAL or RESUME only)
+NOTE second batch of the same connection: a message published 6 min ago is: "dropped as STALE_REPLAY"
+NOTE server clock 6 min ahead of the platform: delivered / staleReplay counter / phase: [[],2,"ENDED"]
+
+[0b929d3] checks 33, failures 0
