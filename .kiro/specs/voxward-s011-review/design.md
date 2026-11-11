@@ -89,19 +89,19 @@ apps/server/src/modules/task-coordinator/coordinator.ts   Q38：已结算记录�
 
 ### 3. 接口
 
-- `ReviewStorePort`（模块内端口）：`readCandidates(channelId, now)`、`readEvent(key)`、`commitSettlement(write)`（同步；一次短事务内做状态比较交换、写裁决、写复核记录、写候选词）、`markScoring(key, state)`、`listPendingScoring()`。
+- `ReviewStorePort`（`review/ports.ts`，模块内端口）：`listOpenCandidates(channelId)`、`readCandidate(eventId)`、`markExpired(eventId)`、`commitSettlement(write)`（同步；一次短事务内做状态比较交换并写入裁决，同时把计分状态置为 PENDING）、`markScoring(eventId, state)`、`listPendingScoring()`。复核记录与候选词由运行器在同一个同步 `apply` 内写入对应端口。
 - `ReviewModelPort`：`reviewBatch(input: AiBatchInput): Promise<unknown>`。输入只有 `itemId` 与 `text`（`text` 含任务别名前缀），输出先经 `validateReviewBatchResult`。推理一律用替身。
-- `BackgroundLanePort`：`enqueueInLane("BACKGROUND", event, deadlineAt): Promise<TaskRef>`，由 task-coordinator 的已导出接口结构匹配。`takeBatch`、`commitResult`、`reportFailure`、`finishBatch`、`cancelEvent` 同样只使用已导出的方法。
+- `BackgroundCoordinatorPort`（`review/ports.ts`）：`enqueueInLane("BACKGROUND", event, deadlineAt): Promise<TaskRef>`、`takeBatch`、`commitResult`、`reportFailure`、`statusOf`、`finishBatch`，由 task-coordinator 的已导出接口结构匹配。模块不导入 task-coordinator。
 - `ScoringPort`：`Pick<ScoringEngine, "applyVerdict">`（合约）。`ScoringRefusedError` 的识别只读 `code`，与 router 的做法一致。
 - `ReviewQueuePort`：`append(record)`，人工复核列表（Q27）。
-- `CandidateRulePort`：`publishConfirmedTerm({channelId, term, candidateId, actorRef}): Promise<number>`，返回新规则版本号。
-- `DataActor`：`{ accountId, channelId, capabilities: ReadonlySet<string> }`，与 data-lifecycle-service 相同形态；HTTP 绑定从 S003 解析能力。
+- `CandidateRulePort`（`candidates/store.ts`）：`publishConfirmedTerm({channelId, term, candidateId, actorRef}): number`，同步返回新规则版本号。
+- `CandidateActor`（`candidates/routes.ts`）：`{ accountId, channelId, capabilities: ReadonlySet<string> }`，与 data-lifecycle-service 的 `DataActor` 同形态。列表需要 `queue.read`，确认需要 `review.decide`；HTTP 绑定从 S003 成员资格解析这些能力。
 
 ### 4. 数据（模块内表示，数据库绑定不在本包）
 
 - `settlement_state` 取值沿用数据字典：`NONE`、`UNSETTLED_FAST_PASS`、`SETTLED`、`UNSETTLED_EXPIRED`。
 - 计分状态 `scoring_state`（自定）：`NOT_REQUIRED`（无需计分）、`PENDING`、`APPLIED`、`REFUSED`。
-- 复核记录 `ReviewRecord`（自定）：`{ id, channelId, eventKey, correlationId, classification: "BLOCK", source: "REVIEW_SETTLEMENT", createdAt, humanState: "OPEN" }`。不含正文。
+- 复核记录 `ReviewRecord`（自定）：`{ id, channelId, eventId, correlationId, classification: "BLOCK", source: "REVIEW_SETTLEMENT", createdAt, humanState: "OPEN" }`。不含正文。
 - 候选词卡片 `CandidateCard`（自定）：`{ id, channelId, term, note, sourceCorrelationId, sourceTaskId, status, createdAt, decidedByRef, decidedAt, ruleVersion }`，`status` 取 `PENDING_CONFIRMATION` 或 `CONFIRMED`。
 - 同一频道内，相同的规范化词条只保留一张待确认卡片。
 
@@ -119,8 +119,8 @@ apps/server/src/modules/task-coordinator/coordinator.ts   Q38：已结算记录�
 1. 触发（`decideReviewTrigger`）：下播 > 累计条数 >= 阈值 > 周期到期。没有待复盘项时不触发。
 2. 选择（`selectForReview`）：先排除已删除、非 `UNSETTLED_FAST_PASS`、记分例外、已有人工裁决的项；再判定到期（证据到期或复盘截止已过）并标记 `UNSETTLED_EXPIRED`，到期项不计分；按同一 `(频道, 平台消息)` 去重；按平台顺序取前 N 条（自定 N=50）。未入选的项留给下一周期。
 3. 入队：每条入选消息调用一次 `enqueueInLane("BACKGROUND", event, deadlineAt)`。协调器对同一事件的去重使重复周期安全。截止时间取 `settlement_deadline_at`，缺省时取证据到期时刻（自定）。
-4. 批次：`takeBatch` 取得批次后，为每条任务生成批内 `itemId`（`i0`、`i1`…）与任务别名，调用模型替身，结果经 `validateReviewBatchResult`。校验失败时对批内每个任务调用 `reportFailure(taskId, "AI_OUTPUT_INVALID")`，不写结算。
-5. 结算：对每条合法条目调用 `commitResult(taskId, { apply, evidence })`。`apply` 在协调器的事实事务内同步运行：先做状态比较交换（当前仍为 `UNSETTLED_FAST_PASS` 才写），再写 `SETTLED` 与裁决；`BLOCK` 同时写复核记录并入人工队列（Q27）；候选词写入卡片，不写规则。已被他人处理的任务返回 `NOT_ELIGIBLE` 并正常结束。
+4. 批次：`takeBatch` 取得批次后，为每条任务生成批内 `itemId`（`i0`、`i1`…）；作者别名按批次生成，一次模型调用内同一作者共用一个别名（自定，别名的作用范围是一次模型调用），调用模型替身，结果经 `validateReviewBatchResult`。校验失败时对批内每个任务调用 `reportFailure(taskId, "AI_OUTPUT_INVALID")`，不写结算。
+5. 结算：对每条合法条目调用 `commitResult(taskId, { apply, evidence })`。`apply` 在协调器的事实事务内同步运行：先做状态比较交换（当前仍为 `UNSETTLED_FAST_PASS` 才写），再写 `SETTLED` 与裁决；`BLOCK` 同时写复核记录并入人工队列（Q27）；候选词写入卡片，不写规则。已被他人处理的任务返回 `NOT_ELIGIBLE` 并正常结束。提交返回 waiting 时，调用 `reportFailure(taskId, "PREDECESSOR_PENDING")` 让任务重新排队，结果记为 `DEFERRED`（自定）。
 6. 计分：只有提交成功且状态比较交换成功的项才调用 `applyVerdict`。成功记 `APPLIED`；`EXCEPTION_ACTIVE` 拒绝记 `REFUSED`；其它异常记 `PENDING`。`resumePendingScoring` 对 `PENDING` 项重放 `applyVerdict`，账本幂等键保证不重复计分。
 7. 结束：每个批次都以 `finishBatch` 释放槽位。
 
