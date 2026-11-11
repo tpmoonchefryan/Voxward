@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:58dd548e00e4c319dce50484",
+  "workRevision": 4,
+  "sourceDigest": "e6cb46d7d7060da3b51cb435bac2c16aea9e1677dcded1b15f3039f66d43fa66",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:58dd548e00e4c319dce50484",
+    "workRevision": 4,
+    "sourceDigest": "e6cb46d7d7060da3b51cb435bac2c16aea9e1677dcded1b15f3039f66d43fa66",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:58dd548e00e4c319dce50484",
+        "externalKey": "VOXWARD-STORY-027",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "测量 AI 质量、实时容量与清理行为",
+        "summary": "测量 AI 质量、实时容量与清理行为；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:79b813cdbe785e9ab7d32228",
+        "scopeDigest": "d7ce65688507625c4030e18d22f8f1d7e764efc80d3cb0a6632afa36e72d39e1",
+        "relations": {
+          "blockedBy": [
+            "work:029c382b5915050f0c4de600",
+            "work:352ba5df1e0b354ede1a9af0",
+            "work:8f928245aa79a29f26ad28a6",
+            "work:ac2a8c1b963085361cf086f0"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:79b813cdbe785e9ab7d32228",
+          "supersedes": []
+        },
+        "fieldSha256": "f1d20b6afdbe8d8300dcb39c323e4b7ab6fa3440be7aec5b5b539bb1a0bcf332",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "a4f893ad3291f2f8f1a255132a54fc5ff64ccbf54bea22e27e7ce24124f503a2",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "b30839f19df53d6e5330755b7d22acc6bbd1cc7809cd99facf16ccde53a94d60",
+    "design.md": "45b63d3a4095a43eca1fb420b608847e5670ef305c904707753d081a28f0b9a8",
+    "tasks.md": "c1c6527e8ae3f9d2455ac5fb2b9a1e40178e096d7684246fed3e7a0abcd1a965"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "9038da0e954c6d3a663b8fe841e2f342bd6049deb230a6c5e1185ccbff7d92d5"
+}
