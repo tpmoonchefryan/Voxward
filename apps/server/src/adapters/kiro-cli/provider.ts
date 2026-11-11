@@ -9,12 +9,13 @@ import {
   type InternalClassification,
 } from "@voxward/contracts";
 import { describeKiroCli } from "./capabilities.js";
+import { markRunDirectoryActive, releaseRunDirectory } from "./active-runs.js";
 import { requestKiroSessionDeletion, removeRunDirectory } from "./cleanup.js";
 import { buildChatArguments, type RunSettings } from "./command.js";
 import { KiroInferenceError } from "./errors.js";
 import { buildModelInput, type ModelInput } from "./input-builder.js";
 import { signalProcessGroup } from "./process-group.js";
-import { parseBusinessJson, readRunStream } from "./run-stream.js";
+import { parseBusinessJson, readRunStream, createSessionIdScanner } from "./run-stream.js";
 import { openRunSession, type RunSession } from "./session-lifecycle.js";
 
 /** The validator's outcome as this adapter needs it. The composition root binds the moderation module's validator. */
@@ -106,6 +107,7 @@ async function inferBatch(
   try {
     const model = buildModelInput(request.items);
     session = await openSession(request.batchId, options);
+    markRunDirectoryActive(session.directory);
     const stdout = await runCli(request.batchId, model, session, slot, options);
     const items = await decodeResult(request.batchId, request, model, stdout, options.validateOutput);
     return { contractVersion: CONTRACT_VERSION, batchId: request.batchId, items };
@@ -114,7 +116,13 @@ async function inferBatch(
     throw error;
   } finally {
     slots.delete(request.batchId);
-    if (session !== undefined) await finishSession(session, outcome, slot, options);
+    if (session !== undefined) {
+      try {
+        await finishSession(session, outcome, slot, options);
+      } finally {
+        releaseRunDirectory(session.directory);
+      }
+    }
   }
 }
 
@@ -182,6 +190,11 @@ function runCli(
     const chunks: Buffer[] = [];
     let outputBytes = 0;
     let settled = false;
+    // Session ids are recorded while the run is alive, so a server that dies mid-run still leaves the id behind.
+    const sessionIds = createSessionIdScanner((kiroSessionId) => {
+      slot.kiroSessionId = kiroSessionId;
+      void bestEffort(() => session.recordKiroSession(kiroSessionId));
+    });
 
     const finish = (outcome: { readonly stdout: string } | { readonly error: KiroInferenceError }): void => {
       if (settled) return;
@@ -199,13 +212,13 @@ function runCli(
       // The CLI may exit before it reads its input. Its exit status decides the outcome, so this error is not separate.
     });
     child.stdout.on("data", (chunk: Buffer) => {
-      if (run.stopReason !== undefined) return;
       outputBytes += chunk.length;
       if (outputBytes > maxOutputBytes) {
         stopRun(run, "RUN_OUTPUT_TOO_LARGE", killGraceMs);
         return;
       }
-      chunks.push(chunk);
+      sessionIds.push(chunk);
+      if (run.stopReason === undefined) chunks.push(chunk);
     });
     child.stderr.on("data", () => {
       // stderr is read so the pipe never fills, then dropped. It can carry anything, so it is never kept or echoed.
@@ -217,8 +230,8 @@ function runCli(
     });
 
     child.on("close", (code) => {
+      sessionIds.end();
       const stdout = Buffer.concat(chunks).toString("utf8");
-      slot.kiroSessionId = readRunStream(stdout).sessionId ?? slot.kiroSessionId;
       if (run.stopReason !== undefined) {
         finish({ error: new KiroInferenceError(run.stopReason, batchId) });
         return;
@@ -280,7 +293,9 @@ async function decodeResult(
 
 /**
  * Records the outcome, asks the CLI to delete its saved session when one was observed, and removes the run directory. It
- * never throws: the business outcome is already decided, and the directory is removed even if a record write fails.
+ * never throws: the business outcome is already decided. A failed record write is not fatal, because the directory and
+ * the sweep still cover it. A failed deletion keeps the directory, since its record is the only place the session id
+ * remains, and the orphan sweep retries the deletion.
  */
 async function finishSession(
   session: RunSession,
@@ -291,13 +306,14 @@ async function finishSession(
   const kiroSessionId = slot.kiroSessionId;
   if (kiroSessionId !== undefined) await bestEffort(() => session.recordKiroSession(kiroSessionId));
   await bestEffort(() => session.finish(outcome));
-  await requestKiroSessionDeletion({
+  const deletion = await requestKiroSessionDeletion({
     command: options.command,
     env: options.env,
     workingDirectory: session.directory,
     sessionId: kiroSessionId,
     timeoutMs: DEFAULT_DELETE_TIMEOUT_MS,
   });
+  if (deletion === "DELETE_FAILED") return;
   await removeRunDirectory(options.runtimeRoot, session.directory);
 }
 

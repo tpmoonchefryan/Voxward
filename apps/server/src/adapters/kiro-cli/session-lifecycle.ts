@@ -57,9 +57,15 @@ export async function openRunSession(runtimeRoot: string, batchId: string, now: 
   };
   await writeRecord(directory, record);
 
-  const update = async (patch: Partial<SessionRecord>, at: Date): Promise<void> => {
-    record = { ...record, ...patch, updatedAt: at.toISOString() };
-    await writeRecord(directory, record);
+  // Updates run one after another, so two writes never share the staging file and the record keeps their order.
+  let previous: Promise<void> = Promise.resolve();
+  const update = (patch: Partial<SessionRecord>, at: Date): Promise<void> => {
+    const write = previous.then(async () => {
+      record = { ...record, ...patch, updatedAt: at.toISOString() };
+      await writeRecord(directory, record);
+    });
+    previous = write.catch(() => undefined);
+    return write;
   };
   return {
     directory,

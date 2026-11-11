@@ -6,8 +6,13 @@ import type { ChildProcess } from "node:child_process";
  */
 export function signalProcessGroup(child: ChildProcess, signal: NodeJS.Signals): void {
   if (child.pid === undefined) return;
+  signalProcessGroupById(child.pid, signal);
+}
+
+/** Signals the process group whose leader has this pid. A group that has already exited is not an error. */
+export function signalProcessGroupById(pid: number, signal: NodeJS.Signals): void {
   try {
-    process.kill(-child.pid, signal);
+    process.kill(-pid, signal);
   } catch {
     // The group has already exited.
   }
