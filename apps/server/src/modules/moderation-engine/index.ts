@@ -232,12 +232,13 @@ export {
   type CandidateStoreOptions,
   type ConfirmResult,
   createCandidateStore,
+  type RejectResult,
 } from "./candidates/store.js";
 export {
   type CandidateActor,
   type CandidateRouteResponse,
   type CandidateRoutes,
   createCandidateRoutes,
+  LIST_EDIT_CAPABILITY,
   QUEUE_READ_CAPABILITY,
-  REVIEW_DECIDE_CAPABILITY,
 } from "./candidates/routes.js";

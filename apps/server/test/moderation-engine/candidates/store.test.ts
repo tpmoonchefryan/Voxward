@@ -92,3 +92,45 @@ describe("candidate cards", () => {
     expect(store.confirm({ cardId: "missing", channelId: "ch-1", actorRef: "account-mod" })).toEqual({ status: "NOT_FOUND" });
   });
 });
+
+describe("candidate cards: rejection (N5)", () => {
+  it("rejects a pending card: it publishes nothing and records who rejected it", () => {
+    const { store, rules } = storeWith();
+    const cardId = store.propose(proposalOf())?.id ?? "";
+
+    const result = store.reject({ cardId, channelId: "ch-1", actorRef: "account-mod" });
+
+    expect(result).toMatchObject({
+      status: "REJECTED",
+      card: { status: "REJECTED", decidedByRef: "account-mod", ruleVersion: null },
+    });
+    expect(rules.published).toEqual([]);
+  });
+
+  it("does not confirm a rejected card, and does not propose its term again", () => {
+    const { store, rules } = storeWith();
+    const cardId = store.propose(proposalOf())?.id ?? "";
+    store.reject({ cardId, channelId: "ch-1", actorRef: "account-mod" });
+
+    expect(store.confirm({ cardId, channelId: "ch-1", actorRef: "account-owner" }).status).toBe("ALREADY_DECIDED");
+    expect(store.propose(proposalOf({ sourceCorrelationId: "corr-9" }))).toBeNull();
+    expect(rules.published).toEqual([]);
+  });
+
+  it("refuses to reject a confirmed card, or a card that was already rejected", () => {
+    const { store } = storeWith();
+    const cardId = store.propose(proposalOf())?.id ?? "";
+    store.confirm({ cardId, channelId: "ch-1", actorRef: "account-mod" });
+
+    expect(store.reject({ cardId, channelId: "ch-1", actorRef: "account-mod" }).status).toBe("ALREADY_DECIDED");
+    expect(store.reject({ cardId: "missing", channelId: "ch-1", actorRef: "account-mod" })).toEqual({ status: "NOT_FOUND" });
+  });
+
+  it("does not reject a card of another channel", () => {
+    const { store } = storeWith();
+    const cardId = store.propose(proposalOf())?.id ?? "";
+
+    expect(store.reject({ cardId, channelId: "ch-2", actorRef: "account-mod" })).toEqual({ status: "NOT_FOUND" });
+    expect(store.readCard(cardId)?.status).toBe("PENDING_CONFIRMATION");
+  });
+});

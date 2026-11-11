@@ -2,10 +2,10 @@ import { normalizeText } from "../rules/normalize.js";
 import type { CandidateProposal, CandidateProposalPort } from "../review/ports.js";
 
 /**
- * A candidate term waits on a card until a person with `review.decide` confirms it (proposal section 5.4). Nothing here
- * changes the rule set: only a confirmation publishes a term, through the rule port.
+ * A candidate term waits on a card until a person with `list.edit` confirms or rejects it (proposal sections 2.1 and 5.4).
+ * Nothing here changes the rule set: only a confirmation publishes a term, through the rule port.
  */
-export const CANDIDATE_STATUSES = ["PENDING_CONFIRMATION", "CONFIRMED"] as const;
+export const CANDIDATE_STATUSES = ["PENDING_CONFIRMATION", "CONFIRMED", "REJECTED"] as const;
 export type CandidateStatus = (typeof CANDIDATE_STATUSES)[number];
 
 export interface CandidateCard {
@@ -46,6 +46,11 @@ export type ConfirmResult =
   | { readonly status: "NOT_FOUND" }
   | { readonly status: "ALREADY_DECIDED"; readonly card: CandidateCard };
 
+export type RejectResult =
+  | { readonly status: "REJECTED"; readonly card: CandidateCard }
+  | { readonly status: "NOT_FOUND" }
+  | { readonly status: "ALREADY_DECIDED"; readonly card: CandidateCard };
+
 export interface CandidateStore extends CandidateProposalPort {
   /** Adds a card for a new term. Returns null when the channel already has a card for the same term. */
   propose(proposal: CandidateProposal): CandidateCard | null;
@@ -53,6 +58,8 @@ export interface CandidateStore extends CandidateProposalPort {
   readCard(cardId: string): CandidateCard | undefined;
   /** Confirms one pending card of the channel. A card changes status once, so a repeated call publishes nothing. */
   confirm(input: { readonly cardId: string; readonly channelId: string; readonly actorRef: string }): ConfirmResult;
+  /** Rejects one pending card of the channel. The card stays on record, so the same term is not proposed again. */
+  reject(input: { readonly cardId: string; readonly channelId: string; readonly actorRef: string }): RejectResult;
 }
 
 interface MutableCard {
@@ -75,7 +82,7 @@ interface MutableCard {
  */
 export function createCandidateStore(options: CandidateStoreOptions): CandidateStore {
   const cards = new Map<string, MutableCard>();
-  /** One card per normalized term in a channel, whatever its status. */
+  /** One card per normalized term in a channel, whatever its status. A rejected term is therefore never proposed again. */
   const cardByTerm = new Map<string, string>();
 
   return {
@@ -124,6 +131,17 @@ export function createCandidateStore(options: CandidateStoreOptions): CandidateS
       card.decidedAt = options.now().toISOString();
       card.ruleVersion = ruleVersion;
       return { status: "CONFIRMED", card: snapshotOf(card) };
+    },
+
+    reject({ cardId, channelId, actorRef }) {
+      const card = cards.get(cardId);
+      if (card === undefined || card.channelId !== channelId) return { status: "NOT_FOUND" };
+      if (card.status !== "PENDING_CONFIRMATION") return { status: "ALREADY_DECIDED", card: snapshotOf(card) };
+
+      card.status = "REJECTED";
+      card.decidedByRef = actorRef;
+      card.decidedAt = options.now().toISOString();
+      return { status: "REJECTED", card: snapshotOf(card) };
     },
   };
 }

@@ -2,8 +2,11 @@ import type { CandidateCard, CandidateStore } from "./store.js";
 
 /** Reading the review queue, cards included. Owners and moderators hold it (S003 membership matrix). */
 export const QUEUE_READ_CAPABILITY = "queue.read";
-/** Deciding a review item. Confirming a candidate term changes the rules, so only this capability may confirm (自定). */
-export const REVIEW_DECIDE_CAPABILITY = "review.decide";
+/**
+ * Editing lists and terms. Confirming or rejecting a candidate term is a term operation, the same capability that adds a term
+ * in S014 (proposal section 2.1). Owners and moderators hold it (自定, N5).
+ */
+export const LIST_EDIT_CAPABILITY = "list.edit";
 
 /** The caller, already authenticated by the HTTP binding. `capabilities` belongs to the caller's membership in the channel. */
 export interface CandidateActor {
@@ -20,10 +23,12 @@ export interface CandidateRouteResponse {
 export interface CandidateRoutes {
   listCards(actor: CandidateActor): CandidateRouteResponse;
   confirm(actor: CandidateActor, cardId: unknown): CandidateRouteResponse;
+  reject(actor: CandidateActor, cardId: unknown): CandidateRouteResponse;
 }
 
 const FORBIDDEN: CandidateRouteResponse = { status: 403, body: { error: "FORBIDDEN" } };
 const BAD_REQUEST: CandidateRouteResponse = { status: 400, body: { error: "INVALID_REQUEST" } };
+const NOT_FOUND: CandidateRouteResponse = { status: 404, body: { error: "CANDIDATE_NOT_FOUND" } };
 const CARD_ID = /^[A-Za-z0-9-]{1,64}$/u;
 
 /**
@@ -38,7 +43,7 @@ export function createCandidateRoutes(store: CandidateStore): CandidateRoutes {
     },
 
     confirm(actor, cardId) {
-      if (!actor.capabilities.has(REVIEW_DECIDE_CAPABILITY)) return FORBIDDEN;
+      if (!actor.capabilities.has(LIST_EDIT_CAPABILITY)) return FORBIDDEN;
       if (typeof cardId !== "string" || !CARD_ID.test(cardId)) return BAD_REQUEST;
 
       const result = store.confirm({ cardId, channelId: actor.channelId, actorRef: actor.accountId });
@@ -46,7 +51,22 @@ export function createCandidateRoutes(store: CandidateStore): CandidateRoutes {
         case "CONFIRMED":
           return { status: 200, body: { status: "CONFIRMED", card: viewOf(result.card) } };
         case "NOT_FOUND":
-          return { status: 404, body: { error: "CANDIDATE_NOT_FOUND" } };
+          return NOT_FOUND;
+        case "ALREADY_DECIDED":
+          return { status: 409, body: { error: "ALREADY_DECIDED", card: viewOf(result.card) } };
+      }
+    },
+
+    reject(actor, cardId) {
+      if (!actor.capabilities.has(LIST_EDIT_CAPABILITY)) return FORBIDDEN;
+      if (typeof cardId !== "string" || !CARD_ID.test(cardId)) return BAD_REQUEST;
+
+      const result = store.reject({ cardId, channelId: actor.channelId, actorRef: actor.accountId });
+      switch (result.status) {
+        case "REJECTED":
+          return { status: 200, body: { status: "REJECTED", card: viewOf(result.card) } };
+        case "NOT_FOUND":
+          return NOT_FOUND;
         case "ALREADY_DECIDED":
           return { status: 409, body: { error: "ALREADY_DECIDED", card: viewOf(result.card) } };
       }
