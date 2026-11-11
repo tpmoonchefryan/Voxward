@@ -159,6 +159,7 @@ export interface TaskCoordinatorService extends TaskCoordinator {
 - 派工顺序 PAID > REALTIME > BACKGROUND。PAID 与 REALTIME 可用全部槽位。
 - 后台余量：`reserve = min(limit, max(1, ceil(limit / 4)))`，BACKGROUND 批次数不得超过 `limit - reserve`。当前并发上限为 1 时后台暂停（自定）。上限大于 1 时，即使并发降到配置的最小值，后台仍保留 `limit - reserve` 个槽位（N8，与代码一致）。
 - 每个批次占一个并发槽位，直到 `finishBatch` 释放。槽位由执行器在 Crew 接受取消、或会话已报告后释放（§9）。截止时间到期后，执行器对仍在运行的会话发起取消。
+- 取批按车道（B2，S011 返工）：`takeBatch({ lanes })` 只取调用方指定的车道，派工顺序仍是 PAID、REALTIME、BACKGROUND。Crew 执行器只取 PAID 与 REALTIME；复盘运行器（S011）只取 BACKGROUND。两者共用同一套槽位与后台余量。未指定车道时取全部车道（与原行为相同）。
 
 ## 6. 重试与退避（自定）
 
@@ -206,7 +207,7 @@ Crew 执行器（`createCrewExecutor`）：
 - `completed` 报告必须已先经 S007 整批校验（VW-R-008）。执行器只按任务匹配校验后的条目，不再二次校验。Crew 端内容残留（VW-R-009）由真实绑定在 done 或 cancel 之后清理；本端口没有清理步骤，真实绑定归 S029（N6）。
 - 有条目：`commitResult`，`apply` 调用 `writeVerdict(taskId, item)`，evidence 为 ITEM_ID_MAP 与 VALIDATED_JSON（每个任务各一条）。
 - `waiting` 的提交放入待重试列表，下一次 `pump` 再试。
-- `pump()`：先 `sweep`，再对无 RUNNING 任务的空闲批次发起 Crew 取消，重试暂存的提交，然后按并发上限取批启动。返回启动的批次数。`pump` 不等待会话结束，也不等待取消返回（B5）。
+- `pump()`：先 `sweep`，再对无 RUNNING 任务的空闲批次发起 Crew 取消，重试暂存的提交，然后按并发上限取 PAID 与 REALTIME 批次启动（BACKGROUND 批次由复盘运行器取，B2）。返回启动的批次数。`pump` 不等待会话结束，也不等待取消返回（B5）。
 - 取消不在主路径上等待（B5）：发起取消后，该批次保留槽位，直到 Crew 接受取消才 `finishBatch`。被拒绝的取消保留槽位，下一次 `pump` 再发。取消一直不返回时，该槽位一直保留，其它批次照常派工。若并发上限为 1，派工暂停直到 Crew 应答。这是残留风险：执行器侧不设上限，因为提前释放会让 Crew 侧的会话数超过上限；有界取消须由真实绑定保证（S029）。
 - start 尚未返回时批次已空闲：槽位立即释放，因为此时还没有可取消的 Crew 会话。若 start 之后才返回，执行器立即发起取消且不等待；被拒绝则由下一次 `pump` 再发。在取消被接受前，Crew 侧可能短暂多出一个会话（残留风险，未测量）。
 - `drain()`：等待已启动的会话全部报告。供测试与停机使用。
@@ -255,7 +256,7 @@ Crew 执行器（`createCrewExecutor`）：
 - 主体引用沿用 S004 的做法：`channelId` + `sender.senderRef`，并标注为自定，待与 S019 的删除索引对齐。
 - 技术日志的 stage：入队失败与超时用 ERROR，提交结果用 COMMIT。超时 status 为 TIMED_OUT，丢弃为 SKIPPED。
 - 车道排队上限、并发上限的确切值由部署配置决定。
-- 结算后释放正文，保留轻量记录（任务状态、原因、事件键与版本），用于状态查询与同一事件的去重。未结任务按车道与频道建立索引，调度不遍历历史记录（N2）。轻量记录随累计任务数增长，清理策略未定。
+- 结算后释放正文，保留轻量记录（任务状态、原因、事件键与版本），用于状态查询与同一事件的去重（只在窗口内成立）。未结任务按车道与频道建立索引，调度不遍历历史记录（N2）。轻量记录只保留最近 `maxSettledRecords` 条结算任务（自定，默认 5000，Q38）；超出的最旧记录连同事件索引一起删除，窗口外同一事件再次入队会新建任务（S011 R2）。`retainedRecords()` 观察当前记录数。
 
 ## 13. 未验证项
 
@@ -263,4 +264,4 @@ Crew 执行器（`createCrewExecutor`）：
 - 提案所列的 250 ms 与 2 ms 数值。
 - 微批默认值在真实模型与消息量下的表现。
 - 与 S019 删除索引、S008 适配器、S011 决定提交的实际对接。
-- 长时间运行后的内存：结算后的轻量记录仍随累计任务数线性增长（N2 残留，清理策略未定），未在长时间运行下实测。
+- 长时间运行后的内存：结算后的轻量记录数已由 Q38 窗口封顶，窗口内的占用未在长时间运行下实测。第 6 批探针 E34 在 5482e5d 上测得每条结算记录约 54 字节（`.kiro/specs/voxward-batch-m6/evidence/acceptance.md` E34），这不是长时间运行的测量。
