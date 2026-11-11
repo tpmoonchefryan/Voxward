@@ -189,3 +189,45 @@ HTTP（`auth/data-routes.ts`，组合）：
 - 不创建 HMAC 密钥，不新增配置项。
 - 不删除名单条目（见第 8 节）。
 - 不发明来源没有的产品功能；不派子代理。
+
+
+## SUB-036 实施记录（自定，受管段之外）
+
+本段在 SUB-036 完成后写入，记录实际实现与第 1–10 节的差异。
+
+### 11. 实际实现
+
+- 清理顺序由 `cleaningRank`（`cleanup-targets.ts`）给出，与第 6 节一致。执行器按序号排序未完成项，不依赖存储的项顺序（项标识是随机值）。
+- 删除索引（`db/audit-log.ts` 的 `locateScope`）覆盖三类数据：
+  - 技术行：主体自有的行，以及挂在主体任务上的行（任务行的 `subject_id` 可能为空，见 Q29 与提案 §11.3「任务临时 ID」）；
+  - 变更日志：主体事件与技术行的关联链，以及 `subject:<id>` 链（S014 约定）；
+  - 读取（`locateSubjectLogs`）报告全部命中的行。写入（证书化、删除、移除证据）只报告尚未持有证书文本的变更行，因此重复删除不产生新事件。
+- 执行器（`cleanup-executor.ts`）：逐个存储面执行，遇到第一个失败即停；失败项记录错误码（只存代码，不存错误文本）；续作从第一个非 DONE 项开始。`COMPLETED` 的条件是全部 DONE，且（`DELETE_AND_EXCEPT` 时）主体的例外仍然生效。否则为 `PARTIAL_FAILED`：未完成时原因为未清完，例外不生效时原因为 `EXCEPTION_NOT_CONFIRMED`。
+- 任务面（`TASK`）执行前再扫一次主体的技术行，避免晚到的技术行阻塞任务删除（外键）。扫描是幂等的，并会发布它删除的行。
+- 进程内表面的错误码：表面不在注册表中时记为 `SURFACE_NOT_REGISTERED`，不记为完成（修正第 8 节「注册表为空时直接 DONE」的说法：注册表为空时，这些项不会生成，请求也不会因此被记为清理了这些表面）。
+- 同一个执行入口 `POST /channels/:channelId/data/requests/:requestId/execute` 处理两类请求：`DELETE` 先启动（若未启动）再清理；`RESUME_SCORING` 调用恢复计分。这是对第 5 节「RESUME_SCORING 的 HTTP 绑定」的实现方式，未另设路由。
+- 失效总线（Q35）：`buildApp` 只创建一条总线（传入的 `invalidation` 或新建的），查看器缓存与删除路径都使用它。删除路径通过 `DataDeps.publishInvalidation` 发布 `DELETED` 事件，只含标识。
+- 进程内表面的注入点：`AppOptions.subjectCaches`（默认为空注册表）。组合根当前不传入任何实例。
+
+### 12. 进程内表面的失效方法
+
+| 问题 | 方法 | 位置 | 测试 |
+| --- | --- | --- | --- |
+| Q7 | `NicknameVerdictCache.forget(subject)` | `moderation-engine/nickname-cache/cache.ts` | `test/moderation-engine/nickname-cache/cache.test.ts` |
+| Q42 | `IdentityTracker.forget(subjectKey)` | `platform-source/youtube/identity.ts` | `test/platform-source/youtube-identity/identity.test.ts` |
+| Q51（候选卡片） | `CandidateStore.removeBySourceCorrelations(channelId, correlationIds)` | `moderation-engine/candidates/store.ts` | `test/moderation-engine/candidates/store.test.ts` |
+| Q51（`score_outcomes`） | 存储面 `SCORE_OUTCOME`，按 `subject_id` 删除 | `db/subject-cleanup.ts` | `test/data-lifecycle-service/cleanup/executor.test.ts` |
+| Q29 | `certifySubjectChangeLogs` 与扩展的 `locateScope` | `db/audit-log.ts` | `test/audit-store/deletion-index/subject-chain.test.ts`，以及执行器测试 |
+| Q35 | 一条共用总线 | `app.ts` | `test/data-lifecycle-service/execute-routes.test.ts`（经 HTTP 发布到应用的总线） |
+
+### 13. 偏离与自定选择
+
+- 候选卡片随来源删除（第 7 节已定）。已确认的卡片所发布的规则词条不回滚；规则版本的历史不在本包范围内。
+- 没有迁移：本包不改表结构，`0006` 保持不变。
+- `TASK` 面执行前的技术行扫描（见第 11 节）是本包新增的顺序细节，不改变第 6 节的顺序。
+- `AppOptions.subjectCaches` 是本包新增的组合根参数（第 7 节「组合根注入」的具体化）。
+
+### 14. 仍未接线的部分（来源缺口，需在报告中说明）
+
+- 生产组合根不持有昵称缓存、身份跟踪器、候选存储的实例，因此一次删除目前不会清理这三类进程内数据。它们只受 TTL（昵称缓存默认 1 小时）或进程重启限制。接线需要审核模块与平台模块把实例暴露给组合根，并在启动时传入 `subjectCaches`；本包只提供方法、注册点与测试。
+- HMAC 偏好标记（第 8 节）仍未实现。

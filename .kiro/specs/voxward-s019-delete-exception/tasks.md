@@ -24,28 +24,28 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ### 规格（SUB-035 与 SUB-036 的共同前置）
 
-- [ ] S-1. 写 `design.md` 实施设计与本清单（本提交：`VOXWARD-STORY-019: add spec`）。`kiro-specs.mjs check` 结果为 SPEC_CURRENT。
+- [x] S-1. 写 `design.md` 实施设计与本清单（本提交：`VOXWARD-STORY-019: add spec`）。`kiro-specs.mjs check` 结果为 SPEC_CURRENT。
 
 ### VOXWARD-SUB-035：同事务确认例外、提升代次、登记删除
 
-- [ ] 35-1. 契约：`DELETION_TARGET_KINDS` 与 `DATA_REQUEST_KINDS`（加 `RESUME_SCORING`）；`DataRequestPort` 增加 `startDeletion`、`markItem`、`finishExecution`、`resumeException`；`ports/data-request.ts` 增加 `SubjectCleanupPort`、`SubjectCacheHub`。提交：`VOXWARD-SUB-035: contracts for deletion start`。
-- [ ] 35-2. 迁移 `0006`（drizzle-kit 生成）、`db/schema/data-requests.ts`、`docs/data-dictionary.md`、`test/db/schema.test.ts` 与 `constraints.test.ts` 的新 CHECK 用例。
-- [ ] 35-3. `db/data-request-store.ts`：实现 `startDeletion`（单事务，含故障注入用例）、`markItem`、`finishExecution`、`resumeException`。
-- [ ] 35-4. 模块：`delete-with-exception.ts`、`preference-marker.ts`、`resume-scoring.ts`、`requests.ts`（接受 `RESUME_SCORING`）。
-- [ ] 35-5. 测试：`test/data-lifecycle-service/delete-with-exception/transaction.test.ts`、`preference-marker.test.ts`、`resume-scoring.test.ts`；数据生命周期夹具 `fixtures.ts` 同步新的 `DataDeps` 字段。
-- [ ] 35-6. 自测：`pnpm typecheck`、相关 `vitest` 文件。提交：`VOXWARD-SUB-035: delete with exception in one transaction`。
+- [x] 35-1. 契约：`DELETION_TARGET_KINDS` 与 `DATA_REQUEST_KINDS`（加 `RESUME_SCORING`）；`DataRequestPort` 增加 `startDeletion`、`markItem`、`finishExecution`、`resumeException`；`ports/data-request.ts` 增加 `SubjectCleanupPort`、`SubjectCacheHub`。提交：`VOXWARD-SUB-035: contracts for deletion start`。
+- [x] 35-2. 迁移 `0006`（drizzle-kit 生成）、`db/schema/data-requests.ts`、`docs/data-dictionary.md`、`test/db/schema.test.ts` 与 `constraints.test.ts` 的新 CHECK 用例。
+- [x] 35-3. `db/data-request-store.ts`：实现 `startDeletion`（单事务，含故障注入用例）、`markItem`、`finishExecution`、`resumeException`。
+- [x] 35-4. 模块：`delete-with-exception.ts`、`preference-marker.ts`、`resume-scoring.ts`、`requests.ts`（接受 `RESUME_SCORING`）。
+- [x] 35-5. 测试：`test/data-lifecycle-service/delete-with-exception/transaction.test.ts`、`preference-marker.test.ts`、`resume-scoring.test.ts`；数据生命周期夹具 `fixtures.ts` 同步新的 `DataDeps` 字段。
+- [x] 35-6. 自测：`pnpm typecheck`、相关 `vitest` 文件。提交：`VOXWARD-SUB-035: delete with exception in one transaction`。
 
 ### VOXWARD-SUB-036：逐存储面清理、续作、两部分完成
 
-- [ ] 36-1. `db/subject-cleanup.ts`：`readCleanupFacts`、`cleanSurface`（DB 存储面，每面一个幂等操作）；`db/audit-log.ts`：`removeSubjectEvidence`、`removeSubjectTechnicalRows`、`certifySubjectChangeLogs`；`locateScope` 纳入 `subject:<id>` 关联（Q29）。
-- [ ] 36-2. 进程内对象：`nickname-cache/cache.ts` 的 `forgetSubject`（Q7）；`youtube/identity.ts` 的 `forget`（Q42）；`candidates/store.ts` 的 `removeBySourceCorrelations`（Q51）。各加用例。
-- [ ] 36-3. 模块：`cleanup-targets.ts`（固定顺序）、`cleanup-executor.ts`（逐步、续作、两部分判定）、`routes.ts` 增加 `execute`。
-- [ ] 36-4. 组合：`app.ts` 只创建一条总线，交给查看器缓存与数据删除路径（Q35）；`auth/data-routes.ts` 增加 `execute` 路由与 `RESUME_SCORING` 的 HTTP 绑定。
-- [ ] 36-5. 测试：`test/data-lifecycle-service/cleanup/executor.test.ts`（故障注入、续作、存储面覆盖、证书、Q35 事件）；`test/audit-store/deletion-index/subject-removal.test.ts` 补 Q29 用例。提交：`VOXWARD-SUB-036: per-surface cleanup with resume`。
+- [x] 36-1. `db/subject-cleanup.ts`：`readCleanupFacts`、`cleanSurface`（DB 存储面，每面一个幂等操作）；`db/audit-log.ts`：`removeSubjectEvidence`、`removeSubjectTechnicalRows`、`certifySubjectChangeLogs`；`locateScope` 纳入 `subject:<id>` 关联（Q29）。
+- [x] 36-2. 进程内对象：`nickname-cache/cache.ts` 的 `forgetSubject`（Q7）；`youtube/identity.ts` 的 `forget`（Q42）；`candidates/store.ts` 的 `removeBySourceCorrelations`（Q51）。各加用例。
+- [x] 36-3. 模块：`cleanup-targets.ts`（固定顺序）、`cleanup-executor.ts`（逐步、续作、两部分判定）、`routes.ts` 增加 `execute`。
+- [x] 36-4. 组合：`app.ts` 只创建一条总线，交给查看器缓存与数据删除路径（Q35）；`auth/data-routes.ts` 增加 `execute` 路由与 `RESUME_SCORING` 的 HTTP 绑定。
+- [x] 36-5. 测试：`test/data-lifecycle-service/cleanup/executor.test.ts`（故障注入、续作、存储面覆盖、证书、Q35 事件）；`test/audit-store/deletion-index/subject-removal.test.ts` 补 Q29 用例。提交：`VOXWARD-SUB-036: per-surface cleanup with resume`。
 
 ### 收尾（两张子单之后）
 
-- [ ] F-1. 工作树门禁：`pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`，全部退出 0。
-- [ ] F-2. 启动冒烟：`bash /home/ryanlan/Code/Voxward/.kiro/specs/voxward-master/tools/smoke.sh <工作树> $KIROCREW_SCRATCH/s019-delete-exception-smoke`。不设 `VOXWARD_DATABASE_FILE`。
-- [ ] F-3. 证据：`.kiro/specs/voxward-s019-delete-exception/evidence/self-check.md` 记录命令、退出码、关键输出摘录，随最后一个 commit 提交。
-- [ ] F-4. 交付报告：实际模型、commit hash、改动文件、自测结果、AC001 逐条结果、自定选择、偏离、来源缺口、未验证项、与同批包的合并冲突点（`app.ts`、`auth/routes.ts` 与 `package.json`、`pnpm-lock.yaml`、config schema、`check-deps`、contracts `index.ts`）。
+- [x] F-1. 工作树门禁：`pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`，全部退出 0。
+- [x] F-2. 启动冒烟：`bash /home/ryanlan/Code/Voxward/.kiro/specs/voxward-master/tools/smoke.sh <工作树> $KIROCREW_SCRATCH/s019-delete-exception-smoke`。不设 `VOXWARD_DATABASE_FILE`。
+- [x] F-3. 证据：`.kiro/specs/voxward-s019-delete-exception/evidence/self-check.md` 记录命令、退出码、关键输出摘录，随最后一个 commit 提交。
+- [x] F-4. 交付报告：实际模型、commit hash、改动文件、自测结果、AC001 逐条结果、自定选择、偏离、来源缺口、未验证项、与同批包的合并冲突点（`app.ts`、`auth/routes.ts` 与 `package.json`、`pnpm-lock.yaml`、config schema、`check-deps`、contracts `index.ts`）。
