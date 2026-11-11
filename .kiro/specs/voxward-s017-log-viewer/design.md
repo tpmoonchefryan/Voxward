@@ -94,7 +94,7 @@ HTTP 绑定放在认证分区，与 `auth/routes.ts` 一致。模块分区不导
 - 不新建 `apps/server/src/modules/audit/`。工单中的 `audit/index.ts` 对应现有的 `audit-store/index.ts`。（偏离，自定）
 - 测试放在 `apps/server/test/audit-store/viewer/` 与 `apps/server/test/auth/log-viewer-routes.test.ts`。
 
-工单 SUB-032 的交付清单之外，新增两处：`apps/web/package.json`（声明对 `@voxward/contracts` 的工作区依赖，网页需要契约中的视图类型）和 `apps/web/vite.config.ts`（开发代理转发 `/internal`）。（自定，理由见第 8 节）
+工单 SUB-032 的交付清单之外，新增三处：`apps/web/package.json`（声明对 `@voxward/contracts` 的工作区依赖，网页需要契约中的视图类型）、`apps/web/vite.config.ts`（开发代理转发 `/internal`）和 `apps/web/src/pages/logs/IsolatedText.tsx`（把不可信文本包进 `<bdi>` 的组件，三个视图共用；单独成文件是为了避免 `CorrelationChain` 与 `LogViewer` 之间的循环导入）。（自定，理由见第 8 节）
 
 ### 4. 接口
 
@@ -169,7 +169,7 @@ type ViewerResult<T> = { ok: true; value: T } | { ok: false; code: "FORBIDDEN" |
 ### 8. 前端（SUB-032）
 
 - 路由为 `/logs/:channelId`（自定）。页面位于 `apps/web/src/pages/logs/`，由 `routes.tsx` 的目录扫描自动注册。
-- 两个入口：Change Log 列表与 Technical Log 列表，按服务端顺序显示，有「下一页」。Change Log 的条目带「处理链」按钮，按其 `correlationId` 打开关联链。
+- 两个入口：Change Log 列表与 Technical Log 列表，按服务端顺序显示。页尾有「加载更多」按钮，追加下一页，不替换已显示的行。Change Log 的条目带「处理链」按钮，按其 `correlationId` 打开关联链。
 - 关联链：翻页加载全部条目，按 `sequence` 列出，高亮当前项。提供「上一条」「下一条」、点选任意条目、「返回列表」。选中项以 `logId` 保存，切换条目时保持。
 - JSON 面板：默认折叠（`<details>` 不带 `open`）。显示模型（`modelRef`）、任务（`taskId`）、契约版本（`contractVersion`）和规则模板版本（`ruleTemplateVersion`）。证据为校验后的 JSON 时，解析后缩进显示。解析失败时原文显示，并注明「未通过 JSON 解析」（自定）。证据缺失（无权限）时整个 JSON 区不渲染。
 - 不可信文本（摘要、错误代码、模型引用、JSON 正文等）统一经 S003 的 `UntrustedText` 渲染，外层加 `<bdi>`。`UntrustedText` 只删除 C0/C1 控制字符，零宽字符与 bidi 控制字符保留在文本中，`<bdi>` 负责隔离它们对周围排版的影响（Q15）。

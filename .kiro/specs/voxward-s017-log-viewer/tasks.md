@@ -24,7 +24,7 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] A1. 读取实时工单（STORY-017、SUB-031、SUB-032）、规范、steering、提案 §11.2/§12、问题清单。
 - [x] A2. 读取现有代码：审计模块（S016）、认证、数据库端口、网页不可信文本组件（S003）、测试辅助。
 - [x] A3. 运行 `kiro-specs.mjs init`，写入实施设计与本任务清单（受管段之外）。
-- [ ] A4. `kiro-specs.mjs check` 返回 SPEC_CURRENT。提交 `VOXWARD-STORY-017: add spec`。
+- [x] A4. `kiro-specs.mjs check` 返回 SPEC_CURRENT。提交 `VOXWARD-STORY-017: add spec`。
 
 ### 步骤 B：VOXWARD-SUB-031（服务端查询、权限、缓存）
 
@@ -38,14 +38,14 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ### 步骤 C：VOXWARD-SUB-032（网页）
 
-- [ ] C1. `apps/web/package.json` 增加 `@voxward/contracts` 工作区依赖，更新锁文件（`pnpm install`，不使用 `--frozen-lockfile`）；`vite.config.ts` 增加 `/internal` 代理。
-- [ ] C2. 实现 `pages/logs/api.ts`（分页读取、整链循环翻页、错误映射、形状校验）。
-- [ ] C3. 实现 `pages/logs/CorrelationChain.tsx`（导航纯函数、链列表、上一条/下一条）、`JsonPanel.tsx`（折叠、版本字段、无权限不渲染）、`LogViewer.tsx`（两个入口、分页、进入链）、`route.tsx`。所有不可信文本经 `UntrustedText` 并包 `<bdi>`。
-- [ ] C4. 测试：`__tests__/api`、`chain-navigation`、`json-panel`、`untrusted-isolation`。
-- [ ] C5. 运行完整自测（`pnpm install`、`build`、`typecheck`、`test`、`check:deps`、`kiro-specs.mjs check`，再加 `pnpm dev` 与 `/healthz` 检查）。把结果写入 `evidence/self-check.md`。
-- [ ] C6. 提交 `VOXWARD-SUB-032: ...`（证据随最后一个提交一起提交），并在本清单打勾。
+- [x] C1. `apps/web/package.json` 增加 `@voxward/contracts` 工作区依赖，更新锁文件（`pnpm install`，不使用 `--frozen-lockfile`）；`vite.config.ts` 增加 `/internal` 代理。
+- [x] C2. 实现 `pages/logs/api.ts`（分页读取、整链循环翻页、错误映射、形状校验）。
+- [x] C3. 实现 `pages/logs/CorrelationChain.tsx`（导航纯函数、链列表、上一条/下一条）、`JsonPanel.tsx`（折叠、版本字段、无权限不渲染）、`LogViewer.tsx`（两个入口、分页、进入链）、`route.tsx`。所有不可信文本经 `UntrustedText` 并包 `<bdi>`。
+- [x] C4. 测试：`__tests__/api`、`chain-navigation`、`json-panel`、`untrusted-isolation`。
+- [x] C5. 运行完整自测（`pnpm install`、`build`、`typecheck`、`test`、`check:deps`、`kiro-specs.mjs check`，再加 `pnpm dev` 与 `/healthz` 检查）。把结果写入 `evidence/self-check.md`。
+- [x] C6. 提交 `VOXWARD-SUB-032: ...`（证据随最后一个提交一起提交），并在本清单打勾。
 
 ### 步骤 D：收尾
 
-- [ ] D1. 确认服务已停止、无残留进程、工作树干净。
+- [x] D1. 确认服务已停止、无残留进程、工作树干净。
 - [ ] D2. 交付报告：模型、提交哈希、改动文件、自测结果、各 AC001 的实际结果、自定选择、偏离、未验证项、与同批包的可能冲突。
