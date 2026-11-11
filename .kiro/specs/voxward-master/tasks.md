@@ -46,7 +46,7 @@
 | 4 | S006, S008, S012, S016 | SUB-012；SUB-015→016；SUB-023；SUB-029→030 | **done**：S012、S016 在 c67db24；S008 返工后在 b1a1471（18 行按 D1 用替身判定）；S006 打回 2 次，第 3 轮在 5ce5bee 通过。证据在 `.kiro/specs/voxward-batch4/`、`voxward-batch5a/`、`voxward-batch5b/` |
 | 5 | S009, S013, S017, S018 | SUB-017→018；SUB-024→025；SUB-031→032；SUB-033→034 | **done**：S017、S018 在 b1a1471；S009 打回 1 次（B4、B5），返工后和 S013（含 Q28、Q20）在 0b929d3 通过 64/64。证据在 `voxward-batch5b/`、`voxward-batch6/`；知识卡新增 10 张 |
 | 6 | S010, S011, S014 | SUB-019→020；SUB-021→022；SUB-026→027 | S010、S014 返工 1 次后在 fff691e **done**。S011 第 2 轮打回（B6：跨调用方优先级），rejections=2，升 sonnet 返工。证据 `voxward-batch-m6/`、`voxward-batch-m6r1/` |
-| 7 | S015, S019, S021, S027 | SUB-028；SUB-035→036；SUB-039→040；SUB-049→050 | S015、S021 实施中；S019、S027 等 S011 done |
+| 7 | S015, S019, S021, S027 | SUB-028；SUB-035→036；SUB-039→040；SUB-049→050 | S011（第 3 轮）、S015 在 cb822f0 **done**（54/54）。S021 依赖由 Owner 安装后续做；S019、S027（只做 SUB-049；SUB-050 等 Owner 独立账号）实施中。证据 `voxward-batch-m7/` |
 | 8 | S020, S022, S023, S024, S026 | SUB-037→038→042；SUB-041；SUB-043；SUB-044→045；SUB-048 | 未开始 |
 | 9 | S025, S028 | SUB-046→047；SUB-051 | 未开始 |
 | 10–13 | S029, S030, S032, S033 | SUB-052→053；SUB-054；SUB-056；SUB-057、SUB-058 | 未开始 |
@@ -119,3 +119,6 @@
 | Q55 | m6 复验 N1 | Q49 余下缺口：只在重放时才触及上下限的情形不标记（C6：结果 9，重放应为 7） | 下次改 `db/decision-store.ts` 的 Story，最迟 S026 |
 | Q56 | m6 复验 N2 | 投递状态没有 SENT 写入方；输出端只能发 PENDING 且未过期的行 | S021 |
 | Q57 | m6 复验 N3 | 一个协调器只接一个复盘运行器；跳过不认识的任务时仍整批 finishBatch（R7） | 接线 Story、S026 |
+| Q58 | m7 验收执行偏差 | 拦截自检有一次没加载拦截模块就跑了，向 Google API 主机、accounts.google.com、Kiro 认证主机和 example.com 各发了一次不带凭据的根路径请求。没有调用任何 API，不影响判定。以后验收简报要求：拦截自检只在拦截加载后运行 | 每批验收 |
+| Q59 | m7 S021 | 用 pnpm 加带作用域包名的开发依赖时，会被宿主「防数据外传」规则误拦（命令里不能出现这种写法，写在笔记里也不行）。需要新增开发依赖时，请 Owner 在终端用 `ssh tcrn-platform-dev 'sudo -u ryanlan -H bash -lc "…"'` 执行 | 每批 |
+| Q60 | S027 | SUB-050（真实模型测量与报告）要用 Owner 提供的独立 Kiro 账号，和 S029 的真实演练一起跑 | S029 |
