@@ -2,9 +2,11 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest 
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { VoxwardDatabase } from "../db/client.js";
+import { revokeOutputGrant } from "../db/output-store.js";
 import { authAccounts, CHANNEL_ROLES } from "../db/schema/index.js";
 import { runShortTransaction } from "../db/transaction.js";
 import { issueOutputToken, revokeOutputToken } from "./downstream-tokens.js";
+import { issueNativeGrant } from "./output-grants.js";
 import { login } from "./login.js";
 import { grantMembership, listActiveMembers, revokeMembership } from "./members.js";
 import {
@@ -20,6 +22,8 @@ import { DEFAULT_SESSION_TTL_MS, revokeSession } from "./session.js";
 
 export interface AuthRoutesOptions {
   readonly database: VoxwardDatabase;
+  /** Runs after a native output grant is revoked, so the consumers it opened are closed at once. */
+  readonly onOutputGrantRevoked?: (grantId: string) => void;
 }
 
 /** A refusal with a stable code. The error handler turns it into a JSON body with no detail beyond the code. */
@@ -221,6 +225,31 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
       requireCapability(database, allowed, channelId, "tokens.manage");
       const revoked = runShortTransaction(database, (tx) => revokeOutputToken(tx, { id: tokenId, channelId, now: new Date() }));
       if (!revoked) throw new RouteFailure(404, "TOKEN_NOT_FOUND");
+      return reply.code(204).send();
+    },
+  );
+
+  app.post<{ Params: { channelId: string } }>("/channels/:channelId/output-grants", async (request, reply) => {
+    const allowed = principalOf(database, request);
+    const { channelId } = request.params;
+    requireCapability(database, allowed, channelId, "tokens.manage");
+    const issued = runShortTransaction(database, (tx) =>
+      issueNativeGrant(tx, { channelId, nowIso: new Date().toISOString() }),
+    );
+    return reply.code(201).header("cache-control", "no-store").send(issued);
+  });
+
+  app.delete<{ Params: { channelId: string; grantId: string } }>(
+    "/channels/:channelId/output-grants/:grantId",
+    async (request, reply) => {
+      const allowed = principalOf(database, request);
+      const { channelId, grantId } = request.params;
+      requireCapability(database, allowed, channelId, "tokens.manage");
+      const revoked = runShortTransaction(database, (tx) =>
+        revokeOutputGrant(tx, { grantId, channelId, nowIso: new Date().toISOString() }),
+      );
+      if (!revoked) throw new RouteFailure(404, "GRANT_NOT_FOUND");
+      options.onOutputGrantRevoked?.(grantId);
       return reply.code(204).send();
     },
   );

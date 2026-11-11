@@ -24,14 +24,14 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ### SUB-039（VOXWARD-SUB-039）协议契约、凭据授权、心跳与撤销
 
-- [ ] 1.1 契约：`packages/contracts/src/output/native-v1.ts` 与 `packages/contracts/src/ports/output-port.ts`，导出到 `index.ts`。
-- [ ] 1.2 帧与字段白名单：`apps/server/src/modules/output-adapter/native-protocol.ts`（DELIVER、WARD_BLOCKED、HELLO；白名单字段；BLOCK 不含原文）。
-- [ ] 1.3 授权存储：`apps/server/src/db/output-store.ts`（签发、撤销、凭据解析、授权有效性、已批准文本读取；只用既有表 `credential_refs`、`output_grants`）。
+- [x] 1.1 契约：`packages/contracts/src/output/native-v1.ts` 与 `packages/contracts/src/ports/output-port.ts`，导出到 `index.ts`。
+- [x] 1.2 帧与字段白名单：`apps/server/src/modules/output-adapter/native-protocol.ts`（DELIVER、WARD_BLOCKED、HELLO；白名单字段；BLOCK 不含原文）。
+- [x] 1.3 授权存储：`apps/server/src/db/output-store.ts`（签发、撤销、凭据解析、授权有效性、已批准文本读取；只用既有表 `credential_refs`、`output_grants`）。
 - [ ] 1.4 订阅策略：`apps/server/src/modules/output-adapter/subscription.ts`（心跳周期、授权复查、关闭码判定）。
 - [ ] 1.5 传输：`apps/server/src/adapters/native-output/socket.ts`（ws、升级鉴权、子协议、pong 与 4400/4403/4408/4413）。
-- [ ] 1.6 签发与撤销路由：`apps/server/src/auth/routes.ts`（POST／DELETE `/channels/:channelId/output-grants`）。
+- [x] 1.6 签发与撤销路由：`apps/server/src/auth/routes.ts`（POST／DELETE `/channels/:channelId/output-grants`）。
 - [ ] 1.7 组合：`apps/server/src/app.ts` 挂载升级处理、撤销回调与 Q25 固定错误体；`apps/server/package.json` 增加 `ws`、`@types/ws` 与 `--external:ws`。
-- [ ] 1.8 Q25：`apps/server/src/security/redaction.ts` 的 `redactUrlText`，并测试。
+- [x] 1.8 Q25：`apps/server/src/security/redaction.ts` 的 `redactUrlText`，并测试。
 - [ ] 1.9 测试：`test/output-adapter/protocol/frames.test.ts`、`test/output-adapter/protocol/socket.test.ts`、`test/db/output-store.test.ts`、`test/security/url-redaction.test.ts`、`test/app/error-responses.test.ts`。
 
 ### SUB-040（VOXWARD-SUB-040）投递 ID、状态、有限发送与补发契约
