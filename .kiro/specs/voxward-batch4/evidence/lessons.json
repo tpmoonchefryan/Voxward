@@ -1,0 +1,115 @@
+[
+ {
+  "subject": "去除组合标记不能删全部 \\p{M}：NFKD 后删 \\p{M} 会抹掉日文浊点与半浊点，正则与转写表随之失效",
+  "summary": "U+3099/U+309A（浊点、半浊点）与 U+0301 同属 \\p{M}。VoxWard 第 4 批为封堵「a 加 U+0301」的绕过，在默认匹配副本里先 NFKD 再删全部 \\p{M}：ば 变成 は、ガ 变成 カ、é 变成 e。正则只对匹配副本匹配、源串不归一化，含这些字符的正则从此不命中；归一化规则让只差浊点的词互相命中；转写表的键校验用默认选项，含 が 的表无法构建。",
+  "snippet": "要去掉的是附加符号，不是所有标记：只删 U+0300–036F、U+1AB0–1AFF、U+1DC0–1DFF、U+20D0–20FF、U+FE20–FE2F，或按文字启用；正则源串与匹配副本走同一归一化；验收用例至少含 ば/は、バ/ハ、带重音字母的正则与含浊音键的转写表。",
+  "body": "第 4 批候选 c67db24 的探针，同一输入对照合并前的 f4808fb：正则规则 ばか、バカ、café 由 BLOCK 变为 PASS；归一化规则 ばか 命中「はかまいりにいく」、バカ 命中「ハカセ」，由 PASS 变为 BLOCK；转写表 {が: ga} 构造时抛 TypeError，表 {か: ka} 把 が 读成 ka 且标为完整。规则集关闭 stripCombiningMarks 后前两类恢复，但拉丁字母绕过重新出现，转写仍用默认选项。韩文不受影响（NFKD 拆出的谚文字母不是 \\p{M}，NFKC 会重新组合）；梵文元音符号在 S004 时就因 NFKC 之后删 \\p{M} 而被删除，不是本批的变化。原因在 rules/normalize.ts 的 normalizeUnit、rules/groups.ts 的正则编译和 rules/transliterate.ts 的键校验。派工简报里「先 NFKD，删除 \\p{M}，再 NFKC」的写法本身就过宽，实施方照做后只测了拉丁字母与韩文。产品面向跨语种 VTuber 直播，日文是主要语种之一。",
+  "tags": [
+   "voxward",
+   "unicode",
+   "normalization",
+   "japanese",
+   "moderation"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/moderation-engine/rules/normalize.ts",
+    "apps/server/src/modules/moderation-engine/rules/groups.ts",
+    "apps/server/src/modules/moderation-engine/rules/transliterate.ts",
+    "apps/server/test/moderation-engine/rules/normalize.test.ts",
+    ".kiro/specs/voxward-batch4/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "drizzle 的 SQLite 迁移器只和最新一条 created_at 比较：集成时改迁移编号，会让按旧编号建的库跳过迁移",
+  "summary": "drizzle-orm 0.45 的 migrate() 只取 __drizzle_migrations 中 created_at 最大的一行，然后执行 journal 里 when 大于它的条目；不补中间缺的条目，也不比对已执行条目的 hash。第 4 批把 S006 的 0002 改为 0003 后，S006 工作树里建的库（其 0002 的 when 比 S016 的 0002 晚 25 s）升级时跳过审计字段迁移，再在 0003 报 no such table 并整体回滚。",
+  "snippet": "合并多个分支的迁移时让 when 与 idx 同序，并对每个真实前驱状态（每次 main 的末条迁移）建库做升级测试；改过编号的分支上建的开发库直接删除，不要拿来升级。",
+  "body": "第 4 批候选 c67db24 的 journal 为 0000_initial@1794328962096、0001_auth_sessions@1794338430942、0002_audit_log_fields@1794348831376、0003_drop_subject_nickname_checks@1794350398062，快照 prevId 成链。停在 0001（第 3 批 main）与停在 0002（f4808fb）的库都能升到 0003 并保留原有行。用 c0bd06a（S006 分支，0002_drop_subject_nickname_checks@1794348856227）的迁移建库再升级：记录 3 行不变，审计字段迁移被跳过，0003 的 DROP TABLE 报 no such table: subject_nickname_checks，事务回滚。判断逻辑在 drizzle-orm 的 sqlite-core/dialect.js migrate()：lastDbMigration.created_at < migration.folderMillis 才执行。仓库的迁移测试只覆盖 main 上出现过的状态，所以发现不了分支库的问题；这种库没有部署，只影响各工作树里残留的开发库。",
+  "tags": [
+   "voxward",
+   "drizzle",
+   "sqlite",
+   "migrations",
+   "integration"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/migrate.ts",
+    "apps/server/src/db/migrations/meta/_journal.json",
+    "apps/server/test/db/migrate.test.ts",
+    "apps/server/node_modules/drizzle-orm/sqlite-core/dialect.js",
+    ".kiro/specs/voxward-master/evidence/b4-integrate.md"
+   ]
+  }
+ },
+ {
+  "subject": "子进程清理要防服务端崩溃：清理所需的会话 ID 要在首次出现时落盘；detached 子进程会活过父进程，只在启动时扫描会漏掉它",
+  "summary": "VoxWard 的 Kiro 适配器在子进程 close 之后才从完整 stdout 读出 CLI 会话 ID 并写进 session.json。服务进程被 SIGKILL 时这一步不会发生，重启后的孤儿扫描只能删运行目录，无法请求删除 CLI 已保存的会话。CLI 以 detached 启动，父进程死后继续运行；扫描遇到存活进程跳过且不终止，扫描又只在启动时运行。",
+  "snippet": "子进程输出的、清理时要用的标识（会话 ID、远端任务 ID）在增量解析时首次出现就落盘；孤儿扫描对存活进程先核对身份（/proc/<pid>/cwd 等于运行目录）再终止进程组，或改为周期运行；验收除取消与超时外，还要做「服务端 SIGKILL」演练。",
+  "body": "第 4 批候选 c67db24 的崩溃演练：子进程扮演服务端，假 CLI 先输出含 sessionId 的 session/update 事件再挂起；session.json 变为 running 后对子进程组发 SIGKILL。结果 session.json 停在 state=running、pid=CLI、kiroSessionId=null；CLI 仍存活；此时扫描 skipped=1；结束 CLI 后扫描 removed=1、kiroSessions.notObserved=1，删除请求 0 次。成功、CLI 失败、输出无效、输出不是 JSON、输出过大、取消、超时 7 种结局都由 finishSession 清理，只有服务端异常退出的路径缺失。kiro-cli 3.1.0 的 chat --help 提供 --list-sessions（当前目录已保存的会话）与 --delete-session，可作为没有记录 ID 时的兜底，但要用真实 CLI 实测。提案 §8.4 与 VW-R-009 要求恢复时清理孤儿任务与本地内容残留，第 4 批据此把 STORY-008 打回（B2）。",
+  "tags": [
+   "voxward",
+   "kiro-cli",
+   "process-lifecycle",
+   "cleanup",
+   "crash-recovery"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/adapters/kiro-cli/provider.ts",
+    "apps/server/src/adapters/kiro-cli/orphan-sweep.ts",
+    "apps/server/src/adapters/kiro-cli/session-lifecycle.ts",
+    "docs/security/ai-retention-boundary.md",
+    ".kiro/specs/voxward-batch4/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "主机不允许 unshare -rn 时，用 NODE_OPTIONS=--import 预加载拦截外连，证明测试不访问真实端点、不调用真实 CLI",
+  "summary": "这台主机没有非特权用户命名空间，unshare -rn 返回 Operation not permitted。改写 net.Socket.prototype.connect、dns.lookup 并记录 fetch 的预加载模块，经 NODE_OPTIONS 进入 vitest 的每个 fork 进程，能拦下 fetch、https 与 net 的外连并留下记录。https 代理调用 connect 时 options.path 为 null，若把「path 不是 undefined」当作 IPC 放行，就会漏过 https。",
+  "snippet": "CI=1 PATH=<垫片目录>:$PATH PROBE_NET_LOG_DIR=<dir> NODE_OPTIONS=--import=<preload.mjs> ./node_modules/.bin/vitest run；只把非空字符串 path 当作 IPC；运行前对真实主机做 fetch、https、net 三种自检；PATH 最前放一个记录调用并以非 0 退出的同名垫片，证明测试没有调用真实 CLI。",
+  "body": "第 4 批验收在候选 c67db24 上用这种方式跑全量测试：67 个文件 770 项通过，拦截模块在 93 个 Node 进程中加载；被拒连接 0 次，非回环 fetch 0 次，回环连接 23 次（127.0.0.1 上的 /healthz 用例），1 次 DNS 查询 no-such-host.invalid（启动失败用例）；kiro-cli 垫片调用 0 次。自检时第一版因 path:null 被当作 IPC，https.get 漏过拦截、只留下一条 DNS 记录；改为只放行非空字符串 path 后，对 oauth2.googleapis.com、www.googleapis.com、accounts.google.com 的三种请求都被拒（ECONNREFUSED）。拦截放在 Socket.prototype.connect 上，net.connect、tls.connect 与 undici 的 fetch 都经过它。",
+  "tags": [
+   "voxward",
+   "acceptance",
+   "testing",
+   "network-isolation",
+   "vitest"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "vitest.workspace.ts",
+    "apps/server/test/platform-source/youtube-credentials/fixtures.ts",
+    "apps/server/test/adapters/kiro-cli/helpers.ts",
+    ".kiro/specs/voxward-batch4/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "SQLite 删除行后正文仍在数据库文件里：secure_delete 默认关闭，checkpoint 之后按字节还能找到",
+  "summary": "VoxWard 的 openDatabase 只设置 WAL、synchronous=FULL 与 foreign_keys=ON，secure_delete 为 0。第 4 批删除一个主体的日志与证据并执行 wal_checkpoint(TRUNCATE) 后，被删正文仍能在主数据库文件中按字节找到，-wal 与 -shm 文件里没有。行删除只把页面放进空闲列表，内容要等被覆盖或 VACUUM。",
+  "snippet": "验证删除时，在 checkpoint 之后对 .sqlite3、-wal、-shm 做字节扫描，而不只看行数；需要介质层清除时开启 PRAGMA secure_delete=ON（FAST 只在不增加 I/O 时清零），或在删除批次后 VACUUM，并把备份轮换一起处理（提案 §12.4）。",
+  "body": "第 4 批候选 c67db24 的 S016 探针：真实 SQLite 加真实 redactText，写入两个主体的处理链，删除 sub-A 后 sub-A 的日志行与证据行为 0、同批 sub-B 不变，但对 audit.sqlite3 做字节扫描仍能找到 sub-A 的正文标记，PRAGMA secure_delete 返回 0。提案 §12.4 写明「SQLite 行删除不等于磁盘介质已安全擦除」，要求处理 WAL、临时文件、备份与 AI 运行目录；删除编排（STORY-019）与到期清理（STORY-020）实现时要把这一步算进完成条件，数据面板在介质层清除完成前不能显示「全部删除」。",
+  "tags": [
+   "voxward",
+   "sqlite",
+   "deletion",
+   "data-retention",
+   "privacy"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/client.ts",
+    "apps/server/src/db/audit-log.ts",
+    "apps/server/src/modules/audit-store/deletion-index.ts",
+    ".kiro/specs/voxward-batch4/evidence/acceptance.md"
+   ]
+  }
+ }
+]
