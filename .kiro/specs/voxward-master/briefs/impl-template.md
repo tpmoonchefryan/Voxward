@@ -34,7 +34,7 @@ Owner 授权 minutes:fd542a49a57a9e6526440dac：按批量原则做到底，spec 
 - 不发明来源没有的产品功能。不派子代理。中途不发进度；只有安全问题或硬阻塞才提前报告。不用 send_message 重复完成通知。
 
 ## 自测
-在工作树根依次跑 `pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`，全部要退出 0。接着不设任何 `VOXWARD_DATABASE_FILE`，跑 `pnpm dev`，确认 `/healthz` 返回 200、服务只绑 127.0.0.1。确认后停掉服务，并检查没有残留进程。确认的失败在本包内修好后复跑；同一个失败分析两次都没有新证据，就停下来报告。
+在工作树根依次跑 `pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps`、`kiro-specs.mjs check`，全部要退出 0。接着不设任何 `VOXWARD_DATABASE_FILE`，用 `bash /home/ryanlan/Code/Voxward/.kiro/specs/voxward-master/tools/smoke.sh <工作树> $KIROCREW_SCRATCH/{WT}-smoke` 做启动冒烟（它会起 dev 和 dist、探测 /healthz、按进程组停掉）。不要手工起 `pnpm dev`；手工起的服务可能停不掉。确认的失败在本包内修好后复跑；同一个失败分析两次都没有新证据，就停下来报告。
 
 ## 证据（必须持久保存）
 自测命令、退出码、关键输出摘录写到 `.kiro/specs/{SPEC}/evidence/self-check.md`，随最后一个 commit 提交。
