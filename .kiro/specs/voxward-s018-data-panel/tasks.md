@@ -27,10 +27,10 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 2.4 模块 `requests.ts`、`subject-lookup.ts`、`export-material.ts`、`change-row.ts`、`validate.ts`、`types.ts`、`routes.ts`、`index.ts` 与模块测试
   - [x] 2.5 `auth/data-routes.ts`、`app.ts` 绑定，HTTP 权限与 CSRF 测试
   - [x] 2.6 `check:deps`、`typecheck`、`test` 通过后提交
-- [ ] 3. VOXWARD-SUB-034：数据面板页面与两种删除入口，提交 `VOXWARD-SUB-034: ...`
-  - [ ] 3.1 `api.ts`、`flow.ts` 与测试
-  - [ ] 3.2 `DataPanel.tsx`、`RequestStatus.tsx`、`DeleteActions.tsx`、`route.tsx` 与测试，`<bdi>` 隔离
-  - [ ] 3.3 `vite.config.ts` 增加接口代理（自定），`typecheck`、`test`、`build` 通过后提交
+- [x] 3. VOXWARD-SUB-034：数据面板页面与两种删除入口，提交 `VOXWARD-SUB-034: ...`
+  - [x] 3.1 `api.ts`、`flow.ts` 与测试
+  - [x] 3.2 `DataPanel.tsx`、`RequestStatus.tsx`、`DeleteActions.tsx`、`route.tsx` 与测试，`<bdi>` 隔离
+  - [x] 3.3 `vite.config.ts` 增加接口代理（自定），`typecheck`、`test`、`build` 通过后提交
 - [ ] 4. 自测与证据：`.kiro/specs/voxward-s018-data-panel/evidence/self-check.md`，随最后一个提交保存
   - [ ] 4.1 `pnpm install`、`build`、`typecheck`、`test`、`check:deps`、`kiro-specs.mjs check` 全部退出 0
   - [ ] 4.2 不设 `VOXWARD_DATABASE_FILE` 运行 `pnpm dev`，`/healthz` 返回 200，服务只绑 127.0.0.1，停止后无残留进程
