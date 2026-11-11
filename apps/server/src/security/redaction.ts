@@ -39,3 +39,11 @@ export function redactValue(value: unknown, depth = 0): unknown {
   }
   return value;
 }
+
+/**
+ * Redacts a URL path or a Host header. Percent-encoded ASCII is decoded first, so an encoded credential such as `vwo%5F...`
+ * is caught the same way as `vwo_...`. Decoding never throws: a malformed escape is left as it is.
+ */
+export function redactUrlText(text: string): string {
+  return redactText(text.replace(/%([0-9A-Fa-f]{2})/g, (_match, hex: string) => String.fromCharCode(Number.parseInt(hex, 16))));
+}
