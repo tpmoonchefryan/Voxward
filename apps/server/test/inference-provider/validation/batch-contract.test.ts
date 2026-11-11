@@ -148,26 +148,41 @@ describe("generated text in SC batches", () => {
   const checked = { maxItems: 10, generatedText: ruleEngineTextChecker(EXPLICIT_RULES) };
 
   it("accepts SC output whose generated text the rule engine passes", async () => {
-    expect((await validateScBatch({ items: [sc1, sc2] }, input, checked)).ok).toBe(true);
+    expect(await validateScBatch({ items: [sc1, sc2] }, input, checked)).toMatchObject({
+      ok: true,
+      rejectedGeneratedText: [],
+    });
   });
 
-  it("rejects a translation the rule engine flags, locating the field and not echoing the text", async () => {
+  it("keeps the batch ok when a translation is flagged, and names only that item and field (Q23)", async () => {
     const result = await validateScBatch({ items: [{ ...sc1, translatedText: "a badword here" }, sc2] }, input, checked);
-    expect(errorsOf(result)).toEqual([
-      { code: "GENERATED_TEXT_REJECTED", path: "/items/0/translatedText", itemId: "b-1" },
-    ]);
-    expect(JSON.stringify(result)).not.toContain("badword");
+    expect(result).toMatchObject({
+      ok: true,
+      rejectedGeneratedText: [{ itemId: "b-1", field: "translatedText" }],
+    });
+    // The items still carry the generated text, so the caller must withhold the flagged item's cue. The rejection record
+    // itself never carries the text.
+    if (!result.ok) return;
+    expect(JSON.stringify(result.rejectedGeneratedText)).not.toContain("badword");
   });
 
-  it("checks the thank-you reading when it is present", async () => {
+  it("names a flagged thank-you reading the same way when it is present", async () => {
+    const result = await validateScBatch({ items: [{ ...sc1, thankYouReading: "a badword" }, sc2] }, input, checked);
+    expect(result).toMatchObject({ ok: true, rejectedGeneratedText: [{ itemId: "b-1", field: "thankYouReading" }] });
+  });
+
+  it("does not check a BLOCK item's generated text, so a flagged translation on it changes nothing (Q23)", async () => {
+    const result = await validateScBatch({ items: [sc1, { ...sc2, translatedText: "a badword here" }] }, input, checked);
+    expect(result).toMatchObject({ ok: true, rejectedGeneratedText: [] });
+  });
+
+  it("still fails the whole batch for a structural error, even when another translation is flagged", async () => {
     const result = await validateScBatch(
-      { items: [{ ...sc1, thankYouReading: "a badword" }, sc2] },
+      { items: [{ ...sc1, translatedText: "a badword here", score: 9 }, sc2] },
       input,
       checked,
     );
-    expect(errorsOf(result)).toEqual([
-      { code: "GENERATED_TEXT_REJECTED", path: "/items/0/thankYouReading", itemId: "b-1" },
-    ]);
+    expect(errorsOf(result)).toEqual([{ code: "FIELD_UNKNOWN", path: "/items/0", itemId: "b-1" }]);
   });
 
   it("fails closed when the rule engine has no rule set", async () => {

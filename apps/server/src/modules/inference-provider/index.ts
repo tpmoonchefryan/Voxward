@@ -4,6 +4,11 @@ export * from "./validation/batch-contract.js";
 export * from "./validation/errors.js";
 export * from "./validation/output-text-check.js";
 export * from "./validation/unicode-span.js";
+export * from "./model-settings/settings.js";
+export * from "./model-settings/capability-check.js";
+export * from "./model-settings/routes.js";
+export * from "./sc-translation/cue-sheet.js";
+export * from "./sc-translation/pipeline.js";
 
 /** Placeholder entry for inference. Declares no capabilities and fails every call. */
 export function createInferenceProvider(): InferenceProvider {

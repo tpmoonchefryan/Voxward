@@ -27,9 +27,23 @@ export interface AiBatchOptions {
   readonly generatedText?: GeneratedTextChecker;
 }
 
-/** Either every item passed and the items are returned, or the whole batch fails with every located error. */
+/** A generated field a rule hit. The text itself is never returned, only the item and the field name. */
+export interface RejectedGeneratedText {
+  readonly itemId: string;
+  readonly field: string;
+}
+
+/**
+ * Either the batch is ok and its items are returned, or the whole batch fails with every located error. A rule hit on
+ * generated text does not fail the batch. It is listed in `rejectedGeneratedText`, and only that item loses its cue (Q23).
+ */
 export type AiBatchValidation<Item> =
-  | { readonly ok: true; readonly schema: AiSchemaRef; readonly items: readonly Item[] }
+  | {
+      readonly ok: true;
+      readonly schema: AiSchemaRef;
+      readonly items: readonly Item[];
+      readonly rejectedGeneratedText: readonly RejectedGeneratedText[];
+    }
   | { readonly ok: false; readonly schema: AiSchemaRef; readonly errors: readonly BatchValidationError[] };
 
 /** What differs between the batch kinds: the schema reader and the generated fields a viewer will see. */
@@ -48,13 +62,17 @@ const MODERATION_KIND: BatchKind<ModerationItemResult> = {
 const SC_KIND: BatchKind<ScItemResult> = {
   schema: SC_BATCH_SCHEMA,
   read: validateScBatchResult,
-  // Every generated text is checked whatever the verdict, because a translation or reply cue may still reach a viewer.
-  generatedFieldsOf: (item) => [
-    { name: "translatedText", text: item.translatedText },
-    { name: "slangNote", text: item.slangNote },
-    { name: "replyCue", text: item.replyCue },
-    ...(item.thankYouReading === undefined ? [] : [{ name: "thankYouReading", text: item.thankYouReading }]),
-  ],
+  // A BLOCK item is not translated (proposal section 8), so its generated text is neither checked nor shown. For every
+  // other item, each generated text is checked, because a translation or reply cue may still reach a viewer.
+  generatedFieldsOf: (item) =>
+    item.verdict === "BLOCK"
+      ? []
+      : [
+          { name: "translatedText", text: item.translatedText },
+          { name: "slangNote", text: item.slangNote },
+          { name: "replyCue", text: item.replyCue },
+          ...(item.thankYouReading === undefined ? [] : [{ name: "thankYouReading", text: item.thankYouReading }]),
+        ],
 };
 
 const REVIEW_KIND: BatchKind<ReviewItemResult> = {
@@ -110,6 +128,7 @@ async function validateAiBatch<Item extends ModerationItemResult>(
   if (!read.ok) return rejected(kind.schema, read.issues.map((issue) => locate(issue, output, sources)));
 
   const errors: BatchValidationError[] = [];
+  const rejectedGeneratedText: RejectedGeneratedText[] = [];
   const seen = new Set<string>();
   for (const [index, item] of read.value.items.entries()) {
     const path = `/items/${index}`;
@@ -127,7 +146,9 @@ async function validateAiBatch<Item extends ModerationItemResult>(
       errors.push({ code: "SPAN_OUT_OF_RANGE", path: `${path}/matchedSpan`, itemId: item.itemId });
     }
     const fields = kind.generatedFieldsOf(item);
-    errors.push(...(await checkGeneratedTextFields(index, item.itemId, fields, options.generatedText)));
+    const findings = await checkGeneratedTextFields(index, item.itemId, fields, options.generatedText);
+    errors.push(...findings.errors);
+    for (const field of findings.rejectedFields) rejectedGeneratedText.push({ itemId: item.itemId, field });
   }
   for (const source of input.items) {
     if (!seen.has(source.itemId)) {
@@ -136,7 +157,7 @@ async function validateAiBatch<Item extends ModerationItemResult>(
   }
 
   if (errors.length > 0) return rejected(kind.schema, errors);
-  return { ok: true, schema: kind.schema, items: read.value.items };
+  return { ok: true, schema: kind.schema, items: read.value.items, rejectedGeneratedText };
 }
 
 function rejected<Item>(schema: AiSchemaRef, errors: readonly BatchValidationError[]): AiBatchValidation<Item> {

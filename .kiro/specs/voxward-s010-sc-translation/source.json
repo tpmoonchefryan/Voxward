@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:029c382b5915050f0c4de600",
+  "workRevision": 4,
+  "sourceDigest": "16932bf7d1fd9630c6c578d985081fa01f15dd2d3b33e3b1a209d55d56b815dd",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:029c382b5915050f0c4de600",
+    "workRevision": 4,
+    "sourceDigest": "16932bf7d1fd9630c6c578d985081fa01f15dd2d3b33e3b1a209d55d56b815dd",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:029c382b5915050f0c4de600",
+        "externalKey": "VOXWARD-STORY-010",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现 SC 安全精翻与模型能力设置",
+        "summary": "实现 SC 安全精翻与模型能力设置；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:8980504408e4d156c130a8f9",
+        "scopeDigest": "9f9bddf713f48b20fb1e04d5290376cbb8901b37f0aa7df31147b96c02850a63",
+        "relations": {
+          "blockedBy": [
+            "work:05e6184a65712b369d65bba7",
+            "work:352ba5df1e0b354ede1a9af0",
+            "work:ac2a8c1b963085361cf086f0"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:8980504408e4d156c130a8f9",
+          "supersedes": []
+        },
+        "fieldSha256": "570af8a69451888dbb32f9767fe3684cbe8f939e4606b796fe37ec5be90e2f26",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "b995baee900bff1866fa97d2ef63555652add2ccd3b96d8e7d4c3737bb89321c",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "5fa45ae281dd4ece41e7a0142d5988939e84c783dbb71c3252d5a3cfc917d0f9",
+    "design.md": "465b637cafb2863bf9d9dff7b5472f801c0531c9835cbbc6f22734f3c76211bf",
+    "tasks.md": "a69826bc1701dcff075e3e205f57090719a0ca34262bda2d9cc0fdbba70c17bd"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "b85fbe8841d06d9a4da1906029e977b963347d62912220d2a34810d2cbb1ab4b"
+}
