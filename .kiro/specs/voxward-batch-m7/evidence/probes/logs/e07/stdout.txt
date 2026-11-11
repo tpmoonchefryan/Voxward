@@ -1,0 +1,4 @@
+dev healthz ok=1 code=200 after 1s
+dist healthz ok=1 code=200 after 1s
+no listeners
+smoke exit 0

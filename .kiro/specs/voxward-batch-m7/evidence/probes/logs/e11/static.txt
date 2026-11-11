@@ -1,0 +1,201 @@
+== log fff691e..cb822f0
+cb822f0 Merge voxward/s015-platform-delete (batch m7)
+70a28c5 Merge voxward/s011-fix2 (batch m7)
+9ab18aa VOXWARD-SUB-028: add self-check evidence and tick local tasks
+1f46fa1 VOXWARD-SUB-028: add platform message delete port, YouTube adapter and local-block orchestration
+0b9e662 VOXWARD-STORY-011 rework2: S009/S011 design notes and self-check evidence
+0f2b8fa VOXWARD-STORY-015: add spec
+db2af1b VOXWARD-SUB-021 B6: keep PAID and REALTIME ahead of BACKGROUND across callers
+0a3237c Master: S010/S014 done; S011 fix2, S015, S021 briefs; Q55-Q57
+9f0a2c9 Batch m6 recheck evidence (S010, S014 pass; S011 B6)
+839660f Master: m6 recheck brief
+== shortstat outside .kiro
+ 12 files changed, 956 insertions(+), 10 deletions(-)
+== name-status outside .kiro
+M	apps/server/src/modules/decision-service/index.ts
+A	apps/server/src/modules/decision-service/platform-delete.ts
+M	apps/server/src/modules/moderation-engine/review/ports.ts
+M	apps/server/src/modules/platform-source/index.ts
+A	apps/server/src/modules/platform-source/youtube/delete-message.ts
+M	apps/server/src/modules/task-coordinator/coordinator.ts
+A	apps/server/test/decision-service/platform-delete/orchestration.test.ts
+M	apps/server/test/moderation-engine/review/runner.test.ts
+A	apps/server/test/platform-source/youtube-delete/delete-message.test.ts
+M	apps/server/test/task-coordinator/lanes.test.ts
+M	packages/contracts/src/index.ts
+A	packages/contracts/src/ports/platform-delete.ts
+== name-status .kiro
+A	.kiro/specs/voxward-batch-m6r1/evidence/acceptance.md
+A	.kiro/specs/voxward-batch-m6r1/evidence/evidence-records.json
+A	.kiro/specs/voxward-batch-m6r1/evidence/judgment.md
+A	.kiro/specs/voxward-batch-m6r1/evidence/lessons.json
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/README.md
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/extract-cards.cjs
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e01/evidence-onchain.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e01/extract.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e01/show-keys.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e07/db-before.sha
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e07/smoke.exit
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e07/smoke.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e08/deny-ports.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e08/net.jsonl
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e08/selfcheck.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e08/shim-calls.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e08/vitest.exit
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e09/after.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e09/base.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e09/neg.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/managed.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s010.done
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s010.err
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s010.exit
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s010.json
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s011.done
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s011.err
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s011.exit
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s011.json
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s014.done
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s014.err
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s014.exit
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/s014.json
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/script.sha
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/specs-after.sha
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/specs-before.sha
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e10/start.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e11/diff.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e11/imports.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e11/risky.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/e11/unchanged.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/gates/e02-install.exit
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/gates/e03-build.exit
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/gates/e04-typecheck.exit
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/gates/e05-files.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/gates/e05-test.exit
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/gates/e06-deps.exit
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/gates/head.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/gates/lock-after.sha
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/gates/lock-before.sha
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/probes/s010-40223e2-parse.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/probes/s010-fff691e.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/probes/s011-fff691e.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/probes/s011-heap-fff691e.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/probes/s011-order-fff691e.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/probes/s014-40223e2-ledger.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/probes/s014-fff691e.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/s009/e30.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/s009/e31.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/s009/e32.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/s009/e34.out
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/logs/s009/probe-sha.txt
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/net/loopcheck.mjs
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/net/preload.mjs
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/net/selfcheck.mjs
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/out-src/acc-00-head.md
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/out-src/acc-10-s010.md
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/out-src/acc-20-s011.md
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/out-src/acc-30-s014.md
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/out-src/acc-90-scope.md
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/out-src/build-out.mjs
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/out-src/cards-m6r1.json
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/out-src/rows.mjs
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/probe-m6r1-s010.mts
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/probe-m6r1-s011-heap.mts
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/probe-m6r1-s011-order.mts
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/probe-m6r1-s011.mts
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/probe-m6r1-s014-race-child.mts
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/probe-m6r1-s014.mts
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/probe-s009-b6.mts
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/probe-s009-extra.mts
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/probe-s009-order.mts
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/probe-s009.mts
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/shim/kiro
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/shim/kiro-cli
+A	.kiro/specs/voxward-batch-m6r1/evidence/probes/shim/kirocrew
+A	.kiro/specs/voxward-master/briefs/b7-reaccept.md
+A	.kiro/specs/voxward-master/briefs/b8-s011-fix2.md
+A	.kiro/specs/voxward-master/briefs/b8-s015.md
+A	.kiro/specs/voxward-master/briefs/b8-s021.md
+A	.kiro/specs/voxward-master/briefs/b8-tasks.cjs
+M	.kiro/specs/voxward-master/tasks.md
+M	.kiro/specs/voxward-s009-scheduler/design.md
+M	.kiro/specs/voxward-s011-review/design.md
+A	.kiro/specs/voxward-s011-review/evidence/rework2-probes/probe-m6r1-to-m6r2.patch
+A	.kiro/specs/voxward-s011-review/evidence/rework2-self-check.md
+A	.kiro/specs/voxward-s015-platform-delete/design.md
+A	.kiro/specs/voxward-s015-platform-delete/evidence/self-check.md
+A	.kiro/specs/voxward-s015-platform-delete/requirements.md
+A	.kiro/specs/voxward-s015-platform-delete/source.json
+A	.kiro/specs/voxward-s015-platform-delete/tasks.md
+== must-be-unchanged
+package.json changed-files=0
+apps/server/package.json changed-files=0
+apps/web/package.json changed-files=0
+packages/contracts/package.json changed-files=0
+pnpm-lock.yaml changed-files=0
+scripts changed-files=0
+apps/server/src/app.ts changed-files=0
+apps/server/src/main.ts changed-files=0
+apps/server/src/modules/registry.ts changed-files=0
+apps/server/src/config changed-files=0
+apps/server/src/auth changed-files=0
+apps/web changed-files=0
+docs changed-files=0
+apps/server/src/db changed-files=0
+apps/server/src/modules/inference-provider changed-files=0
+apps/server/src/modules/scoring-engine changed-files=0
+apps/server/src/adapters changed-files=0
+apps/server/src/modules/moderation-engine/candidates changed-files=0
+apps/server/src/modules/moderation-engine/review/runner.ts changed-files=0
+apps/server/src/modules/moderation-engine/review/membership.ts changed-files=0
+apps/server/src/modules/task-coordinator/crew changed-files=0
+apps/server/src/modules/task-coordinator/priority.ts changed-files=0
+apps/server/src/modules/task-coordinator/micro-batch.ts changed-files=0
+apps/server/src/modules/platform-source/youtube/credentials.ts changed-files=0
+apps/server/src/modules/platform-source/youtube/quota.ts changed-files=0
+apps/server/src/modules/platform-source/youtube/stream-list.ts changed-files=0
+apps/server/src/modules/decision-service/service.ts changed-files=0
+apps/server/src/modules/decision-service/compensation.ts changed-files=0
+apps/server/src/modules/decision-service/concurrency.ts changed-files=0
+packages/contracts/src/modules changed-files=0
+packages/contracts/src/version.ts changed-files=0
+== CONTRACT_VERSION
+2:export const CONTRACT_VERSION = "1";
+3:export type ContractVersion = typeof CONTRACT_VERSION;
+== index diffs
+diff --git a/apps/server/src/modules/decision-service/index.ts b/apps/server/src/modules/decision-service/index.ts
+index c39f796..36ebdc2 100644
+--- a/apps/server/src/modules/decision-service/index.ts
++++ b/apps/server/src/modules/decision-service/index.ts
+@@ -17,6 +17,14 @@ export {
+   type TermRequest,
+ } from "./list-permissions.js";
+ export { DEFAULT_DECISION_LIMITS, type DecisionDeps, type DecisionLimits } from "./service.js";
++export {
++  deleteFromPlatform,
++  PLATFORM_DELETE_MAX_ATTEMPTS,
++  type LocalBlockOutcome,
++  type PlatformDeleteDeps,
++  type PlatformDeleteOutcome,
++  type PlatformDeleteRequest,
++} from "./platform-delete.js";
+ 
+ /**
+  * Creates the decision module. Without dependencies the module is not wired, and every entry point rejects with the
+diff --git a/apps/server/src/modules/platform-source/index.ts b/apps/server/src/modules/platform-source/index.ts
+index ee560bd..f8fff86 100644
+--- a/apps/server/src/modules/platform-source/index.ts
++++ b/apps/server/src/modules/platform-source/index.ts
+@@ -20,3 +20,4 @@ export * from "./youtube/stream-list.js";
+ export * from "./youtube/identity.js";
+ export * from "./youtube/quota.js";
+ export * from "./youtube/to-business-event.js";
++export * from "./youtube/delete-message.js";
+diff --git a/packages/contracts/src/index.ts b/packages/contracts/src/index.ts
+index 1c54321..8574eb7 100644
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
+@@ -20,3 +20,4 @@ export * from "./viewer/log-viewer.js";
+ export * from "./ai/index.js";
+ export * from "./ports/data-request.js";
+ export * from "./ports/decision-store.js";
++export * from "./ports/platform-delete.js";

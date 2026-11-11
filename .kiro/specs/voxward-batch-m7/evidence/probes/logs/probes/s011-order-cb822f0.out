@@ -1,0 +1,10 @@
+## [cb822f0] limit 4 (background ceiling 3, reserve 1), 8 REALTIME and 8 BACKGROUND tasks queued, one task per batch
+ticks: one group per tick, R = a PAID/REALTIME batch started, B = a BACKGROUND batch started
+{"order":"single-caller","rtDeadlineMs":2500,"ticks":"RRRR RRRR BBB BBB BB -","realtimeDone":8,"realtimeToManualQueue":0}
+{"order":"crew-first","rtDeadlineMs":2500,"ticks":"RRRR RRRR BBB BBB BB -","realtimeDone":8,"realtimeToManualQueue":0}
+{"order":"review-first","rtDeadlineMs":2500,"ticks":"RRRR RRRR BBB BBB BB -","realtimeDone":8,"realtimeToManualQueue":0}
+{"order":"single-caller","rtDeadlineMs":10000,"ticks":"RRRR RRRR BBB BBB BB -","realtimeDone":8,"realtimeToManualQueue":0}
+{"order":"crew-first","rtDeadlineMs":10000,"ticks":"RRRR RRRR BBB BBB BB -","realtimeDone":8,"realtimeToManualQueue":0}
+{"order":"review-first","rtDeadlineMs":10000,"ticks":"RRRR RRRR BBB BBB BB -","realtimeDone":8,"realtimeToManualQueue":0}
+
+NOTE realtime deadline 2.5 s: single caller 8/8 done, review-first 8/8 done and 0 to the manual queue

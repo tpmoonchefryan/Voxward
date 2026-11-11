@@ -1,0 +1,32 @@
+[
+ {
+  "host": "oauth2.googleapis.com",
+  "fetch": "CONNECTED",
+  "https": "CONNECTED",
+  "net": "CONNECTED"
+ },
+ {
+  "host": "www.googleapis.com",
+  "fetch": "CONNECTED",
+  "https": "CONNECTED",
+  "net": "CONNECTED"
+ },
+ {
+  "host": "accounts.google.com",
+  "fetch": "CONNECTED",
+  "https": "CONNECTED",
+  "net": "CONNECTED"
+ },
+ {
+  "host": "prod.us-east-1.auth.desktop.kiro.dev",
+  "fetch": "CONNECTED",
+  "https": "CONNECTED",
+  "net": "CONNECTED"
+ },
+ {
+  "host": "example.com",
+  "fetch": "CONNECTED",
+  "https": "CONNECTED",
+  "net": "CONNECTED"
+ }
+]

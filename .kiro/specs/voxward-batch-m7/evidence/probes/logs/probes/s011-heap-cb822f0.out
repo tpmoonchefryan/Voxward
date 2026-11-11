@@ -1,0 +1,8 @@
+NOTE marker strings still on the heap after the store rows were removed (20 per kind): {"cancelled":0,"expired":0,"settled":0}
+OK   H1 control: tasks settled through runBatch leave no message text in the runner :: {"cancelled":0,"expired":0,"settled":0}
+OK   H2 tasks cancelled for a deletion leave no message text in the runner (VW-R-017: 不创建清理遗漏副本) :: {"cancelled":0,"expired":0,"settled":0}
+OK   H3 tasks that expired in the coordinator leave no message text in the runner :: {"cancelled":0,"expired":0,"settled":0}
+NOTE runner entries before and after the next cycle: {"before":{"cancelled":20,"expired":20,"settled":0},"after":{"cancelled":0,"expired":0,"settled":0}}
+OK   H4 the runner's entries for cancelled, expired and settled tasks are released at its next cycle (no unbounded entry table) :: {"before":{"cancelled":20,"expired":20,"settled":0},"after":{"cancelled":0,"expired":0,"settled":0}}
+
+[cb822f0] checks 4, failures 0

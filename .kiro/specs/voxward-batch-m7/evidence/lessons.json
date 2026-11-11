@@ -1,0 +1,111 @@
+[
+ {
+  "subject": "共享调度器让低车道调用方在高车道就绪时返回 null，高车道的优先级与调用顺序无关了，但低车道拿不拿得到剩余槽位取决于谁先调用",
+  "summary": "VoxWard B6 的修法：takeBatch 遇到调用方没请求、但已就绪的更高车道时返回 null。付费与实时在任何调用顺序下都不晚于单一调用方。复盘运行器若先于执行器取批，它第一次取批就得到 null，按 runBatch() 到 null 为止的用法不再取；执行器取走实时批次后剩下的槽位本周期没人用。实时细流持续时，后台会一直拖到细流停止。",
+  "snippet": "低车道让位的调度器要配好驱动顺序：每个周期先调高车道的调用方，再调低车道的调用方（或让低车道在高车道之后再取一次）。验收分两类断言：高车道每个任务的开始时间不晚于单一调用方（随机到达的性质检查），低车道的延后只作读数并单列。",
+  "body": "第 m7 批 E63：S1（上限 4，1 条实时、8 条后台）单一调用方 RBBB BBB BB，复盘先取 R BBB BBB BB；S2（每周期 1 条新实时、持续 10 个周期）单一调用方与执行器先取时后台在第 0–2 周期全部开始，复盘先取时要等第 10–12 周期。300 组随机到达共 5940 个付费或实时任务，两种调用顺序都是 0 个晚开始、0 个转人工；复盘先取时 3659 个后台任务有 3217 个晚开始。上一轮的复验条件只看了一个积压形状（8 实时、8 后台、实时把槽位占满），在这个形状里三种顺序的每周期启动序列恰好相同，测不出后台的差别；S009 设计 §5 因此写成了「与哪个调用方先调用无关」。",
+  "tags": [
+   "voxward",
+   "scheduling",
+   "task-coordinator",
+   "priority",
+   "acceptance-probes"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/task-coordinator/coordinator.ts",
+    "apps/server/test/task-coordinator/lanes.test.ts",
+    ".kiro/specs/voxward-s009-scheduler/design.md",
+    ".kiro/specs/voxward-batch-m7/evidence/acceptance.md",
+    ".kiro/specs/voxward-batch-m7/evidence/probes/probe-m7-s011-order2.mts"
+   ]
+  }
+ },
+ {
+  "subject": "比较两次调度回放时，按输入的身份（到达序号、平台消息 ID）对齐任务，不按生成的 taskId：测试夹具的任务 ID 与批次 ID 共用一个计数器",
+  "summary": "task-coordinator 测试夹具 harnessWith 用一个 sequentialIds() 同时生成任务 ID 和批次 ID。两种调用顺序在同一周期建的批次数不同，之后入队的任务拿到的 ID 就错位，按 taskId 比较会把不同的任务当成同一个。",
+  "snippet": "跨回放比较前先建「生成的 ID → 输入身份」的映射（入队时记下 ref.taskId 对应的到达序号），所有读数按输入身份汇总；结果异常大时先怀疑对齐，再怀疑候选。",
+  "body": "第 m7 批 E63 第一版按 taskId 比较单一调用方与复盘先取的开始周期，报出 3480 个实时任务晚开始、23 个转人工，例子里有实时任务「从未开始」。按到达序号对齐后同一组场景是 0 与 0；同一探针在修复前的 fff691e 副本上仍报 1090 与 527，说明修正后的探针仍能发现 B6。E62 只用一个固定积压、入队全部在第 0 周期，所以没有碰到这个问题。",
+  "tags": [
+   "voxward",
+   "acceptance-probes",
+   "test-doubles",
+   "scheduling"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/test/task-coordinator/helpers.ts",
+    ".kiro/specs/voxward-batch-m7/evidence/probes/probe-m7-s011-order2.mts",
+    ".kiro/specs/voxward-batch-m7/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "外连拦截的自检脚本本身会真的去连目标主机：不带 NODE_OPTIONS=--import 运行时，它对 Google 与 Kiro 认证主机各发一次真实请求",
+  "summary": "VoxWard 验收用的 net/selfcheck.mjs 对 oauth2.googleapis.com、www.googleapis.com、accounts.google.com、prod.us-east-1.auth.desktop.kiro.dev、example.com 做 fetch、https 与 443 TCP 连接，期望全部被拦截模块拒绝。脚本不检查拦截模块是否已加载，单独运行时就是一次真实外连。",
+  "snippet": "自检与拦截模块写在同一条命令里：PROBE_NET_LOG_DIR=… PROBE_DENY_PORTS=… NODE_OPTIONS=--import=<preload> node selfcheck.mjs。更稳的做法是让 preload 设置一个全局标记，自检在标记缺失时直接退出、不发请求。",
+  "body": "第 m7 批 E08：自检第一次误在没有 NODE_OPTIONS 的情况下运行，5 个主机全部 CONNECTED（不带凭据的 GET / 与 443 连接，没有调用任何 API）；加上拦截模块后全部 refused:ECONNREFUSED。简报要求不连真实 YouTube 或 Google，这一次按字面没有做到，已在验收记录与判断里如实写出。拦截下的全量测试与全部探针本身没有任何外连记录。",
+  "tags": [
+   "voxward",
+   "acceptance-probes",
+   "network-isolation",
+   "safety"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    ".kiro/specs/voxward-batch-m7/evidence/probes/net/selfcheck.mjs",
+    ".kiro/specs/voxward-batch-m7/evidence/probes/net/preload.mjs",
+    ".kiro/specs/voxward-batch-m7/evidence/probes/logs/e08/selfcheck-NO-GUARD-mistake.txt",
+    ".kiro/specs/voxward-batch-m7/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "平台删除的「未知先核实、不盲目重试」只在一次操作内做到不够：新操作必须从该消息上一次的平台状态开始",
+  "summary": "VoxWard S015 的 deleteFromPlatform 在一次操作内：每次请求前查写权限与配额、记 PENDING；答复未知时先读回，PRESENT 才重试，上限 2 次。但平台状态只交给 record 回调，不落库：UNKNOWN 之后用新操作标识再来一次会直接发请求；两人同时操作会发两次；进程在 PENDING 之后中断，重启后没有任何地方记得这次请求。",
+  "snippet": "接平台写操作时按对象（这里是事件）持久化每条平台记录；新操作开始前读最近状态：PENDING 未结束则不再发送，UNKNOWN 或重启后遗留的 PENDING 先读回，SUCCEEDED 不再发送。验收用例覆盖「UNKNOWN 后新操作」「两人同时操作」「PENDING 后重启」三种序列。",
+  "body": "第 m7 批 E70 U5：UNKNOWN(VERIFICATION_UNAVAILABLE) 之后的新操作，本地结果 already_blocked，随即发出删除请求，没有先读回。U6：两个操作用 Promise.all 同时执行，一个 blocked、一个 already_blocked，共 2 次请求、40 单位。同一探针的变异对照（未知时不读回）在 S5–S8、U1、U2、U4 上报不符，说明操作内的核实是被测到的。S015 设计 §7 写明「不做跨操作的『已删除』去重」，落库、路由与界面归接线 Story。",
+  "tags": [
+   "voxward",
+   "platform-delete",
+   "youtube",
+   "idempotency",
+   "wiring"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/decision-service/platform-delete.ts",
+    "packages/contracts/src/ports/platform-delete.ts",
+    ".kiro/specs/voxward-s015-platform-delete/design.md",
+    ".kiro/specs/voxward-batch-m7/evidence/probes/probe-m7-s015.mts",
+    ".kiro/specs/voxward-batch-m7/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "VoxWard 的 YouTube 删除与 streamList 连接共用一个配额监视器：删除每次在请求前计 20 单位，删除得到 quotaExceeded 后连接也被拒到 UTC 换日",
+  "summary": "S015 的 YouTube 删除适配器复用 S013 的 QuotaMonitor：checkDeletePermission 在已用加 20 超过日预算或服务器已报耗尽时拒绝；deleteMessage 先 spend(20) 再发请求（拒绝也计）；答复 403 quotaExceeded 时调用 onQuotaExceeded()。同一监视器的 allowConnect() 决定 streamList 能否连接（每次 5 单位），所以一批删除会占掉重连的预算，删除触发的耗尽也会挡住重连。",
+  "snippet": "部署与接线时把删除和连接算进同一个日预算：界面显示两者的用量，部署说明写明删除 20 单位/次、配额耗尽后连接同样被拒；需要时在配置里给重连保留余量。读回（liveChatMessages.list）目前不计费，实测后再补。",
+  "body": "第 m7 批 E70 Q3：预算 40、已用 20 时删除发出 1 次并计到 40，下一次删除 0 次请求、FAILED(QUOTA_EXHAUSTED)。Q4：删除答复 403 quotaExceeded 后，下一次删除 0 次请求，同一监视器 allowConnect() 为 false、state 为 EXHAUSTED。这与 YouTube 按 Cloud 项目计日配额一致，代码不需要改；提案 §3.1 要求部署指引列明每项能力的配额成本。",
+  "tags": [
+   "voxward",
+   "youtube",
+   "quota",
+   "platform-delete",
+   "deployment"
+  ],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/platform-source/youtube/delete-message.ts",
+    "apps/server/src/modules/platform-source/youtube/quota.ts",
+    "apps/server/src/modules/platform-source/youtube/config.ts",
+    ".kiro/specs/voxward-batch-m7/evidence/acceptance.md"
+   ]
+  }
+ }
+]
