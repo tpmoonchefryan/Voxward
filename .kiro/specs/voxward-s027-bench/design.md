@@ -91,10 +91,14 @@ bench/
   samples/moderation-samples.json 合成样本，每条带规则期望与 AI 期望
   samples/rule-set.json           合成规则集与读音表（占位词，不含真实侮辱词）
   fixtures/fake-kiro-cli.mjs      假 CLI 替身，内容复制自 apps/server/test 的替身，可执行
-  lib/samples.ts                  读取、结构与覆盖校验，失败时退出码 1
+  lib/paths.ts                    bench 内路径与 scratch 目录（不依赖工作目录）
+  lib/samples.ts                  读取、结构、来源与覆盖校验，失败时退出码 1
+  lib/rules.ts                    规则集与读音表加载，检查器装配（完整消息与仅正文两种）
   lib/doubles.ts                  替身装配：合成适配器、假 CLI 适配器、合成 SC 与复盘模型
-  lib/environment.ts              环境记录：硬件、操作系统、Node、替身名、配置、时间
-  lib/gate.ts                     真实模型闸门，默认关闭
+  lib/metrics.ts                  指标：规则、AI 分类、分位数、错误码
+  lib/fake-log.ts                 假 CLI 日志读取、存活进程计数、等待标记
+  lib/crash-child.ts              异常重启场景的子进程（仅由 cleanup-observe 启动）
+  lib/gate.ts                     真实模型闸门（默认关闭）、参数解析、环境记录
   scripts/quality.ts              质量指标
   scripts/latency-capacity.ts     延迟与容量指标
   scripts/cleanup-observe.ts      清理观察
@@ -105,7 +109,7 @@ bench/
 ### 4. 依赖方向（自定）
 
 - `bench/` 不在 `scripts/check-deps.mjs` 的扫描根中，因此不受分区规则约束。模块代码和 check-deps 规则都不改动。
-- bench 只读调用已有公开导出，且只经相对路径导入：`packages/contracts/src/index.ts`；`apps/server/src/modules/moderation-engine/index.ts` 与 `rules/normalize.ts`、`rules/transliterate.ts`；`apps/server/src/modules/inference-provider/index.ts`（批次校验与 SC 流水线）；`apps/server/src/adapters/synthetic/inference-provider.ts`；`apps/server/src/adapters/kiro-cli/provider.ts`、`cleanup.ts`、`orphan-sweep.ts`、`session-lifecycle.ts`。
+- bench 只读调用已有公开导出，且只经相对路径导入：`packages/contracts/src/index.ts`；`apps/server/src/modules/moderation-engine/index.ts`（检查器工厂与昵称源接口）、`rules/groups.ts`（规则集类型）、`rules/normalize.ts`（选项类型）、`rules/transliterate.ts`（读音表）；`apps/server/src/modules/inference-provider/index.ts`（批次校验与 SC 流水线）；`apps/server/src/adapters/synthetic/inference-provider.ts`；`apps/server/src/adapters/kiro-cli/provider.ts`、`errors.ts`、`orphan-sweep.ts`。
 - bench 不导入 `apps/server/test/` 下的任何文件。假 CLI 替身复制到 `bench/fixtures/`，使 bench 不依赖测试目录。
 - 替身通过端口注入。规则引擎实现 `GeneratedTextChecker`，SC 与复盘模型是 bench 内的合成函数，地址与条目编号由本地函数给出。
 
@@ -118,7 +122,7 @@ bench/
 
 ### 6. 规则集（自定）
 
-- `rule-set.json` 版本为 `bench-synth-v1`。组：BLOCK 组（精确、归一化、受约束正则各一条）、REVIEW 组（读音规则，只允许在 REVIEW 组内，由编译器强制）、DEDUCT 组（精确，扣分 3）。
+- `rule-set.json` 版本为 `bench-synth-v1`。组：BLOCK 组（归一化两条、受约束正则一条）、REVIEW 组（读音规则一条；读音规则只允许在 REVIEW 组内，由编译器强制）、DEDUCT 组（精确一条，扣分 3）。精确匹配只出现在 DEDUCT 组。
 - 读音表只覆盖谐音样本用到的字符。未覆盖的字符使读音不完整，读音规则不会命中。
 
 ### 7. 替身（`lib/doubles.ts`，自定）

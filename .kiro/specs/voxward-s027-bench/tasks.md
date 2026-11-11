@@ -20,12 +20,12 @@ A checked task is local progress only. Formal completion still requires the engi
 
 勾选只是本地进度，不改变工单状态，也不构成完成证据。
 
-- [ ] 2. VOXWARD-SUB-049 合成样本与基准脚本（work:2aa6c8e36e17dd07df29f664）
-  - [ ] 2.1 样本与来源：`bench/samples/SOURCES.md`、`moderation-samples.json`、`rule-set.json`，覆盖中日英、混合、谐音、昵称组合、跨条、噪声、规避、误报。
-  - [ ] 2.2 替身与装配：`bench/lib/samples.ts`、`doubles.ts`、`environment.ts`、`gate.ts`，`bench/fixtures/fake-kiro-cli.mjs`。
-  - [ ] 2.3 `bench/scripts/quality.ts`：规则、实时、SC、复盘指标；两次运行输出逐字节一致。
-  - [ ] 2.4 `bench/scripts/latency-capacity.ts`：静态耗时、端到端 P50/P95、并发档位、超时与过载探针。
-  - [ ] 2.5 `bench/scripts/cleanup-observe.ts`：成功、失败、取消、超时、校验失败、异常重启的残留观察。
-  - [ ] 2.6 `bench/README.md`、根 `package.json` 脚本入口、`typecheck` 追加 bench。
-  - [ ] 2.7 自测与证据：`evidence/self-check.md`，随最后一个 commit 提交。
+- [x] 2. VOXWARD-SUB-049 合成样本与基准脚本（work:2aa6c8e36e17dd07df29f664）
+  - [x] 2.1 样本与来源：`bench/samples/SOURCES.md`、`moderation-samples.json`、`rule-set.json`，覆盖中日英、混合、谐音、昵称组合、跨条、噪声、规避、误报。
+  - [x] 2.2 替身与装配：`bench/lib/*.ts`，`bench/fixtures/fake-kiro-cli.mjs`。
+  - [x] 2.3 `bench/scripts/quality.ts`：规则、实时、SC、复盘指标；两次运行输出逐字节一致。
+  - [x] 2.4 `bench/scripts/latency-capacity.ts`：静态耗时、端到端 P50/P95、并发档位、超时与过载探针。
+  - [x] 2.5 `bench/scripts/cleanup-observe.ts`：成功、失败、取消、超时、校验失败、异常重启的残留观察。
+  - [x] 2.6 `bench/README.md`、根 `package.json` 脚本入口、`typecheck` 追加 bench。
+  - [x] 2.7 自测与证据：`evidence/self-check.md`，随最后一个 commit 提交。
 - [ ] 3. VOXWARD-SUB-050 真实运行与报告：待 Owner 账号（S029 演练时一起跑），本包不做，不转态。
