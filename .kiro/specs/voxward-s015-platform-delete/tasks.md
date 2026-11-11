@@ -22,5 +22,5 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] T3 VOXWARD-SUB-028：YouTube 删除适配 `youtube/delete-message.ts` 与 `test/platform-source/youtube-delete/delete-message.test.ts`。
 - [x] T4 VOXWARD-SUB-028：删除编排 `decision-service/platform-delete.ts` 与 `test/decision-service/platform-delete/orchestration.test.ts`（真实 S014 数据库）。
 - [x] T5 VOXWARD-SUB-028：`platform-source/index.ts` 与 `decision-service/index.ts` 导出。
-- [ ] T6 自测与证据：`pnpm install`、`build`、`typecheck`、`test`、`check:deps`、`kiro-specs.mjs check`、`smoke.sh`；证据写入 `evidence/self-check.md`。
-- [ ] T7 交付报告：模型、提交、改动文件、自测结果、AC 逐条结果、自定选择、偏离、来源缺口、未验证项、可能的合并冲突。
+- [x] T6 自测与证据：`pnpm install`、`build`、`typecheck`、`test`、`check:deps`、`kiro-specs.mjs check`、`smoke.sh` 均退出 0；证据写入 `evidence/self-check.md`。
+- [x] T7 交付报告：模型、提交、改动文件、自测结果、AC 逐条结果、自定选择、偏离、来源缺口、未验证项、可能的合并冲突。
