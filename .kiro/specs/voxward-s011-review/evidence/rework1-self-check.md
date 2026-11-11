@@ -29,7 +29,7 @@
 | E60 探针（S011 §A、§C–§G） | 26 项，6 不符（A2、A3、G1–G4） | 26 项，0 不符 |
 | E60 A2：共用协调器时实时任务 | `PENDING_REVIEW`，`REVIEW_TASK_UNKNOWN` | `QUEUED`（见下文探针说明） |
 | E60 A3：复盘任务由谁结算 | Crew 执行器启动 1 个会话并 `writeVerdict`，消息仍为 `UNSETTLED_FAST_PASS` | 执行器启动 0 个会话，消息为 `SETTLED` |
-| E60 G1–G4：整批契约 | 部分结算。G1 的 `i0` 以 ALLOW 结算 +2，BLOCK 消失；G2、G3 的其余条目照常结算 | 四例均整批 `FAILED`（G1、G3、G4 为 `AI_OUTPUT_INVALID`，G2 为 `AI_OUTPUT_INCOMPLETE`），计分 0、复核记录 0 |
+| E60 G1–G4：整批契约 | 部分结算。G1 的 `i0` 以 ALLOW 结算 +2，BLOCK 消失；G2、G3 的其余条目照常结算 | 四例均整批 `FAILED`（G1、G3、G4 为 `AI_OUTPUT_INVALID`，G2 为 `AI_OUTPUT_INCOMPLETE`），无条目结算，`scores` 为 `null`；G1、G4 的复核记录为 0 |
 | E60 G5（合法输出对照） | 符合 | 符合 |
 | E61 堆探针（H1–H3） | 3 项，2 不符：取消 20/20、到期 20/20 个正文标记残留 | 3 项，0 不符：取消 0/20、到期 0/20、已结算 0/20 |
 | E30（第 6 批 S009 主探针） | 98 项，0 不符 | 98 项，0 不符；逐行 OK/FAIL 与修复前相同 |
