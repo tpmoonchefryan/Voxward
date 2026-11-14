@@ -57,7 +57,7 @@ afterEach(async () => {
   harness = undefined;
 });
 
-function connectBlivechat(port: number, credential: string, path = BLIVECHAT_OUTPUT_PATH): WebSocket {
+function connectBlivechat(port: number, credential: string, path: string = BLIVECHAT_OUTPUT_PATH): WebSocket {
   const ws = new WebSocket(`ws://127.0.0.1:${port}${path}`, [BLIVECHAT_PROTOCOL_VERSION, `vw-cred.${credential}`]);
   openSockets.push(ws);
   return ws;
