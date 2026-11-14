@@ -34,6 +34,7 @@ import { runShortTransaction } from "../../../src/db/transaction.js";
 import { RETENTION_DAYS } from "../../../src/modules/audit-store/content-policy.js";
 import { createDecisionService } from "../../../src/modules/decision-service/index.js";
 import { createCandidateStore } from "../../../src/modules/moderation-engine/index.js";
+import { createReviewRunner } from "../../../src/modules/moderation-engine/review/runner.js";
 import { buildRegistry } from "../../../src/modules/registry.js";
 import { createScoringEngine, createScoringPlanner } from "../../../src/modules/scoring-engine/index.js";
 import { createTaskCoordinator } from "../../../src/modules/task-coordinator/index.js";
@@ -101,7 +102,7 @@ describe("S026 Core Flow: Manual Overturn, Exception Zero-Window, Coordinator & 
     removeDirectory(dbDir);
   });
 
-  it("handles manual overturn concurrency conflict, reverses earlier score, and enforces idempotency (Q49, Q55)", async () => {
+  it("handles manual overturn concurrency conflict, reverses single-event score, and enforces idempotency (Q49)", async () => {
     const decisionStore = createDecisionStorePort(database, {
       planner: createScoringPlanner({ enabled: true }),
       changeLogExpiresAt: (occurredAt) =>
@@ -192,7 +193,7 @@ describe("S026 Core Flow: Manual Overturn, Exception Zero-Window, Coordinator & 
     expect(ledgerRows.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("refuses scoring during active scoring exception window and leaves score at 0 (Q55)", async () => {
+  it("refuses scoring during active scoring exception window and leaves score at 0 (score_exceptions)", async () => {
     const subjectId = "sub-exc-1";
     runShortTransaction(database, (tx) => {
       SubjectStore.create(tx, {
@@ -439,5 +440,196 @@ describe("S026 Core Flow: Manual Overturn, Exception Zero-Window, Coordinator & 
     });
     expect(approved?.text).toBe(fixture.translationPayloadExample.text);
     expect(approved?.translation).toBe(rawTranslationJson);
+  });
+
+  it("reproduces Q55 C6 clamp compensation drift on overturn (+2 vs ledger replay, as-is without modifying src/)", async () => {
+    const subjectId = "sub-q55-c6";
+    runShortTransaction(database, (tx) => {
+      SubjectStore.create(tx, {
+        id: subjectId,
+        channelId: fixture.channelId,
+        platformSubjectKey: "yt-viewer-q55-c6",
+        createdAt: fixture.baseTimeIso,
+      });
+    });
+
+    const planner = createScoringPlanner({
+      enabled: true,
+      minScore: -100,
+      maxScore: 10,
+      complianceReward: 2,
+      violationPenalty: 3,
+      rewardCooldownMs: 0,
+    });
+    let seqId = 0;
+    let tickMs = Date.parse(fixture.baseTimeIso);
+    const decisionStore = createDecisionStorePort(database, {
+      planner,
+      newId: () => `id-c6-${++seqId}`,
+      changeLogExpiresAt: () => "2099-01-01T00:00:00.000Z",
+    });
+    const decisions = createDecisionService({
+      store: decisionStore,
+      newId: () => `did-c6-${++seqId}`,
+      now: () => new Date((tickMs += 1000)),
+      limits: { overturnValidityMs: 300_000, resendValidityMs: 60_000, resendMaxAgeMs: 600_000 },
+    });
+
+    const steps: readonly ("BLOCK" | "ALLOW_MEANINGFUL")[] = [
+      "BLOCK",
+      "ALLOW_MEANINGFUL",
+      "ALLOW_MEANINGFUL",
+      "ALLOW_MEANINGFUL",
+      "ALLOW_MEANINGFUL",
+      "ALLOW_MEANINGFUL",
+      "ALLOW_MEANINGFUL",
+      "BLOCK",
+    ];
+
+    for (let i = 0; i < steps.length; i++) {
+      const idx = i + 1;
+      const evIso = new Date(Date.parse(fixture.baseTimeIso) + idx * 1000).toISOString();
+      runShortTransaction(database, (tx) => {
+        tx.insert(channelEvents)
+          .values({
+            id: `ev-c6-${idx}`,
+            channelId: fixture.channelId,
+            platformMessageRef: `pm-c6-${idx}`,
+            platformOrder: idx,
+            receivedAt: evIso,
+            correlationId: `corr-c6-${idx}`,
+            subjectId,
+            eventVersion: 1,
+            createdAt: evIso,
+          })
+          .run();
+        tx.insert(tasks)
+          .values({
+            id: `tk-c6-${idx}`,
+            channelId: fixture.channelId,
+            eventId: `ev-c6-${idx}`,
+            eventVersion: 1,
+            processingGeneration: 0,
+            kind: "REALTIME_REVIEW",
+            status: "RUNNING",
+            deadlineAt: "2099-01-01T00:00:00.000Z",
+            createdAt: evIso,
+            updatedAt: evIso,
+          })
+          .run();
+      });
+      const res = await decisions.commit(`tk-c6-${idx}`, createVerdict(steps[i]!), { kind: "SYSTEM", source: "MODEL" });
+      expect(res.status).toBe("committed");
+    }
+
+    const beforeRow = database.orm.select().from(subjectScores).where(eq(subjectScores.subjectId, subjectId)).get();
+    expect(beforeRow?.currentScore).toBe(6);
+
+    const actor: DecisionActor = {
+      contractVersion: CONTRACT_VERSION,
+      accountRef: fixture.manualOverturn.operatorRef,
+      channelId: fixture.channelId,
+      capabilities: new Set([REVIEW_CAPABILITY]),
+    };
+    const overturned = await decisions.overturn({
+      eventId: "ev-c6-1",
+      operationId: "op-c6-1",
+      verdict: createVerdict("ALLOW_MEANINGFUL"),
+      actor,
+    });
+    expect(overturned.status).toBe("overturned");
+    // Known Q55 C6 defect in src/: compensation adds +3 -> 9 with needsManualAdjustment=false,
+    // whereas replaying the remaining timeline without ev-c6-1 clamps at maxScore=10 then -3 -> 7 (+2 drift).
+    if (overturned.status === "overturned") {
+      expect(overturned.needsManualAdjustment).toBe(false);
+    }
+    const afterRow = database.orm.select().from(subjectScores).where(eq(subjectScores.subjectId, subjectId)).get();
+    expect(afterRow?.currentScore).toBe(9);
+
+    let replayScore = 0;
+    for (const s of steps.slice(1)) {
+      const delta = s === "ALLOW_MEANINGFUL" ? 2 : -3;
+      replayScore = Math.max(-100, Math.min(10, replayScore + delta));
+    }
+    expect(replayScore).toBe(7);
+  });
+
+  it("reproduces Q57 R7 cross-instance ReviewRunner skip leaving BACKGROUND task RUNNING (as-is without modifying src/)", async () => {
+    const deadline = new Date(Date.parse(fixture.baseTimeIso) + 1_800_000).toISOString();
+    const coordinator = createTaskCoordinator({
+      facts: {
+        readFacts: () => ({ eventVersion: 1, processingGeneration: 1, deleted: false }),
+        commitIfCurrent: (_key, _expected, apply) => {
+          apply();
+          return { status: "committed" };
+        },
+      },
+      concurrency: { current: () => 4 },
+      clock: () => new Date(fixture.baseTimeIso),
+      limits: { maxBatchItems: 1 },
+    });
+
+    const candidateEvent: ChannelEvent = {
+      contractVersion: CONTRACT_VERSION,
+      platform: "youtube",
+      channelId: fixture.channelId,
+      platformMessageId: "yt-q57-r7-1",
+      platformOrder: 1,
+      receivedAt: fixture.baseTimeIso,
+      correlationId: "corr-q57-r7-1",
+      body: "fast passed text needing background review",
+      sender: { contractVersion: CONTRACT_VERSION, senderRef: "viewer-q57-r7" },
+    };
+
+    const makeRunner = (hasCandidate: boolean) =>
+      createReviewRunner({
+        store: {
+          listOpenCandidates: () =>
+            hasCandidate
+              ? [
+                  {
+                    eventId: "ev-q57-r7-1",
+                    event: candidateEvent,
+                    settlementState: "UNSETTLED_FAST_PASS",
+                    settlementDeadlineAt: deadline,
+                    evidenceExpiresAt: deadline,
+                    exceptionMarked: false,
+                    deletionInProgress: false,
+                    manuallyDecided: false,
+                  },
+                ]
+              : [],
+          readCandidate: () => undefined,
+          markExpired: () => undefined,
+          commitSettlement: () => ({ status: "SETTLED" }),
+          markScoring: () => undefined,
+          listPendingScoring: () => [],
+        },
+        coordinator,
+        model: {
+          reviewBatch: async () => ({ contractVersion: CONTRACT_VERSION, items: [] }),
+        },
+        scoring: {
+          applyVerdict: async () => {
+            throw new Error("should not be called");
+          },
+        },
+        reviewQueue: { append: () => undefined },
+        candidates: { propose: () => undefined },
+        now: () => new Date(fixture.baseTimeIso),
+        newId: () => "id-r7",
+        newNonce: () => "nonce-r7",
+      });
+
+    const runnerA = makeRunner(true);
+    const runnerB = makeRunner(false);
+
+    const cycleA = await runnerA.runCycle({ channelId: fixture.channelId, streamEnded: true });
+    expect(cycleA.enqueued).toBe(1);
+
+    // Known Q57 R7 defect in src/: runnerB takes runnerA's BACKGROUND task, skips it as unknown, and calls finishBatch.
+    const batchB = await runnerB.runBatch();
+    expect(batchB).not.toBeNull();
+    expect(batchB?.items).toHaveLength(0);
   });
 });
