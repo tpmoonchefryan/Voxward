@@ -51,6 +51,8 @@ export interface NativeOutputOptions {
   readonly grants: OutputGrantPort;
   readonly subscribers: OutputSubscriberRegistry;
   readonly timing?: Partial<NativeOutputTiming>;
+  /** Upgrade paths handled by sibling endpoints on the same HTTP server; skipped without 404. */
+  readonly ignoredPaths?: ReadonlySet<string>;
   /** Receives refusals and connection errors. A line carries a reason code, never the URL, a header or a credential. */
   readonly log?: { warn(fields: Record<string, unknown>, message: string): void };
   readonly onClosed?: (closed: ClosedConnection) => void;
@@ -97,7 +99,11 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
   }
 
   function onUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): void {
-    if (pathOf(request.url) !== NATIVE_OUTPUT_PATH) {
+    const path = pathOf(request.url);
+    if (options.ignoredPaths?.has(path)) {
+      return;
+    }
+    if (path !== NATIVE_OUTPUT_PATH) {
       refuse(socket, 404, "PATH_NOT_FOUND");
       return;
     }

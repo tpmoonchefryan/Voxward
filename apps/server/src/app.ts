@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import type { OutputSubscriberRegistry, SubjectCacheHub } from "@voxward/contracts";
+import { attachBlivechatOutput } from "./adapters/blivechat/socket.js";
 import { attachNativeOutput, type ClosedConnection, type NativeOutputTiming } from "./adapters/native-output/socket.js";
 import { channelPanelRoutes } from "./auth/channel-panel-routes.js";
 import { dataLifecycleRoutes } from "./auth/data-routes.js";
@@ -47,6 +48,7 @@ import {
   type CandidateStore,
 } from "./modules/moderation-engine/index.js";
 import { compileRuleSet, type RuleSetInput } from "./modules/moderation-engine/rules/groups.js";
+import { BLIVECHAT_OUTPUT_PATH, BLIVECHAT_PROTOCOL_VERSION, createBlivechatAdapter } from "./modules/output/index.js";
 import { createDeliveryPump } from "./modules/output-adapter/delivery.js";
 import { createSubscriptionRegistry } from "./modules/output-adapter/subscription.js";
 import type { ModuleRegistry } from "./modules/registry.js";
@@ -145,9 +147,21 @@ function startNativeOutput(
   subscribers: OutputSubscriberRegistry,
   settings: NativeOutputSettings | undefined,
 ): void {
+  const grants = createOutputGrantPort(database);
   const endpoint = attachNativeOutput(app.server, {
-    grants: createOutputGrantPort(database),
+    grants,
     subscribers,
+    timing: settings?.timing,
+    ignoredPaths: new Set([BLIVECHAT_OUTPUT_PATH]),
+    log: app.log,
+    onClosed: settings?.onClosed,
+  });
+  const blivechatEndpoint = attachBlivechatOutput(app.server, {
+    path: BLIVECHAT_OUTPUT_PATH,
+    protocolVersion: BLIVECHAT_PROTOCOL_VERSION,
+    grants,
+    subscribers,
+    protocol: createBlivechatAdapter(),
     timing: settings?.timing,
     log: app.log,
     onClosed: settings?.onClosed,
@@ -178,6 +192,7 @@ function startNativeOutput(
   app.addHook("preClose", async () => {
     clearInterval(timer);
     endpoint.close();
+    blivechatEndpoint.close();
   });
 }
 
