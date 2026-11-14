@@ -18,8 +18,9 @@ const DATABASE_PACKAGES = ["drizzle-orm", "better-sqlite3"];
 // The db zone reaches external packages only through DATABASE_PACKAGES, checked in allowed().
 const ALLOWED_TARGETS = {
   contracts: ["contracts"],
+  demo: ["contracts", "demo", "module", "adapter", "db", "auth", "security", "composition", "external", "builtin"],
   adapter: ["contracts", "adapter", "external", "builtin"],
-  composition: ["contracts", "module", "adapter", "composition", "db", "auth", "security", "external", "builtin"],
+  composition: ["contracts", "demo", "module", "adapter", "composition", "db", "auth", "security", "external", "builtin"],
   db: ["contracts", "db", "builtin"],
   auth: ["contracts", "auth", "db", "external", "builtin"],
   security: ["contracts", "security", "builtin"],
@@ -50,6 +51,7 @@ function zoneOf(absolutePath) {
   if (moduleMatch !== null) return { kind: "module", name: moduleMatch[1], rel };
   if (rel.startsWith("apps/server/src/adapters/")) return { kind: "adapter", rel };
   if (rel.startsWith("apps/server/src/db/")) return { kind: "db", rel };
+  if (rel.startsWith("apps/server/src/demo/")) return { kind: "demo", rel };
   if (rel.startsWith("apps/server/src/auth/")) return { kind: "auth", rel };
   if (rel.startsWith("apps/server/src/security/")) return { kind: "security", rel };
   if (rel === "apps/server/src/app.ts" || rel === "apps/server/src/main.ts" || rel.startsWith("apps/server/src/config/")) {

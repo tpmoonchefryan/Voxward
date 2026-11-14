@@ -1,0 +1,10 @@
+{
+  "mode": "synthetic-sandbox",
+  "adapters": "synthetic",
+  "databasePath": "data/voxward-sandbox.sqlite3",
+  "host": "127.0.0.1",
+  "port": 3100,
+  "channelId": "sandbox-ch-01",
+  "banner": "SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）",
+  "allowProductionSecrets": false
+}
