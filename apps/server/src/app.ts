@@ -56,6 +56,8 @@ import { createSubscriptionRegistry } from "./modules/output-adapter/subscriptio
 import type { ModuleRegistry } from "./modules/registry.js";
 import { createScoringPlanner } from "./modules/scoring-engine/index.js";
 import { redactUrlText } from "./security/redaction.js";
+import { sandboxRoutes } from "./demo/routes.js";
+import { assertSandboxStartupSafe, type SandboxOptions } from "./demo/sandbox-guard.js";
 
 export interface AppOptions {
   readonly modules: ModuleRegistry;
@@ -80,6 +82,8 @@ export interface AppOptions {
   readonly candidateStore?: CandidateStore;
   /** External tombstone ledger for data deletion replay across backup restores (S020). */
   readonly tombstoneLedger?: TombstoneLedger;
+  /** Opt-in isolated synthetic sandbox routes. Disabled by default. */
+  readonly sandbox?: SandboxOptions;
 }
 
 export interface NativeOutputSettings {
@@ -112,6 +116,7 @@ export function buildApp({
   subjectCaches,
   candidateStore,
   tombstoneLedger,
+  sandbox,
 }: AppOptions): FastifyInstance {
   const app = Fastify({ logger: logger ? loggerOptions(logStream) : false, frameworkErrors: frameworkErrorReply });
   // One bus for the whole process: the viewer cache and the deletion path both use it (Q35).
@@ -138,6 +143,10 @@ export function buildApp({
     app.register(dataLifecycleRoutes, { database, routes: createDataRoutes(deps) });
     app.register(channelPanelRoutes, channelPanelOptionsFor(database, modules, candidateStore));
     startNativeOutput(app, database, outputSubscribers, nativeOutput);
+    if (sandbox?.enabled === true) {
+      assertSandboxStartupSafe(sandbox, database.filePath);
+      app.register(sandboxRoutes, { database });
+    }
   }
   return app;
 }
