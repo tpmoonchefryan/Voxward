@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAuditLogPort } from "../../src/db/audit-log.js";
 import { writeChannelSetting } from "../../src/db/channel-settings-store.js";
 import { openDatabase, type VoxwardDatabase } from "../../src/db/client.js";
-import { createRetentionStore } from "../../src/db/retention-store.js";
+import { createRetentionStore, type RetentionExpiredBatch } from "../../src/db/retention-store.js";
 import { CHANNEL, openDataFixture, type DataFixture } from "../data-lifecycle-service/fixtures.js";
 import { changeLog, count, day, evidence, MARKER, seedViewerHistory, techLog } from "../data-lifecycle-service/s020/seed.js";
 import { removeDirectory, scratchDirectory } from "./helpers.js";
@@ -99,6 +99,23 @@ describe("tiered expiry", () => {
     const result = createRetentionStore(database).sweepExpired({ nowIso: day(2), batchSize: 2 });
     expect(result.removed.changeLogs).toBe(5);
     expect(() => createRetentionStore(database).sweepExpired({ nowIso: "not a time" })).toThrow(RangeError);
+  });
+
+  it("emits onExpired batches with exact logIds, correlationIds, and changeLogIds after commit (B12)", () => {
+    seedTiers();
+    const batches: RetentionExpiredBatch[] = [];
+    const store = createRetentionStore(database, { onExpired: (batch) => batches.push(batch) });
+
+    store.sweepExpired({ nowIso: day(8) });
+    expect(batches).toEqual([{ logIds: ["log-a"], correlationIds: ["corr-a"], changeLogIds: [] }]);
+
+    batches.length = 0;
+    store.sweepExpired({ nowIso: day(15) });
+    expect(batches).toEqual([{ logIds: ["log-a"], correlationIds: ["corr-a"], changeLogIds: [] }]);
+
+    batches.length = 0;
+    store.sweepExpired({ nowIso: day(31) });
+    expect(batches).toEqual([{ logIds: [], correlationIds: [], changeLogIds: ["change-a"] }]);
   });
 });
 

@@ -26,6 +26,6 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] T7 tests: Q30, tiers, active task, S019 coordination, bounded backup, zero resurrection, other-subject safety, failed replay keeps live file
 - [ ] T8 composition wiring (`app.ts` `tombstoneLedger?` & `restoreDatabaseWithLedger`, `main.ts` non-`:memory:` ledger, `db/restore-support.ts` `createRestoreReplayPorts` & `restoreDatabaseWithPorts`) and E2E test `test/app/s020-tombstone-wiring.test.ts`
 - [ ] T9 `evidence/self-check.md`; gates build, typecheck, check-deps, test, smoke, spec check
-- [ ] T10 B12 & N15c: `RetentionExpiredBatch` + `onExpired` in `db/retention-store.ts`, `app.retention` + `retentionSweepIntervalMs` in `app.ts`, `main.ts` 60s interval
-- [ ] T11 B13: `bumpGenerationForTombstone` in `db/restore-support.ts` & `restore-replay.ts`, staged `sweepExpired` + `compact()` in `restoreBackup` (`db/backup-store.ts`)
-- [ ] T12 Rework 1 regression tests (E80 R3: B12 `ViewerCache` `EXPIRED` eviction & timer lifecycle; B13 `processingGeneration` bump + staged expiry sweep & `VACUUM`), `self-check.md`, and gates
+- [x] T10 B12 & N15c: `RetentionExpiredBatch` + `onExpired` in `db/retention-store.ts`, `app.retention` + `retentionSweepIntervalMs` in `app.ts`, `main.ts` 60s interval
+- [x] T11 B13: `bumpGenerationForTombstone` in `db/restore-support.ts` & `restore-replay.ts`, staged `sweepExpired` + `compact()` in `restoreBackup` (`db/backup-store.ts`)
+- [x] T12 Rework 1 regression tests (E80 R3: B12 `ViewerCache` `EXPIRED` eviction & timer lifecycle; B13 `processingGeneration` bump + staged expiry sweep & `VACUUM`), `self-check.md`, and gates

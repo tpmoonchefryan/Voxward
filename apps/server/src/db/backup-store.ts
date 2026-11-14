@@ -2,6 +2,7 @@ import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, renameSync
 import { join } from "node:path";
 import { openDatabase, type VoxwardDatabase } from "./client.js";
 import { runMigrations } from "./migrate.js";
+import { createRetentionStore } from "./retention-store.js";
 import type { TombstoneEntry, TombstoneLedger } from "./tombstone-ledger.js";
 
 const BACKUP_PREFIX = "voxward-";
@@ -28,7 +29,13 @@ export interface BackupResult {
 }
 
 export class BackupError extends Error {
-  readonly code: "INVALID_LIMITS" | "BACKUP_EXISTS" | "RESTORE_REPLAY_INCOMPLETE" | "RESTORE_CHECK_FAILED" | "BACKUP_NOT_FOUND";
+  readonly code:
+    | "INVALID_LIMITS"
+    | "BACKUP_EXISTS"
+    | "RESTORE_REPLAY_INCOMPLETE"
+    | "RESTORE_CHECK_FAILED"
+    | "RESTORE_COMPACT_FAILED"
+    | "BACKUP_NOT_FOUND";
 
   constructor(code: BackupError["code"]) {
     super(code);
@@ -140,6 +147,8 @@ export interface RestoreOptions {
   /** The live database file. It is replaced only after every check has passed. */
   readonly targetPath: string;
   readonly ledger: TombstoneLedger;
+  /** Clock used for staged expiry sweep before promoting the restored database. */
+  readonly now?: () => Date;
   /** Repeats the tombstones on the staged database. Wired by the composition to the data lifecycle module. */
   readonly replay: (staged: VoxwardDatabase, tombstones: readonly TombstoneEntry[]) => ReplayOutcome;
 }
@@ -160,6 +169,16 @@ export function restoreBackup(options: RestoreOptions): void {
       runMigrations(staged);
       const outcome = options.replay(staged, options.ledger.read());
       if (!outcome.complete) throw new BackupError("RESTORE_REPLAY_INCOMPLETE");
+      const nowIso = (options.now ?? (() => new Date()))().toISOString();
+      const retention = createRetentionStore(staged);
+      for (;;) {
+        const swept = retention.sweepExpired({ nowIso });
+        if (swept.removed.evidence === 0 && swept.removed.technicalLogs === 0 && swept.removed.changeLogs === 0) {
+          break;
+        }
+      }
+      const compacted = retention.compact();
+      if (!compacted.compacted) throw new BackupError("RESTORE_COMPACT_FAILED");
       if (!isConsistent(staged)) throw new BackupError("RESTORE_CHECK_FAILED");
       staged.sqlite.pragma("wal_checkpoint(TRUNCATE)");
     } finally {

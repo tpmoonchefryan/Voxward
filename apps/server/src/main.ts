@@ -17,7 +17,12 @@ const { config } = loaded;
 const database = openDatabaseOrExit(config.databaseFile);
 const tombstoneLedger =
   config.databaseFile !== ":memory:" ? createTombstoneLedger(join(dirname(config.databaseFile), "tombstones")) : undefined;
-const app = buildApp({ modules: buildRegistry(config), database, tombstoneLedger });
+const app = buildApp({
+  modules: buildRegistry(config),
+  database,
+  tombstoneLedger,
+  retentionSweepIntervalMs: config.databaseFile === ":memory:" ? undefined : 60_000,
+});
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {

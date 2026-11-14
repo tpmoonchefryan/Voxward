@@ -1,10 +1,11 @@
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import type { VoxwardDatabase } from "./client.js";
 import {
   DEFAULT_RETENTION_ADMIN_SETTINGS,
   readChannelSetting,
   type RetentionAdminSettings,
 } from "./channel-settings-store.js";
+import { changeLogs, technicalLogEvidence, technicalLogs } from "./schema/index.js";
 import { runShortTransaction } from "./transaction.js";
 
 /** Rows removed per short transaction. A sweep never holds the write lock for more than one batch. */
@@ -40,6 +41,17 @@ export interface CompactResult {
   readonly code: "COMPACTED" | "WAL_BUSY" | "VACUUM_FAILED";
 }
 
+export interface RetentionExpiredBatch {
+  readonly logIds: readonly string[];
+  readonly correlationIds: readonly string[];
+  readonly changeLogIds: readonly string[];
+}
+
+export interface RetentionStoreOptions {
+  /** Called after each committed batch that deleted at least one row. */
+  readonly onExpired?: (batch: RetentionExpiredBatch) => void;
+}
+
 export interface RetentionStore {
   sweepExpired(input: RetentionSweepInput): RetentionSweepResult;
   /** Rebuilds the main file and truncates the WAL, so pages that held expired rows leave the files (Q30). */
@@ -51,7 +63,8 @@ export interface RetentionStore {
  * metadata, then the Change Log. A channel's retention-config can shorten a row's stored `expires_at`, never extend it.
  * A technical log row is removed only when none of its evidence remains and its task is no longer active.
  */
-export function createRetentionStore(database: VoxwardDatabase): RetentionStore {
+export function createRetentionStore(database: VoxwardDatabase, options?: RetentionStoreOptions): RetentionStore {
+  const onExpired = options?.onExpired;
   return {
     sweepExpired({ nowIso, batchSize = DEFAULT_SWEEP_BATCH }) {
       const now = Date.parse(nowIso);
@@ -69,25 +82,59 @@ export function createRetentionStore(database: VoxwardDatabase): RetentionStore 
           technical: iso(now - policy.technicalLogDays * DAY_MS),
           change: iso(now - policy.changeLogDays * DAY_MS),
         };
-        removed.evidence += drain(database, batchSize, (tx) =>
-          tx.run(sql`DELETE FROM technical_log_evidence WHERE id IN (
-            SELECT e.id FROM technical_log_evidence e JOIN technical_logs l ON l.id = e.log_id
-            WHERE l.channel_id = ${channelId} AND (e.expires_at <= ${nowIso} OR l.created_at <= ${cut.evidence})
-              AND ${inactiveTask(sql`l`)} LIMIT ${batchSize})`).changes,
-        );
-        removed.technicalLogs += drain(database, batchSize, (tx) =>
-          tx.run(sql`DELETE FROM technical_logs WHERE id IN (
-            SELECT l.id FROM technical_logs l
-            WHERE l.channel_id = ${channelId} AND (l.expires_at <= ${nowIso} OR l.created_at <= ${cut.technical})
-              AND ${inactiveTask(sql`l`)}
-              AND NOT EXISTS (SELECT 1 FROM technical_log_evidence e WHERE e.log_id = l.id) LIMIT ${batchSize})`).changes,
-        );
-        removed.changeLogs += drain(database, batchSize, (tx) =>
-          tx.run(sql`DELETE FROM change_logs WHERE id IN (
-            SELECT id FROM change_logs
-            WHERE channel_id = ${channelId} AND (expires_at <= ${nowIso} OR occurred_at <= ${cut.change}) LIMIT ${batchSize})`)
-            .changes,
-        );
+        removed.evidence += drain(database, batchSize, onExpired, (tx) => {
+          const rows = tx.all<{ id: string; logId: string; correlationId: string }>(
+            sql`SELECT e.id AS id, l.id AS logId, l.correlation_id AS correlationId
+                FROM technical_log_evidence e JOIN technical_logs l ON l.id = e.log_id
+                WHERE l.channel_id = ${channelId} AND (e.expires_at <= ${nowIso} OR l.created_at <= ${cut.evidence})
+                  AND ${inactiveTask(sql`l`)} LIMIT ${batchSize}`,
+          );
+          if (rows.length === 0) return { changes: 0, batch: null };
+          const changes = tx
+            .delete(technicalLogEvidence)
+            .where(inArray(technicalLogEvidence.id, rows.map((r) => r.id)))
+            .run().changes;
+          return {
+            changes,
+            batch: {
+              logIds: [...new Set(rows.map((r) => r.logId))],
+              correlationIds: [...new Set(rows.map((r) => r.correlationId))],
+              changeLogIds: [],
+            },
+          };
+        });
+        removed.technicalLogs += drain(database, batchSize, onExpired, (tx) => {
+          const rows = tx.all<{ logId: string; correlationId: string }>(
+            sql`SELECT l.id AS logId, l.correlation_id AS correlationId FROM technical_logs l
+                WHERE l.channel_id = ${channelId} AND (l.expires_at <= ${nowIso} OR l.created_at <= ${cut.technical})
+                  AND ${inactiveTask(sql`l`)}
+                  AND NOT EXISTS (SELECT 1 FROM technical_log_evidence e WHERE e.log_id = l.id) LIMIT ${batchSize}`,
+          );
+          if (rows.length === 0) return { changes: 0, batch: null };
+          const logIds = rows.map((r) => r.logId);
+          const changes = tx.delete(technicalLogs).where(inArray(technicalLogs.id, logIds)).run().changes;
+          return {
+            changes,
+            batch: {
+              logIds: [...new Set(logIds)],
+              correlationIds: [...new Set(rows.map((r) => r.correlationId))],
+              changeLogIds: [],
+            },
+          };
+        });
+        removed.changeLogs += drain(database, batchSize, onExpired, (tx) => {
+          const rows = tx.all<{ id: string }>(
+            sql`SELECT id FROM change_logs
+                WHERE channel_id = ${channelId} AND (expires_at <= ${nowIso} OR occurred_at <= ${cut.change}) LIMIT ${batchSize}`,
+          );
+          if (rows.length === 0) return { changes: 0, batch: null };
+          const changeLogIds = rows.map((r) => r.id);
+          const changes = tx.delete(changeLogs).where(inArray(changeLogs.id, changeLogIds)).run().changes;
+          return {
+            changes,
+            batch: { logIds: [], correlationIds: [], changeLogIds },
+          };
+        });
         remaining.evidence += count(
           database,
           sql`SELECT count(*) FROM technical_log_evidence e JOIN technical_logs l ON l.id = e.log_id
@@ -106,10 +153,18 @@ export function createRetentionStore(database: VoxwardDatabase): RetentionStore 
       }
 
       // Change Log rows that belong to no channel have no channel policy: only their stored expiry applies.
-      removed.changeLogs += drain(database, batchSize, (tx) =>
-        tx.run(sql`DELETE FROM change_logs WHERE id IN (
-          SELECT id FROM change_logs WHERE channel_id IS NULL AND expires_at <= ${nowIso} LIMIT ${batchSize})`).changes,
-      );
+      removed.changeLogs += drain(database, batchSize, onExpired, (tx) => {
+        const rows = tx.all<{ id: string }>(
+          sql`SELECT id FROM change_logs WHERE channel_id IS NULL AND expires_at <= ${nowIso} LIMIT ${batchSize}`,
+        );
+        if (rows.length === 0) return { changes: 0, batch: null };
+        const changeLogIds = rows.map((r) => r.id);
+        const changes = tx.delete(changeLogs).where(inArray(changeLogs.id, changeLogIds)).run().changes;
+        return {
+          changes,
+          batch: { logIds: [], correlationIds: [], changeLogIds },
+        };
+      });
       remaining.changeLogs += count(
         database,
         sql`SELECT count(*) FROM change_logs WHERE channel_id IS NULL AND expires_at <= ${nowIso}`,
@@ -160,12 +215,23 @@ function iso(ms: number): string {
 type Tx = Parameters<Parameters<typeof runShortTransaction>[1]>[0];
 
 /** Runs one batch per short transaction until a batch removes fewer rows than its size. */
-function drain(database: VoxwardDatabase, batchSize: number, batch: (tx: Tx) => number): number {
+function drain(
+  database: VoxwardDatabase,
+  batchSize: number,
+  onExpired: ((batch: RetentionExpiredBatch) => void) | undefined,
+  batch: (tx: Tx) => { changes: number; batch: RetentionExpiredBatch | null },
+): number {
   let total = 0;
   for (let i = 0; i < MAX_BATCHES; i += 1) {
-    const changes = runShortTransaction(database, batch);
-    total += changes;
-    if (changes < batchSize) break;
+    const result = runShortTransaction(database, batch);
+    total += result.changes;
+    if (result.changes > 0 && result.batch !== null) {
+      const { logIds, correlationIds, changeLogIds } = result.batch;
+      if (logIds.length > 0 || correlationIds.length > 0 || changeLogIds.length > 0) {
+        onExpired?.(result.batch);
+      }
+    }
+    if (result.changes < batchSize) break;
   }
   return total;
 }

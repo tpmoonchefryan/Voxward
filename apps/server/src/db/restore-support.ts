@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { createAuditLogPort } from "./audit-log.js";
 import { restoreBackup, type ReplayOutcome } from "./backup-store.js";
 import type { VoxwardDatabase } from "./client.js";
-import { ScoreExceptionStore } from "./repository.js";
+import { ScoreExceptionStore, SubjectStore } from "./repository.js";
 import { dataRequests } from "./schema/index.js";
 import { createSubjectCleanupPort } from "./subject-cleanup.js";
 import type { TombstoneEntry, TombstoneLedger } from "./tombstone-ledger.js";
@@ -26,6 +26,7 @@ export interface RestoreReplayPorts {
   readonly cleanup: SubjectCleanupPort;
   readonly logs: Pick<AuditLogPort, "certifySubjectChangeLogs" | "removeSubjectEvidence" | "removeSubjectTechnicalRows">;
   readonly reinstateException: (input: Omit<ExceptionReinstatement, "id">) => void;
+  readonly bumpGenerationForTombstone: (input: { readonly subjectId: string; readonly requestId: string }) => void;
   readonly certificateSummary: string;
   readonly now: () => Date;
 }
@@ -64,6 +65,22 @@ export function reinstateException(database: VoxwardDatabase, input: ExceptionRe
   });
 }
 
+/**
+ * Advances `processing_generation` on a restored snapshot when the deletion request predates the snapshot so older
+ * queued/in-flight tasks cannot commit after restore (B13).
+ */
+export function bumpGenerationForTombstone(
+  database: VoxwardDatabase,
+  input: { readonly subjectId: string; readonly requestId: string },
+): void {
+  runShortTransaction(database, (tx) => {
+    const known = tx.select({ id: dataRequests.id }).from(dataRequests).where(eq(dataRequests.id, input.requestId)).get();
+    if (known === undefined) {
+      SubjectStore.bumpGeneration(tx, input.subjectId);
+    }
+  });
+}
+
 /** Binds the real SQLite ports on a staged database for tombstone replay. */
 export function createRestoreReplayPorts(staged: VoxwardDatabase, options: RestorePortsOptions): RestoreReplayPorts {
   const newId = options.newId ?? randomUUID;
@@ -71,6 +88,7 @@ export function createRestoreReplayPorts(staged: VoxwardDatabase, options: Resto
     cleanup: createSubjectCleanupPort(staged),
     logs: createAuditLogPort(staged),
     reinstateException: (input) => reinstateException(staged, { ...input, id: newId() }),
+    bumpGenerationForTombstone: (input) => bumpGenerationForTombstone(staged, input),
     certificateSummary: options.certificateSummary,
     now: options.now ?? (() => new Date()),
   };
@@ -82,6 +100,7 @@ export function restoreDatabaseWithPorts(options: RestoreWithPortsOptions): void
     backupPath: options.backupPath,
     targetPath: options.targetPath,
     ledger: options.ledger,
+    now: options.now,
     replay: (staged, tombstones) =>
       options.replayWith(
         createRestoreReplayPorts(staged, {
