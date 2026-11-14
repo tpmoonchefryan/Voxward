@@ -1,0 +1,133 @@
+{
+  "fixtureId": "s026-routing-scoring-v1",
+  "candidateCommit": "fcad360",
+  "channelId": "ch-s026-routing",
+  "baseTimeIso": "2026-11-14T10:00:00.000Z",
+  "transliterationTable": {
+    "草": "cao",
+    "泥": "ni",
+    "马": "ma",
+    "笨": "ben",
+    "蛋": "dan",
+    "好": "hao",
+    "棒": "bang",
+    "你": "ni"
+  },
+  "ruleSet": {
+    "version": "rules-s026-v1",
+    "normalization": {
+      "stripCombiningMarks": true
+    },
+    "groups": [
+      {
+        "id": "grp-block-exact",
+        "action": { "kind": "BLOCK" },
+        "rules": [
+          { "id": "t-spam-link", "kind": "exact", "text": "free-coins.example" }
+        ]
+      },
+      {
+        "id": "grp-review-keyword",
+        "action": { "kind": "REVIEW" },
+        "rules": [
+          { "id": "t-cnm", "kind": "reading", "text": "caonima" },
+          { "id": "t-bendan", "kind": "reading", "text": "bendan" },
+          { "id": "t-cafe", "kind": "normalized", "text": "cafe" }
+        ]
+      }
+    ]
+  },
+  "routingScenarios": [
+    {
+      "id": "R1-noise-anonymous",
+      "description": "Deterministic noise/emoji-only message from anonymous viewer auto-allows as ALLOW_NOISE",
+      "senderRef": "anon-viewer-1",
+      "nickname": "Guest123",
+      "body": "   !!! ???   ",
+      "facts": { "exceptionMarked": false, "paidText": false, "whitelisted": false, "score": 0 },
+      "expectedState": "DONE",
+      "expectedClassification": "ALLOW_NOISE",
+      "expectedDownstream": "ALLOW",
+      "expectedSource": "FAST_PASS"
+    },
+    {
+      "id": "R2-whitelist-bypass",
+      "description": "Whitelisted viewer with low score (5 < fastPassThreshold 50) and clean text fast-passes",
+      "senderRef": "wl-viewer-1",
+      "nickname": "GoodFriend",
+      "body": "nice stream today",
+      "facts": { "exceptionMarked": false, "paidText": false, "whitelisted": true, "score": 5 },
+      "expectedState": "DONE",
+      "expectedClassification": "ALLOW_NOISE",
+      "expectedDownstream": "ALLOW",
+      "expectedSource": "FAST_PASS"
+    },
+    {
+      "id": "R3-high-score-fast-pass",
+      "description": "High-score clean viewer reaches fastPassThreshold (50) and fast-passes without scoring call",
+      "senderRef": "high-viewer-1",
+      "nickname": "HaoBang",
+      "body": "好棒 nice stream!",
+      "facts": { "exceptionMarked": false, "paidText": false, "whitelisted": false, "score": 50 },
+      "expectedState": "DONE",
+      "expectedClassification": "ALLOW_NOISE",
+      "expectedDownstream": "ALLOW",
+      "expectedSource": "FAST_PASS"
+    },
+    {
+      "id": "R4-mid-score-sample-review",
+      "description": "Mid-score viewer hitting REVIEW keyword (diacritic normalized café -> cafe) routes to REALTIME_REVIEW",
+      "senderRef": "mid-viewer-1",
+      "nickname": "NormalViewer",
+      "body": "café talk",
+      "facts": { "exceptionMarked": false, "paidText": false, "whitelisted": false, "score": 15 },
+      "expectedState": "QUEUED",
+      "expectedTaskKind": "REALTIME_REVIEW",
+      "expectedPlanReason": "BASE_REVIEW"
+    },
+    {
+      "id": "R5-exact-block-deduct",
+      "description": "Exact spam link triggers BASE_RULE BLOCK and -5 violationPenalty",
+      "senderRef": "bad-viewer-1",
+      "nickname": "BadActor",
+      "body": "visit free-coins.example now",
+      "facts": { "exceptionMarked": false, "paidText": false, "whitelisted": false, "score": 10 },
+      "expectedState": "DONE",
+      "expectedClassification": "BLOCK",
+      "expectedDownstream": "BLOCK",
+      "expectedSource": "BASE_RULE",
+      "expectedScoringDelta": -5
+    },
+    {
+      "id": "R5b-homophone-review",
+      "description": "Chinese homophone 草泥马 transliterated to caonima routes to REALTIME_REVIEW (READING_CANNOT_PENALIZE)",
+      "senderRef": "bad-viewer-2",
+      "nickname": "HomophoneUser",
+      "body": "草泥马",
+      "facts": { "exceptionMarked": false, "paidText": false, "whitelisted": false, "score": 10 },
+      "expectedState": "QUEUED",
+      "expectedTaskKind": "REALTIME_REVIEW",
+      "expectedPlanReason": "BASE_REVIEW"
+    },
+    {
+      "id": "R6-exception-user-bypass-fastpass",
+      "description": "Exception-marked viewer even with high score (80) routes to REALTIME_REVIEW with reason EXCEPTION",
+      "senderRef": "exc-viewer-1",
+      "nickname": "ExcUser",
+      "body": "你好",
+      "facts": { "exceptionMarked": true, "paidText": false, "whitelisted": false, "score": 80 },
+      "expectedState": "QUEUED",
+      "expectedTaskKind": "REALTIME_REVIEW",
+      "expectedReasons": ["EXCEPTION"]
+    }
+  ],
+  "identityClampScenario": {
+    "subjectKey": "viewer-identity-q20-q43",
+    "steps": [
+      { "kind": "identity", "sourceEventRef": "yt:id:1", "nextKind": "PAID_MEMBER", "expectedBase": 10, "expectedCurrent": 10 },
+      { "kind": "manualCorrection", "operationId": "op-up-95", "delta": 95, "expectedBehaviorAdjust": 90, "expectedCurrent": 100 },
+      { "kind": "identity", "sourceEventRef": "yt:id:2", "nextKind": "MODERATOR", "expectedBase": 30, "expectedCurrent": 100 },
+      { "kind": "identity", "sourceEventRef": "yt:id:3", "nextKind": "UNKNOWN", "expectedBase": 0, "expectedCurrent": 90 }
+    ]
+  }
+}
