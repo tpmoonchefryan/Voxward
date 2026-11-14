@@ -22,21 +22,21 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ### Spec-First（D2）
 - [x] S0.1 初始化 `.kiro/specs/voxward-s024-compat` 并补齐 `requirements.md`、`design.md`、`tasks.md`
-- [ ] S0.2 运行 `kiro-specs.mjs check` 确认 `SPEC_CURRENT` 并单独提交 `VOXWARD-STORY-024: add spec`
+- [x] S0.2 运行 `kiro-specs.mjs check` 确认 `SPEC_CURRENT` 并单独提交 `VOXWARD-STORY-024: add spec`
 
 ### VOXWARD-SUB-044（blivechat 适配与 E2E 验证）
-- [ ] 1.1 `apps/server/src/modules/output/blivechat/{frames.ts,adapter.ts}` 与 `apps/server/src/modules/output/index.ts`（纯模块层，零 `ws`/`node:*`/跨模块导入）
-- [ ] 1.2 `apps/server/src/adapters/native-output/socket.ts` 增加 `ignoredPaths?: ReadonlySet<string>` 实现 upgrade 路由共存
-- [ ] 1.3 `apps/server/src/adapters/blivechat/socket.ts` 实现 WS 升级端点、子协议鉴权、`OutputSubscriberRegistry` 注册与撤销 `4403` 断开
-- [ ] 1.4 `apps/server/src/app.ts` 组合 `modules/output` 与 `adapters/blivechat/socket.ts` 并与 `attachNativeOutput` 共存
-- [ ] 1.5 `apps/server/test/output/blivechat/` 单元测试 + 真实 loopback HTTP+WS 端到端测试
-- [ ] 1.6 `docs/integrations/blivechat.md` 文档并提交 `VOXWARD-SUB-044`
+- [x] 1.1 `apps/server/src/modules/output/blivechat/{frames.ts,adapter.ts}` 与 `apps/server/src/modules/output/index.ts`（纯模块层，零 `ws`/`node:*`/跨模块导入）
+- [x] 1.2 `apps/server/src/adapters/native-output/socket.ts` 增加 `ignoredPaths?: ReadonlySet<string>` 实现 upgrade 路由共存
+- [x] 1.3 `apps/server/src/adapters/blivechat/socket.ts` 实现 WS 升级端点、子协议鉴权、`OutputSubscriberRegistry` 注册与撤销 `4403` 断开
+- [x] 1.4 `apps/server/src/app.ts` 组合 `modules/output` 与 `adapters/blivechat/socket.ts` 并与 `attachNativeOutput` 共存
+- [x] 1.5 `apps/server/test/output/blivechat/` 单元测试 + 真实 loopback HTTP+WS 端到端测试
+- [x] 1.6 `docs/integrations/blivechat.md` 文档并提交 `VOXWARD-SUB-044`
 
 ### VOXWARD-SUB-045（OneComme/VTS 调研、支持矩阵与 `/guides` 页面）
-- [ ] 2.1 `docs/integrations/{support-matrix.md,onecomme.md,vts.md}`
-- [ ] 2.2 `apps/web/src/pages/guides/{route.tsx,GuidesPage.tsx,api.ts,__tests__/GuidesPage.test.tsx}`（不修改 `apps/web/src/routes.tsx`）
-- [ ] 2.3 `.kiro/specs/voxward-s024-compat/evidence/self-check.md` 并提交 `VOXWARD-SUB-045`
+- [x] 2.1 `docs/integrations/{support-matrix.md,onecomme.md,vts.md}`
+- [x] 2.2 `apps/web/src/pages/guides/{route.tsx,GuidesPage.tsx,api.ts,__tests__/GuidesPage.test.tsx}`（不修改 `apps/web/src/routes.tsx`）
+- [x] 2.3 `.kiro/specs/voxward-s024-compat/evidence/self-check.md` 并提交 `VOXWARD-SUB-045`
 
 ### 门禁与收尾
-- [ ] 3.1 `pnpm build`、`pnpm typecheck && pnpm run bench:typecheck`、`node scripts/check-deps.mjs`
-- [ ] 3.2 `guarded.sh` 包裹 `pnpm test`、冒烟脚本 `smoke.sh`、`kiro-specs.mjs check` -> `SPEC_CURRENT`
+- [x] 3.1 `pnpm build`、`pnpm typecheck && pnpm run bench:typecheck`、`node scripts/check-deps.mjs`
+- [x] 3.2 `guarded.sh` 包裹 `pnpm test`、冒烟脚本 `smoke.sh`、`kiro-specs.mjs check` -> `SPEC_CURRENT`
