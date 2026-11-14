@@ -1,0 +1,87 @@
+{
+  "candidate": "1d259d3",
+  "total": 5,
+  "allPassed": true,
+  "results": [
+    {
+      "id": "S1_routes_assets_boundaries",
+      "passed": true,
+      "details": {
+        "overlayRoute": "/overlay/:roomId",
+        "guidesRoute": "/guides",
+        "assetFiles": [
+          "LICENSE.md",
+          "scroll-frame.svg",
+          "ward-barrier.svg",
+          "ward-chime.wav"
+        ],
+        "wavHeader": {
+          "audioFormat": 1,
+          "numChannels": 1,
+          "sampleRate": 22050,
+          "bitsPerSample": 16,
+          "bytes": 11068,
+          "durationSec": 0.25
+        },
+        "dangerouslyCount": 0,
+        "ttsCount": 0,
+        "externalUrls": []
+      }
+    },
+    {
+      "id": "S2_overlay_q16_bdi_retraction_ssr",
+      "passed": true,
+      "details": {
+        "bdiCount": 3,
+        "retractedPlatformOrder": 43,
+        "safeAliasRendered": true
+      }
+    },
+    {
+      "id": "S3_s023_loopback_ws_q16_q25_burst_backpressure",
+      "passed": true,
+      "details": {
+        "ws2PostReconnectIds": [
+          "s3-del-3"
+        ],
+        "burstCount": 55,
+        "clientDataCloseCode": 4400,
+        "backpressureCloseCode": 4413,
+        "q25Statuses": [
+          400,
+          414
+        ],
+        "credentialRedactedInLogs": true
+      }
+    },
+    {
+      "id": "S4_s024_blivechat_coexistence_spoof_nonleak_4403",
+      "passed": true,
+      "details": {
+        "negotiatedSubprotocols": [
+          "vw-output.v1",
+          "blivechat-v1.x-json-ws"
+        ],
+        "crossChannelJoinSpoofBlocked": true,
+        "wardBlockedFramesSentToBlivechat": 0,
+        "reverseUploadCloseCode": 4400,
+        "revocationCloseCodes": [
+          4403,
+          4403
+        ]
+      }
+    },
+    {
+      "id": "S5_s024_guides_honesty_matrix",
+      "passed": true,
+      "details": {
+        "statuses": {
+          "native-obs": "SUPPORTED",
+          "blivechat": "VERIFIED_LOOPBACK",
+          "onecomme": "UNSUPPORTED",
+          "vts": "UNSUPPORTED"
+        }
+      }
+    }
+  ]
+}

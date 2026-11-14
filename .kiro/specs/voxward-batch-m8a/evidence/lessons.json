@@ -1,0 +1,33 @@
+[
+ {
+  "subject": "Linux 回环套接字 2 MiB 内核发送缓冲会同步吞下短突发帧：测试 ws.bufferedAmount 背压断连（4413）需用零/负阈值或双端暂停读取并灌入兆字节载荷",
+  "summary": "在本地 loopback（127.0.0.1）上验证 WebSocket 服务端慢消费者背压（如 ws.bufferedAmount > maxBufferedBytes 时关闭 4413 SUBSCRIBER_BACKPRESSURE）时，Linux 内核 TCP 发送与接收缓冲区会同步吸收数十千字节的小帧写入，使服务端每次 ws.send 后同步读取的 ws.bufferedAmount 恒为 0。若探针只将 maxBufferedBytes 设为 32 字节并发送几十条短帧，背压分支永远不会触发，等待 close 事件会直接挂起超时。",
+  "snippet": "单机回环测试 WebSocket bufferedAmount 背压保护时，若测阈值判断分支本身，可将可注入配置的 maxBufferedBytes 设为 -1（使 bufferedAmount >= 0 确定性命中）；若测真实套接字积压，客户端必须 pause 底层 socket 且服务端连续灌入超过内核缓冲上限的多兆字节载荷。",
+  "body": "第 m8a 批 E80 S3 探针首次运行将 maxBufferedBytes 设为 32 并突发推送帧，因 Linux 127.0.0.1 内核缓冲瞬时排空写入，ws.bufferedAmount 保持 0 导致 await bpClosed 挂起；改为通过 AppOptions.nativeOutput 注入 maxBufferedBytes: -1 验证阈值断连分支后，4413 SUBSCRIBER_BACKPRESSURE 在数毫秒内确定性收敛且不影响同房间健康连接。",
+  "tags": ["voxward", "websocket", "backpressure", "loopback-testing", "nodejs"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/adapters/native-output/socket.ts",
+    "apps/server/src/adapters/blivechat/socket.ts",
+    ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "同一 Node HTTP Server 挂载多个 noServer WebSocket 端点时，升级监听器必须显式声明友邻路径豁免表（ignoredPaths），否则首个监听器会把友邻握手直接 404 销毁",
+  "summary": "Node http.Server 的 upgrade 事件会向所有注册监听器广播。若原生输出端点 /output/v1/room 在路径不匹配时无条件写 HTTP/1.1 404 Not Found 并 destroy 套接字，后注册的兼容端点（如 /output/blivechat/v1/chat）在收到同一 upgrade 请求前套接字就已被销毁。通过显式维护 ignoredPaths 集合让双方仅跳过已登记的友邻 WS 路径，同时对真正未知的升级路径由兜底方返回单个 404，既能同服无冲突共存，又不会让未知路径悬空挂起。",
+  "snippet": "单 HTTP Server 挂载多个 ws.WebSocketServer({ noServer: true }) 时，不要在每个 upgrade 处理器里对非本路径一律 socket.destroy()；用显式路径分发器或双向 ignoredPaths 白名单放行友邻端点，并实测：（1）两端点同时在线互不干扰；（2）未知升级路径仍立即返回 404。",
+  "body": "第 m8a 批 S024 核验确认：apps/server/src/app.ts 将 BLIVECHAT_OUTPUT_PATH 注入 startNativeOutput 的 ignoredPaths，同时 attachBlivechatOutput 跳过非自身路径交由原生监听器统一返回 404。E80 S4 同服并发连接 /output/v1/room 与 /output/blivechat/v1/chat 实测确认双通道帧隔离（WARD_BLOCKED 仅达原生通道、blivechat 0 泄漏）且未知升级路径 /output/unknown 仍稳定返回 404。",
+  "tags": ["voxward", "websocket", "http-upgrade", "multi-endpoint", "architecture"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/app.ts",
+    "apps/server/src/adapters/native-output/socket.ts",
+    "apps/server/src/adapters/blivechat/socket.ts",
+    ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md"
+   ]
+  }
+ }
+]

@@ -1,0 +1,823 @@
+[
+  {
+    "key": "VOXWARD-STORY-023",
+    "id": "work:4cf6a15287447d5046c0df9c",
+    "rev": 4,
+    "status": "active",
+    "headEventHash": "6faaac90a5d80312de619e61a0fa14582e4e9382bae7535cbfcd68b2f3397755",
+    "goal": "OBS Browser Source/Custom Dock 可从远端显示获准双语 SC 和拦截舞台事件。",
+    "existingEvidence": 0,
+    "acceptanceCount": 11,
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-S023-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-SPLIT"
+        ],
+        "text": "OBS Browser Source/Custom Dock 可从远端显示获准双语 SC 和拦截舞台事件。\n交付：透明 Overlay、双语卷轴/梗注/安全称呼、结界动画和短音效；OBS 配置说明；断连/恢复与过期展示；来源/保护范围提示。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "拦截动画不泄露原文/身份；无过时自动补播、TTS 或语音第二裁决；原文和生成内容区分，文本不执行脚本。",
+        "id": "VW-S023-AC001",
+        "method": "实际 OBS/浏览器联调、截图/录像和字段/过期测试。",
+        "requirement": {
+          "requirementId": "VW-S023-R001",
+          "version": 1,
+          "workId": "work:4cf6a15287447d5046c0df9c"
+        },
+        "scenario": "远端 OBS 连接、获准 SC、WARD_BLOCKED、断连重连及不可信文本。",
+        "version": 1
+      },
+      {
+        "expected": "拦截动画不泄露原文/身份；无过时自动补播、TTS 或语音第二裁决；原文和生成内容区分，文本不执行脚本。",
+        "id": "VW-S023-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；实际 OBS/浏览器联调、截图/录像和字段/过期测试。",
+        "requirement": {
+          "requirementId": "VW-E005-R023",
+          "version": 1,
+          "workId": "work:1f83883cd1373011cf0f8b49"
+        },
+        "scenario": "远端 OBS 连接、获准 SC、WARD_BLOCKED、断连重连及不可信文本。",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S023-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-S023-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "requirement": {
+          "requirementId": "VW-R-006",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-006 对应模块的接口、前置和实际影响。",
+        "version": 1
+      },
+      {
+        "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S023-INHERIT-009",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-S023-INHERIT-010",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。",
+        "requirement": {
+          "requirementId": "VW-R-010",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-010 对应模块的接口、前置和实际影响。",
+        "version": 1
+      },
+      {
+        "expected": "写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S023-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单使用的仓储接口、数据字段、事务或部署说明。",
+        "version": 1
+      },
+      {
+        "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S023-INHERIT-012",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。",
+        "version": 1
+      },
+      {
+        "expected": "删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S023-INHERIT-017",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单涉及的数据、缓存、任务、关联或恢复说明。",
+        "version": 1
+      },
+      {
+        "expected": "拦截动画不泄露原文/身份；无过时自动补播、TTS 或语音第二裁决；原文和生成内容区分，文本不执行脚本。 继续遵守 VW-R-018 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S023-INHERIT-018",
+        "method": "实际 OBS/浏览器联调、截图/录像和字段/过期测试。",
+        "requirement": {
+          "requirementId": "VW-R-018",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "远端 OBS 连接、获准 SC、WARD_BLOCKED、断连重连及不可信文本。（本单对 VW-R-018 的贡献）",
+        "version": 1
+      },
+      {
+        "expected": "拦截动画不泄露原文/身份；无过时自动补播、TTS 或语音第二裁决；原文和生成内容区分，文本不执行脚本。 继续遵守 VW-R-019 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S023-INHERIT-019",
+        "method": "实际 OBS/浏览器联调、截图/录像和字段/过期测试。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "远端 OBS 连接、获准 SC、WARD_BLOCKED、断连重连及不可信文本。（本单对 VW-R-019 的贡献）",
+        "version": 1
+      }
+    ]
+  },
+  {
+    "key": "VOXWARD-SUB-043",
+    "id": "work:ca0be638bce1de65b0964274",
+    "rev": 3,
+    "status": "active",
+    "headEventHash": "6faaac90a5d80312de619e61a0fa14582e4e9382bae7535cbfcd68b2f3397755",
+    "goal": "OBS Browser Source 与 Custom Dock 可从远端加载透明 Overlay，显示获准双语 SC 卷轴、梗注与安全称呼，以及不泄露原文/身份的拦截结界动画与短音效，断连恢复与过期展示正确。",
+    "existingEvidence": 0,
+    "acceptanceCount": 12,
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-SUB043-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-DISPATCH"
+        ],
+        "text": "承担 VW-S023-R001@1 的全部交付：透明 Overlay、双语卷轴/梗注/安全称呼、结界动画和短音效；OBS 配置说明；断连/恢复与过期展示；来源/保护范围提示。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "拦截动画不泄露原文/身份；无过时自动补播、TTS 或语音第二裁决；原文和生成内容区分，文本不执行脚本。",
+        "id": "VW-SUB043-AC001",
+        "method": "实际 OBS/浏览器联调、截图/录像和字段/过期测试。",
+        "requirement": {
+          "requirementId": "VW-SUB043-R001",
+          "version": 1,
+          "workId": "work:ca0be638bce1de65b0964274"
+        },
+        "scenario": "远端 OBS 连接、获准 SC、WARD_BLOCKED、断连重连及不可信文本。",
+        "version": 1
+      },
+      {
+        "expected": "拦截动画不泄露原文/身份；无过时自动补播、TTS 或语音第二裁决；原文和生成内容区分，文本不执行脚本。 本单只证明所承担部分；VOXWARD-STORY-023 的完整判据（VW-S023-AC001@1）保持。",
+        "id": "VW-SUB043-STORY",
+        "method": "实际 OBS/浏览器联调、截图/录像和字段/过期测试。",
+        "requirement": {
+          "requirementId": "VW-S023-R001",
+          "version": 1,
+          "workId": "work:4cf6a15287447d5046c0df9c"
+        },
+        "scenario": "本单承担 VW-S023-R001@1 中「透明 Overlay、双语卷轴/梗注/安全称呼、结界动画和短音效；OBS 配置说明；断连/恢复与过期展示；来源/保护范围提示」：远端 OBS 连接、获准 SC、WARD_BLOCKED、断连重连及不可信文本。",
+        "version": 1
+      },
+      {
+        "expected": "拦截动画不泄露原文/身份；无过时自动补播、TTS 或语音第二裁决；原文和生成内容区分，文本不执行脚本。",
+        "id": "VW-SUB043-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；实际 OBS/浏览器联调、截图/录像和字段/过期测试。",
+        "requirement": {
+          "requirementId": "VW-E005-R023",
+          "version": 1,
+          "workId": "work:1f83883cd1373011cf0f8b49"
+        },
+        "scenario": "远端 OBS 连接、获准 SC、WARD_BLOCKED、断连重连及不可信文本。（继承自 VOXWARD-STORY-023 VW-S023-PARENT@1）",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB043-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。（继承自 VOXWARD-STORY-023 VW-S023-INHERIT-001@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB043-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "requirement": {
+          "requirementId": "VW-R-006",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-006 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-023 VW-S023-INHERIT-006@1）",
+        "version": 1
+      },
+      {
+        "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB043-INHERIT-009",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。（继承自 VOXWARD-STORY-023 VW-S023-INHERIT-009@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB043-INHERIT-010",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。",
+        "requirement": {
+          "requirementId": "VW-R-010",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-010 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-023 VW-S023-INHERIT-010@1）",
+        "version": 1
+      },
+      {
+        "expected": "写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB043-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单使用的仓储接口、数据字段、事务或部署说明。（继承自 VOXWARD-STORY-023 VW-S023-INHERIT-011@1）",
+        "version": 1
+      },
+      {
+        "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB043-INHERIT-012",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。（继承自 VOXWARD-STORY-023 VW-S023-INHERIT-012@1）",
+        "version": 1
+      },
+      {
+        "expected": "删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB043-INHERIT-017",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单涉及的数据、缓存、任务、关联或恢复说明。（继承自 VOXWARD-STORY-023 VW-S023-INHERIT-017@1）",
+        "version": 1
+      },
+      {
+        "expected": "拦截动画不泄露原文/身份；无过时自动补播、TTS 或语音第二裁决；原文和生成内容区分，文本不执行脚本。 继续遵守 VW-R-018 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB043-INHERIT-018",
+        "method": "实际 OBS/浏览器联调、截图/录像和字段/过期测试。",
+        "requirement": {
+          "requirementId": "VW-R-018",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "远端 OBS 连接、获准 SC、WARD_BLOCKED、断连重连及不可信文本。（本单对 VW-R-018 的贡献）（继承自 VOXWARD-STORY-023 VW-S023-INHERIT-018@1）",
+        "version": 1
+      },
+      {
+        "expected": "拦截动画不泄露原文/身份；无过时自动补播、TTS 或语音第二裁决；原文和生成内容区分，文本不执行脚本。 继续遵守 VW-R-019 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB043-INHERIT-019",
+        "method": "实际 OBS/浏览器联调、截图/录像和字段/过期测试。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "远端 OBS 连接、获准 SC、WARD_BLOCKED、断连重连及不可信文本。（本单对 VW-R-019 的贡献）（继承自 VOXWARD-STORY-023 VW-S023-INHERIT-019@1）",
+        "version": 1
+      }
+    ]
+  },
+  {
+    "key": "VOXWARD-STORY-024",
+    "id": "work:e5f4bbecea9a82b6068a9ca7",
+    "rev": 4,
+    "status": "active",
+    "headEventHash": "6faaac90a5d80312de619e61a0fa14582e4e9382bae7535cbfcd68b2f3397755",
+    "goal": "提供版本化支持矩阵和可复现接入步骤，完成可行的 blivechat 适配验证。",
+    "existingEvidence": 0,
+    "acceptanceCount": 11,
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-S024-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-SPLIT"
+        ],
+        "text": "提供版本化支持矩阵和可复现接入步骤，完成可行的 blivechat 适配验证。\n交付：blivechat 指定版本握手/房间/帧/译文验证；OneComme/VTS 官方能力及现成桥接调研；配置、拓扑、权限、测试事件、撤销和故障指引页面。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "通过端到端才标支持；不可行/未测明确标注，不把云服务器 localhost 当主播电脑，不以反向上传取代平台接入。",
+        "id": "VW-S024-AC001",
+        "method": "实际版本联调记录与指引复现；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-S024-R001",
+          "version": 1,
+          "workId": "work:e5f4bbecea9a82b6068a9ca7"
+        },
+        "scenario": "按指引接入候选软件并测试授权输出；遇到只能依靠新本机代理的路径。",
+        "version": 1
+      },
+      {
+        "expected": "通过端到端才标支持；不可行/未测明确标注，不把云服务器 localhost 当主播电脑，不以反向上传取代平台接入。",
+        "id": "VW-S024-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；实际版本联调记录与指引复现；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-E005-R024",
+          "version": 1,
+          "workId": "work:1f83883cd1373011cf0f8b49"
+        },
+        "scenario": "按指引接入候选软件并测试授权输出；遇到只能依靠新本机代理的路径。",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S024-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-S024-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "requirement": {
+          "requirementId": "VW-R-006",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-006 对应模块的接口、前置和实际影响。",
+        "version": 1
+      },
+      {
+        "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S024-INHERIT-009",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-S024-INHERIT-010",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。",
+        "requirement": {
+          "requirementId": "VW-R-010",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-010 对应模块的接口、前置和实际影响。",
+        "version": 1
+      },
+      {
+        "expected": "写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S024-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单使用的仓储接口、数据字段、事务或部署说明。",
+        "version": 1
+      },
+      {
+        "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S024-INHERIT-012",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。",
+        "version": 1
+      },
+      {
+        "expected": "删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S024-INHERIT-017",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单涉及的数据、缓存、任务、关联或恢复说明。",
+        "version": 1
+      },
+      {
+        "expected": "通过端到端才标支持；不可行/未测明确标注，不把云服务器 localhost 当主播电脑，不以反向上传取代平台接入。 继续遵守 VW-R-018 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S024-INHERIT-018",
+        "method": "实际版本联调记录与指引复现；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-R-018",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "按指引接入候选软件并测试授权输出；遇到只能依靠新本机代理的路径。（本单对 VW-R-018 的贡献）",
+        "version": 1
+      },
+      {
+        "expected": "通过端到端才标支持；不可行/未测明确标注，不把云服务器 localhost 当主播电脑，不以反向上传取代平台接入。 继续遵守 VW-R-019 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S024-INHERIT-019",
+        "method": "实际版本联调记录与指引复现；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "按指引接入候选软件并测试授权输出；遇到只能依靠新本机代理的路径。（本单对 VW-R-019 的贡献）",
+        "version": 1
+      }
+    ]
+  },
+  {
+    "key": "VOXWARD-SUB-044",
+    "id": "work:5e629e36f0bfb2e4327c7a39",
+    "rev": 3,
+    "status": "active",
+    "headEventHash": "6faaac90a5d80312de619e61a0fa14582e4e9382bae7535cbfcd68b2f3397755",
+    "goal": "对指定版本 blivechat 完成握手、房间、帧与译文字段的适配验证，只有端到端通过才在支持矩阵标为支持。",
+    "existingEvidence": 0,
+    "acceptanceCount": 12,
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-SUB044-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-DISPATCH"
+        ],
+        "text": "承担 VW-S024-R001@1 交付中的「blivechat 指定版本握手/房间/帧/译文验证」：完成可行的 blivechat 适配验证。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "通过端到端才标支持；不把云服务器 localhost 当主播电脑；不以反向上传取代平台接入。",
+        "id": "VW-SUB044-AC001",
+        "method": "实际版本联调记录；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-SUB044-R001",
+          "version": 1,
+          "workId": "work:5e629e36f0bfb2e4327c7a39"
+        },
+        "scenario": "按指引接入指定版本 blivechat 并测试授权输出。",
+        "version": 1
+      },
+      {
+        "expected": "通过端到端才标支持；不把云服务器 localhost 当主播电脑；不以反向上传取代平台接入。 本单只证明所承担部分；VOXWARD-STORY-024 的完整判据（VW-S024-AC001@1）保持。",
+        "id": "VW-SUB044-STORY",
+        "method": "实际版本联调记录；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-S024-R001",
+          "version": 1,
+          "workId": "work:e5f4bbecea9a82b6068a9ca7"
+        },
+        "scenario": "本单承担 VW-S024-R001@1 中「blivechat 指定版本握手/房间/帧/译文验证」：按指引接入指定版本 blivechat 并测试授权输出。",
+        "version": 1
+      },
+      {
+        "expected": "通过端到端才标支持；不可行/未测明确标注，不把云服务器 localhost 当主播电脑，不以反向上传取代平台接入。",
+        "id": "VW-SUB044-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；实际版本联调记录与指引复现；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-E005-R024",
+          "version": 1,
+          "workId": "work:1f83883cd1373011cf0f8b49"
+        },
+        "scenario": "按指引接入候选软件并测试授权输出；遇到只能依靠新本机代理的路径。（继承自 VOXWARD-STORY-024 VW-S024-PARENT@1）",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB044-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-001@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB044-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "requirement": {
+          "requirementId": "VW-R-006",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-006 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-006@1）",
+        "version": 1
+      },
+      {
+        "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB044-INHERIT-009",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-009@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB044-INHERIT-010",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。",
+        "requirement": {
+          "requirementId": "VW-R-010",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-010 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-010@1）",
+        "version": 1
+      },
+      {
+        "expected": "写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB044-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单使用的仓储接口、数据字段、事务或部署说明。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-011@1）",
+        "version": 1
+      },
+      {
+        "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB044-INHERIT-012",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-012@1）",
+        "version": 1
+      },
+      {
+        "expected": "删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB044-INHERIT-017",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单涉及的数据、缓存、任务、关联或恢复说明。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-017@1）",
+        "version": 1
+      },
+      {
+        "expected": "通过端到端才标支持；不可行/未测明确标注，不把云服务器 localhost 当主播电脑，不以反向上传取代平台接入。 继续遵守 VW-R-018 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB044-INHERIT-018",
+        "method": "实际版本联调记录与指引复现；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-R-018",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "按指引接入候选软件并测试授权输出；遇到只能依靠新本机代理的路径。（本单对 VW-R-018 的贡献）（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-018@1）",
+        "version": 1
+      },
+      {
+        "expected": "通过端到端才标支持；不可行/未测明确标注，不把云服务器 localhost 当主播电脑，不以反向上传取代平台接入。 继续遵守 VW-R-019 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB044-INHERIT-019",
+        "method": "实际版本联调记录与指引复现；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "按指引接入候选软件并测试授权输出；遇到只能依靠新本机代理的路径。（本单对 VW-R-019 的贡献）（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-019@1）",
+        "version": 1
+      }
+    ]
+  },
+  {
+    "key": "VOXWARD-SUB-045",
+    "id": "work:364a7a1320c5d0a5388fd171",
+    "rev": 3,
+    "status": "active",
+    "headEventHash": "6faaac90a5d80312de619e61a0fa14582e4e9382bae7535cbfcd68b2f3397755",
+    "goal": "记录 OneComme 与 VTS 的官方能力及现成桥接调研结论，形成版本化支持矩阵，并提供包含配置、拓扑、权限、测试事件、撤销与故障排查的接入指引页面。",
+    "existingEvidence": 0,
+    "acceptanceCount": 12,
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-SUB045-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-DISPATCH"
+        ],
+        "text": "承担 VW-S024-R001@1 交付中的「OneComme/VTS 官方能力及现成桥接调研；配置、拓扑、权限、测试事件、撤销和故障指引页面」，提供版本化支持矩阵。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "不可行/未测明确标注；不以新本机代理扩大范围；矩阵每项附版本与证据。",
+        "id": "VW-SUB045-AC001",
+        "method": "指引复现与调研证据核对。",
+        "requirement": {
+          "requirementId": "VW-SUB045-R001",
+          "version": 1,
+          "workId": "work:364a7a1320c5d0a5388fd171"
+        },
+        "scenario": "按指引接入候选软件；遇到只能依靠新本机代理的路径。",
+        "version": 1
+      },
+      {
+        "expected": "不可行/未测明确标注；不以新本机代理扩大范围；矩阵每项附版本与证据。 本单只证明所承担部分；VOXWARD-STORY-024 的完整判据（VW-S024-AC001@1）保持。",
+        "id": "VW-SUB045-STORY",
+        "method": "指引复现与调研证据核对。",
+        "requirement": {
+          "requirementId": "VW-S024-R001",
+          "version": 1,
+          "workId": "work:e5f4bbecea9a82b6068a9ca7"
+        },
+        "scenario": "本单承担 VW-S024-R001@1 中「OneComme/VTS 官方能力及现成桥接调研；配置、拓扑、权限、测试事件、撤销和故障指引页面」：按指引接入候选软件；遇到只能依靠新本机代理的路径。",
+        "version": 1
+      },
+      {
+        "expected": "通过端到端才标支持；不可行/未测明确标注，不把云服务器 localhost 当主播电脑，不以反向上传取代平台接入。",
+        "id": "VW-SUB045-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；实际版本联调记录与指引复现；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-E005-R024",
+          "version": 1,
+          "workId": "work:1f83883cd1373011cf0f8b49"
+        },
+        "scenario": "按指引接入候选软件并测试授权输出；遇到只能依靠新本机代理的路径。（继承自 VOXWARD-STORY-024 VW-S024-PARENT@1）",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB045-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-001@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB045-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "requirement": {
+          "requirementId": "VW-R-006",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-006 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-006@1）",
+        "version": 1
+      },
+      {
+        "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB045-INHERIT-009",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-009@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB045-INHERIT-010",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。",
+        "requirement": {
+          "requirementId": "VW-R-010",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-010 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-010@1）",
+        "version": 1
+      },
+      {
+        "expected": "写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB045-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单使用的仓储接口、数据字段、事务或部署说明。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-011@1）",
+        "version": 1
+      },
+      {
+        "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB045-INHERIT-012",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-012@1）",
+        "version": 1
+      },
+      {
+        "expected": "删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB045-INHERIT-017",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单涉及的数据、缓存、任务、关联或恢复说明。（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-017@1）",
+        "version": 1
+      },
+      {
+        "expected": "通过端到端才标支持；不可行/未测明确标注，不把云服务器 localhost 当主播电脑，不以反向上传取代平台接入。 继续遵守 VW-R-018 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB045-INHERIT-018",
+        "method": "实际版本联调记录与指引复现；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-R-018",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "按指引接入候选软件并测试授权输出；遇到只能依靠新本机代理的路径。（本单对 VW-R-018 的贡献）（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-018@1）",
+        "version": 1
+      },
+      {
+        "expected": "通过端到端才标支持；不可行/未测明确标注，不把云服务器 localhost 当主播电脑，不以反向上传取代平台接入。 继续遵守 VW-R-019 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB045-INHERIT-019",
+        "method": "实际版本联调记录与指引复现；无可用接口时提交具体限制证据而非虚构兼容。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "按指引接入候选软件并测试授权输出；遇到只能依靠新本机代理的路径。（本单对 VW-R-019 的贡献）（继承自 VOXWARD-STORY-024 VW-S024-INHERIT-019@1）",
+        "version": 1
+      }
+    ]
+  }
+]

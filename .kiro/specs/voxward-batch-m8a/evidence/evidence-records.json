@@ -1,0 +1,903 @@
+{
+  "note": "草稿，供主线程链写。targets[].evidence 中每一行只含引擎 evidence 行允许的八个键，可原样追加到对应工单 content.evidence。5 张工单 58 行全部 satisfied（failed 0、unverified 0）：VOXWARD-STORY-023 11/11、VOXWARD-SUB-043 12/12、VOXWARD-STORY-024 11/11、VOXWARD-SUB-044 12/12、VOXWARD-SUB-045 12/12。locator 指向 .kiro/specs/voxward-batch-m8a/evidence/acceptance.md，主线程需把本轮 acceptance.md 放到该路径。",
+  "candidate": {
+    "codeVersion": "1d259d3",
+    "fullSha": "1d259d3464ed9c2b924bb6dc7698de61185f780a",
+    "note": "引擎按字符串精确比较 evidence.codeVersion 与完成候选。五张工单 58 行全部 satisfied，可以 DONE_KEYS=VOXWARD-STORY-023,VOXWARD-SUB-043,VOXWARD-STORY-024,VOXWARD-SUB-044,VOXWARD-SUB-045 在 1d259d3 上关单（close-batch.cjs 先关子单再关 Story）。写入时以读回的 revision 为准。"
+  },
+  "readFrom": {
+    "command": "预取实时工单快照 scratch/wave2a/show/VOXWARD-{STORY-023,SUB-043,STORY-024,SUB-044,SUB-045}.json（einzbern.mjs work-show --workspace <Ether> --external-key <KEY>）",
+    "libraryVersion": 21554,
+    "headEventHash": "6faaac90a5d80312de619e61a0fa14582e4e9382bae7535cbfcd68b2f3397755"
+  },
+  "shapeCheck": "生成脚本对每一行检查：键名与顺序精确为八个、requirement 三键、正整数版本、outcome 与 kind 枚举、kind 按方法确定（方法以「接口/数据字段/文档与原始需求核对」或「对照本单交付边界及依赖」开头的为 source-behavior-review，其余为 machine）、actual 非空且不是裸 pass/ok/success、无未替换占位符、locator 锚点在 acceptance.md 中恰好出现一次且该行标题存在、codeVersion 为 1d259d3，并核对每单写出的行数与 E01 读到的实时行数相同（11+12+11+12+12=58）。未调用引擎写入。",
+  "counts": {
+    "total": 58,
+    "satisfied": 58,
+    "failed": 0,
+    "unverified": 0,
+    "machine": 23,
+    "sourceBehaviorReview": 35,
+    "byTarget": {
+      "VOXWARD-STORY-023": {
+        "total": 11,
+        "satisfied": 11,
+        "failed": 0,
+        "unverified": 0
+      },
+      "VOXWARD-SUB-043": {
+        "total": 12,
+        "satisfied": 12,
+        "failed": 0,
+        "unverified": 0
+      },
+      "VOXWARD-STORY-024": {
+        "total": 11,
+        "satisfied": 11,
+        "failed": 0,
+        "unverified": 0
+      },
+      "VOXWARD-SUB-044": {
+        "total": 12,
+        "satisfied": 12,
+        "failed": 0,
+        "unverified": 0
+      },
+      "VOXWARD-SUB-045": {
+        "total": 12,
+        "satisfied": 12,
+        "failed": 0,
+        "unverified": 0
+      }
+    }
+  },
+  "targets": [
+    {
+      "externalKey": "VOXWARD-STORY-023",
+      "workId": "work:4cf6a15287447d5046c0df9c",
+      "revision": 4,
+      "evidence": [
+        {
+          "acceptanceId": "VW-S023-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4cf6a15287447d5046c0df9c",
+            "requirementId": "VW-S023-R001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-ac001",
+          "actual": "在 1d259d3（S023 合入提交 dc04481）上独立实测 VOXWARD-STORY-023：（1）Q16 URL fragment 与握手（E05 overlay.test.tsx + s023-q16-q25.test.ts、E80 S2/S3）：Stage.tsx 仅从 #vwo_... 或 #cred=vwo_... 读取凭据并在建连前调用 history.replaceState 清掉 fragment，URL 含 ?cred=/token=/credential=（即使同时带 #vwo_...）一律拒连报错；WebSocket 以 Sec-WebSocket-Protocol: [\"vw-output.v1\",\"vw-cred.<cred>\"] 建连且服务端只回显 vw-output.v1，不带子协议仅靠 query 的升级请求返回 401，输出凭据调管理端点 /channels/:id/dock 返回 401。（2）双语卷轴、不可信文本与防注入（E05、E80 S1/S2）：ScScroll.tsx 将观众原文（标「观众原文（原始输入）」）与译文（标「AI 精翻（生成内容）」）分块渲染，label 为 null 时回退「匿名观众」，label/text/translation 与 Stage roomId 全部包裹 UntrustedText（<bdi class=\"vw-untrusted\">，S2 实测 3 处 bdi 且 <img onerror=alert(1)> 原样转义不执行），apps/web/src/pages/overlay/ 全目录 0 处 dangerouslySetInnerHTML、0 处 speechSynthesis/TTS/语音第二裁决。（3）WARD_BLOCKED 结界与回缩、短音效与 CC0 资产（E05、E80 S1/S2）：WardBarrier.tsx 仅显示「结界已拦截一条异常内容」与 reasonClass 标签，0 原文/身份字段；对已展示的同 platformOrder=43 DELIVER 帧收到 WARD_BLOCKED 时立即从舞台移除；短音效默认开启且可静音切换，public/overlay/ 仅含 LICENSE.md、scroll-frame.svg、ward-barrier.svg、ward-chime.wav（PCM 22050Hz 16-bit mono 0.25s CC0 原创合成），0 外部 URL。（4）断连恢复、过期过滤、Q25 防爆与撤销（E80 S3）：断连重连后按 deliveryId 去重不重播旧帧、仅展示新增 s3-del-3，已过 validUntil 的历史帧跳过不补播；55 条突发 DELIVER 顺序到达无崩溃，客户端反向上传以 4400 关闭，背压超限以 4413 SUBSCRIBER_BACKPRESSURE 断开且不影响健康连接，凭据撤销以 4403 关闭并停止重连；Q25 畸形路径返回固定 400 BAD_REQUEST、超长 URL 返回 414 URI_TOO_LONG，序列化器对 URL/Host 中百分号编码的 vwo_ 凭据脱敏为 [REDACTED]。（5）OBS 指引与外部边界诚实记录：docs/obs/setup.md 完整说明 Browser Source/Custom Dock 配置、保护范围横幅与吊销恢复；受限于无桌面 Linux 验收环境，未启动桌面 OBS Studio GUI 实机截图/录屏，已在 acceptance.md 明确标注该外部边界。满足 VW-S023-AC001 全部判据。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S023-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:1f83883cd1373011cf0f8b49",
+            "requirementId": "VW-E005-R023",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-parent",
+          "actual": "在 1d259d3（S023 合入提交 dc04481）上独立实测 VOXWARD-STORY-023：（1）Q16 URL fragment 与握手（E05 overlay.test.tsx + s023-q16-q25.test.ts、E80 S2/S3）：Stage.tsx 仅从 #vwo_... 或 #cred=vwo_... 读取凭据并在建连前调用 history.replaceState 清掉 fragment，URL 含 ?cred=/token=/credential=（即使同时带 #vwo_...）一律拒连报错；WebSocket 以 Sec-WebSocket-Protocol: [\"vw-output.v1\",\"vw-cred.<cred>\"] 建连且服务端只回显 vw-output.v1，不带子协议仅靠 query 的升级请求返回 401，输出凭据调管理端点 /channels/:id/dock 返回 401。（2）双语卷轴、不可信文本与防注入（E05、E80 S1/S2）：ScScroll.tsx 将观众原文（标「观众原文（原始输入）」）与译文（标「AI 精翻（生成内容）」）分块渲染，label 为 null 时回退「匿名观众」，label/text/translation 与 Stage roomId 全部包裹 UntrustedText（<bdi class=\"vw-untrusted\">，S2 实测 3 处 bdi 且 <img onerror=alert(1)> 原样转义不执行），apps/web/src/pages/overlay/ 全目录 0 处 dangerouslySetInnerHTML、0 处 speechSynthesis/TTS/语音第二裁决。（3）WARD_BLOCKED 结界与回缩、短音效与 CC0 资产（E05、E80 S1/S2）：WardBarrier.tsx 仅显示「结界已拦截一条异常内容」与 reasonClass 标签，0 原文/身份字段；对已展示的同 platformOrder=43 DELIVER 帧收到 WARD_BLOCKED 时立即从舞台移除；短音效默认开启且可静音切换，public/overlay/ 仅含 LICENSE.md、scroll-frame.svg、ward-barrier.svg、ward-chime.wav（PCM 22050Hz 16-bit mono 0.25s CC0 原创合成），0 外部 URL。（4）断连恢复、过期过滤、Q25 防爆与撤销（E80 S3）：断连重连后按 deliveryId 去重不重播旧帧、仅展示新增 s3-del-3，已过 validUntil 的历史帧跳过不补播；55 条突发 DELIVER 顺序到达无崩溃，客户端反向上传以 4400 关闭，背压超限以 4413 SUBSCRIBER_BACKPRESSURE 断开且不影响健康连接，凭据撤销以 4403 关闭并停止重连；Q25 畸形路径返回固定 400 BAD_REQUEST、超长 URL 返回 414 URI_TOO_LONG，序列化器对 URL/Host 中百分号编码的 vwo_ 凭据脱敏为 [REDACTED]。（5）OBS 指引与外部边界诚实记录：docs/obs/setup.md 完整说明 Browser Source/Custom Dock 配置、保护范围横幅与吊销恢复；受限于无桌面 Linux 验收环境，未启动桌面 OBS Studio GUI 实机截图/录屏，已在 acceptance.md 明确标注该外部边界。同候选版本 1d259d3 的前端/协议组件与文档材料已联调保留，支撑父 Epic VOXWARD-EPIC-005（VW-E005-R023）。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S023-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-inherit-001",
+          "actual": "核对 S023 路由、组件与依赖边界（E03/E04/E06/E09、E80 S1）：apps/web/src/routes.tsx 零改动自动发现 /overlay/:roomId；Overlay 通过只读 WebSocket 契约 packages/contracts/src/output/native-v1.ts 通信，pnpm check:deps 扫描 249 文件 0 违规（E09 负控注入 4 类跨层违规均准确检出 exit 1）；无新本机代理、生产托管依赖或供应商 SDK 对象穿透业务层。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S023-INHERIT-006",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-006",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-inherit-006",
+          "actual": "核对与 VW-R-006（实时审核与输出流水线）的接口衔接：Overlay 只消费服务端已落库的 native-v1 DELIVER / WARD_BLOCKED / HEARTBEAT 帧，不介入审核裁决或绕过服务端门控；E80 S2/S3 验证先发后审或重判 WARD_BLOCKED 时同 platformOrder 已展示卡片立即回缩；全链路容量与端到端门控仍由责任单及 INIT VW-AC-006 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S023-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-inherit-009",
+          "actual": "核对 S023 接触的数据字段与日志材料（E80 S1–S3）：Overlay 不调用任何 AI 接口，仅接收 OutputEventFrame 最小展示载荷（label、text、translation、reasonClass），不触碰完整会话/提示/工具轨迹或观众原始身份；Q25 请求日志序列化器对含凭据 URL 与异常 Host 做 [REDACTED] 脱敏，docs/obs/setup.md 未宣称应用清理等于外部平台删除。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S023-INHERIT-010",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-010",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-inherit-010",
+          "actual": "核对与 VW-R-010（故障退化、背压与安全降级）的衔接（E80 S3）：WebSocket 断连后进入指数退避重连并展示「连接中断，正在重连」状态条，4403/4400 终态错误停止盲目重连；服务端慢消费者背压以 4413 隔离慢连接且不拖垮同房间正常订阅者，过期帧（validUntil <= now）重连后不补播；完整退化演练继续由 INIT VW-AC-010 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S023-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-inherit-011",
+          "actual": "核对 S023 数据与存储边界（源码审查 + E80 S3）：/overlay/:roomId 纯前端只读订阅页面，不直写数据库、不缓存持久化观众正文（仅内存 Map 去重，刷新或关闭即释放），客户端向 /output/v1/room 发送任何上行帧均被服务端以 4400 CLIENT_UPLOAD_FORBIDDEN 关闭；服务端写入仍统一由单后端 SQLite 短事务承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S023-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-inherit-012",
+          "actual": "核对 S023 凭据、权限与防注入边界（E05、E80 S1–S3）：输出凭据通过 #fragment 传入并在建连前 history.replaceState 擦除，禁止 query 传参（Q16），输出凭据访问管理接口返回 401，撤销后活跃连接立即收到 4403；不可信文本经 <bdi class=\"vw-untrusted\"> 纯文本渲染，0 处 dangerouslySetInnerHTML，不把待审或获准文本当脚本或工具指令执行；docs/obs/setup.md 全部使用占位符示例。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S023-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-inherit-017",
+          "actual": "核对 S023 与数据生命周期/过期边界（源码审查 + E80 S2/S3）：Overlay 不建立本地持久化副本（无 localStorage/IndexedDB 正文缓存），重连回放严格过滤 validUntil 过期帧，收到吊销（4403）或 WARD_BLOCKED 回缩事件即刻清除对应舞台状态；docs/obs/setup.md 明确标注保护范围仅限经 VoxWard 审核通道展示的内容。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S023-INHERIT-018",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-018",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-inherit-018",
+          "actual": "在 1d259d3（S023 合入提交 dc04481）上独立实测 VOXWARD-STORY-023：（1）Q16 URL fragment 与握手（E05 overlay.test.tsx + s023-q16-q25.test.ts、E80 S2/S3）：Stage.tsx 仅从 #vwo_... 或 #cred=vwo_... 读取凭据并在建连前调用 history.replaceState 清掉 fragment，URL 含 ?cred=/token=/credential=（即使同时带 #vwo_...）一律拒连报错；WebSocket 以 Sec-WebSocket-Protocol: [\"vw-output.v1\",\"vw-cred.<cred>\"] 建连且服务端只回显 vw-output.v1，不带子协议仅靠 query 的升级请求返回 401，输出凭据调管理端点 /channels/:id/dock 返回 401。（2）双语卷轴、不可信文本与防注入（E05、E80 S1/S2）：ScScroll.tsx 将观众原文（标「观众原文（原始输入）」）与译文（标「AI 精翻（生成内容）」）分块渲染，label 为 null 时回退「匿名观众」，label/text/translation 与 Stage roomId 全部包裹 UntrustedText（<bdi class=\"vw-untrusted\">，S2 实测 3 处 bdi 且 <img onerror=alert(1)> 原样转义不执行），apps/web/src/pages/overlay/ 全目录 0 处 dangerouslySetInnerHTML、0 处 speechSynthesis/TTS/语音第二裁决。（3）WARD_BLOCKED 结界与回缩、短音效与 CC0 资产（E05、E80 S1/S2）：WardBarrier.tsx 仅显示「结界已拦截一条异常内容」与 reasonClass 标签，0 原文/身份字段；对已展示的同 platformOrder=43 DELIVER 帧收到 WARD_BLOCKED 时立即从舞台移除；短音效默认开启且可静音切换，public/overlay/ 仅含 LICENSE.md、scroll-frame.svg、ward-barrier.svg、ward-chime.wav（PCM 22050Hz 16-bit mono 0.25s CC0 原创合成），0 外部 URL。（4）断连恢复、过期过滤、Q25 防爆与撤销（E80 S3）：断连重连后按 deliveryId 去重不重播旧帧、仅展示新增 s3-del-3，已过 validUntil 的历史帧跳过不补播；55 条突发 DELIVER 顺序到达无崩溃，客户端反向上传以 4400 关闭，背压超限以 4413 SUBSCRIBER_BACKPRESSURE 断开且不影响健康连接，凭据撤销以 4403 关闭并停止重连；Q25 畸形路径返回固定 400 BAD_REQUEST、超长 URL 返回 414 URI_TOO_LONG，序列化器对 URL/Host 中百分号编码的 vwo_ 凭据脱敏为 [REDACTED]。（5）OBS 指引与外部边界诚实记录：docs/obs/setup.md 完整说明 Browser Source/Custom Dock 配置、保护范围横幅与吊销恢复；受限于无桌面 Linux 验收环境，未启动桌面 OBS Studio GUI 实机截图/录屏，已在 acceptance.md 明确标注该外部边界。遵守 VW-R-018 远端接入与诚实边界，无新本机代理；INIT 全量验收仍由责任单承载。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S023-INHERIT-019",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-019",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s023-inherit-019",
+          "actual": "在 1d259d3（S023 合入提交 dc04481）上独立实测 VOXWARD-STORY-023：（1）Q16 URL fragment 与握手（E05 overlay.test.tsx + s023-q16-q25.test.ts、E80 S2/S3）：Stage.tsx 仅从 #vwo_... 或 #cred=vwo_... 读取凭据并在建连前调用 history.replaceState 清掉 fragment，URL 含 ?cred=/token=/credential=（即使同时带 #vwo_...）一律拒连报错；WebSocket 以 Sec-WebSocket-Protocol: [\"vw-output.v1\",\"vw-cred.<cred>\"] 建连且服务端只回显 vw-output.v1，不带子协议仅靠 query 的升级请求返回 401，输出凭据调管理端点 /channels/:id/dock 返回 401。（2）双语卷轴、不可信文本与防注入（E05、E80 S1/S2）：ScScroll.tsx 将观众原文（标「观众原文（原始输入）」）与译文（标「AI 精翻（生成内容）」）分块渲染，label 为 null 时回退「匿名观众」，label/text/translation 与 Stage roomId 全部包裹 UntrustedText（<bdi class=\"vw-untrusted\">，S2 实测 3 处 bdi 且 <img onerror=alert(1)> 原样转义不执行），apps/web/src/pages/overlay/ 全目录 0 处 dangerouslySetInnerHTML、0 处 speechSynthesis/TTS/语音第二裁决。（3）WARD_BLOCKED 结界与回缩、短音效与 CC0 资产（E05、E80 S1/S2）：WardBarrier.tsx 仅显示「结界已拦截一条异常内容」与 reasonClass 标签，0 原文/身份字段；对已展示的同 platformOrder=43 DELIVER 帧收到 WARD_BLOCKED 时立即从舞台移除；短音效默认开启且可静音切换，public/overlay/ 仅含 LICENSE.md、scroll-frame.svg、ward-barrier.svg、ward-chime.wav（PCM 22050Hz 16-bit mono 0.25s CC0 原创合成），0 外部 URL。（4）断连恢复、过期过滤、Q25 防爆与撤销（E80 S3）：断连重连后按 deliveryId 去重不重播旧帧、仅展示新增 s3-del-3，已过 validUntil 的历史帧跳过不补播；55 条突发 DELIVER 顺序到达无崩溃，客户端反向上传以 4400 关闭，背压超限以 4413 SUBSCRIBER_BACKPRESSURE 断开且不影响健康连接，凭据撤销以 4403 关闭并停止重连；Q25 畸形路径返回固定 400 BAD_REQUEST、超长 URL 返回 414 URI_TOO_LONG，序列化器对 URL/Host 中百分号编码的 vwo_ 凭据脱敏为 [REDACTED]。（5）OBS 指引与外部边界诚实记录：docs/obs/setup.md 完整说明 Browser Source/Custom Dock 配置、保护范围横幅与吊销恢复；受限于无桌面 Linux 验收环境，未启动桌面 OBS Studio GUI 实机截图/录屏，已在 acceptance.md 明确标注该外部边界。遵守 VW-R-019 只读输出与安全展示边界；INIT 全量验收仍由责任单承载。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-043",
+      "workId": "work:ca0be638bce1de65b0964274",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB043-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:ca0be638bce1de65b0964274",
+            "requirementId": "VW-SUB043-R001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-ac001",
+          "actual": "在 1d259d3（S023 合入提交 dc04481）上核验 VOXWARD-SUB-043 承担的透明 Overlay、双语卷轴/安全称呼、结界动画与短音效、OBS 配置说明、断连/恢复与过期展示及保护范围提示：（1）Q16 URL fragment 与握手（E05 overlay.test.tsx + s023-q16-q25.test.ts、E80 S2/S3）：Stage.tsx 仅从 #vwo_... 或 #cred=vwo_... 读取凭据并在建连前调用 history.replaceState 清掉 fragment，URL 含 ?cred=/token=/credential=（即使同时带 #vwo_...）一律拒连报错；WebSocket 以 Sec-WebSocket-Protocol: [\"vw-output.v1\",\"vw-cred.<cred>\"] 建连且服务端只回显 vw-output.v1，不带子协议仅靠 query 的升级请求返回 401，输出凭据调管理端点 /channels/:id/dock 返回 401。（2）双语卷轴、不可信文本与防注入（E05、E80 S1/S2）：ScScroll.tsx 将观众原文（标「观众原文（原始输入）」）与译文（标「AI 精翻（生成内容）」）分块渲染，label 为 null 时回退「匿名观众」，label/text/translation 与 Stage roomId 全部包裹 UntrustedText（<bdi class=\"vw-untrusted\">，S2 实测 3 处 bdi 且 <img onerror=alert(1)> 原样转义不执行），apps/web/src/pages/overlay/ 全目录 0 处 dangerouslySetInnerHTML、0 处 speechSynthesis/TTS/语音第二裁决。（3）WARD_BLOCKED 结界与回缩、短音效与 CC0 资产（E05、E80 S1/S2）：WardBarrier.tsx 仅显示「结界已拦截一条异常内容」与 reasonClass 标签，0 原文/身份字段；对已展示的同 platformOrder=43 DELIVER 帧收到 WARD_BLOCKED 时立即从舞台移除；短音效默认开启且可静音切换，public/overlay/ 仅含 LICENSE.md、scroll-frame.svg、ward-barrier.svg、ward-chime.wav（PCM 22050Hz 16-bit mono 0.25s CC0 原创合成），0 外部 URL。（4）断连恢复、过期过滤、Q25 防爆与撤销（E80 S3）：断连重连后按 deliveryId 去重不重播旧帧、仅展示新增 s3-del-3，已过 validUntil 的历史帧跳过不补播；55 条突发 DELIVER 顺序到达无崩溃，客户端反向上传以 4400 关闭，背压超限以 4413 SUBSCRIBER_BACKPRESSURE 断开且不影响健康连接，凭据撤销以 4403 关闭并停止重连；Q25 畸形路径返回固定 400 BAD_REQUEST、超长 URL 返回 414 URI_TOO_LONG，序列化器对 URL/Host 中百分号编码的 vwo_ 凭据脱敏为 [REDACTED]。（5）OBS 指引与外部边界诚实记录：docs/obs/setup.md 完整说明 Browser Source/Custom Dock 配置、保护范围横幅与吊销恢复；受限于无桌面 Linux 验收环境，未启动桌面 OBS Studio GUI 实机截图/录屏，已在 acceptance.md 明确标注该外部边界。满足 VW-S023-AC001 全部判据。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB043-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:4cf6a15287447d5046c0df9c",
+            "requirementId": "VW-S023-R001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-story",
+          "actual": "在 1d259d3（S023 合入提交 dc04481）上核验 VOXWARD-SUB-043 承担的透明 Overlay、双语卷轴/安全称呼、结界动画与短音效、OBS 配置说明、断连/恢复与过期展示及保护范围提示：（1）Q16 URL fragment 与握手（E05 overlay.test.tsx + s023-q16-q25.test.ts、E80 S2/S3）：Stage.tsx 仅从 #vwo_... 或 #cred=vwo_... 读取凭据并在建连前调用 history.replaceState 清掉 fragment，URL 含 ?cred=/token=/credential=（即使同时带 #vwo_...）一律拒连报错；WebSocket 以 Sec-WebSocket-Protocol: [\"vw-output.v1\",\"vw-cred.<cred>\"] 建连且服务端只回显 vw-output.v1，不带子协议仅靠 query 的升级请求返回 401，输出凭据调管理端点 /channels/:id/dock 返回 401。（2）双语卷轴、不可信文本与防注入（E05、E80 S1/S2）：ScScroll.tsx 将观众原文（标「观众原文（原始输入）」）与译文（标「AI 精翻（生成内容）」）分块渲染，label 为 null 时回退「匿名观众」，label/text/translation 与 Stage roomId 全部包裹 UntrustedText（<bdi class=\"vw-untrusted\">，S2 实测 3 处 bdi 且 <img onerror=alert(1)> 原样转义不执行），apps/web/src/pages/overlay/ 全目录 0 处 dangerouslySetInnerHTML、0 处 speechSynthesis/TTS/语音第二裁决。（3）WARD_BLOCKED 结界与回缩、短音效与 CC0 资产（E05、E80 S1/S2）：WardBarrier.tsx 仅显示「结界已拦截一条异常内容」与 reasonClass 标签，0 原文/身份字段；对已展示的同 platformOrder=43 DELIVER 帧收到 WARD_BLOCKED 时立即从舞台移除；短音效默认开启且可静音切换，public/overlay/ 仅含 LICENSE.md、scroll-frame.svg、ward-barrier.svg、ward-chime.wav（PCM 22050Hz 16-bit mono 0.25s CC0 原创合成），0 外部 URL。（4）断连恢复、过期过滤、Q25 防爆与撤销（E80 S3）：断连重连后按 deliveryId 去重不重播旧帧、仅展示新增 s3-del-3，已过 validUntil 的历史帧跳过不补播；55 条突发 DELIVER 顺序到达无崩溃，客户端反向上传以 4400 关闭，背压超限以 4413 SUBSCRIBER_BACKPRESSURE 断开且不影响健康连接，凭据撤销以 4403 关闭并停止重连；Q25 畸形路径返回固定 400 BAD_REQUEST、超长 URL 返回 414 URI_TOO_LONG，序列化器对 URL/Host 中百分号编码的 vwo_ 凭据脱敏为 [REDACTED]。（5）OBS 指引与外部边界诚实记录：docs/obs/setup.md 完整说明 Browser Source/Custom Dock 配置、保护范围横幅与吊销恢复；受限于无桌面 Linux 验收环境，未启动桌面 OBS Studio GUI 实机截图/录屏，已在 acceptance.md 明确标注该外部边界。本子单交付与实测证据完整支撑 VOXWARD-STORY-023 对应要求，Story 完整判据保持。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB043-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:1f83883cd1373011cf0f8b49",
+            "requirementId": "VW-E005-R023",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-parent",
+          "actual": "在 1d259d3（S023 合入提交 dc04481）上核验 VOXWARD-SUB-043 承担的透明 Overlay、双语卷轴/安全称呼、结界动画与短音效、OBS 配置说明、断连/恢复与过期展示及保护范围提示：（1）Q16 URL fragment 与握手（E05 overlay.test.tsx + s023-q16-q25.test.ts、E80 S2/S3）：Stage.tsx 仅从 #vwo_... 或 #cred=vwo_... 读取凭据并在建连前调用 history.replaceState 清掉 fragment，URL 含 ?cred=/token=/credential=（即使同时带 #vwo_...）一律拒连报错；WebSocket 以 Sec-WebSocket-Protocol: [\"vw-output.v1\",\"vw-cred.<cred>\"] 建连且服务端只回显 vw-output.v1，不带子协议仅靠 query 的升级请求返回 401，输出凭据调管理端点 /channels/:id/dock 返回 401。（2）双语卷轴、不可信文本与防注入（E05、E80 S1/S2）：ScScroll.tsx 将观众原文（标「观众原文（原始输入）」）与译文（标「AI 精翻（生成内容）」）分块渲染，label 为 null 时回退「匿名观众」，label/text/translation 与 Stage roomId 全部包裹 UntrustedText（<bdi class=\"vw-untrusted\">，S2 实测 3 处 bdi 且 <img onerror=alert(1)> 原样转义不执行），apps/web/src/pages/overlay/ 全目录 0 处 dangerouslySetInnerHTML、0 处 speechSynthesis/TTS/语音第二裁决。（3）WARD_BLOCKED 结界与回缩、短音效与 CC0 资产（E05、E80 S1/S2）：WardBarrier.tsx 仅显示「结界已拦截一条异常内容」与 reasonClass 标签，0 原文/身份字段；对已展示的同 platformOrder=43 DELIVER 帧收到 WARD_BLOCKED 时立即从舞台移除；短音效默认开启且可静音切换，public/overlay/ 仅含 LICENSE.md、scroll-frame.svg、ward-barrier.svg、ward-chime.wav（PCM 22050Hz 16-bit mono 0.25s CC0 原创合成），0 外部 URL。（4）断连恢复、过期过滤、Q25 防爆与撤销（E80 S3）：断连重连后按 deliveryId 去重不重播旧帧、仅展示新增 s3-del-3，已过 validUntil 的历史帧跳过不补播；55 条突发 DELIVER 顺序到达无崩溃，客户端反向上传以 4400 关闭，背压超限以 4413 SUBSCRIBER_BACKPRESSURE 断开且不影响健康连接，凭据撤销以 4403 关闭并停止重连；Q25 畸形路径返回固定 400 BAD_REQUEST、超长 URL 返回 414 URI_TOO_LONG，序列化器对 URL/Host 中百分号编码的 vwo_ 凭据脱敏为 [REDACTED]。（5）OBS 指引与外部边界诚实记录：docs/obs/setup.md 完整说明 Browser Source/Custom Dock 配置、保护范围横幅与吊销恢复；受限于无桌面 Linux 验收环境，未启动桌面 OBS Studio GUI 实机截图/录屏，已在 acceptance.md 明确标注该外部边界。同候选版本 1d259d3 的前端/协议组件与文档材料已联调保留，支撑父 Epic VOXWARD-EPIC-005（VW-E005-R023）。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB043-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-inherit-001",
+          "actual": "核对 S023 路由、组件与依赖边界（E03/E04/E06/E09、E80 S1）：apps/web/src/routes.tsx 零改动自动发现 /overlay/:roomId；Overlay 通过只读 WebSocket 契约 packages/contracts/src/output/native-v1.ts 通信，pnpm check:deps 扫描 249 文件 0 违规（E09 负控注入 4 类跨层违规均准确检出 exit 1）；无新本机代理、生产托管依赖或供应商 SDK 对象穿透业务层。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB043-INHERIT-006",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-006",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-inherit-006",
+          "actual": "核对与 VW-R-006（实时审核与输出流水线）的接口衔接：Overlay 只消费服务端已落库的 native-v1 DELIVER / WARD_BLOCKED / HEARTBEAT 帧，不介入审核裁决或绕过服务端门控；E80 S2/S3 验证先发后审或重判 WARD_BLOCKED 时同 platformOrder 已展示卡片立即回缩；全链路容量与端到端门控仍由责任单及 INIT VW-AC-006 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB043-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-inherit-009",
+          "actual": "核对 S023 接触的数据字段与日志材料（E80 S1–S3）：Overlay 不调用任何 AI 接口，仅接收 OutputEventFrame 最小展示载荷（label、text、translation、reasonClass），不触碰完整会话/提示/工具轨迹或观众原始身份；Q25 请求日志序列化器对含凭据 URL 与异常 Host 做 [REDACTED] 脱敏，docs/obs/setup.md 未宣称应用清理等于外部平台删除。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB043-INHERIT-010",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-010",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-inherit-010",
+          "actual": "核对与 VW-R-010（故障退化、背压与安全降级）的衔接（E80 S3）：WebSocket 断连后进入指数退避重连并展示「连接中断，正在重连」状态条，4403/4400 终态错误停止盲目重连；服务端慢消费者背压以 4413 隔离慢连接且不拖垮同房间正常订阅者，过期帧（validUntil <= now）重连后不补播；完整退化演练继续由 INIT VW-AC-010 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB043-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-inherit-011",
+          "actual": "核对 S023 数据与存储边界（源码审查 + E80 S3）：/overlay/:roomId 纯前端只读订阅页面，不直写数据库、不缓存持久化观众正文（仅内存 Map 去重，刷新或关闭即释放），客户端向 /output/v1/room 发送任何上行帧均被服务端以 4400 CLIENT_UPLOAD_FORBIDDEN 关闭；服务端写入仍统一由单后端 SQLite 短事务承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB043-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-inherit-012",
+          "actual": "核对 S023 凭据、权限与防注入边界（E05、E80 S1–S3）：输出凭据通过 #fragment 传入并在建连前 history.replaceState 擦除，禁止 query 传参（Q16），输出凭据访问管理接口返回 401，撤销后活跃连接立即收到 4403；不可信文本经 <bdi class=\"vw-untrusted\"> 纯文本渲染，0 处 dangerouslySetInnerHTML，不把待审或获准文本当脚本或工具指令执行；docs/obs/setup.md 全部使用占位符示例。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB043-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-inherit-017",
+          "actual": "核对 S023 与数据生命周期/过期边界（源码审查 + E80 S2/S3）：Overlay 不建立本地持久化副本（无 localStorage/IndexedDB 正文缓存），重连回放严格过滤 validUntil 过期帧，收到吊销（4403）或 WARD_BLOCKED 回缩事件即刻清除对应舞台状态；docs/obs/setup.md 明确标注保护范围仅限经 VoxWard 审核通道展示的内容。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB043-INHERIT-018",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-018",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-inherit-018",
+          "actual": "在 1d259d3（S023 合入提交 dc04481）上核验 VOXWARD-SUB-043 承担的透明 Overlay、双语卷轴/安全称呼、结界动画与短音效、OBS 配置说明、断连/恢复与过期展示及保护范围提示：（1）Q16 URL fragment 与握手（E05 overlay.test.tsx + s023-q16-q25.test.ts、E80 S2/S3）：Stage.tsx 仅从 #vwo_... 或 #cred=vwo_... 读取凭据并在建连前调用 history.replaceState 清掉 fragment，URL 含 ?cred=/token=/credential=（即使同时带 #vwo_...）一律拒连报错；WebSocket 以 Sec-WebSocket-Protocol: [\"vw-output.v1\",\"vw-cred.<cred>\"] 建连且服务端只回显 vw-output.v1，不带子协议仅靠 query 的升级请求返回 401，输出凭据调管理端点 /channels/:id/dock 返回 401。（2）双语卷轴、不可信文本与防注入（E05、E80 S1/S2）：ScScroll.tsx 将观众原文（标「观众原文（原始输入）」）与译文（标「AI 精翻（生成内容）」）分块渲染，label 为 null 时回退「匿名观众」，label/text/translation 与 Stage roomId 全部包裹 UntrustedText（<bdi class=\"vw-untrusted\">，S2 实测 3 处 bdi 且 <img onerror=alert(1)> 原样转义不执行），apps/web/src/pages/overlay/ 全目录 0 处 dangerouslySetInnerHTML、0 处 speechSynthesis/TTS/语音第二裁决。（3）WARD_BLOCKED 结界与回缩、短音效与 CC0 资产（E05、E80 S1/S2）：WardBarrier.tsx 仅显示「结界已拦截一条异常内容」与 reasonClass 标签，0 原文/身份字段；对已展示的同 platformOrder=43 DELIVER 帧收到 WARD_BLOCKED 时立即从舞台移除；短音效默认开启且可静音切换，public/overlay/ 仅含 LICENSE.md、scroll-frame.svg、ward-barrier.svg、ward-chime.wav（PCM 22050Hz 16-bit mono 0.25s CC0 原创合成），0 外部 URL。（4）断连恢复、过期过滤、Q25 防爆与撤销（E80 S3）：断连重连后按 deliveryId 去重不重播旧帧、仅展示新增 s3-del-3，已过 validUntil 的历史帧跳过不补播；55 条突发 DELIVER 顺序到达无崩溃，客户端反向上传以 4400 关闭，背压超限以 4413 SUBSCRIBER_BACKPRESSURE 断开且不影响健康连接，凭据撤销以 4403 关闭并停止重连；Q25 畸形路径返回固定 400 BAD_REQUEST、超长 URL 返回 414 URI_TOO_LONG，序列化器对 URL/Host 中百分号编码的 vwo_ 凭据脱敏为 [REDACTED]。（5）OBS 指引与外部边界诚实记录：docs/obs/setup.md 完整说明 Browser Source/Custom Dock 配置、保护范围横幅与吊销恢复；受限于无桌面 Linux 验收环境，未启动桌面 OBS Studio GUI 实机截图/录屏，已在 acceptance.md 明确标注该外部边界。遵守 VW-R-018 远端接入与诚实边界，无新本机代理；INIT 全量验收仍由责任单承载。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB043-INHERIT-019",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-019",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub043-inherit-019",
+          "actual": "在 1d259d3（S023 合入提交 dc04481）上核验 VOXWARD-SUB-043 承担的透明 Overlay、双语卷轴/安全称呼、结界动画与短音效、OBS 配置说明、断连/恢复与过期展示及保护范围提示：（1）Q16 URL fragment 与握手（E05 overlay.test.tsx + s023-q16-q25.test.ts、E80 S2/S3）：Stage.tsx 仅从 #vwo_... 或 #cred=vwo_... 读取凭据并在建连前调用 history.replaceState 清掉 fragment，URL 含 ?cred=/token=/credential=（即使同时带 #vwo_...）一律拒连报错；WebSocket 以 Sec-WebSocket-Protocol: [\"vw-output.v1\",\"vw-cred.<cred>\"] 建连且服务端只回显 vw-output.v1，不带子协议仅靠 query 的升级请求返回 401，输出凭据调管理端点 /channels/:id/dock 返回 401。（2）双语卷轴、不可信文本与防注入（E05、E80 S1/S2）：ScScroll.tsx 将观众原文（标「观众原文（原始输入）」）与译文（标「AI 精翻（生成内容）」）分块渲染，label 为 null 时回退「匿名观众」，label/text/translation 与 Stage roomId 全部包裹 UntrustedText（<bdi class=\"vw-untrusted\">，S2 实测 3 处 bdi 且 <img onerror=alert(1)> 原样转义不执行），apps/web/src/pages/overlay/ 全目录 0 处 dangerouslySetInnerHTML、0 处 speechSynthesis/TTS/语音第二裁决。（3）WARD_BLOCKED 结界与回缩、短音效与 CC0 资产（E05、E80 S1/S2）：WardBarrier.tsx 仅显示「结界已拦截一条异常内容」与 reasonClass 标签，0 原文/身份字段；对已展示的同 platformOrder=43 DELIVER 帧收到 WARD_BLOCKED 时立即从舞台移除；短音效默认开启且可静音切换，public/overlay/ 仅含 LICENSE.md、scroll-frame.svg、ward-barrier.svg、ward-chime.wav（PCM 22050Hz 16-bit mono 0.25s CC0 原创合成），0 外部 URL。（4）断连恢复、过期过滤、Q25 防爆与撤销（E80 S3）：断连重连后按 deliveryId 去重不重播旧帧、仅展示新增 s3-del-3，已过 validUntil 的历史帧跳过不补播；55 条突发 DELIVER 顺序到达无崩溃，客户端反向上传以 4400 关闭，背压超限以 4413 SUBSCRIBER_BACKPRESSURE 断开且不影响健康连接，凭据撤销以 4403 关闭并停止重连；Q25 畸形路径返回固定 400 BAD_REQUEST、超长 URL 返回 414 URI_TOO_LONG，序列化器对 URL/Host 中百分号编码的 vwo_ 凭据脱敏为 [REDACTED]。（5）OBS 指引与外部边界诚实记录：docs/obs/setup.md 完整说明 Browser Source/Custom Dock 配置、保护范围横幅与吊销恢复；受限于无桌面 Linux 验收环境，未启动桌面 OBS Studio GUI 实机截图/录屏，已在 acceptance.md 明确标注该外部边界。遵守 VW-R-019 只读输出与安全展示边界；INIT 全量验收仍由责任单承载。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-STORY-024",
+      "workId": "work:e5f4bbecea9a82b6068a9ca7",
+      "revision": 4,
+      "evidence": [
+        {
+          "acceptanceId": "VW-S024-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:e5f4bbecea9a82b6068a9ca7",
+            "requirementId": "VW-S024-R001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-ac001",
+          "actual": "在 1d259d3 上联合核验 VOXWARD-STORY-024（含 SUB-044 协议适配与 SUB-045 支持矩阵/指引，E05、E06/E09、E80 S4/S5）：（1）blivechat v1.x 兼容端点 /output/blivechat/v1/chat 与原生 /output/v1/room 同服共存，握手强制校验 vw-cred.<cred> + blivechat-v1.x-json-ws，JOIN_ROOM 忽略客户端伪造 roomId 强制绑定授权频道，HEARTBEAT 正常应答，ALLOW DELIVER 正确映射 ADD_TEXT/ADD_SUPER_CHAT（含原文与译文、匿名作者、无内部 uid/分数），WARD_BLOCKED 静默抑制 0 泄漏，客户端反向上传以 4400 拒绝，凭据吊销以 4403 立即断开。（2）支持矩阵与 /guides 页面严格按实测证据分级：仅原生 OBS Overlay 标 SUPPORTED；blivechat 因仅完成本机 loopback 契约实测而未启动独立上游 blivechat 进程，诚实标为 VERIFIED_LOOPBACK 并写明原因；OneComme 与 VTS 因云端服务端无法直连主播本机 localhost API 且不引入新本机代理，明确标为 UNSUPPORTED，不把云服务器 localhost 当主播电脑，也不以反向上传取代平台接入。满足 VW-S024-AC001 全部判据。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S024-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:1f83883cd1373011cf0f8b49",
+            "requirementId": "VW-E005-R024",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-parent",
+          "actual": "在 1d259d3 上联合核验 VOXWARD-STORY-024（含 SUB-044 协议适配与 SUB-045 支持矩阵/指引，E05、E06/E09、E80 S4/S5）：（1）blivechat v1.x 兼容端点 /output/blivechat/v1/chat 与原生 /output/v1/room 同服共存，握手强制校验 vw-cred.<cred> + blivechat-v1.x-json-ws，JOIN_ROOM 忽略客户端伪造 roomId 强制绑定授权频道，HEARTBEAT 正常应答，ALLOW DELIVER 正确映射 ADD_TEXT/ADD_SUPER_CHAT（含原文与译文、匿名作者、无内部 uid/分数），WARD_BLOCKED 静默抑制 0 泄漏，客户端反向上传以 4400 拒绝，凭据吊销以 4403 立即断开。（2）支持矩阵与 /guides 页面严格按实测证据分级：仅原生 OBS Overlay 标 SUPPORTED；blivechat 因仅完成本机 loopback 契约实测而未启动独立上游 blivechat 进程，诚实标为 VERIFIED_LOOPBACK 并写明原因；OneComme 与 VTS 因云端服务端无法直连主播本机 localhost API 且不引入新本机代理，明确标为 UNSUPPORTED，不把云服务器 localhost 当主播电脑，也不以反向上传取代平台接入。同候选版本 1d259d3 的协议适配、/guides 页面与支持矩阵材料均已核验保留，支撑父 Epic VOXWARD-EPIC-005（VW-E005-R024）。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S024-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-inherit-001",
+          "actual": "核对 S024 模块边界、路由与依赖方向（E03/E04/E06/E09、E80 S1/S4）：纯协议映射位于 apps/server/src/modules/output/blivechat/{frames.ts,adapter.ts}（零 ws、零 node:* 依赖），WebSocket 传输隔离在 apps/server/src/adapters/blivechat/socket.ts，前端 /guides 由 routes.tsx 自动发现且不引用后端实现；pnpm check:deps 检查 249 文件 0 违规（E09 负控 4 项跨层违规均检出 exit 1），未引入任何新本机代理或生产托管依赖。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S024-INHERIT-006",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-006",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-inherit-006",
+          "actual": "核对与 VW-R-006（实时审核与输出门控）的接口边界（源码审查 + E80 S4）：blivechat 适配器与 OutputHub 共享同一 OutputStore 已裁决事件源，只将 verdict=ALLOW 的 DELIVER 帧映射下发，WARD_BLOCKED 在 blivechat 通道完全抑制不输出原文/身份，不影响原生 /output/v1/room 通道正常接收 WARD_BLOCKED；上游审核流水线职责不变，完整验证由 INIT VW-AC-006 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S024-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-inherit-009",
+          "actual": "核对 S024 接触的数据字段与日志边界（源码审查 + E80 S3/S4）：S024 不调用 AI 模型、不新增数据库表或会话/提示副本；ADD_TEXT / ADD_SUPER_CHAT 帧仅投影已获准文本与译文，authorName 固定为空串且 uid 置 0，不附带观众真实 uid、信誉分或审核证据；服务端日志沿用 Q25 脱敏且文档不宣称清理等于外部平台删除。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S024-INHERIT-010",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-010",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-inherit-010",
+          "actual": "核对与 VW-R-010（背压、故障隔离与安全退化）的衔接（源码审查 + E80 S4）：/output/blivechat/v1/chat 复用与原生输出一致的 maxBufferedBytes 背压阈值（超限以 4413 断开慢客户端）与心跳机制，单连接异常或吊销（4403）不影响同房间其它订阅者与原生 Overlay；完整退化演练继续由 INIT VW-AC-010 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S024-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-inherit-011",
+          "actual": "核对 S024 存储与写入边界（源码审查 + E80 S4）：S024 零新增数据库迁移、零新增写库路径，仅只读调用既有 OutputStore.readInitialSnapshot 与 InvalidationBus 通知，不在适配器内存中复制持久化队列；客户端通过 WebSocket 发送非 JOIN_ROOM/HEARTBEAT 的上行聊天帧一律以 4400 拒绝，浏览器与外部兼容客户端均无法直写后端存储。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S024-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-inherit-012",
+          "actual": "核对 S024 凭据权限、频道隔离与示例安全（E05、E80 S4/S5）：/output/blivechat/v1/chat 强制通过 Sec-WebSocket-Protocol 子协议校验只读输出凭据（拒绝 URL query 传参，Q16），忽略 JOIN_ROOM 中客户端传入的 roomId 而严格绑定凭据授权 channelId（跨频道订阅 0 泄漏），撤销凭据后立即 4403 断连；/guides 页面与 docs/integrations/*.md 全部使用占位符示例，未硬编码任何真实凭据。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S024-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-inherit-017",
+          "actual": "核对 S024 与数据生命周期/清理边界（源码审查 + E80 S4/S5）：blivechat 适配层不新增任何持久化表、缓存表面或主体副本，连接初始回放复用 OutputStore 既有 validUntil 过滤与删除后快照，凭据吊销即时断连；docs/integrations/*.md 与 /guides 明确说明输出端外部软件一旦接收帧即超出 VoxWard 撤回控制面（因此 blivechat 不发预展示撤回帧，仅推送已 ALLOW 帧并静默丢弃 WARD_BLOCKED）。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-S024-INHERIT-018",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-018",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-inherit-018",
+          "actual": "在 1d259d3 上联合核验 VOXWARD-STORY-024（含 SUB-044 协议适配与 SUB-045 支持矩阵/指引，E05、E06/E09、E80 S4/S5）：（1）blivechat v1.x 兼容端点 /output/blivechat/v1/chat 与原生 /output/v1/room 同服共存，握手强制校验 vw-cred.<cred> + blivechat-v1.x-json-ws，JOIN_ROOM 忽略客户端伪造 roomId 强制绑定授权频道，HEARTBEAT 正常应答，ALLOW DELIVER 正确映射 ADD_TEXT/ADD_SUPER_CHAT（含原文与译文、匿名作者、无内部 uid/分数），WARD_BLOCKED 静默抑制 0 泄漏，客户端反向上传以 4400 拒绝，凭据吊销以 4403 立即断开。（2）支持矩阵与 /guides 页面严格按实测证据分级：仅原生 OBS Overlay 标 SUPPORTED；blivechat 因仅完成本机 loopback 契约实测而未启动独立上游 blivechat 进程，诚实标为 VERIFIED_LOOPBACK 并写明原因；OneComme 与 VTS 因云端服务端无法直连主播本机 localhost API 且不引入新本机代理，明确标为 UNSUPPORTED，不把云服务器 localhost 当主播电脑，也不以反向上传取代平台接入。严格遵守 VW-R-018 诚实兼容与零本机代理约束；本单贡献不替代 INIT 对 VW-R-018 的全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-S024-INHERIT-019",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-019",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-s024-inherit-019",
+          "actual": "在 1d259d3 上联合核验 VOXWARD-STORY-024（含 SUB-044 协议适配与 SUB-045 支持矩阵/指引，E05、E06/E09、E80 S4/S5）：（1）blivechat v1.x 兼容端点 /output/blivechat/v1/chat 与原生 /output/v1/room 同服共存，握手强制校验 vw-cred.<cred> + blivechat-v1.x-json-ws，JOIN_ROOM 忽略客户端伪造 roomId 强制绑定授权频道，HEARTBEAT 正常应答，ALLOW DELIVER 正确映射 ADD_TEXT/ADD_SUPER_CHAT（含原文与译文、匿名作者、无内部 uid/分数），WARD_BLOCKED 静默抑制 0 泄漏，客户端反向上传以 4400 拒绝，凭据吊销以 4403 立即断开。（2）支持矩阵与 /guides 页面严格按实测证据分级：仅原生 OBS Overlay 标 SUPPORTED；blivechat 因仅完成本机 loopback 契约实测而未启动独立上游 blivechat 进程，诚实标为 VERIFIED_LOOPBACK 并写明原因；OneComme 与 VTS 因云端服务端无法直连主播本机 localhost API 且不引入新本机代理，明确标为 UNSUPPORTED，不把云服务器 localhost 当主播电脑，也不以反向上传取代平台接入。严格遵守 VW-R-019 只读输出、禁反向上传与撤销即时断连约束；本单贡献不替代 INIT 对 VW-R-019 的全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-044",
+      "workId": "work:5e629e36f0bfb2e4327c7a39",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB044-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:5e629e36f0bfb2e4327c7a39",
+            "requirementId": "VW-SUB044-R001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-ac001",
+          "actual": "在 1d259d3 上独立实测 VOXWARD-SUB-044 blivechat v1.x 协议适配（E05 frames.test.ts + socket.test.ts、E06/E09 check-deps、E80 S4）：（1）架构与共存：modules/output/blivechat/{frames.ts,adapter.ts} 零 ws/node:* 依赖（check-deps 249 文件 0 违规），adapters/blivechat/socket.ts 挂载 /output/blivechat/v1/chat 并通过 native-output ignoredPaths 与 /output/v1/room 在同一 HTTP Server 无冲突共存，未知路径仍回 404。（2）握手、房间隔离与心跳：仅接受同时携带 vw-cred.<credential> 与 blivechat-v1.x-json-ws 子协议的有效未撤销凭据（缺失或 query 传参一律 401）；客户端发 cmd=1 JOIN_ROOM 尝试跨频道伪造 roomId=\"channel-b\" 时，服务端强制绑定凭据所属 channel-a，channel-b 事件 0 泄漏；cmd=0 HEARTBEAT 正常返回 cmd=0 HEARTBEAT_REPLY。（3）帧映射、非泄漏、禁反向上传与吊销：ALLOW DELIVER 文本与 SC 分别映射为 cmd=2 ADD_TEXT（data[1]=原文、data[14]=译文、data[2]=\"\" 匿名、0 uid/分数/审计字段）与 cmd=3 ADD_SUPER_CHAT（content + translation + authorName:\"\"）；WARD_BLOCKED 在协议层静默丢弃（E80 S4 实测 blivechat 收到 0 帧而同房间原生 /output/v1/room 正常收到 WARD_BLOCKED）；客户端发 cmd=2 反向上传被 4400 拒绝，凭据撤销立即以 4403 GRANT_REVOKED 断开。（4）诚实边界：仅完成本机 loopback 协议契约与双端点共存实测，未运行独立第三方上游 blivechat 桌面/Python 进程，因此在矩阵与文档中标为 VERIFIED_LOOPBACK 而非 SUPPORTED，不把云服务器 localhost 当主播电脑。满足 VW-SUB044-AC001 全部判据。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB044-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:e5f4bbecea9a82b6068a9ca7",
+            "requirementId": "VW-S024-R001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-story",
+          "actual": "在 1d259d3 上独立实测 VOXWARD-SUB-044 blivechat v1.x 协议适配（E05 frames.test.ts + socket.test.ts、E06/E09 check-deps、E80 S4）：（1）架构与共存：modules/output/blivechat/{frames.ts,adapter.ts} 零 ws/node:* 依赖（check-deps 249 文件 0 违规），adapters/blivechat/socket.ts 挂载 /output/blivechat/v1/chat 并通过 native-output ignoredPaths 与 /output/v1/room 在同一 HTTP Server 无冲突共存，未知路径仍回 404。（2）握手、房间隔离与心跳：仅接受同时携带 vw-cred.<credential> 与 blivechat-v1.x-json-ws 子协议的有效未撤销凭据（缺失或 query 传参一律 401）；客户端发 cmd=1 JOIN_ROOM 尝试跨频道伪造 roomId=\"channel-b\" 时，服务端强制绑定凭据所属 channel-a，channel-b 事件 0 泄漏；cmd=0 HEARTBEAT 正常返回 cmd=0 HEARTBEAT_REPLY。（3）帧映射、非泄漏、禁反向上传与吊销：ALLOW DELIVER 文本与 SC 分别映射为 cmd=2 ADD_TEXT（data[1]=原文、data[14]=译文、data[2]=\"\" 匿名、0 uid/分数/审计字段）与 cmd=3 ADD_SUPER_CHAT（content + translation + authorName:\"\"）；WARD_BLOCKED 在协议层静默丢弃（E80 S4 实测 blivechat 收到 0 帧而同房间原生 /output/v1/room 正常收到 WARD_BLOCKED）；客户端发 cmd=2 反向上传被 4400 拒绝，凭据撤销立即以 4403 GRANT_REVOKED 断开。（4）诚实边界：仅完成本机 loopback 协议契约与双端点共存实测，未运行独立第三方上游 blivechat 桌面/Python 进程，因此在矩阵与文档中标为 VERIFIED_LOOPBACK 而非 SUPPORTED，不把云服务器 localhost 当主播电脑。本子单交付与 loopback 联调证据完整支撑 VOXWARD-STORY-024 中「blivechat 指定版本握手/房间/帧/译文验证」部分，Story 完整判据保持。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB044-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:1f83883cd1373011cf0f8b49",
+            "requirementId": "VW-E005-R024",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-parent",
+          "actual": "在 1d259d3 上联合核验 VOXWARD-STORY-024（含 SUB-044 协议适配与 SUB-045 支持矩阵/指引，E05、E06/E09、E80 S4/S5）：（1）blivechat v1.x 兼容端点 /output/blivechat/v1/chat 与原生 /output/v1/room 同服共存，握手强制校验 vw-cred.<cred> + blivechat-v1.x-json-ws，JOIN_ROOM 忽略客户端伪造 roomId 强制绑定授权频道，HEARTBEAT 正常应答，ALLOW DELIVER 正确映射 ADD_TEXT/ADD_SUPER_CHAT（含原文与译文、匿名作者、无内部 uid/分数），WARD_BLOCKED 静默抑制 0 泄漏，客户端反向上传以 4400 拒绝，凭据吊销以 4403 立即断开。（2）支持矩阵与 /guides 页面严格按实测证据分级：仅原生 OBS Overlay 标 SUPPORTED；blivechat 因仅完成本机 loopback 契约实测而未启动独立上游 blivechat 进程，诚实标为 VERIFIED_LOOPBACK 并写明原因；OneComme 与 VTS 因云端服务端无法直连主播本机 localhost API 且不引入新本机代理，明确标为 UNSUPPORTED，不把云服务器 localhost 当主播电脑，也不以反向上传取代平台接入。同候选版本 1d259d3 的协议适配、/guides 页面与支持矩阵材料均已核验保留，支撑父 Epic VOXWARD-EPIC-005（VW-E005-R024）。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB044-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-inherit-001",
+          "actual": "核对 S024 模块边界、路由与依赖方向（E03/E04/E06/E09、E80 S1/S4）：纯协议映射位于 apps/server/src/modules/output/blivechat/{frames.ts,adapter.ts}（零 ws、零 node:* 依赖），WebSocket 传输隔离在 apps/server/src/adapters/blivechat/socket.ts，前端 /guides 由 routes.tsx 自动发现且不引用后端实现；pnpm check:deps 检查 249 文件 0 违规（E09 负控 4 项跨层违规均检出 exit 1），未引入任何新本机代理或生产托管依赖。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB044-INHERIT-006",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-006",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-inherit-006",
+          "actual": "核对与 VW-R-006（实时审核与输出门控）的接口边界（源码审查 + E80 S4）：blivechat 适配器与 OutputHub 共享同一 OutputStore 已裁决事件源，只将 verdict=ALLOW 的 DELIVER 帧映射下发，WARD_BLOCKED 在 blivechat 通道完全抑制不输出原文/身份，不影响原生 /output/v1/room 通道正常接收 WARD_BLOCKED；上游审核流水线职责不变，完整验证由 INIT VW-AC-006 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB044-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-inherit-009",
+          "actual": "核对 S024 接触的数据字段与日志边界（源码审查 + E80 S3/S4）：S024 不调用 AI 模型、不新增数据库表或会话/提示副本；ADD_TEXT / ADD_SUPER_CHAT 帧仅投影已获准文本与译文，authorName 固定为空串且 uid 置 0，不附带观众真实 uid、信誉分或审核证据；服务端日志沿用 Q25 脱敏且文档不宣称清理等于外部平台删除。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB044-INHERIT-010",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-010",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-inherit-010",
+          "actual": "核对与 VW-R-010（背压、故障隔离与安全退化）的衔接（源码审查 + E80 S4）：/output/blivechat/v1/chat 复用与原生输出一致的 maxBufferedBytes 背压阈值（超限以 4413 断开慢客户端）与心跳机制，单连接异常或吊销（4403）不影响同房间其它订阅者与原生 Overlay；完整退化演练继续由 INIT VW-AC-010 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB044-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-inherit-011",
+          "actual": "核对 S024 存储与写入边界（源码审查 + E80 S4）：S024 零新增数据库迁移、零新增写库路径，仅只读调用既有 OutputStore.readInitialSnapshot 与 InvalidationBus 通知，不在适配器内存中复制持久化队列；客户端通过 WebSocket 发送非 JOIN_ROOM/HEARTBEAT 的上行聊天帧一律以 4400 拒绝，浏览器与外部兼容客户端均无法直写后端存储。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB044-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-inherit-012",
+          "actual": "核对 S024 凭据权限、频道隔离与示例安全（E05、E80 S4/S5）：/output/blivechat/v1/chat 强制通过 Sec-WebSocket-Protocol 子协议校验只读输出凭据（拒绝 URL query 传参，Q16），忽略 JOIN_ROOM 中客户端传入的 roomId 而严格绑定凭据授权 channelId（跨频道订阅 0 泄漏），撤销凭据后立即 4403 断连；/guides 页面与 docs/integrations/*.md 全部使用占位符示例，未硬编码任何真实凭据。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB044-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-inherit-017",
+          "actual": "核对 S024 与数据生命周期/清理边界（源码审查 + E80 S4/S5）：blivechat 适配层不新增任何持久化表、缓存表面或主体副本，连接初始回放复用 OutputStore 既有 validUntil 过滤与删除后快照，凭据吊销即时断连；docs/integrations/*.md 与 /guides 明确说明输出端外部软件一旦接收帧即超出 VoxWard 撤回控制面（因此 blivechat 不发预展示撤回帧，仅推送已 ALLOW 帧并静默丢弃 WARD_BLOCKED）。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB044-INHERIT-018",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-018",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-inherit-018",
+          "actual": "在 1d259d3 上联合核验 VOXWARD-STORY-024（含 SUB-044 协议适配与 SUB-045 支持矩阵/指引，E05、E06/E09、E80 S4/S5）：（1）blivechat v1.x 兼容端点 /output/blivechat/v1/chat 与原生 /output/v1/room 同服共存，握手强制校验 vw-cred.<cred> + blivechat-v1.x-json-ws，JOIN_ROOM 忽略客户端伪造 roomId 强制绑定授权频道，HEARTBEAT 正常应答，ALLOW DELIVER 正确映射 ADD_TEXT/ADD_SUPER_CHAT（含原文与译文、匿名作者、无内部 uid/分数），WARD_BLOCKED 静默抑制 0 泄漏，客户端反向上传以 4400 拒绝，凭据吊销以 4403 立即断开。（2）支持矩阵与 /guides 页面严格按实测证据分级：仅原生 OBS Overlay 标 SUPPORTED；blivechat 因仅完成本机 loopback 契约实测而未启动独立上游 blivechat 进程，诚实标为 VERIFIED_LOOPBACK 并写明原因；OneComme 与 VTS 因云端服务端无法直连主播本机 localhost API 且不引入新本机代理，明确标为 UNSUPPORTED，不把云服务器 localhost 当主播电脑，也不以反向上传取代平台接入。严格遵守 VW-R-018 诚实兼容与零本机代理约束；本单贡献不替代 INIT 对 VW-R-018 的全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB044-INHERIT-019",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-019",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub044-inherit-019",
+          "actual": "在 1d259d3 上联合核验 VOXWARD-STORY-024（含 SUB-044 协议适配与 SUB-045 支持矩阵/指引，E05、E06/E09、E80 S4/S5）：（1）blivechat v1.x 兼容端点 /output/blivechat/v1/chat 与原生 /output/v1/room 同服共存，握手强制校验 vw-cred.<cred> + blivechat-v1.x-json-ws，JOIN_ROOM 忽略客户端伪造 roomId 强制绑定授权频道，HEARTBEAT 正常应答，ALLOW DELIVER 正确映射 ADD_TEXT/ADD_SUPER_CHAT（含原文与译文、匿名作者、无内部 uid/分数），WARD_BLOCKED 静默抑制 0 泄漏，客户端反向上传以 4400 拒绝，凭据吊销以 4403 立即断开。（2）支持矩阵与 /guides 页面严格按实测证据分级：仅原生 OBS Overlay 标 SUPPORTED；blivechat 因仅完成本机 loopback 契约实测而未启动独立上游 blivechat 进程，诚实标为 VERIFIED_LOOPBACK 并写明原因；OneComme 与 VTS 因云端服务端无法直连主播本机 localhost API 且不引入新本机代理，明确标为 UNSUPPORTED，不把云服务器 localhost 当主播电脑，也不以反向上传取代平台接入。严格遵守 VW-R-019 只读输出、禁反向上传与撤销即时断连约束；本单贡献不替代 INIT 对 VW-R-019 的全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        }
+      ]
+    },
+    {
+      "externalKey": "VOXWARD-SUB-045",
+      "workId": "work:364a7a1320c5d0a5388fd171",
+      "revision": 3,
+      "evidence": [
+        {
+          "acceptanceId": "VW-SUB045-AC001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:364a7a1320c5d0a5388fd171",
+            "requirementId": "VW-SUB045-R001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-ac001",
+          "actual": "在 1d259d3 上独立核验 VOXWARD-SUB-045 支持矩阵、调研证据与 /guides 指引页面（E05 GuidesPage.test.tsx、E80 S1/S5 及 docs/integrations/*.md 核对）：（1）版本化支持矩阵与诚实分级：apps/web/src/pages/guides/{api.ts,GuidesPage.tsx} 与 docs/integrations/support-matrix.md 对齐 4 项集成并逐项附版本、拓扑、实测证据路径与限制说明——仅「VoxWard 原生 OBS Overlay（native-v1）」标 SUPPORTED；「blivechat v1.x WebSocket 兼容输出（v1.9.x 协议族）」诚实标为 VERIFIED_LOOPBACK（协议适配已验证，限本机 loopback E2E，明确声明未跑独立上游二进制）；「OneComme（v5.x–v8.x HTTP Comment API）」与「VTube Studio（v1.28+ WebSocket Plugin API）」明确标为 UNSUPPORTED。（2）拒绝新本机代理与 localhost 混淆：docs/integrations/{onecomme.md,vts.md} 与 /guides 页面明确指出云端 VoxWard 的 127.0.0.1 并非主播电脑本机（127.0.0.1:11180 / ws://localhost:8001 不可直连），且受项目范围约束不开发客户端守护进程/新本机代理，也不以浏览器反向上传取代平台接入。（3）完整指引闭环：/guides 路由由 routes.tsx 自动发现，页面与文档完整覆盖配置步骤、网络拓扑、最小只读输出凭据权限、测试事件触发与核对、凭据吊销（4403）及常见故障排查（401/4400/4403/4413）。满足 VW-SUB045-AC001 全部判据。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB045-STORY",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:e5f4bbecea9a82b6068a9ca7",
+            "requirementId": "VW-S024-R001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-story",
+          "actual": "在 1d259d3 上独立核验 VOXWARD-SUB-045 支持矩阵、调研证据与 /guides 指引页面（E05 GuidesPage.test.tsx、E80 S1/S5 及 docs/integrations/*.md 核对）：（1）版本化支持矩阵与诚实分级：apps/web/src/pages/guides/{api.ts,GuidesPage.tsx} 与 docs/integrations/support-matrix.md 对齐 4 项集成并逐项附版本、拓扑、实测证据路径与限制说明——仅「VoxWard 原生 OBS Overlay（native-v1）」标 SUPPORTED；「blivechat v1.x WebSocket 兼容输出（v1.9.x 协议族）」诚实标为 VERIFIED_LOOPBACK（协议适配已验证，限本机 loopback E2E，明确声明未跑独立上游二进制）；「OneComme（v5.x–v8.x HTTP Comment API）」与「VTube Studio（v1.28+ WebSocket Plugin API）」明确标为 UNSUPPORTED。（2）拒绝新本机代理与 localhost 混淆：docs/integrations/{onecomme.md,vts.md} 与 /guides 页面明确指出云端 VoxWard 的 127.0.0.1 并非主播电脑本机（127.0.0.1:11180 / ws://localhost:8001 不可直连），且受项目范围约束不开发客户端守护进程/新本机代理，也不以浏览器反向上传取代平台接入。（3）完整指引闭环：/guides 路由由 routes.tsx 自动发现，页面与文档完整覆盖配置步骤、网络拓扑、最小只读输出凭据权限、测试事件触发与核对、凭据吊销（4403）及常见故障排查（401/4400/4403/4413）。本子单交付完整支撑 VOXWARD-STORY-024 中「OneComme/VTS 官方能力及现成桥接调研；配置、拓扑、权限、测试事件、撤销和故障指引页面」部分，Story 完整判据保持。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB045-PARENT",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:1f83883cd1373011cf0f8b49",
+            "requirementId": "VW-E005-R024",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-parent",
+          "actual": "在 1d259d3 上联合核验 VOXWARD-STORY-024（含 SUB-044 协议适配与 SUB-045 支持矩阵/指引，E05、E06/E09、E80 S4/S5）：（1）blivechat v1.x 兼容端点 /output/blivechat/v1/chat 与原生 /output/v1/room 同服共存，握手强制校验 vw-cred.<cred> + blivechat-v1.x-json-ws，JOIN_ROOM 忽略客户端伪造 roomId 强制绑定授权频道，HEARTBEAT 正常应答，ALLOW DELIVER 正确映射 ADD_TEXT/ADD_SUPER_CHAT（含原文与译文、匿名作者、无内部 uid/分数），WARD_BLOCKED 静默抑制 0 泄漏，客户端反向上传以 4400 拒绝，凭据吊销以 4403 立即断开。（2）支持矩阵与 /guides 页面严格按实测证据分级：仅原生 OBS Overlay 标 SUPPORTED；blivechat 因仅完成本机 loopback 契约实测而未启动独立上游 blivechat 进程，诚实标为 VERIFIED_LOOPBACK 并写明原因；OneComme 与 VTS 因云端服务端无法直连主播本机 localhost API 且不引入新本机代理，明确标为 UNSUPPORTED，不把云服务器 localhost 当主播电脑，也不以反向上传取代平台接入。同候选版本 1d259d3 的协议适配、/guides 页面与支持矩阵材料均已核验保留，支撑父 Epic VOXWARD-EPIC-005（VW-E005-R024）。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB045-INHERIT-001",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-001",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-inherit-001",
+          "actual": "核对 S024 模块边界、路由与依赖方向（E03/E04/E06/E09、E80 S1/S4）：纯协议映射位于 apps/server/src/modules/output/blivechat/{frames.ts,adapter.ts}（零 ws、零 node:* 依赖），WebSocket 传输隔离在 apps/server/src/adapters/blivechat/socket.ts，前端 /guides 由 routes.tsx 自动发现且不引用后端实现；pnpm check:deps 检查 249 文件 0 违规（E09 负控 4 项跨层违规均检出 exit 1），未引入任何新本机代理或生产托管依赖。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB045-INHERIT-006",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-006",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-inherit-006",
+          "actual": "核对与 VW-R-006（实时审核与输出门控）的接口边界（源码审查 + E80 S4）：blivechat 适配器与 OutputHub 共享同一 OutputStore 已裁决事件源，只将 verdict=ALLOW 的 DELIVER 帧映射下发，WARD_BLOCKED 在 blivechat 通道完全抑制不输出原文/身份，不影响原生 /output/v1/room 通道正常接收 WARD_BLOCKED；上游审核流水线职责不变，完整验证由 INIT VW-AC-006 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB045-INHERIT-009",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-009",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-inherit-009",
+          "actual": "核对 S024 接触的数据字段与日志边界（源码审查 + E80 S3/S4）：S024 不调用 AI 模型、不新增数据库表或会话/提示副本；ADD_TEXT / ADD_SUPER_CHAT 帧仅投影已获准文本与译文，authorName 固定为空串且 uid 置 0，不附带观众真实 uid、信誉分或审核证据；服务端日志沿用 Q25 脱敏且文档不宣称清理等于外部平台删除。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB045-INHERIT-010",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-010",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-inherit-010",
+          "actual": "核对与 VW-R-010（背压、故障隔离与安全退化）的衔接（源码审查 + E80 S4）：/output/blivechat/v1/chat 复用与原生输出一致的 maxBufferedBytes 背压阈值（超限以 4413 断开慢客户端）与心跳机制，单连接异常或吊销（4403）不影响同房间其它订阅者与原生 Overlay；完整退化演练继续由 INIT VW-AC-010 承载。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB045-INHERIT-011",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-011",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-inherit-011",
+          "actual": "核对 S024 存储与写入边界（源码审查 + E80 S4）：S024 零新增数据库迁移、零新增写库路径，仅只读调用既有 OutputStore.readInitialSnapshot 与 InvalidationBus 通知，不在适配器内存中复制持久化队列；客户端通过 WebSocket 发送非 JOIN_ROOM/HEARTBEAT 的上行聊天帧一律以 4400 拒绝，浏览器与外部兼容客户端均无法直写后端存储。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB045-INHERIT-012",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-012",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-inherit-012",
+          "actual": "核对 S024 凭据权限、频道隔离与示例安全（E05、E80 S4/S5）：/output/blivechat/v1/chat 强制通过 Sec-WebSocket-Protocol 子协议校验只读输出凭据（拒绝 URL query 传参，Q16），忽略 JOIN_ROOM 中客户端传入的 roomId 而严格绑定凭据授权 channelId（跨频道订阅 0 泄漏），撤销凭据后立即 4403 断连；/guides 页面与 docs/integrations/*.md 全部使用占位符示例，未硬编码任何真实凭据。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB045-INHERIT-017",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-017",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-inherit-017",
+          "actual": "核对 S024 与数据生命周期/清理边界（源码审查 + E80 S4/S5）：blivechat 适配层不新增任何持久化表、缓存表面或主体副本，连接初始回放复用 OutputStore 既有 validUntil 过滤与删除后快照，凭据吊销即时断连；docs/integrations/*.md 与 /guides 明确说明输出端外部软件一旦接收帧即超出 VoxWard 撤回控制面（因此 blivechat 不发预展示撤回帧，仅推送已 ALLOW 帧并静默丢弃 WARD_BLOCKED）。",
+          "outcome": "satisfied",
+          "kind": "source-behavior-review"
+        },
+        {
+          "acceptanceId": "VW-SUB045-INHERIT-018",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-018",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-inherit-018",
+          "actual": "在 1d259d3 上联合核验 VOXWARD-STORY-024（含 SUB-044 协议适配与 SUB-045 支持矩阵/指引，E05、E06/E09、E80 S4/S5）：（1）blivechat v1.x 兼容端点 /output/blivechat/v1/chat 与原生 /output/v1/room 同服共存，握手强制校验 vw-cred.<cred> + blivechat-v1.x-json-ws，JOIN_ROOM 忽略客户端伪造 roomId 强制绑定授权频道，HEARTBEAT 正常应答，ALLOW DELIVER 正确映射 ADD_TEXT/ADD_SUPER_CHAT（含原文与译文、匿名作者、无内部 uid/分数），WARD_BLOCKED 静默抑制 0 泄漏，客户端反向上传以 4400 拒绝，凭据吊销以 4403 立即断开。（2）支持矩阵与 /guides 页面严格按实测证据分级：仅原生 OBS Overlay 标 SUPPORTED；blivechat 因仅完成本机 loopback 契约实测而未启动独立上游 blivechat 进程，诚实标为 VERIFIED_LOOPBACK 并写明原因；OneComme 与 VTS 因云端服务端无法直连主播本机 localhost API 且不引入新本机代理，明确标为 UNSUPPORTED，不把云服务器 localhost 当主播电脑，也不以反向上传取代平台接入。严格遵守 VW-R-018 诚实兼容与零本机代理约束；本单贡献不替代 INIT 对 VW-R-018 的全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        },
+        {
+          "acceptanceId": "VW-SUB045-INHERIT-019",
+          "acceptanceVersion": 1,
+          "requirement": {
+            "workId": "work:8bd4977aa0770aa2f41229a2",
+            "requirementId": "VW-R-019",
+            "version": 1
+          },
+          "codeVersion": "1d259d3",
+          "locator": ".kiro/specs/voxward-batch-m8a/evidence/acceptance.md#vw-sub045-inherit-019",
+          "actual": "在 1d259d3 上联合核验 VOXWARD-STORY-024（含 SUB-044 协议适配与 SUB-045 支持矩阵/指引，E05、E06/E09、E80 S4/S5）：（1）blivechat v1.x 兼容端点 /output/blivechat/v1/chat 与原生 /output/v1/room 同服共存，握手强制校验 vw-cred.<cred> + blivechat-v1.x-json-ws，JOIN_ROOM 忽略客户端伪造 roomId 强制绑定授权频道，HEARTBEAT 正常应答，ALLOW DELIVER 正确映射 ADD_TEXT/ADD_SUPER_CHAT（含原文与译文、匿名作者、无内部 uid/分数），WARD_BLOCKED 静默抑制 0 泄漏，客户端反向上传以 4400 拒绝，凭据吊销以 4403 立即断开。（2）支持矩阵与 /guides 页面严格按实测证据分级：仅原生 OBS Overlay 标 SUPPORTED；blivechat 因仅完成本机 loopback 契约实测而未启动独立上游 blivechat 进程，诚实标为 VERIFIED_LOOPBACK 并写明原因；OneComme 与 VTS 因云端服务端无法直连主播本机 localhost API 且不引入新本机代理，明确标为 UNSUPPORTED，不把云服务器 localhost 当主播电脑，也不以反向上传取代平台接入。严格遵守 VW-R-019 只读输出、禁反向上传与撤销即时断连约束；本单贡献不替代 INIT 对 VW-R-019 的全量验收。",
+          "outcome": "satisfied",
+          "kind": "machine"
+        }
+      ]
+    }
+  ]
+}

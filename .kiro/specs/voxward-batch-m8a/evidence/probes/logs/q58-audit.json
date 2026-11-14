@@ -1,0 +1,94 @@
+{
+  "e05-s023-s024-vitest": {
+    "selfcheck": {
+      "guardLoaded": true,
+      "results": [
+        {
+          "host": "oauth2.googleapis.com",
+          "fetch": "refused:ECONNREFUSED",
+          "https": "refused:ECONNREFUSED",
+          "net": "refused:ECONNREFUSED",
+          "dns": "refused:ENOTFOUND"
+        },
+        {
+          "host": "www.googleapis.com",
+          "fetch": "refused:ECONNREFUSED",
+          "https": "refused:ECONNREFUSED",
+          "net": "refused:ECONNREFUSED",
+          "dns": "refused:ENOTFOUND"
+        },
+        {
+          "host": "accounts.google.com",
+          "fetch": "refused:ECONNREFUSED",
+          "https": "refused:ECONNREFUSED",
+          "net": "refused:ECONNREFUSED",
+          "dns": "refused:ENOTFOUND"
+        },
+        {
+          "host": "prod.us-east-1.auth.desktop.kiro.dev",
+          "fetch": "refused:ECONNREFUSED",
+          "https": "refused:ECONNREFUSED",
+          "net": "refused:ECONNREFUSED",
+          "dns": "refused:ENOTFOUND"
+        },
+        {
+          "host": "example.com",
+          "fetch": "refused:ECONNREFUSED",
+          "https": "refused:ECONNREFUSED",
+          "net": "refused:ECONNREFUSED",
+          "dns": "refused:ENOTFOUND"
+        }
+      ]
+    },
+    "totalEvents": 34,
+    "blocked": [],
+    "allowedTargets": [],
+    "shimLines": 0
+  },
+  "e80-m8a": {
+    "selfcheck": {
+      "guardLoaded": true,
+      "results": [
+        {
+          "host": "oauth2.googleapis.com",
+          "fetch": "refused:ECONNREFUSED",
+          "https": "refused:ECONNREFUSED",
+          "net": "refused:ECONNREFUSED",
+          "dns": "refused:ENOTFOUND"
+        },
+        {
+          "host": "www.googleapis.com",
+          "fetch": "refused:ECONNREFUSED",
+          "https": "refused:ECONNREFUSED",
+          "net": "refused:ECONNREFUSED",
+          "dns": "refused:ENOTFOUND"
+        },
+        {
+          "host": "accounts.google.com",
+          "fetch": "refused:ECONNREFUSED",
+          "https": "refused:ECONNREFUSED",
+          "net": "refused:ECONNREFUSED",
+          "dns": "refused:ENOTFOUND"
+        },
+        {
+          "host": "prod.us-east-1.auth.desktop.kiro.dev",
+          "fetch": "refused:ECONNREFUSED",
+          "https": "refused:ECONNREFUSED",
+          "net": "refused:ECONNREFUSED",
+          "dns": "refused:ENOTFOUND"
+        },
+        {
+          "host": "example.com",
+          "fetch": "refused:ECONNREFUSED",
+          "https": "refused:ECONNREFUSED",
+          "net": "refused:ECONNREFUSED",
+          "dns": "refused:ENOTFOUND"
+        }
+      ]
+    },
+    "totalEvents": 15,
+    "blocked": [],
+    "allowedTargets": [],
+    "shimLines": 0
+  }
+}
