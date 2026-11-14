@@ -1,0 +1,6 @@
+{
+  "base": "check-deps: ok, 219 files checked, 0 violations",
+  "negCode": 1,
+  "negOut": "packages/contracts/src/output/zz-neg.ts:1: contracts may not import \"../../../../apps/server/src/db/output-store.js\" (db)\napps/server/src/adapters/native-output/zz-neg.ts:1: adapter may not import \"../../modules/output-adapter/index.js\" (module output-adapter)\napps/server/src/adapters/native-output/zz-neg.ts:1: adapter may not import \"../../db/output-store.js\" (db)\napps/server/src/db/zz-neg.ts:1: db may not import \"../modules/output-adapter/subscription.js\" (module output-adapter)\napps/server/src/modules/output-adapter/zz-neg.ts:1: module output-adapter may not import \"ws\" (package ws)\napps/server/src/modules/output-adapter/zz-neg.ts:1: module output-adapter may not import \"../../db/output-store.js\" (db)\ncheck-deps: 6 violation(s) across 223 files",
+  "clean": "check-deps: ok, 219 files checked, 0 violations"
+}

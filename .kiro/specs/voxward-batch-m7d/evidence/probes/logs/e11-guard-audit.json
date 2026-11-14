@@ -1,0 +1,57 @@
+{
+  "e05-s021-vitest": {
+    "guardLoaded": true,
+    "shimBytes": 0,
+    "counts": {
+      "loaded": 19,
+      "loopback": 19
+    }
+  },
+  "e08-test": {
+    "guardLoaded": true,
+    "shimBytes": 0,
+    "counts": {
+      "loaded": 179,
+      "ipc": 36,
+      "dns": 1,
+      "loopback": 36,
+      "fetch-loopback": 17
+    }
+  },
+  "e60-s021": {
+    "guardLoaded": true,
+    "shimBytes": 0,
+    "counts": {
+      "loaded": 3,
+      "ipc": 1,
+      "loopback": 74
+    }
+  },
+  "e61-s021-race": {
+    "guardLoaded": true,
+    "shimBytes": 0,
+    "counts": {
+      "loaded": 3,
+      "ipc": 1,
+      "loopback": 5
+    }
+  },
+  "e62-s021-example": {
+    "guardLoaded": true,
+    "shimBytes": 0,
+    "counts": {
+      "loaded": 8,
+      "ipc": 1,
+      "loopback": 4
+    }
+  },
+  "e63-s021-rework1": {
+    "guardLoaded": true,
+    "shimBytes": 0,
+    "counts": {
+      "loaded": 3,
+      "ipc": 1,
+      "loopback": 12
+    }
+  }
+}

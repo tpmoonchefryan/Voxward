@@ -1,0 +1,49 @@
+[
+  {
+    "key": "VOXWARD-STORY-021",
+    "id": "work:26274628cbb8f691b6cf430c",
+    "rev": 5,
+    "status": "active",
+    "headEventHash": "e3fe1c909fbe6795ade6e025e2d310deed08c3bc08808d3b45aa466c0d762042",
+    "acceptanceRows": 11,
+    "existingEvidence": 11,
+    "existingOutcomes": {
+      "satisfied": 10,
+      "failed": 1
+    },
+    "existingCodeVersions": [
+      "7400f39"
+    ]
+  },
+  {
+    "key": "VOXWARD-SUB-039",
+    "id": "work:ac327b9a81a9326b33711ffb",
+    "rev": 4,
+    "status": "active",
+    "headEventHash": "e3fe1c909fbe6795ade6e025e2d310deed08c3bc08808d3b45aa466c0d762042",
+    "acceptanceRows": 12,
+    "existingEvidence": 12,
+    "existingOutcomes": {
+      "satisfied": 12
+    },
+    "existingCodeVersions": [
+      "7400f39"
+    ]
+  },
+  {
+    "key": "VOXWARD-SUB-040",
+    "id": "work:a86848777f015b0c0a1d9611",
+    "rev": 4,
+    "status": "active",
+    "headEventHash": "e3fe1c909fbe6795ade6e025e2d310deed08c3bc08808d3b45aa466c0d762042",
+    "acceptanceRows": 12,
+    "existingEvidence": 12,
+    "existingOutcomes": {
+      "satisfied": 11,
+      "failed": 1
+    },
+    "existingCodeVersions": [
+      "7400f39"
+    ]
+  }
+]

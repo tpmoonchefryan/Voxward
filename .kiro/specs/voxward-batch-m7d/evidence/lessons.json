@@ -1,0 +1,33 @@
+[
+ {
+  "subject": "ws 设置 maxPayload 后客户端数据帧存在两层关闭码：阈值内触发 message 关 4400，超阈值（含分片累计）在帧层直接关 1009",
+  "summary": "为只读 WebSocket 端点加上 WebSocketServer({ maxPayload: 4096 }) 后，<=4096 字节的客户端数据帧仍会组装完成并触发 ws.on('message')，走应用自定义关闭码 4400 CLIENT_DATA_NOT_ACCEPTED；而 >4096 字节的单帧（例如 4097B）或多帧分片消息（例如 2500B+2500B）在解析帧头或累计分片超限时即被 ws 拦截，直接发出 ws.on('error')（code=WS_ERR_UNSUPPORTED_MESSAGE_LENGTH）并以 RFC 6455 标准码 1009 断开，不会进入 message 监听器。",
+  "snippet": "编写只读 WebSocket 端点的错误日志与探针时：（1）ws.on('error') 只记录 error.code，不拼 error.message 或原始帧字节；（2）验收探针分别覆盖 maxPayload 精确上界（断言 4400）与上界 +1 / 跨分片超限（断言 1009、快速断开且同进程健康订阅者继续收帧）。",
+  "body": "第 m7d 批 E60 M1 与 E63 X1 实测：4096 字节文本帧以 4400 关闭；4097 字节单帧在 3 ms 内以 1009 关闭，2500+2500 字节分片文本消息同样以 1009 关闭，16 MiB 帧在 159 ms 内以 1009 断开且不再缓存整帧，日志只写 WS_ERR_UNSUPPORTED_MESSAGE_LENGTH，同频道健康消费者后续照常收到 DELIVER。",
+  "tags": ["voxward", "websocket", "ws", "maxPayload", "acceptance-probes"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/adapters/native-output/socket.ts",
+    "docs/protocol/output-native-v1.md",
+    ".kiro/specs/voxward-batch-m7d/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "修复异步投递并发改判需要「发送前同步重查」与「markSent 校验 is_current=1」双保险：前者拦后续行，后者防在途行误标 SENT 或被补发",
+  "summary": "在单线程 Node + 同步 SQLite 下，给投递泵加上 sendRow 前无 await 间隔的 readSendableRow 可以确保排在后面的已改判或已取消行绝不发出原文；而正在套接字慢写之中的那一行若在写完前被改判为 BLOCK，仍需靠 markSent 短事务联表核验 verdicts.is_current = 1 拒标 SENT，使旧行停留在 PENDING + is_current=0（下一轮 readSendable 自动忽略、后续到期转 EXPIRED、人工补发因非当前裁决被拒），同时由改判新写入的同 platformOrder WARD_BLOCKED 行通知下游撤回展示。",
+  "snippet": "复验输出投递竞态时除了测「第 1 行慢写期间改判/取消第 2 行」（拦截未发行），还要加测「第 1 行慢写期间改判第 1 行自身」：断言旧行不标 SENT、下一轮不重复发送、新 WARD_BLOCKED 携带同一 platformOrder，且旧行无法被补发。",
+  "body": "第 m7d 批 E61 R1–R4 与 E63 X2–X3 实测确认：4 行同轮混合改判 BLOCK 与 S019 CANCELLED 时只发出未改判行与后续 WARD_BLOCKED；6 MiB 在途行自身被改判 BLOCK 后保持 PENDING（is_current=0）、仅发送过改判前那 1 次、紧随下发同 platformOrder=77 的 WARD_BLOCKED，后续调 resendDelivery 被拒绝。",
+  "tags": ["voxward", "output-adapter", "delivery", "cas", "concurrency"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/output-adapter/delivery.ts",
+    "apps/server/src/db/output-store.ts",
+    "packages/contracts/src/ports/output-port.ts",
+    ".kiro/specs/voxward-batch-m7d/evidence/acceptance.md"
+   ]
+  }
+ }
+]
