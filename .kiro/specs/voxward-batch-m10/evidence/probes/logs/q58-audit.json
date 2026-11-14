@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "audit": [
+    {
+      "dir": "e05-s029-vitest",
+      "hostsChecked": 5,
+      "allRefused": true,
+      "netBlockedCount": 0
+    },
+    {
+      "dir": "e80-m10-probe",
+      "hostsChecked": 5,
+      "allRefused": true,
+      "netBlockedCount": 0
+    }
+  ]
+}

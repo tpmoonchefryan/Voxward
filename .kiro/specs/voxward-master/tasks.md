@@ -46,10 +46,10 @@
 | 4 | S006, S008, S012, S016 | SUB-012；SUB-015→016；SUB-023；SUB-029→030 | **done**：S012、S016 在 c67db24；S008 返工后在 b1a1471（18 行按 D1 用替身判定）；S006 打回 2 次，第 3 轮在 5ce5bee 通过。证据在 `.kiro/specs/voxward-batch4/`、`voxward-batch5a/`、`voxward-batch5b/` |
 | 5 | S009, S013, S017, S018 | SUB-017→018；SUB-024→025；SUB-031→032；SUB-033→034 | **done**：S017、S018 在 b1a1471；S009 打回 1 次（B4、B5），返工后和 S013（含 Q28、Q20）在 0b929d3 通过 64/64。证据在 `voxward-batch5b/`、`voxward-batch6/`；知识卡新增 10 张 |
 | 6 | S010, S011, S014 | SUB-019→020；SUB-021→022；SUB-026→027 | S010、S014 返工 1 次后在 fff691e **done**。S011 第 2 轮打回（B6：跨调用方优先级），rejections=2，升 sonnet 返工。证据 `voxward-batch-m6/`、`voxward-batch-m6r1/` |
-| 7 | S015, S019, S021, S027 | SUB-028；SUB-035→036；SUB-039→040；SUB-049→050 | S011（第 3 轮）、S015 在 cb822f0 **done**（54/54）。S021 依赖由 Owner 安装后续做；S019、S027（只做 SUB-049；SUB-050 等 Owner 独立账号）实施中。证据 `voxward-batch-m7/` |
-| 8 | S020, S022, S023, S024, S026 | SUB-037→038→042；SUB-041；SUB-043；SUB-044→045；SUB-048 | 未开始 |
-| 9 | S025, S028 | SUB-046→047；SUB-051 | 未开始 |
-| 10–13 | S029, S030, S032, S033 | SUB-052→053；SUB-054；SUB-056；SUB-057、SUB-058 | 未开始 |
+| 7 | S015, S019, S021, S027 | SUB-028；SUB-035→036；SUB-039→040；SUB-049→050 | **除 `SUB-050` 外全部 done**：S011（第 3 轮）、S015 在 `cb822f0` **done**（54/54）；S019、S021、S027（仅 `SUB-049`）经 `voxward-batch-m7/`、`voxward-batch-m7b/`、`voxward-batch-m7c/`、`voxward-batch-m7d/`、`voxward-batch-m7e/` 验收通过并关单。`VOXWARD-SUB-050`（`Q60` 真实模型测量）继续等待 Owner 提供独立 Kiro 账号 |
+| 8 | S020, S022, S023, S024, S026 | SUB-037→038→042；SUB-041；SUB-043；SUB-044→045；SUB-048 | **done**：S023/S024 在 `af53053`（`voxward-batch-m8a/`）；S022 返工 1 轮后于 `7e7f10a`→`994db71`（`voxward-batch-m8b/`）；S020 返工 1 轮（B12/B13/N15c）后于 `ddaf408`→`b1cc8af`（`voxward-batch-m9a/`）；S026/SUB-048 返工 1 轮（B14/N16a）后于 `f1a75e9`→`98e0e88`（45/45，`voxward-batch-m8cr1/`）全部关单 |
+| 9 | S025, S028 | SUB-046→047；SUB-051 | **done**：`SUB-046` 于 `b1cc8af`（`voxward-batch-m9a/`）先行关单；`S025`+`SUB-047` 返工 1 轮（B15/B16/N17a/N17b）后在 `5dab62b` 23/23 通过（`voxward-batch-m9ar1/`），`S028`+`SUB-051` 在 `e639cf8`→`5dab62b` 45/45 通过（`voxward-batch-m9b/`）全部关单 |
+| 10–13 | S029, S030, S032, S033 | SUB-052→053；SUB-054；SUB-056；SUB-057、SUB-058 | **S029 非真实交付已验收通过（待 Owner 实测门）**：`SUB-052`（23/23）、`SUB-053`（23/23）在 `911fe22` 经 `voxward-batch-m10/` 通过并关单；`VOXWARD-STORY-029` 非真实范围 22/23 通过、`VW-S029-KIRO-REAL` 按 D2 保留 `unverified`，保持 `active` 待 Owner 独立 Kiro 账号实测。`S030`、`S032`、`S033` 仍被 `S029` 阻塞，未开始 |
 
 批次表根据 2026-11-10 拆单报告的依赖层整理。开工前仍以 A1 读到的实时 blockedBy 为准。
 
@@ -122,3 +122,7 @@
 | Q58 | m7 验收执行偏差 | 拦截自检有一次没加载拦截模块就跑了，向 Google API 主机、accounts.google.com、Kiro 认证主机和 example.com 各发了一次不带凭据的根路径请求。没有调用任何 API，不影响判定。以后验收简报要求：拦截自检只在拦截加载后运行 | 每批验收 |
 | Q59 | m7 S021 | 用 pnpm 加带作用域包名的开发依赖时，会被宿主「防数据外传」规则误拦（命令里不能出现这种写法，写在笔记里也不行）。需要新增开发依赖时，请 Owner 在终端用 `ssh tcrn-platform-dev 'sudo -u ryanlan -H bash -lc "…"'` 执行 | 每批 |
 | Q60 | S027 | SUB-050（真实模型测量与报告）要用 Owner 提供的独立 Kiro 账号，和 S029 的真实演练一起跑 | S029 |
+| Q18、Q25、Q29、Q30、Q34、Q35、Q42、Q48、Q51、Q56 | 更新 | 随 S019、S020、S021、S022、S023/S024 在第 7–9a 批陆续实现并经 `m7`–`m9a` 关单（`Q30` `secure_delete` 与墓碑账本经 `S028`/`m9b`+`m10` 验证） | — |
+| Q20、Q43、Q49、Q55 | 更新 | `S026` 覆盖验证已随 `m8c-r1`（`98e0e88`）关单；`Q39`/`Q41`/`Q46`/`Q52`/`Q57`（以及 `B14` 相关复盘接线缺口）已作为非阻塞 MVP 缺陷记录在 `docs/acceptance/core-flow-matrix.md`，待后续接线 Story 决策排期 | 接线 Story |
+| Q17、Q26、Q37 | 更新 | `Q17`（无共享密钥一次性 Owner 引导）、`Q26`（`MAX_SCRYPT_CONCURRENCY=4` + 弱/超限哈希拒绝 + 文档/测试）与 `Q37`（`VOXWARD_KIRO_TIMEOUT_MS` `1000..300000 ms` 配置与适配器上限）已在 `911fe22` 经 `voxward-batch-m10/` 通过（附非阻塞建议 `N19a`：`login.ts` 唤醒改 `while`） | — |
+| Q28、Q33、Q41、Q47、Q60、VW-S029-KIRO-REAL | 更新 | `Q28`（PKCE 防抢占与本地退役）与 `Q47`（未报告模型 fail-closed）非真实契约已在 `m10` 验证；`Q41` 时钟偏移保护已写入 `docs/deployment/troubleshooting-and-quotas.md`。真实 `CrewPort` `start`/`cancel` 超时与远端异账号撤销收口（`N19b`）、`Q33` 锁定真实 `kiro-cli` 版本、`VW-S029-KIRO-REAL` 及 `VOXWARD-SUB-050`（`Q60`）继续等待 Owner 提供独立 Kiro 运行账号后实测 | Owner 独立 Kiro 账号实测门 |

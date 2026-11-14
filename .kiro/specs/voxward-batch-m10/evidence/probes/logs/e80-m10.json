@@ -1,0 +1,30 @@
+{
+  "allProbesCompleted": true,
+  "checkCount": 3,
+  "p1": {
+    "deployCheckPositiveCount": 19,
+    "deployCheckNegativeRejected": 3,
+    "mainBundleFailClosedRejected": 2,
+    "liveHealthStatus": 200,
+    "liveSandboxProbeStatus": 404,
+    "gracefulSigtermExit": 0
+  },
+  "p2": {
+    "bootstrapCliVerified": true,
+    "repeatBootstrapRejectedCode": "OWNER_ALREADY_BOOTSTRAPPED",
+    "q26MaxConcurrency": 4,
+    "q26RejectedWeakAndOversizedHashes": 4,
+    "concurrentLoginsSettled": 8,
+    "csrfAndWsOriginEnforced": true,
+    "moderatorRbacVerified": true,
+    "missingBackupRejected": "BACKUP_NOT_FOUND",
+    "restoringReplayedTombstones": 2
+  },
+  "p3": {
+    "q28PkceAndGrantRetireVerified": true,
+    "q37TimeoutBoundsRejected": 4,
+    "q47CapabilityFailClosed": true,
+    "s029FilesHygieneChecked": 23,
+    "kiroRealMarkedUnverifiedInDocs": 5
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "name": "exists:apps/server/dist/main.js",
+      "ok": true,
+      "detail": "present"
+    },
+    {
+      "name": "exists:apps/server/dist/sandbox-main.js",
+      "ok": true,
+      "detail": "present"
+    },
+    {
+      "name": "exists:apps/server/dist/bootstrap-owner.js",
+      "ok": true,
+      "detail": "present"
+    },
+    {
+      "name": "exists:apps/server/dist/migrations/meta/_journal.json",
+      "ok": true,
+      "detail": "present"
+    },
+    {
+      "name": "exists:apps/server/src/db/migrations/meta/_journal.json",
+      "ok": true,
+      "detail": "present"
+    },
+    {
+      "name": "exists:apps/web/dist/index.html",
+      "ok": true,
+      "detail": "present"
+    },
+    {
+      "name": "hygiene:deploy/server/server.env.example",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "hygiene:deploy/server/voxward.service",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "hygiene:deploy/server/Caddyfile.example",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "hygiene:deploy/server/README.md",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "hygiene:deploy/kiro-runtime/README.md",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "hygiene:deploy/kiro-runtime/runtime.env.example",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "hygiene:deploy/kiro-runtime/agent.template.json",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "hygiene:deploy/kiro-runtime/mcp.json",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "env:process:sandbox",
+      "ok": true,
+      "detail": "sandbox disabled"
+    },
+    {
+      "name": "env:file:sandbox",
+      "ok": true,
+      "detail": "sandbox disabled"
+    },
+    {
+      "name": "env:file:kiro-timeout",
+      "ok": true,
+      "detail": "within [1000, 300000]"
+    },
+    {
+      "name": "env:file:port",
+      "ok": true,
+      "detail": "valid port"
+    },
+    {
+      "name": "env:file:adapters",
+      "ok": true,
+      "detail": "supported adapter set"
+    }
+  ]
+}

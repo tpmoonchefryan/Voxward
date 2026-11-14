@@ -1,0 +1,34 @@
+[
+ {
+  "subject": "含 Owner 实测门的父 Story 应将已完成非真实子单先行关单，并在父单保留精确的 unverified 验收行",
+  "summary": "VoxWard Batch m10 在不执行真实 Kiro CLI 或真实 OAuth 联网的前提下，完成了 VOXWARD-SUB-052（远端构建、持久卷迁移、Q17 一次性引导、Q26 scrypt 限流、Q37 超时上限与离线自检）和 VOXWARD-SUB-053（6 篇运维排障手册与端到端非真实恢复演练）的全部 46 行验收，同时按 minutes:8fc0b8640384844e0b2a1787#D2 将父单 VOXWARD-STORY-029 的 VW-S029-KIRO-REAL 忠实记录为 unverified（其余 22 行 satisfied）。",
+  "snippet": "当父 Story 同时包含可离线验证的部署/运维交付与依赖外部真实账号的验收行时，独立验收应逐行实测并关闭已全部 satisfied 的子单，同时通过 work-annotate 将父单已满足的证据与显式 unverified 行一并落链，既不阻断已完成子单收口，也不把替身测试冒充为真实演练通过。",
+  "body": "Batch m10 通过 DONE_KEYS=VOXWARD-SUB-052,VOXWARD-SUB-053 运行 close-batch.cjs 生成 3 条 work-annotate 与 2 条子单 done 转换，确保治理链准确反映真实交付进度与剩余 Owner 实测门。",
+  "tags": ["voxward", "deployment", "acceptance", "governance", "fail-closed"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "deploy/server/README.md",
+    "docs/deployment/remote-deploy.md",
+    "apps/server/test/deployment/deployment-drill.test.ts",
+    ".kiro/specs/voxward-batch-m10/evidence/judgment.md"
+   ]
+  }
+ },
+ {
+  "subject": "备份恢复验收探针应覆盖「备份后发生隐私删除」场景，以实证 .restoring 墓碑账本重放不复活已删主体",
+  "summary": "在 Batch m10 独立探针 E80 P2 中，先写入受试者并生成 VACUUM INTO 热备份，随后由 DATA_ADMIN 执行 DELETE_AND_EXCEPT 隐私删除写入外部墓碑账本，再对旧备份执行 restoreDatabaseWithPorts 隔离恢复；实测恢复后 .restoring 临时文件清理干净，且墓碑重放自动恢复了备份后新增的 score_exceptions 记分例外。",
+  "snippet": "验证带隐私删除合规要求的数据库备份恢复流程时，不能只测静态数据原样还原，必须在备份时间点之后注入一次真实删除请求再执行恢复，核验外部墓碑账本在 .restoring 阶段确实重放生效、被删观众数据不会因回滚备份而复活。",
+  "body": "对照 docs/deployment/backup-and-recovery.md 与 upgrade-and-rollback.md 的运维规程，该探针同时验证了缺失备份文件以 BACKUP_NOT_FOUND 失败关闭且不破坏现网数据库文件。",
+  "tags": ["voxward", "backup-restore", "tombstone-ledger", "sqlite", "verification"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "docs/deployment/backup-and-recovery.md",
+    "docs/deployment/upgrade-and-rollback.md",
+    "apps/server/src/db/restore-support.ts",
+    ".kiro/specs/voxward-batch-m10/evidence/acceptance.md"
+   ]
+  }
+ }
+]
