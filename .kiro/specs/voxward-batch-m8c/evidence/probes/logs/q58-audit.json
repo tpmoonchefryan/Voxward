@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "runs": {
+    "e05-s026-vitest": {
+      "guardLoaded": true,
+      "refusedHosts": 5,
+      "shimInvocations": 0,
+      "netJsonlFiles": 12,
+      "externalAllowed": 0
+    },
+    "e80-m8c": {
+      "guardLoaded": true,
+      "refusedHosts": 5,
+      "shimInvocations": 0,
+      "netJsonlFiles": 2,
+      "externalAllowed": 0
+    }
+  }
+}

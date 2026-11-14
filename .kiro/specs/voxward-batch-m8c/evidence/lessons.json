@@ -1,0 +1,34 @@
+[
+ {
+  "subject": "只读跨模块验收矩阵工单不得将仅测了正常子路径但仍含已知边界缺陷或未装配缺口的条目笼统标为 PASS",
+  "summary": "VoxWard S026（明确约束不修改 src/）在编写 docs/acceptance/core-flow-matrix.md 时，只验证了 Q49 单事件改判与例外零分拒绝、membershipGiftingEvent 手工入 PAID 车道、以及单实例 TaskCoordinator 未知任务返回，便将 Q55、Q46、Q39、Q41、Q52、Q57 全部标为 PASS；独立探针实测发现 db/decision-store.ts 的 Q55 C6 上限钳制改判偏差（currentScore=9 而真实账本重放应为 7）、stream-list.ts 丢弃 memberMilestoneChatDetails.userComment 与稳态轮询时钟快偏误丢实时消息、app.ts 主链路未装配及多 ReviewRunner R7 跳过悬挂均原样存在。",
+  "snippet": "执行「不改产品代码、仅做跨模块集成验证与最小可复现缺陷归档」的验收矩阵任务时，必须先把待核问题清单中的已知边界序列（如钳制重放、非空子事件类型、跨实例竞争、组合根默认未注入端口）逐一写成断言复现，将局部成立的子能力与仍打开的既有缺陷/未装配项拆行呈现，严禁用简化正例的绿灯把未闭环缺陷标为 PASS。",
+  "body": "第 m8c 批 E80 C1–C3 实测复现（B14a）：（1）Q55 C6 在 maxScore=10 下执行 [-3, +2×6, -3] 后改判首条，currentScore=9、needsManualAdjustment=false，与账本重放值 7 偏差 +2；（2）Q46 parseStreamItem 对含 memberMilestoneChatDetails.userComment 的里程碑事件返回 text: null（body: ''）且 ChannelEvent 无付费标记；（3）Q41 稳态轮询在时钟快偏 +6m01s 时将实时消息判为 STALE_REPLAY 丢弃；（4）Q57 双 ReviewRunner 共享协调器时跳过未知 BACKGROUND 任务并 finishBatch 致任务滞留 RUNNING。上述缺口均未写入 core-flow-matrix.md §4。",
+  "tags": ["voxward", "integration-testing", "acceptance-matrix", "defect-reproduction", "verification"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "docs/acceptance/core-flow-matrix.md",
+    "apps/server/test/integration/core-flow/manual-coordinator-wiring.test.ts",
+    "apps/server/test/integration/core-flow/dedupe-replay-sc.test.ts",
+    "apps/server/src/db/decision-store.ts",
+    ".kiro/specs/voxward-batch-m8c/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "在多工作树并行开发的仓库中，提交入库的文档不得使用带本地工作树绝对路径的 file:// 链接",
+  "summary": "S026 在独立工作树 .worktrees/s026-core-flow 内编写 docs/acceptance/core-flow-matrix.md 与 tests/integration/core-flow/README.md 时，直接把编辑器/代理使用的 8 处 file:///home/ryanlan/Code/Voxward/.worktrees/s026-core-flow/... 绝对 URI 提交入库，导致合入其他工作树、CI 或清理临时工作树后链接全部指向不存在或过期的本机目录。",
+  "snippet": "面向聊天界面的回复可使用宿主要求的 file:// 绝对链接，但任何写入 Git 仓库的 Markdown、配置与测试说明文件必须一律使用相对于当前文件或仓库根的可解析相对路径，并在提交前用正则扫描拦截 file:/// 与 .worktrees/ 字面量。",
+  "body": "第 m8c 批 E80 C4 实测检出 docs/acceptance/core-flow-matrix.md:7-14 含 7 处、tests/integration/core-flow/README.md:16 含 1 处 file:///home/ryanlan/Code/Voxward/.worktrees/s026-core-flow/... 硬编码路径（B14c），违反无人值守指令原则中持久文本不固化设备位置的要求。",
+  "tags": ["voxward", "documentation", "git-worktree", "portable-paths", "repo-hygiene"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "docs/acceptance/core-flow-matrix.md",
+    "tests/integration/core-flow/README.md",
+    ".kiro/specs/voxward-batch-m8c/evidence/judgment.md"
+   ]
+  }
+ }
+]

@@ -1,0 +1,57 @@
+{
+  "candidate": "df376eb",
+  "total": 4,
+  "allProbesCompleted": true,
+  "results": [
+    {
+      "id": "C1_q55_c6_live_defect_unrecorded_and_falsely_marked_pass",
+      "passed": true,
+      "details": {
+        "scoreBeforeOverturn": 6,
+        "scoreAfterOverturn": 9,
+        "trueLedgerReplayScore": 7,
+        "needsManualAdjustment": false,
+        "matrixClaimedStatus": "PASS"
+      }
+    },
+    {
+      "id": "C2_q46_q41_live_gaps_unrecorded_and_falsely_marked_pass",
+      "passed": true,
+      "details": {
+        "q46MilestoneUserCommentParsedText": null,
+        "q46MilestoneEventBody": "",
+        "q46ChannelEventKeys": [
+          "contractVersion",
+          "platform",
+          "channelId",
+          "platformMessageId",
+          "platformOrder",
+          "receivedAt",
+          "correlationId",
+          "body",
+          "sender"
+        ],
+        "q41SteadyStateClockSkewDelivered": 0,
+        "q41SteadyStateClockSkewStaleReplay": 1
+      }
+    },
+    {
+      "id": "C3_q57_r7_and_vw_r007_anomaly_no_deduct",
+      "passed": true,
+      "details": {
+        "q57RunnerBSkippedItemsCount": 0,
+        "vwR007TimeoutItemStatus": "FAILED",
+        "vwR007ScoringCallsOnTimeout": 0
+      }
+    },
+    {
+      "id": "C4_hardcoded_ephemeral_worktree_uris_in_repo_docs",
+      "passed": true,
+      "details": {
+        "coreFlowMatrixFileUriCount": 7,
+        "readmeFileUriCount": 1,
+        "sampleUri": "file:///home/ryanlan/Code/Voxward/.worktrees/s026-core-flow/tests/integration/core-flow/README.md"
+      }
+    }
+  ]
+}
