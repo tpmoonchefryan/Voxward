@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "VOXWARD_ADAPTERS=synthetic tsx watch src/main.ts",
-    "build": "esbuild src/main.ts --bundle --platform=node --format=esm --target=node24 --external:fastify --external:zod --external:better-sqlite3 --external:drizzle-orm --external:ws --outfile=dist/main.js && esbuild src/sandbox-main.ts --bundle --platform=node --format=esm --target=node24 --external:fastify --external:zod --external:better-sqlite3 --external:drizzle-orm --external:ws --outfile=dist/sandbox-main.js && node scripts/copy-migrations.mjs",
+    "build": "esbuild src/main.ts --bundle --platform=node --format=esm --target=node24 --external:fastify --external:zod --external:better-sqlite3 --external:drizzle-orm --external:ws --outfile=dist/main.js && esbuild src/sandbox-main.ts --bundle --platform=node --format=esm --target=node24 --external:fastify --external:zod --external:better-sqlite3 --external:drizzle-orm --external:ws --outfile=dist/sandbox-main.js && esbuild src/auth/bootstrap-cli.ts --bundle --platform=node --format=esm --target=node24 --external:better-sqlite3 --external:drizzle-orm --outfile=dist/bootstrap-owner.js && node scripts/copy-migrations.mjs",
     "db:generate": "drizzle-kit generate",
     "start": "node dist/main.js",
     "test": "vitest run",

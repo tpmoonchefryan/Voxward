@@ -65,6 +65,8 @@ export interface KiroCliProviderOptions extends RunSettings {
   readonly now?: () => Date;
 }
 
+export const MIN_KIRO_TIMEOUT_MS = 1;
+export const MAX_KIRO_TIMEOUT_MS = 300_000;
 const DEFAULT_TIMEOUT_MS = 120_000;
 const DEFAULT_MAX_OUTPUT_BYTES = 1_048_576;
 const DEFAULT_KILL_GRACE_MS = 2_000;
@@ -91,6 +93,12 @@ interface BatchSlot {
 
 /** One provider per deployment. Batches run in parallel, and each is addressed by its batch id. */
 export function createKiroCliInferenceProvider(options: KiroCliProviderOptions): InferenceProvider {
+  if (
+    options.timeoutMs !== undefined &&
+    (!Number.isInteger(options.timeoutMs) || options.timeoutMs < MIN_KIRO_TIMEOUT_MS || options.timeoutMs > MAX_KIRO_TIMEOUT_MS)
+  ) {
+    throw new RangeError(`timeoutMs must be an integer between ${MIN_KIRO_TIMEOUT_MS} and ${MAX_KIRO_TIMEOUT_MS}`);
+  }
   const slots = new Map<string, BatchSlot>();
   return {
     moduleName: "InferenceProvider",

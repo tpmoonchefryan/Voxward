@@ -1,0 +1,31 @@
+# Template systemd unit for VoxWard self-hosted server.
+# Adjust User, Group, WorkingDirectory, and EnvironmentFile to match the target host.
+# This repository does not install systemd units or create OS users.
+
+[Unit]
+Description=VoxWard Moderation Middleware Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=voxward
+Group=voxward
+WorkingDirectory=/opt/voxward
+EnvironmentFile=/etc/voxward/server.env
+ExecStart=/usr/bin/node /opt/voxward/apps/server/dist/main.js
+Restart=on-failure
+RestartSec=5s
+
+# Fail-closed process hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/voxward
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+MemoryDenyWriteExecute=false
+
+[Install]
+WantedBy=multi-user.target

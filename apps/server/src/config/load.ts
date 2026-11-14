@@ -20,6 +20,7 @@ const ENV_KEYS: Readonly<Record<string, string>> = {
   VOXWARD_PORT: "port",
   VOXWARD_ADAPTERS: "adapters",
   VOXWARD_DATABASE_FILE: "databaseFile",
+  VOXWARD_KIRO_TIMEOUT_MS: "kiroTimeoutMs",
 };
 
 class ConfigFailure extends Error {
@@ -85,7 +86,8 @@ function readEnvValues(env: ConfigSources["env"]): Record<string, unknown> {
 
     const key = ENV_KEYS[name];
     if (key === undefined) throw unknownKey(name);
-    values[key] = key === "port" && /^\d+$/.test(value) ? Number(value) : value;
+    const isNumericKey = key === "port" || key === "kiroTimeoutMs";
+    values[key] = isNumericKey && /^\d+$/.test(value) ? Number(value) : value;
   }
   return values;
 }

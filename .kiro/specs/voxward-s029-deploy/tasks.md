@@ -17,12 +17,12 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ## 细化执行清单（SUB-052 / SUB-053 / 加固件）
 
-- [ ] S029-1：新增 `deploy/server/` 远端自托管部署模板（`server.env.example`、`voxward.service`、`Caddyfile.example`、`README.md`），无真实密钥/共享口令/演示账号。
-- [ ] S029-2：核对并完善 `deploy/kiro-runtime/` 状态标注（「已实现」vs「部署要求」vs「待实测」），显式保留 `VW-S029-KIRO-REAL` 为 `UNVERIFIED`。
-- [ ] S029-3（Q17）：新增 `apps/server/src/auth/bootstrap.ts` 与 `scripts/bootstrap-owner.mjs`（仅零 owner 时生效、强口令校验、fail-closed 拒绝重复引导）及单测。
-- [ ] S029-4（Q26）：在 `apps/server/src/auth/login.ts` 增加 scrypt 并发上限信号量，核对并测试弱/旧/超限哈希拒绝边界（保持 OWASP 成本）。
-- [ ] S029-5（Q28/Q37/Q47）：核对并补充换号重授权/撤销链路、Kiro 超时上限配置校验、`describeKiroCli` 与适配器契约单测（仅 fake CLI double，0 真实 CLI）。
-- [ ] S029-6：新增非联机检查脚本 `scripts/deploy-check.mjs`（校验产物、迁移、模板占位、Q37 超时与生产 fail-closed；支持 `--json` 与退出码；`check-deps.mjs` 0 violations）。
-- [ ] S029-7（SUB-053）：在 `docs/deployment/` 下新增全套运维与排障手册（远端部署、多房管邀请与最小权限、日志权限与保留期 sweep、备份与 `.restoring` 恢复、升级与回退、YouTube/Kiro 配额与 `Q41` NTP 校时、真实数据准入 `VW-S029-KIRO-REAL` 与 `VOXWARD-SUB-050`/`Q60`）。
-- [ ] S029-8（SUB-053）：新增 `apps/server/test/deployment/deployment-drill.test.ts` 端到端非真实演练测试。
-- [ ] S029-9：运行全量构建、typecheck、check-deps、guarded 全量测试与 `kiro-specs.mjs check`，编写 `.kiro/specs/voxward-s029-deploy/evidence/self-check.md`（显式保留 `VW-S029-KIRO-REAL` `UNVERIFIED`）。
+- [x] S029-1：新增 `deploy/server/` 远端自托管部署模板（`server.env.example`、`voxward.service`、`Caddyfile.example`、`README.md`），无真实密钥/共享口令/演示账号。
+- [x] S029-2：核对并完善 `deploy/kiro-runtime/` 状态标注（「已实现」vs「部署要求」vs「待实测」），显式保留 `VW-S029-KIRO-REAL` 为 `UNVERIFIED`。
+- [x] S029-3（Q17）：新增 `apps/server/src/auth/bootstrap.ts` 与 `scripts/bootstrap-owner.mjs`（仅零 owner 时生效、强口令校验、fail-closed 拒绝重复引导）及单测。
+- [x] S029-4（Q26）：在 `apps/server/src/auth/login.ts` 增加 scrypt 并发上限信号量，核对并测试弱/旧/超限哈希拒绝边界（保持 OWASP 成本）。
+- [x] S029-5（Q28/Q37/Q47）：核对并补充换号重授权/撤销链路、Kiro 超时上限配置校验、`describeKiroCli` 与适配器契约单测（仅 fake CLI double，0 真实 CLI）。
+- [x] S029-6：新增非联机检查脚本 `scripts/deploy-check.mjs`（校验产物、迁移、模板占位、Q37 超时与生产 fail-closed；支持 `--json` 与退出码；`check-deps.mjs` 0 violations）。
+- [x] S029-7（SUB-053）：在 `docs/deployment/` 下新增全套运维与排障手册（远端部署、多房管邀请与最小权限、日志权限与保留期 sweep、备份与 `.restoring` 恢复、升级与回退、YouTube/Kiro 配额与 `Q41` NTP 校时、真实数据准入 `VW-S029-KIRO-REAL` 与 `VOXWARD-SUB-050`/`Q60`）。
+- [x] S029-8（SUB-053）：新增 `apps/server/test/deployment/deployment-drill.test.ts` 端到端非真实演练测试。
+- [x] S029-9：运行全量构建、typecheck、check-deps、guarded 全量测试与 `kiro-specs.mjs check`，编写 `.kiro/specs/voxward-s029-deploy/evidence/self-check.md`（显式保留 `VW-S029-KIRO-REAL` `UNVERIFIED`）。
