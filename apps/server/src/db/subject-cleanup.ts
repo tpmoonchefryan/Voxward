@@ -31,7 +31,15 @@ export function createSubjectCleanupPort(database: VoxwardDatabase): SubjectClea
         .get();
       if (subject === undefined) return undefined;
       const scope = createAuditLogPort(database).locateSubjectLogs(subjectId);
-      return { platformSubjectKey: subject.platformSubjectKey, correlationIds: [...scope.correlationIds].sort() };
+      const eventCorrelationIds = database.orm
+        .select({ correlationId: channelEvents.correlationId })
+        .from(channelEvents)
+        .where(and(eq(channelEvents.channelId, channelId), eq(channelEvents.subjectId, subjectId)))
+        .all()
+        .map((row) => row.correlationId)
+        .filter((id): id is string => id !== null);
+      const correlationIds = [...new Set([...scope.correlationIds, ...eventCorrelationIds])].sort();
+      return { platformSubjectKey: subject.platformSubjectKey, correlationIds };
     },
 
     cleanSurface(input) {

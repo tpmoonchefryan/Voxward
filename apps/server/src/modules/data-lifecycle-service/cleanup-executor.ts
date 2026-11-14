@@ -98,6 +98,13 @@ function runSurface(deps: DataDeps, record: DataRequestRecord, facts: CleanupFac
   return true;
 }
 
+/** Dependent child surfaces that must be idempotently swept before deleting a parent table row (FK order). */
+const PRE_SWEEP_SURFACES: Partial<Record<DeletionTargetKind, readonly DeletionTargetKind[]>> = {
+  VERDICT: ["DELIVERY"],
+  TASK: ["DELIVERY", "VERDICT"],
+  CHANNEL_EVENT: ["DELIVERY", "VERDICT", "TASK"],
+};
+
 function cleanSurface(deps: DataDeps, record: DataRequestRecord, facts: CleanupFacts, target: CleanupTarget): void {
   const { subjectId } = record;
   switch (target.targetKind) {
@@ -115,14 +122,21 @@ function cleanSurface(deps: DataDeps, record: DataRequestRecord, facts: CleanupF
       forgetInProcess(deps, record, facts, target.targetRef);
       return;
     case "TASK":
-      // A technical row that is still attached to a task would block the task's delete. The rows of the subject are
-      // swept again first. The sweep is idempotent, and it publishes what it removes.
+    case "CHANNEL_EVENT":
+      // Technical rows or dependent child rows that arrived while PARTIAL_FAILED would block parent deletion via FK.
       publish(deps, deps.logs.removeSubjectTechnicalRows(subjectId));
-      cleanDatabase(deps, record, target.targetKind);
+      cleanDatabaseWithPreSweep(deps, record, target.targetKind);
       return;
     default:
-      cleanDatabase(deps, record, target.targetKind);
+      cleanDatabaseWithPreSweep(deps, record, target.targetKind);
   }
+}
+
+function cleanDatabaseWithPreSweep(deps: DataDeps, record: DataRequestRecord, targetKind: DeletionTargetKind): void {
+  for (const child of PRE_SWEEP_SURFACES[targetKind] ?? []) {
+    cleanDatabase(deps, record, child);
+  }
+  cleanDatabase(deps, record, targetKind);
 }
 
 function cleanDatabase(deps: DataDeps, record: DataRequestRecord, targetKind: DeletionTargetKind): void {

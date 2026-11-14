@@ -53,7 +53,7 @@ A checked task is local progress only. Formal completion still requires the engi
 ### 返工 1（VOXWARD-SUB-036：B8、B9、N10）
 
 - [x] R1-1. 更新 `design.md` 与 `tasks.md` 受管段之外内容（B8、B9、N10），运行 `kiro-specs.mjs check` 达 `SPEC_CURRENT`，先提交规格更新（`VOXWARD-STORY-019: update spec for fix1 (B8, B9, N10)`）。
-- [ ] R1-2. 修复 B8：`apps/server/src/db/subject-cleanup.ts` 的 `readCleanupFacts` 并集查询 `channel_events.correlation_id`（非空）与 `locateSubjectLogs(subjectId).correlationIds`、去重并排序。
-- [ ] R1-3. 修复 B9：`apps/server/src/modules/data-lifecycle-service/cleanup-executor.ts` 在删除 `VERDICT`、`TASK`、`CHANNEL_EVENT` 前按外键依赖顺序幂等预清扫子表。
-- [ ] R1-4. 补充回归测试（`executor.test.ts` 等）：（1）技术日志过期后仍清净 `CandidateStore`；（2）步骤 4 失败后续作清净 `CandidateStore`；（3）`DELIVERY=DONE` 后例外观众发新不计分消息，续作无 `SQLITE_CONSTRAINT_FOREIGNKEY` 收敛至 `COMPLETED`；（4）`TWIN` 隔离不变。
-- [ ] R1-5. 更新 `probe-m7c-s019.mts`（`R1–R3` 断言修复后通过）并在 `guarded.sh` 下运行，完成 `pnpm build`、`pnpm typecheck`、`pnpm check:deps`、`kiro-specs.mjs check`、guarded `pnpm test`、`smoke.sh` 与 `evidence/rework1-self-check.md`。
+- [x] R1-2. 修复 B8：`apps/server/src/db/subject-cleanup.ts` 的 `readCleanupFacts` 并集查询 `channel_events.correlation_id`（非空）与 `locateSubjectLogs(subjectId).correlationIds`、去重并排序。
+- [x] R1-3. 修复 B9：`apps/server/src/modules/data-lifecycle-service/cleanup-executor.ts` 在删除 `VERDICT`、`TASK`、`CHANNEL_EVENT` 前按外键依赖顺序幂等预清扫子表。
+- [x] R1-4. 补充回归测试（`executor.test.ts` 等）：（1）技术日志过期后仍清净 `CandidateStore`；（2）步骤 4 失败后续作清净 `CandidateStore`；（3）`DELIVERY=DONE` 后例外观众发新不计分消息，续作无 `SQLITE_CONSTRAINT_FOREIGNKEY` 收敛至 `COMPLETED`；（4）`TWIN` 隔离不变。
+- [x] R1-5. 更新 `probe-m7c-s019.mts`（`R1–R3` 断言修复后通过）并在 `guarded.sh` 下运行，完成 `pnpm build`、`pnpm typecheck`、`pnpm check:deps`、`kiro-specs.mjs check`、guarded `pnpm test`、`smoke.sh` 与 `evidence/rework1-self-check.md`。
