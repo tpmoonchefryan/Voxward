@@ -159,18 +159,42 @@ export function createApprovedContentPort(database: VoxwardDatabase): ApprovedCo
  * compare-and-set on the status the row must still have, so a row that changed meanwhile is left alone.
  */
 export function createOutputDeliveryPort(database: VoxwardDatabase): OutputDeliveryPort {
+  const sendableSelection = {
+    deliveryId: deliveries.id,
+    channelId: channelEvents.channelId,
+    correlationId: channelEvents.correlationId,
+    downstream: verdicts.downstream,
+    platformOrder: deliveries.platformOrder,
+    deliverySequence: deliveries.deliverySequence,
+    validUntil: deliveries.validUntil,
+  };
+
+  function toSendableDelivery(row: {
+    deliveryId: string;
+    channelId: string;
+    correlationId: string;
+    downstream: string;
+    platformOrder: number;
+    deliverySequence: number;
+    validUntil: string;
+  }): SendableDelivery {
+    // The verdict column has a CHECK that admits only ALLOW and BLOCK, so the cast cannot produce another value.
+    return {
+      deliveryId: row.deliveryId,
+      channelId: row.channelId,
+      correlationId: row.correlationId,
+      status: "PENDING",
+      verdict: row.downstream as DownstreamVerdict,
+      platformOrder: row.platformOrder,
+      deliverySequence: row.deliverySequence,
+      validUntil: row.validUntil,
+    };
+  }
+
   return {
     readSendable({ channelId, nowIso, limit }) {
       const rows = database.orm
-        .select({
-          deliveryId: deliveries.id,
-          channelId: channelEvents.channelId,
-          correlationId: channelEvents.correlationId,
-          downstream: verdicts.downstream,
-          platformOrder: deliveries.platformOrder,
-          deliverySequence: deliveries.deliverySequence,
-          validUntil: deliveries.validUntil,
-        })
+        .select(sendableSelection)
         .from(deliveries)
         .innerJoin(channelEvents, eq(channelEvents.id, deliveries.eventId))
         .innerJoin(verdicts, eq(verdicts.id, deliveries.verdictId))
@@ -185,19 +209,25 @@ export function createOutputDeliveryPort(database: VoxwardDatabase): OutputDeliv
         .orderBy(asc(deliveries.platformOrder), asc(deliveries.deliverySequence), asc(deliveries.id))
         .limit(limit)
         .all();
-      // The verdict column has a CHECK that admits only ALLOW and BLOCK, so the cast cannot produce another value.
-      return rows.map(
-        (row): SendableDelivery => ({
-          deliveryId: row.deliveryId,
-          channelId: row.channelId,
-          correlationId: row.correlationId,
-          status: "PENDING",
-          verdict: row.downstream as DownstreamVerdict,
-          platformOrder: row.platformOrder,
-          deliverySequence: row.deliverySequence,
-          validUntil: row.validUntil,
-        }),
-      );
+      return rows.map(toSendableDelivery);
+    },
+
+    readSendableRow({ deliveryId, nowIso }) {
+      const row = database.orm
+        .select(sendableSelection)
+        .from(deliveries)
+        .innerJoin(channelEvents, eq(channelEvents.id, deliveries.eventId))
+        .innerJoin(verdicts, eq(verdicts.id, deliveries.verdictId))
+        .where(
+          and(
+            eq(deliveries.id, deliveryId),
+            eq(deliveries.status, "PENDING"),
+            gt(deliveries.validUntil, nowIso),
+            eq(verdicts.isCurrent, 1),
+          ),
+        )
+        .get();
+      return row === undefined ? undefined : toSendableDelivery(row);
     },
 
     expireDue({ nowIso, limit }) {
@@ -221,16 +251,30 @@ export function createOutputDeliveryPort(database: VoxwardDatabase): OutputDeliv
     },
 
     markSent({ deliveryId, nowIso }) {
-      // Runs after every consumer accepted the frame. Only a PENDING row that has not expired becomes SENT.
-      return runShortTransaction(
-        database,
-        (tx) =>
+      // Runs after every consumer accepted the frame. Only a PENDING, unexpired row on a current verdict becomes SENT.
+      return runShortTransaction(database, (tx) => {
+        const current = tx
+          .select({ id: deliveries.id })
+          .from(deliveries)
+          .innerJoin(verdicts, eq(verdicts.id, deliveries.verdictId))
+          .where(
+            and(
+              eq(deliveries.id, deliveryId),
+              eq(deliveries.status, "PENDING"),
+              gt(deliveries.validUntil, nowIso),
+              eq(verdicts.isCurrent, 1),
+            ),
+          )
+          .get();
+        if (current === undefined) return false;
+        return (
           tx
             .update(deliveries)
             .set({ status: "SENT", updatedAt: nowIso })
             .where(and(eq(deliveries.id, deliveryId), eq(deliveries.status, "PENDING"), gt(deliveries.validUntil, nowIso)))
-            .run().changes === 1,
-      );
+            .run().changes === 1
+        );
+      });
     },
 
     recordSendFailure({ deliveryId, nowIso, maxAttempts }) {

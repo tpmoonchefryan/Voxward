@@ -437,4 +437,19 @@ describe("native output endpoint with a failing grant store", () => {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });
+
+  it("N1: app.close() resolves promptly while a WebSocket consumer is still connected", async () => {
+    const h = await startHarness(QUIET);
+    const { credential } = issueGrant(h.db);
+    const ws = consumer(h.port, credential);
+    await opened(ws);
+    const closed = closeOf(ws);
+
+    const startedAt = Date.now();
+    await h.app.close();
+    const elapsedMs = Date.now() - startedAt;
+
+    expect(elapsedMs).toBeLessThan(2000);
+    await closed;
+  });
 });

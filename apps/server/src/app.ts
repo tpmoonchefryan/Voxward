@@ -143,7 +143,8 @@ function startNativeOutput(
       });
   }, settings?.passIntervalMs ?? DEFAULT_PASS_INTERVAL_MS);
   timer.unref();
-  app.addHook("onClose", async () => {
+  // preClose runs before Fastify closes the HTTP server and waits on upgraded WebSocket sockets.
+  app.addHook("preClose", async () => {
     clearInterval(timer);
     endpoint.close();
   });
