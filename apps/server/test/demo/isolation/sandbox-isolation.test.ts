@@ -150,4 +150,99 @@ describe("VOXWARD-SUB-047: sandbox fail-closed isolation and limited demo roles"
 
     await app.close();
   });
+
+  it("enforces privacy.delete on /sandbox-api/scenarios and redacts snapshots by role capability (B16)", async () => {
+    const db = setupDb(dirs);
+    dbs.push(db);
+    const app = buildApp({
+      modules: buildRegistry(serverConfigSchema.parse({ adapters: "synthetic" })),
+      logger: false,
+      database: db,
+      sandbox: { enabled: true, env: {} },
+    });
+
+    // Seed spam/toxicity, manual review, and approved stage output as DEMO_STREAMER
+    await app.inject({
+      method: "POST",
+      url: "/sandbox-api/scenarios",
+      headers: { "x-demo-role": "DEMO_STREAMER" },
+      payload: { scenario: "spam-toxicity-block" },
+    });
+    await app.inject({
+      method: "POST",
+      url: "/sandbox-api/scenarios",
+      headers: { "x-demo-role": "DEMO_STREAMER" },
+      payload: { scenario: "manual-review" },
+    });
+    await app.inject({
+      method: "POST",
+      url: "/sandbox-api/scenarios",
+      headers: { "x-demo-role": "DEMO_STREAMER" },
+      payload: { scenario: "superchat-translation" },
+    });
+
+    // DEMO_MODERATOR, DEMO_STREAMER, DEMO_STAGE_VIEWER cannot run privacy-delete scenarios via /sandbox-api/scenarios
+    for (const role of ["DEMO_MODERATOR", "DEMO_STREAMER", "DEMO_STAGE_VIEWER"] as const) {
+      for (const scenario of ["privacy-delete", "privacy-delete-and-except"] as const) {
+        const res = await app.inject({
+          method: "POST",
+          url: "/sandbox-api/scenarios",
+          headers: { "x-demo-role": role },
+          payload: { scenario, subjectKey: "demo-viewer-alice" },
+        });
+        expect(res.statusCode).toBe(403);
+      }
+    }
+
+    // DEMO_STAGE_VIEWER gets zero reviewQueue, zero blockedItems/originalText, zero subjects, zero logs, but keeps approvedStage
+    const stageStateRes = await app.inject({
+      method: "GET",
+      url: "/sandbox-api/state",
+      headers: { "x-demo-role": "DEMO_STAGE_VIEWER" },
+    });
+    expect(stageStateRes.statusCode).toBe(200);
+    const stageBody = stageStateRes.json() as {
+      snapshot: {
+        subjects: unknown[];
+        reviewQueue: unknown[];
+        blockedItems: unknown[];
+        approvedStage: unknown[];
+        changeLogs: unknown[];
+        technicalLogs: unknown[];
+        dataRequests: unknown[];
+        cacheEntryCount: number;
+      };
+    };
+    expect(stageBody.snapshot.reviewQueue).toEqual([]);
+    expect(stageBody.snapshot.blockedItems).toEqual([]);
+    expect(stageBody.snapshot.subjects).toEqual([]);
+    expect(stageBody.snapshot.changeLogs).toEqual([]);
+    expect(stageBody.snapshot.technicalLogs).toEqual([]);
+    expect(stageBody.snapshot.dataRequests).toEqual([]);
+    expect(stageBody.snapshot.cacheEntryCount).toBe(0);
+    expect(stageBody.snapshot.approvedStage.length).toBeGreaterThan(0);
+
+    // DEMO_PRIVACY_AUDITOR can run privacy-delete-and-except via /sandbox-api/scenarios, and sees redacted blockedItems (no originalText) & no reviewQueue
+    const auditorScenarioRes = await app.inject({
+      method: "POST",
+      url: "/sandbox-api/scenarios",
+      headers: { "x-demo-role": "DEMO_PRIVACY_AUDITOR" },
+      payload: { scenario: "privacy-delete-and-except", subjectKey: "demo-viewer-alice" },
+    });
+    expect(auditorScenarioRes.statusCode).toBe(200);
+    const auditorBody = auditorScenarioRes.json() as {
+      snapshot: {
+        reviewQueue: unknown[];
+        blockedItems: { originalText: string | null }[];
+        dataRequests: unknown[];
+      };
+    };
+    expect(auditorBody.snapshot.reviewQueue).toEqual([]);
+    for (const item of auditorBody.snapshot.blockedItems) {
+      expect(item.originalText).toBeNull();
+    }
+    expect(auditorBody.snapshot.dataRequests.length).toBeGreaterThan(0);
+
+    await app.close();
+  });
 });

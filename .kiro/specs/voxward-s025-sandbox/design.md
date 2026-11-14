@@ -1,7 +1,7 @@
 <!-- EINZBERN-SPEC:MANAGED-START -->
 # Design
 
-<!-- Einzbern source: work=work:ac8ff494373ad248e549ea4a revision=4 sha256=46ac8f06ef8b2d22ffd721361bd0771d5e486d9e3408923fe0305645215a6a9f -->
+<!-- Einzbern source: work=work:ac8ff494373ad248e549ea4a revision=5 sha256=a431679c8a13e4ac215212edf3363f5f017a4c2498fa19963d3ab07fe648281c -->
 
 This file records design-source availability. It does not establish a new design authority or claim publication/build evidence.
 
@@ -101,3 +101,18 @@ No design authority is configured for the resolved work context. No authority wa
 - `apps/server/test/demo/isolation/*.test.ts`：覆盖 fail-closed 启动校验、默认 `buildApp` 拒绝 `/sandbox-api/*`、demo token 被生产路由拒绝、以及无 `CHANNEL_OWNER` 一键签发。
 - `apps/web/src/pages/sandbox/__tests__/SandboxPage.test.tsx`：覆盖合成标识、场景触发、角色切换、重置与队列/评分/舞台/隐私视图渲染。
 - 门禁：`pnpm build`、`pnpm typecheck`、`node scripts/check-deps.mjs`、经 `guarded.sh` 运行 `pnpm test`、`kiro-specs.mjs check`。
+
+### 6. Rework 1 补充设计（B15, B16, N17a, N17b）
+- **B15 真实独立沙盒 HTTP+SPA 启动器与开发代理**：
+  - 新增 `apps/server/src/sandbox-main.ts`（在 `scripts/check-deps.mjs` 归类为 `composition` 分区）：调用 `assertSandboxStartupSafe` 校验环境与 DB 路径，打开独立沙盒 SQLite 并执行 `runMigrations`，调用 `buildApp({ modules, database, sandbox: { enabled: true, ... } })`（保持 `main.ts` 与 `app.ts` 默认 `NO_SUBJECT_CACHES` 与现有契约不变），若 `apps/web/dist` 存在则托管静态资源与 `/sandbox` SPA HTML 回退，监听 `VOXWARD_SANDBOX_HOST`/`VOXWARD_SANDBOX_PORT`（默认 `127.0.0.1:3100`）并支持 `SIGINT`/`SIGTERM` 优雅关闭。
+  - `apps/server/package.json` 的 `build` 脚本同时打包 `dist/main.js` 与 `dist/sandbox-main.js`。
+  - `apps/server/src/main.ts` 入口补充 fail-closed 检查：若 `VOXWARD_SANDBOX_ENABLED` 为真值则拒绝启动生产主进程（不导入 `demo/*`）。
+  - `deploy/sandbox/start-sandbox.mjs` 校验配置后实际启动并监管 `sandbox-main` HTTP+SPA 服务直到收到信号退出（仅显式传 `--check-only` 时仅做校验）；同步校对 `deploy/sandbox/README.md`。
+  - `apps/web/vite.config.ts` 增加 `"/sandbox-api": process.env.VOXWARD_SANDBOX_ORIGIN ?? "http://127.0.0.1:3100"` 开发代理。
+  - 新增 `apps/server/test/demo/isolation/sandbox-launcher.test.ts` 验证子进程真实监听、`/sandbox-api/state`、`/sandbox` SPA HTML、`POST /sandbox-api/scenarios` 及 `SIGINT` 优雅退出与零端口残留。
+- **B16 场景隐私删除门禁与角色快照/UI 裁剪**：
+  - `apps/server/src/demo/routes.ts`：`POST /sandbox-api/scenarios` 对 `"privacy-delete"` 与 `"privacy-delete-and-except"` 强制校验 `"privacy.delete"` 能力（`DEMO_MODERATOR`/`DEMO_STREAMER`/`DEMO_STAGE_VIEWER` 返回 `403`）；对**所有**返回沙盒快照的端点统一应用 `redactSnapshotForCapabilities(snapshot, actor.capabilities)`，无 `"review.decide"` 权限者不得收到 `reviewQueue` 与 `blockedItems[].originalText`（置 `null`）及 `subjects` 明细，无 `"logs.read"` 权限者不得收到 `changeLogs`、`technicalLogs` 与 `dataRequests`（尤其 `DEMO_STAGE_VIEWER` 仅保留横幅与 `approvedStage`）。
+  - `apps/web/src/pages/sandbox/SandboxPage.tsx`：按当前角色能力门禁隐私删除场景按钮（无 `privacy.delete` 禁用），并在前端隐藏无权查看的评分/隐私状态、人工审核队列、已拦截原文与日志区。
+- **N17a / N17b 加固与证据规范**：
+  - `apps/server/src/demo/scenarios/index.ts` 两处 `scoreExceptions` 查询补上 `isNull(scoreExceptions.removedAt)`。
+  - `.kiro/specs/voxward-s025-sandbox/evidence/self-check.md` 全部命令与路径统一使用仓库相对路径。

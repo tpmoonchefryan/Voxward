@@ -17,11 +17,11 @@
    ```bash
    pnpm build
    ```
-3. 启动隔离沙盒服务（仅在本地演示端口运行）：
+3. 启动隔离沙盒服务（仅在本地演示端口运行；加 `--check-only` 可仅校验配置）：
    ```bash
    node deploy/sandbox/start-sandbox.mjs
    ```
-4. 打开前端 `/sandbox` 页面，确认页面顶部常驻 `SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）` 标识。
+4. 打开 `http://127.0.0.1:3100/sandbox`（或开发态 Vite `/sandbox` 页面），确认页面顶部常驻 `SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）` 标识。
 5. 依次触发预设场景按钮：
    - **正常聊天评分**：观察 `demo-viewer-alice` 评分增加与日志记录；
    - **垃圾/毒性拦截**：观察 `demo-viewer-bob` 消息被规则拦截并扣分；

@@ -54,7 +54,12 @@ function zoneOf(absolutePath) {
   if (rel.startsWith("apps/server/src/demo/")) return { kind: "demo", rel };
   if (rel.startsWith("apps/server/src/auth/")) return { kind: "auth", rel };
   if (rel.startsWith("apps/server/src/security/")) return { kind: "security", rel };
-  if (rel === "apps/server/src/app.ts" || rel === "apps/server/src/main.ts" || rel.startsWith("apps/server/src/config/")) {
+  if (
+    rel === "apps/server/src/app.ts" ||
+    rel === "apps/server/src/main.ts" ||
+    rel === "apps/server/src/sandbox-main.ts" ||
+    rel.startsWith("apps/server/src/config/")
+  ) {
     return { kind: "composition", rel };
   }
   return { kind: "unclassified", rel };
