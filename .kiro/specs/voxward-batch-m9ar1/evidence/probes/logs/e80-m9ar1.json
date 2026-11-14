@@ -1,0 +1,51 @@
+{
+  "allProbesCompleted": true,
+  "checkCount": 3,
+  "checks": [
+    {
+      "id": "P1_b15_real_launcher_spa_shutdown_and_prod_fail_closed",
+      "passed": true,
+      "details": {
+        "checkOnlyStatus": 0,
+        "stateStatus": 200,
+        "spaStatus": 200,
+        "spaContentType": "text/html; charset=utf-8",
+        "traversalStatus": 404,
+        "residualListening": false,
+        "prodMainExitCodeWithSandboxEnv": 1
+      }
+    },
+    {
+      "id": "P2_b16_privacy_capability_gate_and_role_redaction_verified",
+      "passed": true,
+      "details": {
+        "forbiddenStatuses": {
+          "DEMO_MODERATOR": [
+            403,
+            403
+          ],
+          "DEMO_STREAMER": [
+            403,
+            403
+          ],
+          "DEMO_STAGE_VIEWER": [
+            403,
+            403
+          ]
+        },
+        "stageApprovedCount": 2,
+        "auditorBlockedOriginalText": null,
+        "auditorPrivacyDeleteStatus": 200
+      }
+    },
+    {
+      "id": "P3_n17a_n17b_and_portable_paths_verified",
+      "passed": true,
+      "details": {
+        "removedAtChecksCount": 2,
+        "filesAudited": 14,
+        "violationsCount": 0
+      }
+    }
+  ]
+}

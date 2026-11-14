@@ -1,0 +1,18 @@
+[
+ {
+  "subject": "全存储面删除验收矩阵应与迁移后 sqlite_master 实时表清单做程序化集合比对，防止漏表",
+  "summary": "VoxWard S028 在不修改产品 src/ 的前提下编写全存储面删除矩阵 docs/acceptance/data-lifecycle-matrix.md 与 deletion-matrix.test.ts，覆盖了全部 27 张 SQLite 业务表与 3 类内存缓存；独立验收探针通过查询迁移后数据库的 sqlite_master 表名集合并与矩阵文档做差集断言，自动确证 27 张表零遗漏。",
+  "snippet": "执行数据删除或隐私生命周期的跨模块验收时，不应仅靠人工手数 Schema 文件，而应在迁移后的真实数据库上查询系统目录（如 sqlite_master）并与验收矩阵及测试用例的覆盖集合做程序化零差集校验。",
+  "body": "第 m9b 批 E80 P1 实测确认：迁移后 SQLite 共 27 张非系统表，与 docs/acceptance/data-lifecycle-matrix.md §2 逐表比对缺失数为 0，配合自动/人工/ReviewRunner.resumePendingScoring 延迟记分三入口与 .sqlite3 原始字节扫描形成完整闭环。",
+  "tags": ["voxward", "data-lifecycle", "privacy-deletion", "sqlite", "verification"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "docs/acceptance/data-lifecycle-matrix.md",
+    "apps/server/test/integration/data-lifecycle/deletion-matrix.test.ts",
+    "apps/server/test/integration/data-lifecycle/isolation-rbac-restore.test.ts",
+    ".kiro/specs/voxward-batch-m9b/evidence/judgment.md"
+   ]
+  }
+ }
+]

@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "runs": {
+    "e05-s028-vitest": {
+      "guardLoaded": true,
+      "selfcheckRefusedCount": 5,
+      "shimInvocations": 0,
+      "netEvents": 12,
+      "externalAllowed": 0
+    },
+    "e80-m9b": {
+      "guardLoaded": true,
+      "selfcheckRefusedCount": 5,
+      "shimInvocations": 0,
+      "netEvents": 4,
+      "externalAllowed": 0
+    }
+  }
+}

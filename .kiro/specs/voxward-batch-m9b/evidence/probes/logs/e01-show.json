@@ -1,0 +1,249 @@
+{
+  "VOXWARD-STORY-028": {
+    "id": "work:7575417f5d8162013086ea6f",
+    "externalKey": "VOXWARD-STORY-028",
+    "status": "active",
+    "revision": 4,
+    "acceptanceCount": 22,
+    "existingEvidenceCount": 0,
+    "headEventHash": "eb9ebf2c38828ad30a4e7a2d2e71d34001310d6e0f9d8aafda5b0a2f609fafd7",
+    "acSummary": [
+      {
+        "id": "VW-S028-AC001",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-S028-R001"
+      },
+      {
+        "id": "VW-S028-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-E006-R028"
+      },
+      {
+        "id": "VW-S028-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-001"
+      },
+      {
+        "id": "VW-S028-INHERIT-002",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-002 承载。",
+        "req": "VW-R-002"
+      },
+      {
+        "id": "VW-S028-INHERIT-003",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-003 承载。",
+        "req": "VW-R-003"
+      },
+      {
+        "id": "VW-S028-INHERIT-004",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-004 承载。",
+        "req": "VW-R-004"
+      },
+      {
+        "id": "VW-S028-INHERIT-005",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-005 承载。",
+        "req": "VW-R-005"
+      },
+      {
+        "id": "VW-S028-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "req": "VW-R-006"
+      },
+      {
+        "id": "VW-S028-INHERIT-007",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-007 承载。",
+        "req": "VW-R-007"
+      },
+      {
+        "id": "VW-S028-INHERIT-008",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-008 承载。",
+        "req": "VW-R-008"
+      },
+      {
+        "id": "VW-S028-INHERIT-009",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-009"
+      },
+      {
+        "id": "VW-S028-INHERIT-010",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。",
+        "req": "VW-R-010"
+      },
+      {
+        "id": "VW-S028-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-011"
+      },
+      {
+        "id": "VW-S028-INHERIT-012",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-012"
+      },
+      {
+        "id": "VW-S028-INHERIT-013",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-013"
+      },
+      {
+        "id": "VW-S028-INHERIT-014",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-014"
+      },
+      {
+        "id": "VW-S028-INHERIT-015",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-015"
+      },
+      {
+        "id": "VW-S028-INHERIT-016",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-016"
+      },
+      {
+        "id": "VW-S028-INHERIT-017",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-017"
+      },
+      {
+        "id": "VW-S028-INHERIT-018",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-018 承载。",
+        "req": "VW-R-018"
+      },
+      {
+        "id": "VW-S028-INHERIT-019",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-019 承载。",
+        "req": "VW-R-019"
+      },
+      {
+        "id": "VW-S028-INHERIT-020",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-020 承载。",
+        "req": "VW-R-020"
+      }
+    ]
+  },
+  "VOXWARD-SUB-051": {
+    "id": "work:6579bb3c8b560c309a6cb7f4",
+    "externalKey": "VOXWARD-SUB-051",
+    "status": "active",
+    "revision": 3,
+    "acceptanceCount": 23,
+    "existingEvidenceCount": 0,
+    "headEventHash": "eb9ebf2c38828ad30a4e7a2d2e71d34001310d6e0f9d8aafda5b0a2f609fafd7",
+    "acSummary": [
+      {
+        "id": "VW-SUB051-AC001",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-SUB051-R001"
+      },
+      {
+        "id": "VW-SUB051-STORY",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-S028-R001"
+      },
+      {
+        "id": "VW-SUB051-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-E006-R028"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-001"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-002",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-002 承载。",
+        "req": "VW-R-002"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-003",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-003 承载。",
+        "req": "VW-R-003"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-004",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-004 承载。",
+        "req": "VW-R-004"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-005",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-005 承载。",
+        "req": "VW-R-005"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "req": "VW-R-006"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-007",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-007 承载。",
+        "req": "VW-R-007"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-008",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-008 承载。",
+        "req": "VW-R-008"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-009",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-009"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-010",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。",
+        "req": "VW-R-010"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-011"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-012",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-012"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-013",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-013"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-014",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-014"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-015",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-015"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-016",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-016"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-017",
+        "method": "故障注入与恢复演练，记录实际对象/版本/结果及不可控提供方范围。",
+        "req": "VW-R-017"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-018",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-018 承载。",
+        "req": "VW-R-018"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-019",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-019 承载。",
+        "req": "VW-R-019"
+      },
+      {
+        "id": "VW-SUB051-INHERIT-020",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-020 承载。",
+        "req": "VW-R-020"
+      }
+    ]
+  }
+}

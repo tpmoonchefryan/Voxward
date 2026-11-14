@@ -1,0 +1,139 @@
+{
+  "VOXWARD-STORY-025": {
+    "id": "work:ac8ff494373ad248e549ea4a",
+    "externalKey": "VOXWARD-STORY-025",
+    "status": "active",
+    "revision": 5,
+    "acceptanceCount": 11,
+    "existingEvidenceCount": 11,
+    "headEventHash": "eb9ebf2c38828ad30a4e7a2d2e71d34001310d6e0f9d8aafda5b0a2f609fafd7",
+    "acSummary": [
+      {
+        "id": "VW-S025-AC001",
+        "method": "隔离/权限与核心演示流程测试。",
+        "req": "VW-S025-R001"
+      },
+      {
+        "id": "VW-S025-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；隔离/权限与核心演示流程测试。",
+        "req": "VW-E005-R025"
+      },
+      {
+        "id": "VW-S025-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-001"
+      },
+      {
+        "id": "VW-S025-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "req": "VW-R-006"
+      },
+      {
+        "id": "VW-S025-INHERIT-009",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-009"
+      },
+      {
+        "id": "VW-S025-INHERIT-010",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。",
+        "req": "VW-R-010"
+      },
+      {
+        "id": "VW-S025-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-011"
+      },
+      {
+        "id": "VW-S025-INHERIT-012",
+        "method": "隔离/权限与核心演示流程测试。",
+        "req": "VW-R-012"
+      },
+      {
+        "id": "VW-S025-INHERIT-017",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-017"
+      },
+      {
+        "id": "VW-S025-INHERIT-018",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-018 承载。",
+        "req": "VW-R-018"
+      },
+      {
+        "id": "VW-S025-INHERIT-019",
+        "method": "隔离/权限与核心演示流程测试。",
+        "req": "VW-R-019"
+      }
+    ]
+  },
+  "VOXWARD-SUB-047": {
+    "id": "work:f58fc4c27cc6068d1f5bcf64",
+    "externalKey": "VOXWARD-SUB-047",
+    "status": "active",
+    "revision": 4,
+    "acceptanceCount": 12,
+    "existingEvidenceCount": 12,
+    "headEventHash": "eb9ebf2c38828ad30a4e7a2d2e71d34001310d6e0f9d8aafda5b0a2f609fafd7",
+    "acSummary": [
+      {
+        "id": "VW-SUB047-AC001",
+        "method": "隔离/权限测试。",
+        "req": "VW-SUB047-R001"
+      },
+      {
+        "id": "VW-SUB047-STORY",
+        "method": "隔离/权限测试。",
+        "req": "VW-S025-R001"
+      },
+      {
+        "id": "VW-SUB047-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；隔离/权限与核心演示流程测试。",
+        "req": "VW-E005-R025"
+      },
+      {
+        "id": "VW-SUB047-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-001"
+      },
+      {
+        "id": "VW-SUB047-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "req": "VW-R-006"
+      },
+      {
+        "id": "VW-SUB047-INHERIT-009",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-009"
+      },
+      {
+        "id": "VW-SUB047-INHERIT-010",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。",
+        "req": "VW-R-010"
+      },
+      {
+        "id": "VW-SUB047-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-011"
+      },
+      {
+        "id": "VW-SUB047-INHERIT-012",
+        "method": "隔离/权限与核心演示流程测试。",
+        "req": "VW-R-012"
+      },
+      {
+        "id": "VW-SUB047-INHERIT-017",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "req": "VW-R-017"
+      },
+      {
+        "id": "VW-SUB047-INHERIT-018",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-018 承载。",
+        "req": "VW-R-018"
+      },
+      {
+        "id": "VW-SUB047-INHERIT-019",
+        "method": "隔离/权限与核心演示流程测试。",
+        "req": "VW-R-019"
+      }
+    ]
+  }
+}

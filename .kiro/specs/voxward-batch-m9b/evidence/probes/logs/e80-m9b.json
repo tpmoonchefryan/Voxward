@@ -1,0 +1,47 @@
+{
+  "allProbesCompleted": true,
+  "checkCount": 3,
+  "checks": [
+    {
+      "id": "P1_all_27_sqlite_tables_verified_against_live_schema_and_matrix",
+      "passed": true,
+      "details": {
+        "tableCount": 27,
+        "missingFromMatrixCount": 0
+      }
+    },
+    {
+      "id": "P2_delayed_review_scoring_and_preference_marker_verified",
+      "passed": true,
+      "details": {
+        "resumeRes": 0,
+        "markedStatus": "NOT_REQUIRED",
+        "ledgerRowCount": 0,
+        "currentScore": 0,
+        "processingGeneration": 1,
+        "preferenceMarkerKeys": [
+          "createdAt",
+          "purpose",
+          "subjectId"
+        ]
+      }
+    },
+    {
+      "id": "P3_s028_docs_links_boundaries_and_portable_paths_verified",
+      "passed": true,
+      "details": {
+        "filesAudited": 9,
+        "violationsCount": 0,
+        "resolvedLinksCount": 6,
+        "resolvedLinks": [
+          "docs/acceptance/data-lifecycle-matrix.md -> ../../apps/server/test/integration/data-lifecycle/deletion-matrix.test.ts",
+          "docs/acceptance/data-lifecycle-matrix.md -> ../../apps/server/test/integration/data-lifecycle/scoring-and-faults.test.ts",
+          "docs/acceptance/data-lifecycle-matrix.md -> ../../apps/server/test/integration/data-lifecycle/isolation-rbac-restore.test.ts",
+          "docs/acceptance/data-lifecycle-matrix.md -> ../../.kiro/specs/voxward-s028-privacy-verify/design.md",
+          "docs/acceptance/data-lifecycle-matrix.md -> ../../.kiro/specs/voxward-s028-privacy-verify/tasks.md",
+          "docs/acceptance/data-lifecycle-matrix.md -> ../../.kiro/specs/voxward-s028-privacy-verify/evidence/self-check.md"
+        ]
+      }
+    }
+  ]
+}

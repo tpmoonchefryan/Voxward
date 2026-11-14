@@ -1,0 +1,18 @@
+[
+ {
+  "subject": "独立演示入口与生产主进程应采用双向环境互斥守卫（沙盒禁生产凭据，生产禁沙盒开关）",
+  "summary": "VoxWard S025 Rework 1 在实现独立沙盒入口 apps/server/src/sandbox-main.ts 时，不仅在沙盒侧用 assertSandboxStartupSafe 拦截生产 OAuth/YouTube 凭据与非沙盒数据库路径，同时在生产入口 apps/server/src/main.ts 顶部对 VOXWARD_SANDBOX_ENABLED=true 执行失败关闭退出且不导入任何 demo/* 模块，确保误配环境变量时生产进程绝不会静默退化或暴露演示端点。",
+  "snippet": "拆分独立演示/沙盒进程与生产主进程时，除了在沙盒入口阻断生产凭据与生产数据库路径外，还应在生产入口对沙盒启用环境变量做零依赖的失败关闭检查，并用子进程集成测试同时覆盖双向拒绝。",
+  "body": "第 m9a-r1 批 E80 P1 实测验证：start-sandbox.mjs 在独立端口提供 /sandbox SPA 与 /sandbox-api/state（SIGINT 后 0 残留监听），同时 dist/main.js 在 VOXWARD_SANDBOX_ENABLED=true 下立即以退出码 1 拒绝启动且 check-deps 保持 265 文件 0 违规。",
+  "tags": ["voxward", "sandbox", "fail-closed", "process-isolation", "security"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/sandbox-main.ts",
+    "apps/server/src/main.ts",
+    "deploy/sandbox/start-sandbox.mjs",
+    ".kiro/specs/voxward-batch-m9ar1/evidence/judgment.md"
+   ]
+  }
+ }
+]
