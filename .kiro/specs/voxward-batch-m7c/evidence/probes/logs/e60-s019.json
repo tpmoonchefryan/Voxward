@@ -1,0 +1,266 @@
+{
+  "total": 14,
+  "allPassed": true,
+  "results": [
+    {
+      "id": "A1-request-validation",
+      "ok": true,
+      "detail": {
+        "deleteNoMode": 400,
+        "resumeWithMode": 400,
+        "accessCreated": 201
+      }
+    },
+    {
+      "id": "A2-execute-auth-matrix",
+      "ok": true,
+      "detail": {
+        "unauth": 401,
+        "noCsrf": 403,
+        "bearer": 403,
+        "moderator": 403,
+        "crossChannel": 403
+      }
+    },
+    {
+      "id": "A3-execute-state-guards",
+      "ok": true,
+      "detail": {
+        "unverified": {
+          "status": 409,
+          "body": {
+            "error": "NOT_VERIFIED"
+          }
+        },
+        "access": {
+          "status": 409,
+          "body": {
+            "error": "NOT_EXECUTABLE"
+          }
+        },
+        "missing": {
+          "status": 404,
+          "body": {
+            "error": "REQUEST_NOT_FOUND"
+          }
+        }
+      }
+    },
+    {
+      "id": "A4-http-execute-q35-q29-and-default-hub",
+      "ok": true,
+      "detail": {
+        "execStatus": 200,
+        "itemCountDefaultHub": 15,
+        "counts": {
+          "done": 15,
+          "failed": 0,
+          "pending": 0
+        },
+        "techAfterStatus": 404,
+        "chainTechnicalCountAfter": 0,
+        "chainChangeSummaries": [
+          {
+            "id": "chg-http-1",
+            "summary": "DATA_REQUEST_CERTIFICATE"
+          }
+        ],
+        "subjectChainSummaries": [
+          {
+            "id": "8742443a-efdc-4058-a7f5-aef14e8eac6a",
+            "kind": "SCORE_EXCEPTION_CHANGED",
+            "summary": "DATA_REQUEST_CERTIFICATE"
+          },
+          {
+            "id": "chg-http-2",
+            "kind": "LIST_CHANGED",
+            "summary": "DATA_REQUEST_CERTIFICATE"
+          }
+        ],
+        "ownerDataForbidden": 403,
+        "resumeOutcome": {
+          "outcome": "RESUMED"
+        },
+        "resumeReplayStatus": 409
+      }
+    },
+    {
+      "id": "B1-startDeletion-atomic-rollback",
+      "ok": true,
+      "detail": {
+        "threw": true,
+        "twinGenAfterRollback": 0,
+        "excCount": 0,
+        "itemCount": 0,
+        "stateAfterRollback": "PENDING"
+      }
+    },
+    {
+      "id": "B2-zero-scoring-window-and-idempotent-start",
+      "ok": true,
+      "detail": {
+        "genAfterStart": 1,
+        "genAfterRepeat": 1,
+        "excCount": 1,
+        "realtimeScoreErr": "EXCEPTION_ACTIVE",
+        "identityScoreErr": "EXCEPTION_ACTIVE",
+        "manualScoreErr": "EXCEPTION_ACTIVE"
+      }
+    },
+    {
+      "id": "B3-late-gen0-verdict-discarded",
+      "ok": true,
+      "detail": {
+        "lateCommit": {
+          "status": "conflict",
+          "reason": "STALE_GENERATION",
+          "current": null
+        },
+        "verdictsWritten": 0
+      }
+    },
+    {
+      "id": "B4-exception-new-message-reviewed-unscored",
+      "ok": true,
+      "detail": {
+        "routeNoise": {
+          "kind": "REVIEW",
+          "taskKind": "REALTIME_REVIEW",
+          "exception": true,
+          "reason": "EXCEPTION"
+        },
+        "routeBlock": {
+          "kind": "FINAL",
+          "verdictSource": "BASE_RULE",
+          "classification": "BLOCK",
+          "settlement": "NONE",
+          "reason": "BASE_BLOCK"
+        },
+        "gen1CommitStatus": "committed",
+        "scoring": "refused",
+        "ledgerRowsTwin": 0
+      }
+    },
+    {
+      "id": "B5-preference-marker-and-exception-persistence",
+      "ok": true,
+      "detail": {
+        "marker": {
+          "purpose": "SCORING_EXCEPTION_PREFERENCE",
+          "subjectId": "subject-2",
+          "createdAt": "2026-11-10T10:00:00.000Z"
+        },
+        "subjectExcStillActive": true,
+        "twinExcStillActive": true
+      }
+    },
+    {
+      "id": "C1-C3-18-surfaces-twin-isolation-and-exception-not-confirmed",
+      "ok": true,
+      "detail": {
+        "run1Execution": "PARTIAL_FAILED",
+        "all18Done": true,
+        "run2ExecutionWhenExceptionLifted": "PARTIAL_FAILED",
+        "dataRequestChanges": [
+          "DATA_REQUEST registered kind=DELETE mode=DELETE_AND_EXCEPT source=OPERATOR_INITIATED request=id-1",
+          "DATA_REQUEST verification=VERIFIED method=ACCOUNT_OWNERSHIP request=id-1",
+          "DATA_REQUEST deletion started mode=DELETE_AND_EXCEPT request=id-1",
+          "DATA_REQUEST cleanup incomplete, unfinished=10",
+          "DATA_REQUEST registered kind=RESUME_SCORING mode=NONE source=OPERATOR_INITIATED request=id-26",
+          "DATA_REQUEST verification=VERIFIED method=REQUEST_AUTHORIZATION request=id-26",
+          "DATA_REQUEST EXCEPTION_NOT_CONFIRMED"
+        ],
+        "remainingCards": [
+          "twin-term"
+        ]
+      }
+    },
+    {
+      "id": "R1-bug-expired-techlog-leaves-candidate-card-on-completed",
+      "ok": true,
+      "detail": {
+        "expectedContract": "remainingCards.length === 0 when COMPLETED",
+        "factsObserved": {
+          "platformSubjectKey": "synthetic-key-1",
+          "correlationIds": []
+        },
+        "execution": "COMPLETED",
+        "candidateItem": {
+          "id": "id-12",
+          "requestId": "id-1",
+          "targetKind": "CANDIDATE_CARD",
+          "targetRef": "CANDIDATE_CARD",
+          "itemState": "DONE",
+          "errorCode": null,
+          "attemptedAt": "2026-11-10T10:00:00.000Z",
+          "completedAt": "2026-11-10T10:00:00.000Z"
+        },
+        "remainingCards": [
+          {
+            "term": "synthetic-viewer-phrase-r1",
+            "note": "synthetic-note-r1",
+            "sourceCorrelationId": "corr-ev-r1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "R2-bug-resume-after-step3-leaves-candidate-card-on-completed",
+      "ok": true,
+      "detail": {
+        "run1Execution": "PARTIAL_FAILED",
+        "factsBeforeResume": {
+          "platformSubjectKey": "synthetic-key-1",
+          "correlationIds": []
+        },
+        "run2Execution": "COMPLETED",
+        "candidateItemAfterResume": {
+          "id": "id-12",
+          "requestId": "id-1",
+          "targetKind": "CANDIDATE_CARD",
+          "targetRef": "CANDIDATE_CARD",
+          "itemState": "DONE",
+          "errorCode": null,
+          "attemptedAt": "2026-11-10T10:00:00.000Z",
+          "completedAt": "2026-11-10T10:00:00.000Z"
+        },
+        "remainingCards": [
+          {
+            "term": "synthetic-viewer-phrase-r2",
+            "note": "synthetic-note-r2",
+            "sourceCorrelationId": "corr-ev-r2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "R3-bug-post-exception-message-wedges-resume-with-fk-error",
+      "ok": true,
+      "detail": {
+        "run1Execution": "PARTIAL_FAILED",
+        "retry1Execution": "PARTIAL_FAILED",
+        "retry2Execution": "PARTIAL_FAILED",
+        "verdictItem": {
+          "id": "id-18",
+          "requestId": "id-1",
+          "targetKind": "VERDICT",
+          "targetRef": "subject-1",
+          "itemState": "FAILED",
+          "errorCode": "SQLITE_CONSTRAINT_FOREIGNKEY",
+          "attemptedAt": "2026-11-10T10:00:00.000Z",
+          "completedAt": null
+        }
+      }
+    },
+    {
+      "id": "R4-counterfactual-fix-cleans-card-and-resumes-cleanly",
+      "ok": true,
+      "detail": {
+        "run1": "PARTIAL_FAILED",
+        "run2": "PARTIAL_FAILED",
+        "run3": "COMPLETED",
+        "remainingCards": 0
+      }
+    }
+  ]
+}

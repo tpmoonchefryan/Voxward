@@ -1,0 +1,51 @@
+[
+ {
+  "subject": "分步删除先删 technical_logs 再删派生缓存时，correlationIds 必须并入 channel_events：只查技术日志会在 7 天到期或续作时漏删候选词卡片",
+  "summary": "VoxWard S019 的 CLEANUP_PLAN 在步骤 3 删除 TECHNICAL_LOG，步骤 4 清理进程内 CANDIDATE_CARD，步骤 13 才删除 CHANNEL_EVENT。db/subject-cleanup.ts 的 readCleanupFacts 直接复用 audit-log.ts locateScope 返回的 correlationIds，而该字段只收集 technical_logs 的 correlation_id（channel_events 的 correlation_id 只进了内部 chainIds）。一旦技术日志按 7 天保留期清掉，或第 1 轮在步骤 3 删完技术日志后于步骤 4 失败、第 2 轮续作，readCleanupFacts 就返回空数组，CANDIDATE_CARD 删 0 张卡却标 DONE，整单虚报 COMPLETED。",
+  "snippet": "跨表与进程内派生缓存按关联 ID 清理时，事实读取必须并集查询尚未删除的上游事件表（channel_events.correlation_id ∪ technical_logs.correlation_id），或在启动事务里快照关联 ID。验收探针要测两条路径：（1）先清空已到期日志再跑删除；（2）在日志删除步骤之后、派生缓存步骤上注入一次失败，再无故障续作，断言派生缓存清零。",
+  "body": "第 m7c 批 E60 R1 与 R2 实测复现（B8）：单轮常规路径 C1 因步骤 1 开始前一次性调用 readCleanupFacts 且技术日志尚在而通过，掩盖了缺陷；R1 清空 technical_logs 后执行删除，以及 R2 让步骤 4 CANDIDATE_CARD 首次抛错置 PARTIAL_FAILED 后重试，两次都返回 status=COMPLETED，但观众消息生成的 CandidateCard（含 term、note、sourceCorrelationId）仍留在 CandidateStore。并入 channel_events.correlation_id 后（R4）两条路径均清零。",
+  "tags": ["voxward", "data-lifecycle", "cleanup", "candidate-store", "acceptance-probes"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/subject-cleanup.ts",
+    "apps/server/src/db/audit-log.ts",
+    "apps/server/src/modules/data-lifecycle-service/cleanup-targets.ts",
+    "packages/contracts/src/ports/data-request.ts",
+    ".kiro/specs/voxward-batch-m7c/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "逐表面短事务删除在跳过已 DONE 子步骤时，必须对继续发言的例外主体前扫全套外键子表：只补扫 technical_logs 会让重试卡死在外键约束",
+  "summary": "记分例外观众不被封禁，PARTIAL_FAILED 等待重试期间仍会正常发弹幕并写入 channel_events -> tasks -> verdicts -> deliveries（不计分）。cleanup-executor 在重试时跳过已标 DONE 的步骤，且只在 TASK 前补扫了 technical_logs，没有在 VERDICT 前补扫 deliveries，也没有在 CHANNEL_EVENT 前补扫 deliveries/verdicts/tasks/technical_logs。只要第 1 轮在步骤 10 DELIVERY 标 DONE 后于步骤 11 VERDICT（或步骤 13 CHANNEL_EVENT）失败，期间来一条新弹幕，后续所有重试都会在 DELETE 父表时抛 SQLITE_CONSTRAINT_FOREIGNKEY，请求永久卡在 PARTIAL_FAILED。",
+  "snippet": "非单事务的分步外键清理若允许主体在 PARTIAL_FAILED 期间继续产生不计分业务行，执行任何外键父表（VERDICT、TASK、CHANNEL_EVENT）前都必须按拓扑逆序幂等补扫其子表，而不能假设前面标过 DONE 的子表仍然为空。验收时在子表步骤 DONE 后的父表步骤注入一次故障，插入一条合规新消息，再测重试能否一次收敛为 COMPLETED。",
+  "body": "第 m7c 批 E60 R3 实测复现（B9）：第 1 轮步骤 1–10 DONE、步骤 11 VERDICT 注入瞬时错误返回 PARTIAL_FAILED；随后写入 1 条例外观众的不计分审核消息（含 event、task、verdict、delivery）；撤销故障后连续两次重试均跳过 DELIVERY，在 VERDICT 上报 SQLITE_CONSTRAINT_FOREIGNKEY 无法恢复。在父表步骤前按依赖顺序幂等补扫子表后（R4），重试一次即达 COMPLETED。",
+  "tags": ["voxward", "data-lifecycle", "sqlite", "foreign-key", "retry-idempotency"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/modules/data-lifecycle-service/cleanup-executor.ts",
+    "apps/server/src/db/subject-cleanup.ts",
+    "apps/server/src/db/migrations/0003_core_pipeline.sql",
+    ".kiro/specs/voxward-batch-m7c/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "VoxWard 数据请求路由仅授予 DATA_ADMIN（CHANNEL_OWNER 默认 403），且 DELETE_AND_EXCEPT 新写的例外变更日志会被步骤 1 证书化",
+  "summary": "核查角色与审计联动时的两个实测细节：（1）auth/permissions.ts 中 data.handle 能力只赋给 DATA_ADMIN，CHANNEL_OWNER 与 MODERATOR 未兼任 DATA_ADMIN 时调 /channels/:id/data/requests* 一律返回 403 FORBIDDEN；（2）DELETE_AND_EXCEPT 在 startDeletion 事务里向 subject:<id> 写入 SCORE_EXCEPTION_CHANGED 变更日志后，紧接着清理步骤 1 CHANGE_LOG 会按 Q29 定位所有 targetRef=subject:<id> 的行并把摘要统一改为 DATA_REQUEST_CERTIFICATE，而 DATA_REQUEST_CHANGED 因 targetRef=requestId 保留原摘要。",
+  "snippet": "编写数据生命周期 HTTP 探针时，执行角色必须显式授予同频道 DATA_ADMIN；断言删除后的 Change Log 时，subject:<id> 下的 SCORE_EXCEPTION_CHANGED 摘要预期为 DATA_REQUEST_CERTIFICATE，请求级状态摘要查 targetRef=requestId 的 DATA_REQUEST_CHANGED 行。",
+  "body": "第 m7c 批 E60 A2 与 A4 实测确认：同频道 MODERATOR、同频道仅持 CHANNEL_OWNER 的会话、S003 Bearer 输出令牌及外频道 DATA_ADMIN 调 execute 均为 403，只有同频道 DATA_ADMIN 返回 200；删除完成后该主体的 SCORE_EXCEPTION_CHANGED 行仍保留 action 但 summary 已被步骤 1 证书化为 DATA_REQUEST_CERTIFICATE。",
+  "tags": ["voxward", "rbac", "audit-log", "data-lifecycle", "testing"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/auth/permissions.ts",
+    "apps/server/src/auth/data-routes.ts",
+    "apps/server/src/db/data-request-store.ts",
+    "apps/server/src/db/audit-log.ts"
+   ]
+  }
+ }
+]

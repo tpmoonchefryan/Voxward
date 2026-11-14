@@ -1,0 +1,6 @@
+{
+  "baseOut": "check-deps: ok, 219 files checked, 0 violations",
+  "negCode": 1,
+  "negOut": "packages/contracts/src/ports/zz-neg.ts:1: contracts may not import \"../../../../apps/server/src/db/subject-cleanup.js\" (db)\napps/server/src/db/zz-neg.ts:1: db may not import \"../modules/data-lifecycle-service/index.js\" (module data-lifecycle-service)\napps/server/src/modules/data-lifecycle-service/zz-neg.ts:1: module data-lifecycle-service may not import \"../../db/subject-cleanup.js\" (db)\napps/server/src/modules/data-lifecycle-service/zz-neg.ts:2: module data-lifecycle-service may not import \"fastify\" (package fastify)\ncheck-deps: 4 violation(s) across 222 files",
+  "cleanOut": "check-deps: ok, 219 files checked, 0 violations"
+}

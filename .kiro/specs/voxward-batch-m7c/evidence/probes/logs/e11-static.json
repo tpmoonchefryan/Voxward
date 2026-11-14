@@ -1,0 +1,484 @@
+{
+  "sub035Files": [
+    "apps/server/src/app.ts",
+    "apps/server/src/db/data-request-store.ts",
+    "apps/server/src/db/migrations/0006_data_deletion_targets.sql",
+    "apps/server/src/db/migrations/meta/0006_snapshot.json",
+    "apps/server/src/db/migrations/meta/_journal.json",
+    "apps/server/src/db/schema/data-requests.ts",
+    "apps/server/src/modules/data-lifecycle-service/change-row.ts",
+    "apps/server/src/modules/data-lifecycle-service/cleanup-targets.ts",
+    "apps/server/src/modules/data-lifecycle-service/delete-with-exception.ts",
+    "apps/server/src/modules/data-lifecycle-service/index.ts",
+    "apps/server/src/modules/data-lifecycle-service/preference-marker.ts",
+    "apps/server/src/modules/data-lifecycle-service/requests.ts",
+    "apps/server/src/modules/data-lifecycle-service/resume-scoring.ts",
+    "apps/server/src/modules/data-lifecycle-service/types.ts",
+    "apps/server/test/data-lifecycle-service/delete-with-exception/preference-marker.test.ts",
+    "apps/server/test/data-lifecycle-service/delete-with-exception/transaction.test.ts",
+    "apps/server/test/data-lifecycle-service/fixtures.ts",
+    "apps/server/test/db/schema.test.ts",
+    "docs/data-dictionary.md",
+    "packages/contracts/src/ports/data-request.ts"
+  ],
+  "sub036Files": [
+    "apps/server/src/app.ts",
+    "apps/server/src/auth/data-routes.ts",
+    "apps/server/src/db/audit-log.ts",
+    "apps/server/src/db/subject-cleanup.ts",
+    "apps/server/src/modules/data-lifecycle-service/change-row.ts",
+    "apps/server/src/modules/data-lifecycle-service/cleanup-executor.ts",
+    "apps/server/src/modules/data-lifecycle-service/cleanup-targets.ts",
+    "apps/server/src/modules/data-lifecycle-service/index.ts",
+    "apps/server/src/modules/data-lifecycle-service/routes.ts",
+    "apps/server/src/modules/data-lifecycle-service/types.ts",
+    "apps/server/src/modules/moderation-engine/candidates/store.ts",
+    "apps/server/src/modules/moderation-engine/nickname-cache/cache.ts",
+    "apps/server/src/modules/platform-source/youtube/identity.ts",
+    "apps/server/test/audit-store/deletion-index/subject-chain.test.ts",
+    "apps/server/test/audit-store/helpers.ts",
+    "apps/server/test/data-lifecycle-service/cleanup/executor.test.ts",
+    "apps/server/test/data-lifecycle-service/execute-routes.test.ts",
+    "apps/server/test/data-lifecycle-service/fixtures.ts",
+    "apps/server/test/moderation-engine/candidates/store.test.ts",
+    "apps/server/test/moderation-engine/nickname-cache/cache.test.ts",
+    "apps/server/test/platform-source/youtube-identity/identity.test.ts",
+    "packages/contracts/src/ports/audit-log.ts",
+    "packages/contracts/src/ports/data-request.ts"
+  ],
+  "findings": [
+    {
+      "file": "apps/server/src/app.ts",
+      "imports": [
+        "node:crypto",
+        "fastify",
+        "@voxward/contracts",
+        "./adapters/native-output/socket.js",
+        "./auth/data-routes.js",
+        "./auth/log-viewer-access.js",
+        "./auth/log-viewer-routes.js",
+        "./auth/routes.js",
+        "./db/audit-log.js",
+        "./db/client.js",
+        "./db/data-request-store.js",
+        "./db/output-store.js",
+        "./db/subject-cleanup.js",
+        "./db/subject-read.js",
+        "./modules/audit-store/content-policy.js",
+        "./modules/audit-store/index.js",
+        "./modules/data-lifecycle-service/index.js",
+        "./modules/output-adapter/delivery.js",
+        "./modules/output-adapter/subscription.js",
+        "./modules/registry.js",
+        "./security/redaction.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": true,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/db/data-request-store.ts",
+      "imports": [
+        "@voxward/contracts",
+        "drizzle-orm",
+        "./client.js",
+        "./schema/index.js",
+        "./repository.js",
+        "./transaction.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/db/schema/data-requests.ts",
+      "imports": [
+        "drizzle-orm",
+        "drizzle-orm/sqlite-core",
+        "./checks.js",
+        "./channels.js",
+        "./subjects.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/data-lifecycle-service/change-row.ts",
+      "imports": [
+        "@voxward/contracts",
+        "./types.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/data-lifecycle-service/cleanup-targets.ts",
+      "imports": [
+        "@voxward/contracts"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/data-lifecycle-service/delete-with-exception.ts",
+      "imports": [
+        "@voxward/contracts",
+        "./change-row.js",
+        "./cleanup-targets.js",
+        "./preference-marker.js",
+        "./requests.js",
+        "./types.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/data-lifecycle-service/index.ts",
+      "imports": [
+        "@voxward/contracts",
+        "./export-material.js",
+        "./delete-with-exception.js",
+        "./cleanup-executor.js",
+        "./cleanup-targets.js",
+        "./preference-marker.js",
+        "./resume-scoring.js",
+        "./routes.js",
+        "./types.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/data-lifecycle-service/preference-marker.ts",
+      "imports": [],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/data-lifecycle-service/requests.ts",
+      "imports": [
+        "@voxward/contracts",
+        "./change-row.js",
+        "./types.js",
+        "./validate.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/data-lifecycle-service/resume-scoring.ts",
+      "imports": [
+        "./change-row.js",
+        "./requests.js",
+        "./types.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/data-lifecycle-service/types.ts",
+      "imports": [
+        "@voxward/contracts"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/data-lifecycle-service/delete-with-exception/preference-marker.test.ts",
+      "imports": [
+        "drizzle-orm",
+        "vitest",
+        "../../../src/db/schema/index.js",
+        "../../db/helpers.js",
+        "../../../src/modules/data-lifecycle-service/index.js",
+        "../fixtures.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/data-lifecycle-service/delete-with-exception/transaction.test.ts",
+      "imports": [
+        "@voxward/contracts",
+        "drizzle-orm",
+        "vitest",
+        "../../../src/db/schema/index.js",
+        "../../../src/db/scoring-ledger.js",
+        "../../../src/modules/data-lifecycle-service/index.js",
+        "../../db/helpers.js",
+        "../fixtures.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/data-lifecycle-service/fixtures.ts",
+      "imports": [
+        "drizzle-orm",
+        "../../src/db/audit-log.js",
+        "../../src/db/client.js",
+        "../../src/db/data-request-store.js",
+        "../../src/db/repository.js",
+        "../../src/db/schema/index.js",
+        "../../src/db/subject-cleanup.js",
+        "../../src/db/subject-read.js",
+        "../../src/db/transaction.js",
+        "../../src/modules/audit-store/content-policy.js",
+        "../../src/modules/audit-store/index.js",
+        "../../src/modules/data-lifecycle-service/index.js",
+        "../../src/auth/permissions.js",
+        "../db/helpers.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/db/schema.test.ts",
+      "imports": [
+        "node:fs",
+        "@voxward/contracts",
+        "drizzle-orm",
+        "drizzle-orm/sqlite-core",
+        "vitest",
+        "../../src/db/schema/index.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "packages/contracts/src/ports/data-request.ts",
+      "imports": [
+        "./audit-log.js",
+        "./scoring-ledger.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/auth/data-routes.ts",
+      "imports": [
+        "fastify",
+        "../db/client.js",
+        "./guard.js",
+        "./members.js",
+        "./permissions.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/db/audit-log.ts",
+      "imports": [
+        "@voxward/contracts",
+        "drizzle-orm",
+        "./client.js",
+        "./schema/index.js",
+        "./transaction.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/db/subject-cleanup.ts",
+      "imports": [
+        "@voxward/contracts",
+        "drizzle-orm",
+        "./audit-log.js",
+        "./client.js",
+        "./schema/index.js",
+        "./transaction.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/data-lifecycle-service/cleanup-executor.ts",
+      "imports": [
+        "@voxward/contracts",
+        "./change-row.js",
+        "./cleanup-targets.js",
+        "./delete-with-exception.js",
+        "./requests.js",
+        "./resume-scoring.js",
+        "./types.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/data-lifecycle-service/routes.ts",
+      "imports": [
+        "./cleanup-executor.js",
+        "./requests.js",
+        "./subject-lookup.js",
+        "./types.js",
+        "./validate.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/moderation-engine/candidates/store.ts",
+      "imports": [
+        "../rules/normalize.js",
+        "../review/ports.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/moderation-engine/nickname-cache/cache.ts",
+      "imports": [
+        "../rules/engine.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/src/modules/platform-source/youtube/identity.ts",
+      "imports": [
+        "@voxward/contracts",
+        "./stream-list.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/audit-store/deletion-index/subject-chain.test.ts",
+      "imports": [
+        "vitest",
+        "../../../src/db/audit-log.js",
+        "../../../src/modules/audit-store/index.js",
+        "../../data-lifecycle-service/fixtures.js",
+        "../../db/helpers.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/audit-store/helpers.ts",
+      "imports": [
+        "@voxward/contracts",
+        "../../src/db/audit-log.js",
+        "../../src/db/client.js",
+        "../../src/db/schema/index.js",
+        "../../src/db/repository.js",
+        "../../src/db/transaction.js",
+        "../../src/modules/audit-store/index.js",
+        "../../src/security/redaction.js",
+        "../db/helpers.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/data-lifecycle-service/cleanup/executor.test.ts",
+      "imports": [
+        "@voxward/contracts",
+        "drizzle-orm",
+        "vitest",
+        "../../../src/db/audit-log.js",
+        "../../../src/db/client.js",
+        "../../../src/db/subject-cleanup.js",
+        "../../../src/db/schema/index.js",
+        "../../../src/modules/audit-store/index.js",
+        "../../../src/modules/data-lifecycle-service/index.js",
+        "../../../src/modules/moderation-engine/candidates/store.js",
+        "../../../src/modules/moderation-engine/nickname-cache/cache.js",
+        "../../../src/modules/moderation-engine/rules/engine.js",
+        "../../../src/modules/platform-source/youtube/identity.js",
+        "../../decision-service/fixtures.js",
+        "../../db/helpers.js",
+        "../fixtures.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/data-lifecycle-service/execute-routes.test.ts",
+      "imports": [
+        "fastify",
+        "vitest",
+        "../../src/app.js",
+        "../../src/auth/login.js",
+        "../../src/auth/members.js",
+        "../../src/config/schema.js",
+        "../../src/db/client.js",
+        "../../src/db/repository.js",
+        "../../src/db/schema/index.js",
+        "../../src/db/transaction.js",
+        "../../src/modules/audit-store/index.js",
+        "../../src/modules/registry.js",
+        "../db/helpers.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/moderation-engine/candidates/store.test.ts",
+      "imports": [
+        "vitest",
+        "./fixtures.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/moderation-engine/nickname-cache/cache.test.ts",
+      "imports": [
+        "vitest",
+        "../../../src/modules/moderation-engine/nickname-cache/cache.js",
+        "../../../src/modules/moderation-engine/rules/engine.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "apps/server/test/platform-source/youtube-identity/identity.test.ts",
+      "imports": [
+        "vitest",
+        "../../../src/modules/platform-source/youtube/identity.js",
+        "../../../src/modules/platform-source/youtube/stream-list.js",
+        "../youtube-stream/fixtures.js"
+      ],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    },
+    {
+      "file": "packages/contracts/src/ports/audit-log.ts",
+      "imports": [],
+      "hasEnv": false,
+      "hasTimer": false,
+      "hasNet": false
+    }
+  ]
+}
