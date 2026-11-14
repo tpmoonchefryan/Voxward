@@ -1,0 +1,34 @@
+[
+ {
+  "subject": "独立演示沙盒的启动脚本必须真实拉起受守卫的 HTTP 服务，不能只打印配置校验 JSON 后立即退出",
+  "summary": "VoxWard S025 在 deploy/sandbox/README.md 中将 node deploy/sandbox/start-sandbox.mjs 作为评审人启动隔离沙盒服务并打开 /sandbox 页面交互的唯一入口，但 start-sandbox.mjs 仅校验了环境变量与路径后打印一段说明文字即刻退出（0 端口监听），同时 main.ts 未读取 VOXWARD_SANDBOX_ENABLED、apps/web/vite.config.ts 未代理 /sandbox-api，导致仓库内没有任何命令能真正把 /sandbox 页面与后端沙盒路由跑通。",
+  "snippet": "交付带文档操作步骤的独立沙盒或演示模式时，必须在自动化测试或自检中实际子进程拉起文档指定的启动脚本并发起真实 HTTP 探针（验证页面与 API 返回 200 后优雅关闭且 0 残留监听），严禁用仅打印提示信息的占位脚本替代可执行入口。",
+  "body": "第 m9a 批 E80 P4 实测复现（B15）：按 deploy/sandbox/README.md 执行 node deploy/sandbox/start-sandbox.mjs，进程仅输出 JSON note 后立即以状态码 0 退出，请求本地沙盒端口返回 ECONNREFUSED，且 main.ts 与 vite.config.ts 均未接线 /sandbox-api。",
+  "tags": ["voxward", "sandbox", "deployment-entrypoint", "smoke-testing", "verification"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "deploy/sandbox/start-sandbox.mjs",
+    "deploy/sandbox/README.md",
+    "apps/web/vite.config.ts",
+    ".kiro/specs/voxward-batch-m9a/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "演示沙盒的聚合场景接口与共享状态快照必须按当前演示角色细粒度校验动作权限并裁剪敏感字段",
+  "summary": "VoxWard S025 定义了四个有限演示角色（如无 privacy.delete 的 DEMO_MODERATOR 与仅持 stage.read 的 DEMO_STAGE_VIEWER），也在专用端点 POST /sandbox-api/privacy 上校验了 privacy.delete；但聚合接口 POST /sandbox-api/scenarios 接受 privacy-delete / privacy-delete-and-except 时只检查了 sandbox.scenario，使房管与主播角色绕过限制直接删除数据；同时 GET /sandbox-api/state 无视调用方角色返回含未折叠毒性拦截原文、待审原文与审计日志的全量快照，并在 SandboxView 中直接渲染给舞台只读角色。",
+  "snippet": "提供多角色切换的演示或管理界面时：（1）聚合调度端点（如 /scenarios、批处理动作）必须按具体子动作映射到底层所需的最小权限，防止绕过专用端点的鉴权；（2）统一状态快照 API 与前端视图必须按调用方角色裁剪未获准的违规原文和审计日志，保持后端响应与前端可见性双重最小权限。",
+  "body": "第 m9a 批 E80 P4 实测复现（B16）：（1）DEMO_MODERATOR 请求 POST /sandbox-api/privacy 返回 403，但请求 POST /sandbox-api/scenarios 传入 privacy-delete-and-except 返回 200 并成功删除数据与加例外；（2）DEMO_STAGE_VIEWER 请求 GET /sandbox-api/state 返回 200 且携带被拦截毒性原文与 6 条变更日志，SandboxView SSR HTML 明文包含该毒性原文。",
+  "tags": ["voxward", "rbac", "capability-bypass", "data-exposure", "sandbox"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/demo/routes.ts",
+    "apps/server/src/demo/demo-roles.ts",
+    "apps/web/src/pages/sandbox/SandboxPage.tsx",
+    ".kiro/specs/voxward-batch-m9a/evidence/judgment.md"
+   ]
+  }
+ }
+]

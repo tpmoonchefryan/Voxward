@@ -1,0 +1,61 @@
+{
+  "candidate": "6a6af8a",
+  "total": 4,
+  "allProbesCompleted": true,
+  "results": [
+    {
+      "id": "P1_s020_b12_and_n15c_closed",
+      "passed": true,
+      "details": {
+        "firstGetStatus": 200,
+        "secondGetStatusAfterSweep": 404,
+        "invalidationEventsCount": 3,
+        "periodicTimerRemainingRows": 0
+      }
+    },
+    {
+      "id": "P2_s020_b13_and_q30_closed",
+      "passed": true,
+      "details": {
+        "secureDelete": 1,
+        "genBeforeRestore": 1,
+        "genAfterRestore": 1,
+        "reinstatedExceptionCount": 1,
+        "natRows": 0,
+        "cfgRows": 0,
+        "freshRows": 1,
+        "httpStatusForShortenedCfgLog": 404,
+        "bytesClean": true
+      }
+    },
+    {
+      "id": "P3_s025_sub046_scenarios_and_prod_isolation_verified",
+      "passed": true,
+      "details": {
+        "defaultAppSandboxStatus": 404,
+        "aliceScoreAfterExceptedManualAllow": 0,
+        "scPlainTextTranslation": "Thanks for the awesome stream! Supporting you always!"
+      }
+    },
+    {
+      "id": "P4_s025_b15_and_b16_reproduced",
+      "passed": true,
+      "details": {
+        "b15StartSandboxNote": "Use apps/server buildApp({ modules, database, sandbox: { enabled: true } }) to serve /sandbox-api/*.",
+        "b15Port3199RefusedAfterExit": true,
+        "b15MainMountsSandbox": false,
+        "b15ViteProxiesSandboxApi": false,
+        "b16ModeratorPrivacyEndpointStatus": 403,
+        "b16ModeratorScenariosDeleteBypassStatus": 200,
+        "b16StageViewerCapabilities": [
+          "sandbox.read",
+          "stage.read"
+        ],
+        "b16StageViewerLeakedBlockedOriginalText": "Click free crypto spam-link-xyz toxic-abuse now!",
+        "b16StageViewerLeakedReviewOriginalText": "Wait check this link maybe for fanart?",
+        "b16StageViewerLeakedChangeLogsCount": 6,
+        "b16StageViewerHtmlExposesToxicBlockedBody": true
+      }
+    }
+  ]
+}
