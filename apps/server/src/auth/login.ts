@@ -7,7 +7,13 @@ import { createSession, DEFAULT_SESSION_TTL_MS, type IssuedSession } from "./ses
 
 /** Self-decided: the brief names no password policy. */
 export const MIN_PASSWORD_LENGTH = 12;
-const LOGIN_NAME_PATTERN = /^[A-Za-z0-9_.-]{1,64}$/;
+export const LOGIN_NAME_PATTERN = /^[A-Za-z0-9_.-]{1,64}$/;
+/** Q26: cap concurrent scrypt derivations (~128 MiB each at N=2^17) to prevent memory exhaustion. */
+export const MAX_SCRYPT_CONCURRENCY = 4;
+/** Minimum accepted stored cost parameters; weak hashes below these bounds are refused without deriving. */
+export const MIN_STORED_COST_LN = 14;
+export const MIN_STORED_COST_R = 8;
+export const MIN_STORED_COST_P = 1;
 
 export type AccountInputErrorCode = "INVALID_LOGIN_NAME" | "WEAK_PASSWORD" | "LOGIN_NAME_TAKEN";
 
@@ -48,14 +54,36 @@ interface StoredHash {
  */
 const STORED_HASH = /^\$scrypt\$ln=(\d+),r=(\d+),p=(\d+)\$([A-Za-z0-9+/]+)\$([A-Za-z0-9+/]+)$/;
 
-function deriveKey(password: string, salt: Buffer, cost: ScryptCost, keyLength: number): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const options = { N: 2 ** cost.ln, r: cost.r, p: cost.p, maxmem: SCRYPT_MAX_MEMORY_BYTES };
-    scryptCallback(password, salt, keyLength, options, (error, key) => {
-      if (error) reject(error);
-      else resolve(key);
+let activeScryptCount = 0;
+const scryptWaiters: Array<() => void> = [];
+
+async function withScryptSlot<T>(action: () => Promise<T>): Promise<T> {
+  if (activeScryptCount >= MAX_SCRYPT_CONCURRENCY) {
+    await new Promise<void>((resolve) => {
+      scryptWaiters.push(resolve);
     });
-  });
+  }
+  activeScryptCount += 1;
+  try {
+    return await action();
+  } finally {
+    activeScryptCount -= 1;
+    const next = scryptWaiters.shift();
+    if (next !== undefined) next();
+  }
+}
+
+function deriveKey(password: string, salt: Buffer, cost: ScryptCost, keyLength: number): Promise<Buffer> {
+  return withScryptSlot(
+    () =>
+      new Promise((resolve, reject) => {
+        const options = { N: 2 ** cost.ln, r: cost.r, p: cost.p, maxmem: SCRYPT_MAX_MEMORY_BYTES };
+        scryptCallback(password, salt, keyLength, options, (error, key) => {
+          if (error) reject(error);
+          else resolve(key);
+        });
+      }),
+  );
 }
 
 /** The working memory scrypt allocates for a cost, in bytes: 128 * r * (N + p + 2). */
@@ -70,7 +98,14 @@ function parseStoredHash(stored: string): StoredHash | undefined {
   const cost = { ln: Number(ln), r: Number(r), p: Number(p) };
   const salt = Buffer.from(saltText, "base64");
   const key = Buffer.from(keyText, "base64");
-  const costIsUsable = cost.ln >= 1 && cost.r >= 1 && cost.p >= 1 && memoryOf(cost) <= MAX_STORED_COST_BYTES;
+  const costIsUsable =
+    Number.isInteger(cost.ln) &&
+    Number.isInteger(cost.r) &&
+    Number.isInteger(cost.p) &&
+    cost.ln >= MIN_STORED_COST_LN &&
+    cost.r >= MIN_STORED_COST_R &&
+    cost.p >= MIN_STORED_COST_P &&
+    memoryOf(cost) <= MAX_STORED_COST_BYTES;
   if (!costIsUsable || salt.length !== SALT_BYTES || key.length !== KEY_BYTES) return undefined;
   return { cost, salt, key };
 }

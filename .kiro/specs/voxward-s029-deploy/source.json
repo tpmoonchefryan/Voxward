@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:40b84e7e9a57ceaa64f3a742",
+  "workRevision": 5,
+  "sourceDigest": "071902019511355b0ecb39b2a2fd21b75743d08b7af137b34c641e7a6c99c568",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:40b84e7e9a57ceaa64f3a742",
+    "workRevision": 5,
+    "sourceDigest": "071902019511355b0ecb39b2a2fd21b75743d08b7af137b34c641e7a6c99c568",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:40b84e7e9a57ceaa64f3a742",
+        "externalKey": "VOXWARD-STORY-029",
+        "kind": "Story",
+        "revision": 5,
+        "status": "active",
+        "title": "形成远端自托管部署与运维交付",
+        "summary": "形成远端自托管部署与运维交付；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:79b813cdbe785e9ab7d32228",
+        "scopeDigest": "1b3488c12153eb32d3af6151478c7e23dc2533810b82125bdbd14535106bfcfc",
+        "relations": {
+          "blockedBy": [
+            "work:26274628cbb8f691b6cf430c",
+            "work:352ba5df1e0b354ede1a9af0",
+            "work:7fca6e51424bb603b416c643",
+            "work:92dbcf7ccd1a31c2af310b77",
+            "work:ac8ff494373ad248e549ea4a",
+            "work:c3303265b2af4669b243c34b"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:79b813cdbe785e9ab7d32228",
+          "supersedes": []
+        },
+        "fieldSha256": "67535eea04252e29a7476274648d9057c1a9cd26564c879414349189581f3b46",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "3aa283a21dc171bef02ce9613b250c053d40783157af30438b9d37bf39d1d19b",
+      "minuteRevisions": [
+        {
+          "id": "minutes:8fc0b8640384844e0b2a1787",
+          "revision": null
+        },
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "1b91701bd8b1de601c017af3882a39b2801f46eef02badbc682930494e1df1df",
+    "design.md": "5c245ffe045a4f7bc9e8e00296bbacb0daa6a06a062ffbbd5358b942bee089e6",
+    "tasks.md": "199f2c29a33e439ab9f007830550327d46b7fcc3a5f4168282bf3d0995650b73"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "f7fa5876098fdce120329a52ff9ba35e89c9abe0422d50b1860a6c3fc949efa4"
+}

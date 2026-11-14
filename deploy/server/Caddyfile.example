@@ -1,0 +1,17 @@
+# Template Caddyfile for HTTPS + WSS termination in front of VoxWard.
+# Replace voxward.example.com with your actual deployment domain.
+#
+# Requirements enforced by VoxWard auth & WebSocket handshake:
+# 1. TLS (HTTPS/WSS) is required because session cookies carry `Secure; HttpOnly; SameSite=Strict`.
+# 2. The reverse proxy must preserve the original `Host` header so WebSocket `Origin` matches `Host`.
+# 3. Never expose the loopback backend port directly to the public internet.
+
+voxward.example.com {
+	encode zstd gzip
+
+	# Serve built frontend static assets if co-located, or proxy everything to Fastify.
+	reverse_proxy 127.0.0.1:3000 {
+		header_up Host {host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+}

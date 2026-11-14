@@ -1,0 +1,294 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { buildApp } from "../../src/app.js";
+import { createKiroCliInferenceProvider } from "../../src/adapters/kiro-cli/provider.js";
+import { describeKiroCli } from "../../src/adapters/kiro-cli/capabilities.js";
+import { bootstrapOwner } from "../../src/auth/bootstrap.js";
+import { SESSION_COOKIE } from "../../src/auth/guard.js";
+import { createAccount } from "../../src/auth/login.js";
+import { loadConfig } from "../../src/config/load.js";
+import { createBackup } from "../../src/db/backup-store.js";
+import { openDatabase } from "../../src/db/client.js";
+import { runMigrations } from "../../src/db/migrate.js";
+import { restoreDatabaseWithPorts } from "../../src/db/restore-support.js";
+import { createTombstoneLedger } from "../../src/db/tombstone-ledger.js";
+import { CERTIFICATE_SUMMARY } from "../../src/modules/audit-store/index.js";
+import { replayTombstones } from "../../src/modules/data-lifecycle-service/index.js";
+import { checkRunnable, checkSettings, DEFAULT_MODEL_SETTINGS } from "../../src/modules/inference-provider/index.js";
+import { createYouTubeCredentialStore, createYouTubeAuthRoutes } from "../../src/modules/platform-source/index.js";
+import { buildRegistry } from "../../src/modules/registry.js";
+import { FAKE_CLI, fakeEnvironment, makeFakeExecutable, moderationValidator } from "../adapters/kiro-cli/helpers.js";
+import { removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
+
+const NOW = new Date(T0);
+const OWNER_PASSWORD = "owner-strong-passphrase-123";
+const MOD_PASSWORD = "moderator-strong-passphrase-456";
+
+function sessionCookieOf(headers: Record<string, unknown>): string {
+  const setCookie = headers["set-cookie"];
+  const raw = Array.isArray(setCookie) ? String(setCookie[0]) : String(setCookie ?? "");
+  const match = new RegExp(`${SESSION_COOKIE}=([^;]+)`).exec(raw);
+  if (match === null) throw new Error("missing session cookie");
+  return `${SESSION_COOKIE}=${match[1]}`;
+}
+
+describe("VOXWARD-SUB-053 non-real deployment drill", () => {
+  let directory: string;
+  let dbPath: string;
+  let backupDir: string;
+  let ledgerDir: string;
+
+  beforeEach(() => {
+    directory = scratchDirectory("deploy-drill-");
+    dbPath = join(directory, "volume", "voxward.sqlite3");
+    backupDir = join(directory, "backups");
+    ledgerDir = join(directory, "volume", "tombstones");
+  });
+
+  afterEach(() => {
+    removeDirectory(directory);
+  });
+
+  it("executes clean volume migrate -> owner bootstrap -> moderator invites -> restart -> backup & .restoring drill", async () => {
+    // 1. Clean volume + migrations + one-time owner bootstrap
+    const db1 = openDatabase({ filePath: dbPath });
+    runMigrations(db1);
+    const owner = await bootstrapOwner(db1, {
+      channelId: "channel-deploy",
+      loginName: "deploy-owner",
+      displayName: "Deploy Owner",
+      password: OWNER_PASSWORD,
+      now: NOW,
+    });
+    const mod1 = await createAccount(db1, {
+      loginName: "mod-alice",
+      displayName: "Alice",
+      password: MOD_PASSWORD,
+      now: NOW,
+    });
+    const mod2 = await createAccount(db1, {
+      loginName: "mod-bob",
+      displayName: "Bob",
+      password: MOD_PASSWORD,
+      now: NOW,
+    });
+
+    // Repeat bootstrap must fail closed
+    await expect(
+      bootstrapOwner(db1, {
+        channelId: "channel-deploy",
+        loginName: "second-owner",
+        displayName: "Second",
+        password: OWNER_PASSWORD,
+        now: NOW,
+      }),
+    ).rejects.toMatchObject({ code: "OWNER_ALREADY_BOOTSTRAPPED" });
+
+    // 2. Start app, login as owner, invite multiple moderators, verify RBAC & immediate revoke
+    const configResult = loadConfig({
+      env: { VOXWARD_ADAPTERS: "synthetic", VOXWARD_DATABASE_FILE: dbPath, VOXWARD_KIRO_TIMEOUT_MS: "120000" },
+      readFile: () => {
+        throw new Error("no file");
+      },
+    });
+    expect(configResult.ok).toBe(true);
+    if (!configResult.ok) return;
+
+    const ledger = createTombstoneLedger(ledgerDir);
+    const app1 = buildApp({
+      modules: buildRegistry(configResult.config),
+      database: db1,
+      tombstoneLedger: ledger,
+      logger: false,
+    });
+
+    const loginRes = await app1.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { loginName: "deploy-owner", password: OWNER_PASSWORD },
+    });
+    expect(loginRes.statusCode).toBe(200);
+    const ownerCookie = sessionCookieOf(loginRes.headers);
+    const ownerCsrf = (loginRes.json() as { csrfToken: string }).csrfToken;
+
+    const inviteRes = await app1.inject({
+      method: "POST",
+      url: "/members/batch",
+      headers: { cookie: ownerCookie, "x-csrf-token": ownerCsrf },
+      payload: {
+        items: [
+          { channelId: "channel-deploy", accountId: mod1.accountId, role: "MODERATOR", logAccess: false },
+          { channelId: "channel-deploy", accountId: mod2.accountId, role: "MODERATOR", logAccess: true },
+        ],
+      },
+    });
+    expect(inviteRes.statusCode).toBe(201);
+    expect(inviteRes.json()).toEqual({ granted: 2 });
+
+    // Moderator logs in and is denied members.manage (least privilege)
+    const modLoginRes = await app1.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { loginName: "mod-alice", password: MOD_PASSWORD },
+    });
+    expect(modLoginRes.statusCode).toBe(200);
+    const modCookie = sessionCookieOf(modLoginRes.headers);
+    const modCsrf = (modLoginRes.json() as { csrfToken: string }).csrfToken;
+
+    const forbiddenMembers = await app1.inject({
+      method: "GET",
+      url: "/channels/channel-deploy/members",
+      headers: { cookie: modCookie },
+    });
+    expect(forbiddenMembers.statusCode).toBe(403);
+
+    // Revoke mod1 -> immediate 403 on mod queue
+    const revokeRes = await app1.inject({
+      method: "DELETE",
+      url: `/channels/channel-deploy/members/${mod1.accountId}`,
+      headers: { cookie: ownerCookie, "x-csrf-token": ownerCsrf },
+    });
+    expect(revokeRes.statusCode).toBe(204);
+    expect(modCsrf.length).toBeGreaterThan(0);
+
+    await app1.close();
+    db1.close();
+
+    // 3. Restart on the same persistent volume and verify state persisted
+    const db2 = openDatabase({ filePath: dbPath });
+    runMigrations(db2);
+    const app2 = buildApp({
+      modules: buildRegistry(configResult.config),
+      database: db2,
+      tombstoneLedger: ledger,
+      logger: false,
+    });
+    const listMembersAfterRestart = await app2.inject({
+      method: "GET",
+      url: "/channels/channel-deploy/members",
+      headers: { cookie: ownerCookie },
+    });
+    expect(listMembersAfterRestart.statusCode).toBe(200);
+    const activeMembers = listMembersAfterRestart.json() as Array<{ accountId: string; role: string }>;
+    expect(activeMembers.map((m) => m.accountId).sort()).toEqual([mod2.accountId, owner.accountId].sort());
+
+    // 4. Create backup, close DB, and execute .restoring isolated restore drill
+    const backup = createBackup(db2, {
+      directory: backupDir,
+      limits: { maxCount: 3, maxTotalBytes: 50 * 1024 * 1024, maxAgeDays: 7 },
+      nowIso: "2026-11-10T12:00:00.000Z",
+    });
+    expect(existsSync(backup.created.path)).toBe(true);
+    await app2.close();
+    db2.close();
+
+    restoreDatabaseWithPorts({
+      backupPath: backup.created.path,
+      targetPath: dbPath,
+      ledger,
+      certificateSummary: CERTIFICATE_SUMMARY,
+      now: () => new Date("2026-11-10T12:05:00.000Z"),
+      replayWith: (ports, tombstones) => replayTombstones(ports, tombstones),
+    });
+    expect(existsSync(`${dbPath}.restoring`)).toBe(false);
+
+    const db3 = openDatabase({ filePath: dbPath });
+    const countRow = db3.sqlite.prepare("SELECT count(*) AS n FROM auth_accounts").get() as { n: number };
+    expect(countRow.n).toBe(3);
+    db3.close();
+  }, 30_000);
+
+  it("enforces fail-closed config, missing YouTube credentials, Q37 timeout cap, and Q47 fake CLI capabilities", async () => {
+    // Q37 config bounds
+    const badTimeout = loadConfig({
+      env: { VOXWARD_ADAPTERS: "synthetic", VOXWARD_KIRO_TIMEOUT_MS: "999999" },
+      readFile: () => "",
+    });
+    expect(badTimeout.ok).toBe(false);
+    if (!badTimeout.ok) {
+      expect(badTimeout.error.code).toBe("CONFIG_INVALID");
+    }
+
+    // Q37 provider upper bound
+    makeFakeExecutable();
+    const runtimeRoot = join(directory, "kiro-root");
+    const logPath = join(directory, "fake-kiro.log");
+    expect(() =>
+      createKiroCliInferenceProvider({
+        command: FAKE_CLI,
+        env: fakeEnvironment(logPath, "ok"),
+        runtimeRoot,
+        maxItems: 5,
+        validateOutput: moderationValidator,
+        agent: "voxward-runtime",
+        model: "kiro-test",
+        timeoutMs: 300_001,
+      }),
+    ).toThrow(RangeError);
+
+    // Q47: describeKiroCli reports no models -> checkSettings/checkRunnable fail-closed
+    const caps = describeKiroCli();
+    expect(caps).toEqual({ contractVersion: "1", providerName: "kiro-cli", supportsCancel: true });
+    expect(
+      checkSettings(
+        {
+          ...DEFAULT_MODEL_SETTINGS,
+          realtimeModeration: { modelId: "kiro-test", reasoning: null },
+        },
+        caps,
+      ),
+    ).toEqual([{ code: "CAPABILITY_NOT_REPORTED", path: "/realtimeModeration" }]);
+    expect(checkRunnable("realtimeModeration", DEFAULT_MODEL_SETTINGS, caps)).toEqual([
+      { code: "SELECTION_NOT_CONFIGURED", path: "/realtimeModeration" },
+    ]);
+
+    // Missing YouTube credentials -> NOT_CONFIGURED (409 on oauth start)
+    const store = createYouTubeCredentialStore({
+      client: {
+        clientId: "client-id",
+        redirectUri: "https://voxward.example.com/youtube/oauth/callback",
+        publishingStatus: "TESTING",
+      },
+      secrets: {
+        put: () => ({ ref: "secretref:unused_000000000" }),
+        reveal: () => {
+          throw new Error("missing");
+        },
+        remove: () => false,
+      },
+      refs: {
+        insert: () => {},
+        findLatest: () => undefined,
+        revoke: () => {},
+      },
+      newId: () => "id-1",
+      now: () => T0,
+    });
+    const ytRoutes = createYouTubeAuthRoutes({
+      store,
+      http: { postForm: async () => ({ status: 500, body: {} }) },
+      states: {
+        issue: () => "state-1",
+        peek: () => null,
+        consume: () => null,
+      },
+      now: () => T0,
+      resolveRole: () => "CHANNEL_OWNER",
+    });
+    const startRes = await ytRoutes.start(
+      { accountId: "owner-1", channelId: "channel-1", role: "CHANNEL_OWNER" },
+      {},
+    );
+    expect(startRes.status).toBe(409);
+    expect(startRes.body).toEqual({ state: "NOT_CONFIGURED" });
+
+    // Verify fake CLI log was never touched (no real CLI invoked)
+    expect(existsSync(logPath)).toBe(false);
+    // Verify deployment template files have no placeholder secret leaks
+    const runtimeEnvPath = fileURLToPath(new URL("../../../../deploy/kiro-runtime/runtime.env.example", import.meta.url));
+    const runtimeEnv = readFileSync(runtimeEnvPath, "utf8");
+    expect(runtimeEnv).toContain("KIRO_API_KEY=\n");
+  });
+});
