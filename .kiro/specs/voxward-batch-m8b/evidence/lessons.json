@@ -1,0 +1,34 @@
+[
+ {
+  "subject": "支持动态缩短保留期时，不能假设进程内缓存靠初始 expiresAt 自然失效而省略清理后的主动驱逐事件",
+  "summary": "VoxWard S020 在 db/retention-store.ts 中支持各频道通过 retention-config 缩短日志与证据保留天数（按 created_at <= cutoff 提前物理删除尚未到达初始 expires_at 的行），但未将 sweepExpired 接入 audit-store 的 InvalidationBus（reason: EXPIRED 全仓 0 发布），误以为 ViewerCache 检查行上初始 expires_at 即可。当某条日志详情先被读取进缓存、随后频道缩短保留期并执行 sweepExpired 将 SQLite 行物理删空后，ViewerCache 仍继续在数天内通过 HTTP 200 明文返回已清理的消息正文。",
+  "snippet": "只要系统允许管理员动态缩短数据保留策略（使实际删除时刻早于写入时计算的初始 TTL/expiresAt），任何缓存了该数据的进程内组件都必须在到期清理事务提交后收到显式失效事件（如 InvalidationBus EXPIRED），不能仅依赖写入时的静态过期时间戳。",
+  "body": "第 m8b 批 E80 R3 实测复现（B12）：向真实 buildApp 写入创建于 2 天前、初始 expires_at 为 +5 天的技术日志与正文证据，先请求 GET /internal/channels/:id/logs/technical/:logId 使其进入 ViewerCache；随后通过 PUT /channels/:id/admin-settings 将保留期改为 1 天并执行 sweepExpired，确认 SQLite 中 technical_log_evidence 与 technical_logs 均已删至 0 行，但再次 GET 同一路径仍返回 HTTP 200 并吐出已删正文。",
+  "tags": ["voxward", "cache-invalidation", "data-retention", "sqlite", "privacy"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/retention-store.ts",
+    "apps/server/src/modules/audit-store/invalidation.ts",
+    "apps/server/src/modules/audit-store/viewer/cache.ts",
+    ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "备份隔离恢复仅重放显式删除墓碑而不跑到期清理与代次递增，会让已到期清理的数据复活并回退删除代次",
+  "summary": "VoxWard S020 的外部墓碑账本只记录显式主体删除（S019 DELETE），日常按期限执行的到期清理（sweepExpired）不写逐行墓碑。db/restore-support.ts 与 db/backup-store.ts 在 .restoring 隔离库上只执行了 replayTombstones，既未在原子替换线上库前执行 sweepExpired + compact/VACUUM，也未递增墓碑主体的 subjects.processing_generation，导致恢复较早备份时把已到期清理擦除的日志行与原始字节重新带回线上（缩短保留期场景下直接经 HTTP 200 明文复活），并将已删主体的 processing_generation 从 1 回退到 0。",
+  "snippet": "采用「外部墓碑账本 + 隔离恢复」防数据复活时，必须在 .restoring 替换线上库之前依次完成三步：（1）重放显式删除墓碑并同步推进单调递增的删除代次（processing_generation）；（2）按当前时钟与恢复库配置执行完整的到期清理（sweepExpired）；（3）执行 WAL 截断与 VACUUM 擦除空闲页字节，之后才能对外提供服务。",
+  "body": "第 m8b 批 E80 R3 实测复现（B13）：在线上库配置 1 天保留期并创建备份后，执行主体删除（processing_generation 变为 1）及 sweepExpired + compact() 擦除自然超期与缩短保留期日志；随后调用 restoreDatabaseWithLedger 恢复该旧备份，恢复后的线上库中两类已清理日志双双复活、原始密文字节重现于 .sqlite3 文件，GET /internal/channels/:id/logs/technical/:logId 对缩短保留期日志直接返回 HTTP 200 明文正文，且已删主体的 processing_generation 回退为 0。",
+  "tags": ["voxward", "backup-restore", "tombstone-replay", "data-lifecycle", "sqlite"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/restore-support.ts",
+    "apps/server/src/db/backup-store.ts",
+    "apps/server/src/modules/data-lifecycle-service/restore-replay.ts",
+    ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md"
+   ]
+  }
+ }
+]

@@ -1,0 +1,1046 @@
+[
+  {
+    "key": "VOXWARD-STORY-022",
+    "id": "work:7fca6e51424bb603b416c643",
+    "rev": 5,
+    "status": "active",
+    "libraryVersion": 21564,
+    "headEventHash": "b532a18585e20f32fa7fa29552bc421fd100125cc046a27515df9b7e91cadccd",
+    "existingEvidenceCount": 11,
+    "existingCodeVersions": [
+      "a7a80ae"
+    ],
+    "acceptanceCount": 11,
+    "goal": "主播与房管通过远端页面处理实时流、审核队列、已拦截复核和管理配置。",
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-S022-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-SPLIT"
+        ],
+        "text": "主播与房管通过远端页面处理实时流、审核队列、已拦截复核和管理配置。\n交付：Dock/房管页面；违规正文按权限折叠；改判/补发/冲突反馈；规则名单/候选词确认；成员/模型/队列/保留/输出配置；数据/日志入口与连接故障状态。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。",
+        "id": "VW-S022-AC001",
+        "method": "关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-S022-R001",
+          "version": 1,
+          "workId": "work:7fca6e51424bb603b416c643"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。",
+        "id": "VW-S022-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-E005-R022",
+          "version": 1,
+          "workId": "work:1f83883cd1373011cf0f8b49"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S022-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-S022-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "requirement": {
+          "requirementId": "VW-R-006",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-006 对应模块的接口、前置和实际影响。",
+        "version": 1
+      },
+      {
+        "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S022-INHERIT-009",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。 继续遵守 VW-R-010 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S022-INHERIT-010",
+        "method": "关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-R-010",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（本单对 VW-R-010 的贡献）",
+        "version": 1
+      },
+      {
+        "expected": "写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S022-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单使用的仓储接口、数据字段、事务或部署说明。",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。 继续遵守 VW-R-012 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S022-INHERIT-012",
+        "method": "关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（本单对 VW-R-012 的贡献）",
+        "version": 1
+      },
+      {
+        "expected": "删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S022-INHERIT-017",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单涉及的数据、缓存、任务、关联或恢复说明。",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-S022-INHERIT-018",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-018 承载。",
+        "requirement": {
+          "requirementId": "VW-R-018",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-018 对应模块的接口、前置和实际影响。",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。 继续遵守 VW-R-019 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S022-INHERIT-019",
+        "method": "关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（本单对 VW-R-019 的贡献）",
+        "version": 1
+      }
+    ]
+  },
+  {
+    "key": "VOXWARD-SUB-041",
+    "id": "work:c95e166bcc76634a8520d9cc",
+    "rev": 4,
+    "status": "active",
+    "libraryVersion": 21564,
+    "headEventHash": "b532a18585e20f32fa7fa29552bc421fd100125cc046a27515df9b7e91cadccd",
+    "existingEvidenceCount": 12,
+    "existingCodeVersions": [
+      "a7a80ae"
+    ],
+    "acceptanceCount": 12,
+    "goal": "主播与房管在远端浏览器中处理实时流、审核队列与已拦截复核，违规正文按权限折叠，改判/补发/冲突有明确反馈，本地拦截与平台删除状态分开显示，系统错误不伪装违规。",
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-SUB041-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-DISPATCH"
+        ],
+        "text": "承担 VW-S022-R001@1 交付中的「Dock/房管页面；违规正文按权限折叠；改判/补发/冲突反馈」：主播与房管通过远端页面处理实时流、审核队列、已拦截复核。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；系统错误不伪装违规；无需房管本地软件。",
+        "id": "VW-SUB041-AC001",
+        "method": "关键用户流程与多人并发验证。",
+        "requirement": {
+          "requirementId": "VW-SUB041-R001",
+          "version": 1,
+          "workId": "work:c95e166bcc76634a8520d9cc"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权。",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；系统错误不伪装违规；无需房管本地软件。 本单只证明所承担部分；VOXWARD-STORY-022 的完整判据（VW-S022-AC001@1）保持。",
+        "id": "VW-SUB041-STORY",
+        "method": "关键用户流程与多人并发验证。",
+        "requirement": {
+          "requirementId": "VW-S022-R001",
+          "version": 1,
+          "workId": "work:7fca6e51424bb603b416c643"
+        },
+        "scenario": "本单承担 VW-S022-R001@1 中「Dock/房管页面；违规正文按权限折叠；改判/补发/冲突反馈」：多人同时处理、SC 精翻切换、模型故障、成员撤权。",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。",
+        "id": "VW-SUB041-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-E005-R022",
+          "version": 1,
+          "workId": "work:1f83883cd1373011cf0f8b49"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（继承自 VOXWARD-STORY-022 VW-S022-PARENT@1）",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB041-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-001@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB041-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "requirement": {
+          "requirementId": "VW-R-006",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-006 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-006@1）",
+        "version": 1
+      },
+      {
+        "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB041-INHERIT-009",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-009@1）",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。 继续遵守 VW-R-010 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB041-INHERIT-010",
+        "method": "关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-R-010",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（本单对 VW-R-010 的贡献）（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-010@1）",
+        "version": 1
+      },
+      {
+        "expected": "写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB041-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单使用的仓储接口、数据字段、事务或部署说明。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-011@1）",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。 继续遵守 VW-R-012 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB041-INHERIT-012",
+        "method": "关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（本单对 VW-R-012 的贡献）（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-012@1）",
+        "version": 1
+      },
+      {
+        "expected": "删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB041-INHERIT-017",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单涉及的数据、缓存、任务、关联或恢复说明。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-017@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB041-INHERIT-018",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-018 承载。",
+        "requirement": {
+          "requirementId": "VW-R-018",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-018 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-018@1）",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。 继续遵守 VW-R-019 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB041-INHERIT-019",
+        "method": "关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（本单对 VW-R-019 的贡献）（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-019@1）",
+        "version": 1
+      }
+    ]
+  },
+  {
+    "key": "VOXWARD-SUB-042",
+    "id": "work:daf3dd02919cc74d68f2cf3b",
+    "rev": 4,
+    "status": "active",
+    "libraryVersion": 21564,
+    "headEventHash": "b532a18585e20f32fa7fa29552bc421fd100125cc046a27515df9b7e91cadccd",
+    "existingEvidenceCount": 12,
+    "existingCodeVersions": [
+      "a7a80ae"
+    ],
+    "acceptanceCount": 12,
+    "goal": "/admin 提供规则名单与候选词确认、成员/模型/队列/保留/输出配置，以及数据面板与日志查看器入口和连接故障状态，不同角色只能访问被授权的管理项。",
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-SUB042-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-DISPATCH"
+        ],
+        "text": "承担 VW-S022-R001@1 交付中的「规则名单/候选词确认；成员/模型/队列/保留/输出配置；数据/日志入口与连接故障状态」。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "权限与后端一致；模型参数真实；连接故障状态可见；无权限的管理项不可操作。",
+        "id": "VW-SUB042-AC001",
+        "method": "跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-SUB042-R001",
+          "version": 1,
+          "workId": "work:daf3dd02919cc74d68f2cf3b"
+        },
+        "scenario": "不同角色访问管理项、修改模型参数、成员撤权、平台连接失效。",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；模型参数真实；连接故障状态可见；无权限的管理项不可操作。 本单只证明所承担部分；VOXWARD-STORY-022 的完整判据（VW-S022-AC001@1）保持。",
+        "id": "VW-SUB042-STORY",
+        "method": "跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-S022-R001",
+          "version": 1,
+          "workId": "work:7fca6e51424bb603b416c643"
+        },
+        "scenario": "本单承担 VW-S022-R001@1 中「规则名单/候选词确认；成员/模型/队列/保留/输出配置；数据/日志入口与连接故障状态」：不同角色访问管理项、修改模型参数、成员撤权、平台连接失效。",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。",
+        "id": "VW-SUB042-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-E005-R022",
+          "version": 1,
+          "workId": "work:1f83883cd1373011cf0f8b49"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（继承自 VOXWARD-STORY-022 VW-S022-PARENT@1）",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB042-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-001@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB042-INHERIT-006",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。",
+        "requirement": {
+          "requirementId": "VW-R-006",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-006 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-006@1）",
+        "version": 1
+      },
+      {
+        "expected": "只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB042-INHERIT-009",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单接触的 AI 输入、运行资源、日志或材料。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-009@1）",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。 继续遵守 VW-R-010 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB042-INHERIT-010",
+        "method": "关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-R-010",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（本单对 VW-R-010 的贡献）（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-010@1）",
+        "version": 1
+      },
+      {
+        "expected": "写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB042-INHERIT-011",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单使用的仓储接口、数据字段、事务或部署说明。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-011@1）",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。 继续遵守 VW-R-012 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB042-INHERIT-012",
+        "method": "关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（本单对 VW-R-012 的贡献）（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-012@1）",
+        "version": 1
+      },
+      {
+        "expected": "删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB042-INHERIT-017",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单涉及的数据、缓存、任务、关联或恢复说明。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-017@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB042-INHERIT-018",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-018 承载。",
+        "requirement": {
+          "requirementId": "VW-R-018",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-018 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-018@1）",
+        "version": 1
+      },
+      {
+        "expected": "权限与后端一致；平台删除和本地拦截分开显示；模型参数真实，系统错误不伪装违规；无需房管本地软件。 继续遵守 VW-R-019 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB042-INHERIT-019",
+        "method": "关键用户流程、多人并发和跨频道页面/API 验证。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "多人同时处理、SC 精翻切换、模型故障、成员撤权及不同角色访问管理项。（本单对 VW-R-019 的贡献）（继承自 VOXWARD-STORY-022 VW-S022-INHERIT-019@1）",
+        "version": 1
+      }
+    ]
+  },
+  {
+    "key": "VOXWARD-STORY-020",
+    "id": "work:92dbcf7ccd1a31c2af310b77",
+    "rev": 4,
+    "status": "active",
+    "libraryVersion": 21564,
+    "headEventHash": "b532a18585e20f32fa7fa29552bc421fd100125cc046a27515df9b7e91cadccd",
+    "existingEvidenceCount": 0,
+    "existingCodeVersions": [],
+    "acceptanceCount": 12,
+    "goal": "数据按可配置期限到期，恢复先处理删除记录，清理失败可继续追踪。",
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-S020-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-SPLIT"
+        ],
+        "text": "数据按可配置期限到期，恢复先处理删除记录，清理失败可继续追踪。\n交付：内容/元数据/评分/偏好期限区别；有界备份轮换；WAL/临时文件处理；恢复隔离阶段重放删除/到期；清理状态及查看器缓存失效。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。",
+        "id": "VW-S020-AC001",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-S020-R001",
+          "version": 1,
+          "workId": "work:92dbcf7ccd1a31c2af310b77"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。",
+        "id": "VW-S020-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-E004-R020",
+          "version": 1,
+          "workId": "work:18aaac72724b30c2ee9be8b6"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S020-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-009 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S020-INHERIT-009",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-009 的贡献）",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-011 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S020-INHERIT-011",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-011 的贡献）",
+        "version": 1
+      },
+      {
+        "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-S020-INHERIT-012",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-S020-INHERIT-013",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-013 承载。",
+        "requirement": {
+          "requirementId": "VW-R-013",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-013 对应模块的接口、前置和实际影响。",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-001,VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-S020-INHERIT-014",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-014 承载。",
+        "requirement": {
+          "requirementId": "VW-R-014",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-014 对应模块的接口、前置和实际影响。",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-S020-INHERIT-015",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-015 承载。",
+        "requirement": {
+          "requirementId": "VW-R-015",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-015 对应模块的接口、前置和实际影响。",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-016 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S020-INHERIT-016",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-016",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-016 的贡献）",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-017 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-S020-INHERIT-017",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-017 的贡献）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-S020-INHERIT-019",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-019 承载。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-019 对应模块的接口、前置和实际影响。",
+        "version": 1
+      }
+    ]
+  },
+  {
+    "key": "VOXWARD-SUB-037",
+    "id": "work:b37002c1194bbbfc3e431edd",
+    "rev": 3,
+    "status": "active",
+    "libraryVersion": 21564,
+    "headEventHash": "b532a18585e20f32fa7fa29552bc421fd100125cc046a27515df9b7e91cadccd",
+    "existingEvidenceCount": 0,
+    "existingCodeVersions": [],
+    "acceptanceCount": 13,
+    "goal": "内容、元数据、评分与偏好按可配置的不同期限到期，到期清理与排队任务协调，清理状态可追踪并使查看器缓存失效。",
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-SUB037-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-DISPATCH"
+        ],
+        "text": "承担 VW-S020-R001@1 交付中的「内容/元数据/评分/偏好期限区别；清理状态及查看器缓存失效」：数据按可配置期限到期，清理失败可继续追踪。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "旧任务不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可。",
+        "id": "VW-SUB037-AC001",
+        "method": "到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-SUB037-R001",
+          "version": 1,
+          "workId": "work:b37002c1194bbbfc3e431edd"
+        },
+        "scenario": "到期时仍有排队任务、清理对象不可访问。",
+        "version": 1
+      },
+      {
+        "expected": "旧任务不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可。 本单只证明所承担部分；VOXWARD-STORY-020 的完整判据（VW-S020-AC001@1）保持。",
+        "id": "VW-SUB037-STORY",
+        "method": "到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-S020-R001",
+          "version": 1,
+          "workId": "work:92dbcf7ccd1a31c2af310b77"
+        },
+        "scenario": "本单承担 VW-S020-R001@1 中「内容/元数据/评分/偏好期限区别；清理状态及查看器缓存失效」：到期时仍有排队任务、清理对象不可访问。",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。",
+        "id": "VW-SUB037-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-E004-R020",
+          "version": 1,
+          "workId": "work:18aaac72724b30c2ee9be8b6"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（继承自 VOXWARD-STORY-020 VW-S020-PARENT@1）",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB037-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-001@1）",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-009 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB037-INHERIT-009",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-009 的贡献）（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-009@1）",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-011 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB037-INHERIT-011",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-011 的贡献）（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-011@1）",
+        "version": 1
+      },
+      {
+        "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB037-INHERIT-012",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-012@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB037-INHERIT-013",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-013 承载。",
+        "requirement": {
+          "requirementId": "VW-R-013",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-013 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-013@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-001,VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB037-INHERIT-014",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-014 承载。",
+        "requirement": {
+          "requirementId": "VW-R-014",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-014 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-014@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB037-INHERIT-015",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-015 承载。",
+        "requirement": {
+          "requirementId": "VW-R-015",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-015 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-015@1）",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-016 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB037-INHERIT-016",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-016",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-016 的贡献）（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-016@1）",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-017 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB037-INHERIT-017",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-017 的贡献）（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-017@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB037-INHERIT-019",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-019 承载。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-019 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-019@1）",
+        "version": 1
+      }
+    ]
+  },
+  {
+    "key": "VOXWARD-SUB-038",
+    "id": "work:165db96157d21662a5e50528",
+    "rev": 3,
+    "status": "active",
+    "libraryVersion": 21564,
+    "headEventHash": "b532a18585e20f32fa7fa29552bc421fd100125cc046a27515df9b7e91cadccd",
+    "existingEvidenceCount": 0,
+    "existingCodeVersions": [],
+    "acceptanceCount": 13,
+    "goal": "备份有界轮换并正确处理 WAL 与临时文件，恢复在隔离阶段先重放删除与到期记录后才对外服务，旧备份不复活已删数据。",
+    "requirements": [
+      {
+        "disposition": "required",
+        "id": "VW-SUB038-R001",
+        "shared": false,
+        "sourceIds": [
+          "S-PARENT",
+          "S-DISPATCH"
+        ],
+        "text": "承担 VW-S020-R001@1 交付中的「有界备份轮换；WAL/临时文件处理；恢复隔离阶段重放删除/到期」：恢复先处理删除记录。",
+        "version": 1
+      }
+    ],
+    "acceptance": [
+      {
+        "expected": "旧备份不复活已删数据；完成重放前不对外服务；不宣称介质擦除保证。",
+        "id": "VW-SUB038-AC001",
+        "method": "备份/恢复演练。",
+        "requirement": {
+          "requirementId": "VW-SUB038-R001",
+          "version": 1,
+          "workId": "work:165db96157d21662a5e50528"
+        },
+        "scenario": "WAL 残留与旧备份恢复。",
+        "version": 1
+      },
+      {
+        "expected": "旧备份不复活已删数据；完成重放前不对外服务；不宣称介质擦除保证。 本单只证明所承担部分；VOXWARD-STORY-020 的完整判据（VW-S020-AC001@1）保持。",
+        "id": "VW-SUB038-STORY",
+        "method": "备份/恢复演练。",
+        "requirement": {
+          "requirementId": "VW-S020-R001",
+          "version": 1,
+          "workId": "work:92dbcf7ccd1a31c2af310b77"
+        },
+        "scenario": "本单承担 VW-S020-R001@1 中「有界备份轮换；WAL/临时文件处理；恢复隔离阶段重放删除/到期」：WAL 残留与旧备份恢复。",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。",
+        "id": "VW-SUB038-PARENT",
+        "method": "复用本单同候选版本的组件/材料证据，保留来源与实际观察；备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-E004-R020",
+          "version": 1,
+          "workId": "work:18aaac72724b30c2ee9be8b6"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（继承自 VOXWARD-STORY-020 VW-S020-PARENT@1）",
+        "version": 1
+      },
+      {
+        "expected": "保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB038-INHERIT-001",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-001",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单产出的接口、说明及依赖方向。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-001@1）",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-009 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB038-INHERIT-009",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-009",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-009 的贡献）（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-009@1）",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-011 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB038-INHERIT-011",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-011",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-011 的贡献）（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-011@1）",
+        "version": 1
+      },
+      {
+        "expected": "频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。",
+        "id": "VW-SUB038-INHERIT-012",
+        "method": "接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。",
+        "requirement": {
+          "requirementId": "VW-R-012",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "审查本单暴露的接口、页面、运行权限或文档示例。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-012@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB038-INHERIT-013",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-013 承载。",
+        "requirement": {
+          "requirementId": "VW-R-013",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-013 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-013@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-001,VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB038-INHERIT-014",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-014 承载。",
+        "requirement": {
+          "requirementId": "VW-R-014",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-014 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-014@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB038-INHERIT-015",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-015 承载。",
+        "requirement": {
+          "requirementId": "VW-R-015",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-015 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-015@1）",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-016 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB038-INHERIT-016",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-016",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-016 的贡献）（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-016@1）",
+        "version": 1
+      },
+      {
+        "expected": "旧任务与备份不复活已删数据；未清完不报全部删除；建议期限不冒充平台许可或介质擦除保证。 继续遵守 VW-R-017 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。",
+        "id": "VW-SUB038-INHERIT-017",
+        "method": "备份/恢复与到期清理演练，记录适用期限和无法验证的外部范围。",
+        "requirement": {
+          "requirementId": "VW-R-017",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "到期时仍有排队任务、WAL 残留、旧备份恢复和清理对象不可访问。（本单对 VW-R-017 的贡献）（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-017@1）",
+        "version": 1
+      },
+      {
+        "expected": "本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。",
+        "id": "VW-SUB038-INHERIT-019",
+        "method": "对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-019 承载。",
+        "requirement": {
+          "requirementId": "VW-R-019",
+          "version": 1,
+          "workId": "work:8bd4977aa0770aa2f41229a2"
+        },
+        "scenario": "核对本单与 VW-R-019 对应模块的接口、前置和实际影响。（继承自 VOXWARD-STORY-020 VW-S020-INHERIT-019@1）",
+        "version": 1
+      }
+    ]
+  }
+]

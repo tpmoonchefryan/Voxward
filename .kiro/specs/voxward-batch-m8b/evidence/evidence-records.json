@@ -1,0 +1,1123 @@
+{
+ "note": "草稿，供主线程链写。targets[].evidence 中每一行严格只含引擎允许的八个键且顺序固定，可由 close-batch.cjs 原样并入对应工单 content.evidence（STORY-022、SUB-041、SUB-042 原有 a7a80ae 证据自动保留，新增本轮 fcad360 证据）。73 行：satisfied 53、failed 20、unverified 0。VOXWARD-STORY-022（11/11 satisfied）、VOXWARD-SUB-041（12/12 satisfied）、VOXWARD-SUB-042（12/12 satisfied）复验通过，可传 DONE_KEYS=VOXWARD-SUB-041,VOXWARD-SUB-042,VOXWARD-STORY-022 先行关单；VOXWARD-STORY-020（6/12 satisfied、6 failed）、VOXWARD-SUB-037（6/13 satisfied、7 failed）、VOXWARD-SUB-038（6/13 satisfied、7 failed）因阻断 B12、B13 打回，仅链写证据留痕、不关单。locator 指向 .kiro/specs/voxward-batch-m8b/evidence/acceptance.md。",
+ "candidate": {
+  "codeVersion": "fcad360",
+  "fullSha": "fcad36094d5f376881c8356dc275285f9c579c1b",
+  "note": "引擎按字符串精确比较 evidence.codeVersion 与完成候选。VOXWARD-SUB-041、VOXWARD-SUB-042 与 VOXWARD-STORY-022 在 fcad360 上全部行均为 satisfied，可立即以 fcad360 关单；VOXWARD-STORY-020、VOXWARD-SUB-037、VOXWARD-SUB-038 含 failed 行，须在 S020 返工后的新候选上窄范围复验。写入时以读回的 revision 为准。"
+ },
+ "readFrom": {
+  "command": "预取实时工单快照 wave2b/show/VOXWARD-{STORY-022,SUB-041,SUB-042,STORY-020,SUB-037,SUB-038}.json（einzbern.mjs work-show --workspace <Ether> --external-key <KEY>）",
+  "headEventHash": "b532a18585e20f32fa7fa29552bc421fd100125cc046a27515df9b7e91cadccd"
+ },
+ "shapeCheck": "生成脚本逐行校验：键名与顺序严格为 [acceptanceId, acceptanceVersion, requirement, codeVersion, locator, actual, outcome, kind] 八键、requirement 含三键且版本为正整数、outcome 与 kind 属合法枚举、kind 按 method 前缀规则确定（36 行 source-behavior-review + 37 行 machine）、actual 非空且含具体实测/审查依据、locator 锚点在 acceptance.md 中唯一存在且与标题一一对应、每单行数与实时快照完全一致（11+12+12+12+13+13=73），并通过 close-batch.cjs 干跑校验。未调用引擎写入。",
+ "counts": {
+  "total": 73,
+  "satisfied": 53,
+  "failed": 20,
+  "unverified": 0,
+  "byTarget": {
+   "VOXWARD-STORY-022": {
+    "total": 11,
+    "satisfied": 11,
+    "failed": 0,
+    "unverified": 0
+   },
+   "VOXWARD-SUB-041": {
+    "total": 12,
+    "satisfied": 12,
+    "failed": 0,
+    "unverified": 0
+   },
+   "VOXWARD-SUB-042": {
+    "total": 12,
+    "satisfied": 12,
+    "failed": 0,
+    "unverified": 0
+   },
+   "VOXWARD-STORY-020": {
+    "total": 12,
+    "satisfied": 6,
+    "failed": 6,
+    "unverified": 0
+   },
+   "VOXWARD-SUB-037": {
+    "total": 13,
+    "satisfied": 6,
+    "failed": 7,
+    "unverified": 0
+   },
+   "VOXWARD-SUB-038": {
+    "total": 13,
+    "satisfied": 6,
+    "failed": 7,
+    "unverified": 0
+   }
+  }
+ },
+ "targets": [
+  {
+   "externalKey": "VOXWARD-STORY-022",
+   "workId": "work:7fca6e51424bb603b416c643",
+   "revision": 5,
+   "evidence": [
+    {
+     "acceptanceId": "VW-S022-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:7fca6e51424bb603b416c643",
+      "requirementId": "VW-S022-R001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-ac001",
+     "actual": "第 m8b 批（fcad360）复验通过，整合 VOXWARD-SUB-041 与 VOXWARD-SUB-042 全部实测证据，m7e 阻断 B10（B10a/B10b-1/B10b-2）、B11 及非阻断项 N12a 全部关闭：E03 build、E04 typecheck、E06 check:deps（254 文件 0 违规）、E05 守卫单测（9 文件 38 用例 + 全量 164 文件 1946 用例全绿）与 E80 P1/P2 全链路探针均通过；Dock/房管台与管理台全部页面、13 项管理变更动作、模型真实参数渲染、违规正文默认折叠按权限展开、本地拦截与平台删除分离、Q12/Q15/Q17/Q34/Q48/Q50 均在浏览器/HTTP 闭环验证成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S022-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:1f83883cd1373011cf0f8b49",
+      "requirementId": "VW-E005-R022",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-parent",
+     "actual": "第 m8b 批（fcad360）复验通过，整合 VOXWARD-SUB-041 与 VOXWARD-SUB-042 全部实测证据，m7e 阻断 B10（B10a/B10b-1/B10b-2）、B11 及非阻断项 N12a 全部关闭：E03 build、E04 typecheck、E06 check:deps（254 文件 0 违规）、E05 守卫单测（9 文件 38 用例 + 全量 164 文件 1946 用例全绿）与 E80 P1/P2 全链路探针均通过；Dock/房管台与管理台全部页面、13 项管理变更动作、模型真实参数渲染、违规正文默认折叠按权限展开、本地拦截与平台删除分离、Q12/Q15/Q17/Q34/Q48/Q50 均在浏览器/HTTP 闭环验证成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-inherit-001",
+     "actual": "审查 apps/server/src/auth/channel-panel-routes.ts、apps/server/src/db/channel-panel-read.ts 及 apps/web/src/pages/{dock,moderation,admin}/* 并结合 E06 check:deps（254 文件 0 违规）：保持远端自托管单后端 + React SPA 与版本化契约，未引入生产云托管、房管本地软件或供应商 SDK 穿透业务层。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-006",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-006",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-inherit-006",
+     "actual": "对照 VW-R-006 边界核查 db/channel-panel-read.ts 与 auth/channel-panel-routes.ts：Rework 1 修复了 approvedSc 的 PAID_TEXT_REVIEW / 非空 TRANSLATION 判定，只读复用审核与精翻结构化结果并通过 compileRuleSet / CandidateStore 端口协作，未改变 EPIC-002 审核规则引擎或精翻模块职责。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-inherit-009",
+     "actual": "审查 S022 前后端源码与 E80 SSR 输出：面板不直连 AI 提供方，模型配置仅读写 modelId 与 reasoningLevel；违规消息折叠组件默认不直出原文，不在前端存储或日志中新增会话/提示词副本，也不做外部删除不实承诺。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-010",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-010",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-inherit-010",
+     "actual": "第 m8b 批（fcad360）复验通过，整合 VOXWARD-SUB-041 与 VOXWARD-SUB-042 全部实测证据，m7e 阻断 B10（B10a/B10b-1/B10b-2）、B11 及非阻断项 N12a 全部关闭：E03 build、E04 typecheck、E06 check:deps（254 文件 0 违规）、E05 守卫单测（9 文件 38 用例 + 全量 164 文件 1946 用例全绿）与 E80 P1/P2 全链路探针均通过；Dock/房管台与管理台全部页面、13 项管理变更动作、模型真实参数渲染、违规正文默认折叠按权限展开、本地拦截与平台删除分离、Q12/Q15/Q17/Q34/Q48/Q50 均在浏览器/HTTP 闭环验证成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-inherit-011",
+     "actual": "审查 db/channel-panel-read.ts、db/channel-settings-store.ts 与 auth/channel-panel-routes.ts：所有配置与名单变更均经后端 SQLite 短事务落库，浏览器无数据库直写路径，未在额外队列或前端状态复制长期正文表。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-inherit-012",
+     "actual": "第 m8b 批（fcad360）复验通过，整合 VOXWARD-SUB-041 与 VOXWARD-SUB-042 全部实测证据，m7e 阻断 B10（B10a/B10b-1/B10b-2）、B11 及非阻断项 N12a 全部关闭：E03 build、E04 typecheck、E06 check:deps（254 文件 0 违规）、E05 守卫单测（9 文件 38 用例 + 全量 164 文件 1946 用例全绿）与 E80 P1/P2 全链路探针均通过；Dock/房管台与管理台全部页面、13 项管理变更动作、模型真实参数渲染、违规正文默认折叠按权限展开、本地拦截与平台删除分离、Q12/Q15/Q17/Q34/Q48/Q50 均在浏览器/HTTP 闭环验证成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-inherit-017",
+     "actual": "审查管理台数据/日志入口及保留期配置：retention-config 写入 channel_settings 供到期清理模块消费，数据请求执行与状态机仍由 S019 data-lifecycle-service 承接，S022 未创建绕过删除清理的额外正文副本。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-018",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-018",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-inherit-018",
+     "actual": "对照 VW-R-018 输出边界核查 auth/channel-panel-routes.ts 与 AdminPage.tsx：输出授权与访问令牌仅通过既有 OutputCredentialStore 签发元数据摘要与即时吊销，未破坏 S016/S017/S023/S024 输出最小字段契约与双层鉴权。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s022-inherit-019",
+     "actual": "第 m8b 批（fcad360）复验通过，整合 VOXWARD-SUB-041 与 VOXWARD-SUB-042 全部实测证据，m7e 阻断 B10（B10a/B10b-1/B10b-2）、B11 及非阻断项 N12a 全部关闭：E03 build、E04 typecheck、E06 check:deps（254 文件 0 违规）、E05 守卫单测（9 文件 38 用例 + 全量 164 文件 1946 用例全绿）与 E80 P1/P2 全链路探针均通过；Dock/房管台与管理台全部页面、13 项管理变更动作、模型真实参数渲染、违规正文默认折叠按权限展开、本地拦截与平台删除分离、Q12/Q15/Q17/Q34/Q48/Q50 均在浏览器/HTTP 闭环验证成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    }
+   ]
+  },
+  {
+   "externalKey": "VOXWARD-SUB-041",
+   "workId": "work:c95e166bcc76634a8520d9cc",
+   "revision": 4,
+   "evidence": [
+    {
+     "acceptanceId": "VW-SUB041-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:c95e166bcc76634a8520d9cc",
+      "requirementId": "VW-SUB041-R001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-ac001",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B10a、B10b-1、B10b-2 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-dock-routes.test.ts、s022-rework1.test.ts、DockPage.test.tsx、ModerationPage.test.tsx；主线程全量基线 164 文件 1946 用例全绿 + smoke.sh dev/dist 双 200）；E80 P1 实测确认 db/channel-panel-read.ts 内联 subjects 返回 subjects.platformSubjectKey（yt-platform-key-77），原样回传 POST /channels/:id/lists/subjects 返回 HTTP 200 {status:\"applied\"} 且 list_entries 落库；approvedSc 仅含 PAID_TEXT_REVIEW 或非空精翻证据的非拦截消息（排除 ALLOW_NOISE 与无 SC 证据普通聊天），DockView 独立渲染 aria-label=\"实时流\"；blockedItems 返回 bodyFolded:true，FoldableBody 默认折叠（SSR 初始 HTML 不含违规正文），仅持 message.original 时提供「展开原文」按钮；本地拦截与平台删除状态分开显示，故障横幅独立展示且不伪装违规，Q17 撤权后即时 403。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB041-STORY",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:7fca6e51424bb603b416c643",
+      "requirementId": "VW-S022-R001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-story",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B10a、B10b-1、B10b-2 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-dock-routes.test.ts、s022-rework1.test.ts、DockPage.test.tsx、ModerationPage.test.tsx；主线程全量基线 164 文件 1946 用例全绿 + smoke.sh dev/dist 双 200）；E80 P1 实测确认 db/channel-panel-read.ts 内联 subjects 返回 subjects.platformSubjectKey（yt-platform-key-77），原样回传 POST /channels/:id/lists/subjects 返回 HTTP 200 {status:\"applied\"} 且 list_entries 落库；approvedSc 仅含 PAID_TEXT_REVIEW 或非空精翻证据的非拦截消息（排除 ALLOW_NOISE 与无 SC 证据普通聊天），DockView 独立渲染 aria-label=\"实时流\"；blockedItems 返回 bodyFolded:true，FoldableBody 默认折叠（SSR 初始 HTML 不含违规正文），仅持 message.original 时提供「展开原文」按钮；本地拦截与平台删除状态分开显示，故障横幅独立展示且不伪装违规，Q17 撤权后即时 403。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB041-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:1f83883cd1373011cf0f8b49",
+      "requirementId": "VW-E005-R022",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-parent",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B10a、B10b-1、B10b-2 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-dock-routes.test.ts、s022-rework1.test.ts、DockPage.test.tsx、ModerationPage.test.tsx；主线程全量基线 164 文件 1946 用例全绿 + smoke.sh dev/dist 双 200）；E80 P1 实测确认 db/channel-panel-read.ts 内联 subjects 返回 subjects.platformSubjectKey（yt-platform-key-77），原样回传 POST /channels/:id/lists/subjects 返回 HTTP 200 {status:\"applied\"} 且 list_entries 落库；approvedSc 仅含 PAID_TEXT_REVIEW 或非空精翻证据的非拦截消息（排除 ALLOW_NOISE 与无 SC 证据普通聊天），DockView 独立渲染 aria-label=\"实时流\"；blockedItems 返回 bodyFolded:true，FoldableBody 默认折叠（SSR 初始 HTML 不含违规正文），仅持 message.original 时提供「展开原文」按钮；本地拦截与平台删除状态分开显示，故障横幅独立展示且不伪装违规，Q17 撤权后即时 403。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-inherit-001",
+     "actual": "审查 apps/server/src/auth/channel-panel-routes.ts、apps/server/src/db/channel-panel-read.ts 及 apps/web/src/pages/{dock,moderation,admin}/* 并结合 E06 check:deps（254 文件 0 违规）：保持远端自托管单后端 + React SPA 与版本化契约，未引入生产云托管、房管本地软件或供应商 SDK 穿透业务层。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-006",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-006",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-inherit-006",
+     "actual": "对照 VW-R-006 边界核查 db/channel-panel-read.ts 与 auth/channel-panel-routes.ts：Rework 1 修复了 approvedSc 的 PAID_TEXT_REVIEW / 非空 TRANSLATION 判定，只读复用审核与精翻结构化结果并通过 compileRuleSet / CandidateStore 端口协作，未改变 EPIC-002 审核规则引擎或精翻模块职责。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-inherit-009",
+     "actual": "审查 S022 前后端源码与 E80 SSR 输出：面板不直连 AI 提供方，模型配置仅读写 modelId 与 reasoningLevel；违规消息折叠组件默认不直出原文，不在前端存储或日志中新增会话/提示词副本，也不做外部删除不实承诺。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-010",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-010",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-inherit-010",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B10a、B10b-1、B10b-2 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-dock-routes.test.ts、s022-rework1.test.ts、DockPage.test.tsx、ModerationPage.test.tsx；主线程全量基线 164 文件 1946 用例全绿 + smoke.sh dev/dist 双 200）；E80 P1 实测确认 db/channel-panel-read.ts 内联 subjects 返回 subjects.platformSubjectKey（yt-platform-key-77），原样回传 POST /channels/:id/lists/subjects 返回 HTTP 200 {status:\"applied\"} 且 list_entries 落库；approvedSc 仅含 PAID_TEXT_REVIEW 或非空精翻证据的非拦截消息（排除 ALLOW_NOISE 与无 SC 证据普通聊天），DockView 独立渲染 aria-label=\"实时流\"；blockedItems 返回 bodyFolded:true，FoldableBody 默认折叠（SSR 初始 HTML 不含违规正文），仅持 message.original 时提供「展开原文」按钮；本地拦截与平台删除状态分开显示，故障横幅独立展示且不伪装违规，Q17 撤权后即时 403。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-inherit-011",
+     "actual": "审查 db/channel-panel-read.ts、db/channel-settings-store.ts 与 auth/channel-panel-routes.ts：所有配置与名单变更均经后端 SQLite 短事务落库，浏览器无数据库直写路径，未在额外队列或前端状态复制长期正文表。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-inherit-012",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B10a、B10b-1、B10b-2 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-dock-routes.test.ts、s022-rework1.test.ts、DockPage.test.tsx、ModerationPage.test.tsx；主线程全量基线 164 文件 1946 用例全绿 + smoke.sh dev/dist 双 200）；E80 P1 实测确认 db/channel-panel-read.ts 内联 subjects 返回 subjects.platformSubjectKey（yt-platform-key-77），原样回传 POST /channels/:id/lists/subjects 返回 HTTP 200 {status:\"applied\"} 且 list_entries 落库；approvedSc 仅含 PAID_TEXT_REVIEW 或非空精翻证据的非拦截消息（排除 ALLOW_NOISE 与无 SC 证据普通聊天），DockView 独立渲染 aria-label=\"实时流\"；blockedItems 返回 bodyFolded:true，FoldableBody 默认折叠（SSR 初始 HTML 不含违规正文），仅持 message.original 时提供「展开原文」按钮；本地拦截与平台删除状态分开显示，故障横幅独立展示且不伪装违规，Q17 撤权后即时 403。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-inherit-017",
+     "actual": "审查管理台数据/日志入口及保留期配置：retention-config 写入 channel_settings 供到期清理模块消费，数据请求执行与状态机仍由 S019 data-lifecycle-service 承接，S022 未创建绕过删除清理的额外正文副本。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-018",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-018",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-inherit-018",
+     "actual": "对照 VW-R-018 输出边界核查 auth/channel-panel-routes.ts 与 AdminPage.tsx：输出授权与访问令牌仅通过既有 OutputCredentialStore 签发元数据摘要与即时吊销，未破坏 S016/S017/S023/S024 输出最小字段契约与双层鉴权。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub041-inherit-019",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B10a、B10b-1、B10b-2 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-dock-routes.test.ts、s022-rework1.test.ts、DockPage.test.tsx、ModerationPage.test.tsx；主线程全量基线 164 文件 1946 用例全绿 + smoke.sh dev/dist 双 200）；E80 P1 实测确认 db/channel-panel-read.ts 内联 subjects 返回 subjects.platformSubjectKey（yt-platform-key-77），原样回传 POST /channels/:id/lists/subjects 返回 HTTP 200 {status:\"applied\"} 且 list_entries 落库；approvedSc 仅含 PAID_TEXT_REVIEW 或非空精翻证据的非拦截消息（排除 ALLOW_NOISE 与无 SC 证据普通聊天），DockView 独立渲染 aria-label=\"实时流\"；blockedItems 返回 bodyFolded:true，FoldableBody 默认折叠（SSR 初始 HTML 不含违规正文），仅持 message.original 时提供「展开原文」按钮；本地拦截与平台删除状态分开显示，故障横幅独立展示且不伪装违规，Q17 撤权后即时 403。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    }
+   ]
+  },
+  {
+   "externalKey": "VOXWARD-SUB-042",
+   "workId": "work:daf3dd02919cc74d68f2cf3b",
+   "revision": 4,
+   "evidence": [
+    {
+     "acceptanceId": "VW-SUB042-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:daf3dd02919cc74d68f2cf3b",
+      "requirementId": "VW-SUB042-R001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-ac001",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B11 与非阻断项 N12a 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-admin-routes.test.ts、s022-rework1.test.ts、AdminPage.test.tsx）；E80 P1/P2 全链路实测确认 AdminPage.tsx 与 createAdminPageController 已完整接线全部 13 个管理端变更方法并逐一实测通过——Q12 非法正则 (foo|bar) 触发 ruleIssues 改写提示并改为 foo|bar 发布成功、词条 ADD/RETIRE、主体名单 BLACKLIST/移除、Q50 候选词卡 CONFIRMED/REJECTED、Q17 成员授权与即时撤权（撤权后立返 403）、Q34 CHANNEL_OWNER 可显式授予 dataAdmin:true、Q48 真实读取 describe().models 渲染下拉框并保存 kiro-sonnet-4 且非法模型返回 422 写入 modelIssues、N12a 越界评分参数（minScore > initialScore）被 400 INVALID_REQUEST 拒绝、输出端授权/令牌签发与吊销闭环、MODERATOR 访问 /model-settings 返回 403 且 SSR 隐藏越权管理区块。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB042-STORY",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:7fca6e51424bb603b416c643",
+      "requirementId": "VW-S022-R001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-story",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B11 与非阻断项 N12a 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-admin-routes.test.ts、s022-rework1.test.ts、AdminPage.test.tsx）；E80 P1/P2 全链路实测确认 AdminPage.tsx 与 createAdminPageController 已完整接线全部 13 个管理端变更方法并逐一实测通过——Q12 非法正则 (foo|bar) 触发 ruleIssues 改写提示并改为 foo|bar 发布成功、词条 ADD/RETIRE、主体名单 BLACKLIST/移除、Q50 候选词卡 CONFIRMED/REJECTED、Q17 成员授权与即时撤权（撤权后立返 403）、Q34 CHANNEL_OWNER 可显式授予 dataAdmin:true、Q48 真实读取 describe().models 渲染下拉框并保存 kiro-sonnet-4 且非法模型返回 422 写入 modelIssues、N12a 越界评分参数（minScore > initialScore）被 400 INVALID_REQUEST 拒绝、输出端授权/令牌签发与吊销闭环、MODERATOR 访问 /model-settings 返回 403 且 SSR 隐藏越权管理区块。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB042-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:1f83883cd1373011cf0f8b49",
+      "requirementId": "VW-E005-R022",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-parent",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B11 与非阻断项 N12a 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-admin-routes.test.ts、s022-rework1.test.ts、AdminPage.test.tsx）；E80 P1/P2 全链路实测确认 AdminPage.tsx 与 createAdminPageController 已完整接线全部 13 个管理端变更方法并逐一实测通过——Q12 非法正则 (foo|bar) 触发 ruleIssues 改写提示并改为 foo|bar 发布成功、词条 ADD/RETIRE、主体名单 BLACKLIST/移除、Q50 候选词卡 CONFIRMED/REJECTED、Q17 成员授权与即时撤权（撤权后立返 403）、Q34 CHANNEL_OWNER 可显式授予 dataAdmin:true、Q48 真实读取 describe().models 渲染下拉框并保存 kiro-sonnet-4 且非法模型返回 422 写入 modelIssues、N12a 越界评分参数（minScore > initialScore）被 400 INVALID_REQUEST 拒绝、输出端授权/令牌签发与吊销闭环、MODERATOR 访问 /model-settings 返回 403 且 SSR 隐藏越权管理区块。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-inherit-001",
+     "actual": "审查 apps/server/src/auth/channel-panel-routes.ts、apps/server/src/db/channel-panel-read.ts 及 apps/web/src/pages/{dock,moderation,admin}/* 并结合 E06 check:deps（254 文件 0 违规）：保持远端自托管单后端 + React SPA 与版本化契约，未引入生产云托管、房管本地软件或供应商 SDK 穿透业务层。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-006",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-006",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-inherit-006",
+     "actual": "对照 VW-R-006 边界核查 db/channel-panel-read.ts 与 auth/channel-panel-routes.ts：Rework 1 修复了 approvedSc 的 PAID_TEXT_REVIEW / 非空 TRANSLATION 判定，只读复用审核与精翻结构化结果并通过 compileRuleSet / CandidateStore 端口协作，未改变 EPIC-002 审核规则引擎或精翻模块职责。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-inherit-009",
+     "actual": "审查 S022 前后端源码与 E80 SSR 输出：面板不直连 AI 提供方，模型配置仅读写 modelId 与 reasoningLevel；违规消息折叠组件默认不直出原文，不在前端存储或日志中新增会话/提示词副本，也不做外部删除不实承诺。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-010",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-010",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-inherit-010",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B11 与非阻断项 N12a 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-admin-routes.test.ts、s022-rework1.test.ts、AdminPage.test.tsx）；E80 P1/P2 全链路实测确认 AdminPage.tsx 与 createAdminPageController 已完整接线全部 13 个管理端变更方法并逐一实测通过——Q12 非法正则 (foo|bar) 触发 ruleIssues 改写提示并改为 foo|bar 发布成功、词条 ADD/RETIRE、主体名单 BLACKLIST/移除、Q50 候选词卡 CONFIRMED/REJECTED、Q17 成员授权与即时撤权（撤权后立返 403）、Q34 CHANNEL_OWNER 可显式授予 dataAdmin:true、Q48 真实读取 describe().models 渲染下拉框并保存 kiro-sonnet-4 且非法模型返回 422 写入 modelIssues、N12a 越界评分参数（minScore > initialScore）被 400 INVALID_REQUEST 拒绝、输出端授权/令牌签发与吊销闭环、MODERATOR 访问 /model-settings 返回 403 且 SSR 隐藏越权管理区块。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-inherit-011",
+     "actual": "审查 db/channel-panel-read.ts、db/channel-settings-store.ts 与 auth/channel-panel-routes.ts：所有配置与名单变更均经后端 SQLite 短事务落库，浏览器无数据库直写路径，未在额外队列或前端状态复制长期正文表。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-inherit-012",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B11 与非阻断项 N12a 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-admin-routes.test.ts、s022-rework1.test.ts、AdminPage.test.tsx）；E80 P1/P2 全链路实测确认 AdminPage.tsx 与 createAdminPageController 已完整接线全部 13 个管理端变更方法并逐一实测通过——Q12 非法正则 (foo|bar) 触发 ruleIssues 改写提示并改为 foo|bar 发布成功、词条 ADD/RETIRE、主体名单 BLACKLIST/移除、Q50 候选词卡 CONFIRMED/REJECTED、Q17 成员授权与即时撤权（撤权后立返 403）、Q34 CHANNEL_OWNER 可显式授予 dataAdmin:true、Q48 真实读取 describe().models 渲染下拉框并保存 kiro-sonnet-4 且非法模型返回 422 写入 modelIssues、N12a 越界评分参数（minScore > initialScore）被 400 INVALID_REQUEST 拒绝、输出端授权/令牌签发与吊销闭环、MODERATOR 访问 /model-settings 返回 403 且 SSR 隐藏越权管理区块。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-inherit-017",
+     "actual": "审查管理台数据/日志入口及保留期配置：retention-config 写入 channel_settings 供到期清理模块消费，数据请求执行与状态机仍由 S019 data-lifecycle-service 承接，S022 未创建绕过删除清理的额外正文副本。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-018",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-018",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-inherit-018",
+     "actual": "对照 VW-R-018 输出边界核查 auth/channel-panel-routes.ts 与 AdminPage.tsx：输出授权与访问令牌仅通过既有 OutputCredentialStore 签发元数据摘要与即时吊销，未破坏 S016/S017/S023/S024 输出最小字段契约与双层鉴权。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub042-inherit-019",
+     "actual": "第 m8b 批（fcad360）复验通过，m7e 阻断 B11 与非阻断项 N12a 已全部消除：E05 守卫单测 9 文件 38 用例全绿（含 s022-admin-routes.test.ts、s022-rework1.test.ts、AdminPage.test.tsx）；E80 P1/P2 全链路实测确认 AdminPage.tsx 与 createAdminPageController 已完整接线全部 13 个管理端变更方法并逐一实测通过——Q12 非法正则 (foo|bar) 触发 ruleIssues 改写提示并改为 foo|bar 发布成功、词条 ADD/RETIRE、主体名单 BLACKLIST/移除、Q50 候选词卡 CONFIRMED/REJECTED、Q17 成员授权与即时撤权（撤权后立返 403）、Q34 CHANNEL_OWNER 可显式授予 dataAdmin:true、Q48 真实读取 describe().models 渲染下拉框并保存 kiro-sonnet-4 且非法模型返回 422 写入 modelIssues、N12a 越界评分参数（minScore > initialScore）被 400 INVALID_REQUEST 拒绝、输出端授权/令牌签发与吊销闭环、MODERATOR 访问 /model-settings 返回 403 且 SSR 隐藏越权管理区块。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    }
+   ]
+  },
+  {
+   "externalKey": "VOXWARD-STORY-020",
+   "workId": "work:92dbcf7ccd1a31c2af310b77",
+   "revision": 4,
+   "evidence": [
+    {
+     "acceptanceId": "VW-S020-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:92dbcf7ccd1a31c2af310b77",
+      "requirementId": "VW-S020-R001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-ac001",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S020-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:18aaac72724b30c2ee9be8b6",
+      "requirementId": "VW-E004-R020",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-parent",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S020-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-inherit-001",
+     "actual": "审查 apps/server/src/db/{client,retention-store,backup-store,tombstone-ledger,restore-support}.ts 与 modules/data-lifecycle-service/restore-replay.ts，结合 E06 check:deps（254 文件 0 违规）：全部采用本地 SQLite + Node 标准文件操作与端口注入，保持远端自托管与模块边界，未引入外部云存储或供应商 SDK。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S020-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-inherit-009",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S020-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-inherit-011",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S020-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-inherit-012",
+     "actual": "审查 backup-store.ts（备份文件 0o600 权限，E80 R1 实测 mode=600）、tombstone-ledger.ts（仅存主体伪名引用与请求元数据，不含消息正文或凭据）与 HTTP 路由边界：S020 未新增绕过鉴权的外部路由，删除执行仍受 DATA_ADMIN / data.delete 与 CSRF 保护。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S020-INHERIT-013",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-013",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-inherit-013",
+     "actual": "对照 VW-R-013 核查 db/retention-store.ts 与 data-dictionary.md：到期清理仅清理到期的 technical_log_evidence、technical_logs 与 change_logs，不误删 subjects、subject_scores、score_ledger 或活跃 score_exceptions，未篡改评分引擎职责。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S020-INHERIT-014",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-014",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-inherit-014",
+     "actual": "对照 VW-R-014 核查 db/retention-store.ts 与 modules/audit-store/*：遵循证据（默认 7 天）先于技术日志（默认 14 天）与变更日志（默认 30 天）的分层保留结构，有证据残留的技术日志行跳过删除，保持审计存储结构与脱敏边界。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S020-INHERIT-015",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-015",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-inherit-015",
+     "actual": "对照 VW-R-015 核查 modules/data-lifecycle-service/{cleanup-executor,restore-replay}.ts 与 db/tombstone-ledger.ts：复用 S019 18 个清理面与最小例外标记契约，墓碑账本不可写时在删除动作前以 409 TOMBSTONE_UNAVAILABLE 闭锁拒绝，不破坏 S019 数据请求状态机。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S020-INHERIT-016",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-016",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-inherit-016",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S020-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-inherit-017",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S020-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-s020-inherit-019",
+     "actual": "对照 VW-R-019 核查 db/retention-store.ts 对 channel_settings 中 retention-config 的读取键名与结构（evidenceDays/technicalLogDays/changeLogDays）同 S022 PUT /channels/:id/admin-settings 完全一致，跨模块配置契约对齐且未侵入面板职责。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    }
+   ]
+  },
+  {
+   "externalKey": "VOXWARD-SUB-037",
+   "workId": "work:b37002c1194bbbfc3e431edd",
+   "revision": 3,
+   "evidence": [
+    {
+     "acceptanceId": "VW-SUB037-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:b37002c1194bbbfc3e431edd",
+      "requirementId": "VW-SUB037-R001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-ac001",
+     "actual": "未满足（阻断项 B12）：虽然 Q30 PRAGMA secure_delete=ON（实测读回 1）+ compact() WAL TRUNCATE/VACUUM 字节擦除、7/14/30 天分层短事务清理及活跃任务（QUEUED/RUNNING/PENDING_REVIEW）跳过并在剩余超期行存在时返回 complete:false 均已实测成立，但 db/retention-store.ts 的 sweepExpired 未接入 InvalidationBus（全仓 reason:\"EXPIRED\" 发布次数为 0）。E80 R3 实测复现：管理员先访问 GET /internal/channels/ch-b12/logs/technical/log-b12 命中 ViewerCache 缓存，随后通过 PUT /channels/ch-b12/admin-settings 将保留期缩短为 1 天并执行 sweepExpired，SQLite 中 technical_log_evidence 与 technical_logs 均已物理删空（0 行），但再次请求同一日志详情接口仍返回 HTTP 200 并明文泄露已清理正文 B12_DELETED_EXPIRED_SECRET_TEXT，违反「清理状态及查看器缓存失效」与「清理对象不可访问」。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB037-STORY",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:92dbcf7ccd1a31c2af310b77",
+      "requirementId": "VW-S020-R001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-story",
+     "actual": "未满足（阻断项 B12）：虽然 Q30 PRAGMA secure_delete=ON（实测读回 1）+ compact() WAL TRUNCATE/VACUUM 字节擦除、7/14/30 天分层短事务清理及活跃任务（QUEUED/RUNNING/PENDING_REVIEW）跳过并在剩余超期行存在时返回 complete:false 均已实测成立，但 db/retention-store.ts 的 sweepExpired 未接入 InvalidationBus（全仓 reason:\"EXPIRED\" 发布次数为 0）。E80 R3 实测复现：管理员先访问 GET /internal/channels/ch-b12/logs/technical/log-b12 命中 ViewerCache 缓存，随后通过 PUT /channels/ch-b12/admin-settings 将保留期缩短为 1 天并执行 sweepExpired，SQLite 中 technical_log_evidence 与 technical_logs 均已物理删空（0 行），但再次请求同一日志详情接口仍返回 HTTP 200 并明文泄露已清理正文 B12_DELETED_EXPIRED_SECRET_TEXT，违反「清理状态及查看器缓存失效」与「清理对象不可访问」。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB037-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:18aaac72724b30c2ee9be8b6",
+      "requirementId": "VW-E004-R020",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-parent",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB037-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-inherit-001",
+     "actual": "审查 apps/server/src/db/{client,retention-store,backup-store,tombstone-ledger,restore-support}.ts 与 modules/data-lifecycle-service/restore-replay.ts，结合 E06 check:deps（254 文件 0 违规）：全部采用本地 SQLite + Node 标准文件操作与端口注入，保持远端自托管与模块边界，未引入外部云存储或供应商 SDK。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB037-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-inherit-009",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB037-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-inherit-011",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB037-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-inherit-012",
+     "actual": "审查 backup-store.ts（备份文件 0o600 权限，E80 R1 实测 mode=600）、tombstone-ledger.ts（仅存主体伪名引用与请求元数据，不含消息正文或凭据）与 HTTP 路由边界：S020 未新增绕过鉴权的外部路由，删除执行仍受 DATA_ADMIN / data.delete 与 CSRF 保护。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB037-INHERIT-013",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-013",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-inherit-013",
+     "actual": "对照 VW-R-013 核查 db/retention-store.ts 与 data-dictionary.md：到期清理仅清理到期的 technical_log_evidence、technical_logs 与 change_logs，不误删 subjects、subject_scores、score_ledger 或活跃 score_exceptions，未篡改评分引擎职责。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB037-INHERIT-014",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-014",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-inherit-014",
+     "actual": "对照 VW-R-014 核查 db/retention-store.ts 与 modules/audit-store/*：遵循证据（默认 7 天）先于技术日志（默认 14 天）与变更日志（默认 30 天）的分层保留结构，有证据残留的技术日志行跳过删除，保持审计存储结构与脱敏边界。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB037-INHERIT-015",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-015",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-inherit-015",
+     "actual": "对照 VW-R-015 核查 modules/data-lifecycle-service/{cleanup-executor,restore-replay}.ts 与 db/tombstone-ledger.ts：复用 S019 18 个清理面与最小例外标记契约，墓碑账本不可写时在删除动作前以 409 TOMBSTONE_UNAVAILABLE 闭锁拒绝，不破坏 S019 数据请求状态机。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB037-INHERIT-016",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-016",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-inherit-016",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB037-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-inherit-017",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB037-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub037-inherit-019",
+     "actual": "对照 VW-R-019 核查 db/retention-store.ts 对 channel_settings 中 retention-config 的读取键名与结构（evidenceDays/technicalLogDays/changeLogDays）同 S022 PUT /channels/:id/admin-settings 完全一致，跨模块配置契约对齐且未侵入面板职责。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    }
+   ]
+  },
+  {
+   "externalKey": "VOXWARD-SUB-038",
+   "workId": "work:165db96157d21662a5e50528",
+   "revision": 3,
+   "evidence": [
+    {
+     "acceptanceId": "VW-SUB038-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:165db96157d21662a5e50528",
+      "requirementId": "VW-SUB038-R001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-ac001",
+     "actual": "未满足（阻断项 B13）：虽然 VACUUM INTO .tmp 原子重命名（0600 权限）、maxCount/maxTotalBytes/maxAgeDays 有界轮换、tombstones.jsonl 不可写时 409 TOMBSTONE_UNAVAILABLE 闭锁及 .restoring 隔离重放显式删除墓碑均已实测成立，但 db/restore-support.ts 与 db/backup-store.ts 在隔离恢复阶段仅调用 replayTombstones 重放显式删除墓碑，未对 .restoring 执行到期清理（sweepExpired + compact/VACUUM），也未推进已删主体的 subjects.processing_generation。E80 R3 实测复现：对含已超期日志及缩短保留期日志的旧备份执行清理与 compact（线上库字节已擦除且 subj-del 的 processing_generation=1）后调用 restoreDatabaseWithLedger 恢复该旧备份，结果（1）已清理的自然超期行与缩短保留期行双双复活（各 1 行），自然超期密文重新出现在恢复后的 SQLite 文件字节中；（2）缩短保留期但原 expires_at 未到的已清理日志通过 GET /internal/channels/ch-b13/logs/technical/log-b13-cfg 直接返回 HTTP 200 明文复活 B13_SHORTENED_CFG_RESURRECTED_HTTP；（3）已删主体 subj-del 的 processing_generation 从 1 回退为 0，违反「恢复隔离阶段重放删除/到期」与「旧任务与备份不复活已删数据」。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB038-STORY",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:92dbcf7ccd1a31c2af310b77",
+      "requirementId": "VW-S020-R001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-story",
+     "actual": "未满足（阻断项 B13）：虽然 VACUUM INTO .tmp 原子重命名（0600 权限）、maxCount/maxTotalBytes/maxAgeDays 有界轮换、tombstones.jsonl 不可写时 409 TOMBSTONE_UNAVAILABLE 闭锁及 .restoring 隔离重放显式删除墓碑均已实测成立，但 db/restore-support.ts 与 db/backup-store.ts 在隔离恢复阶段仅调用 replayTombstones 重放显式删除墓碑，未对 .restoring 执行到期清理（sweepExpired + compact/VACUUM），也未推进已删主体的 subjects.processing_generation。E80 R3 实测复现：对含已超期日志及缩短保留期日志的旧备份执行清理与 compact（线上库字节已擦除且 subj-del 的 processing_generation=1）后调用 restoreDatabaseWithLedger 恢复该旧备份，结果（1）已清理的自然超期行与缩短保留期行双双复活（各 1 行），自然超期密文重新出现在恢复后的 SQLite 文件字节中；（2）缩短保留期但原 expires_at 未到的已清理日志通过 GET /internal/channels/ch-b13/logs/technical/log-b13-cfg 直接返回 HTTP 200 明文复活 B13_SHORTENED_CFG_RESURRECTED_HTTP；（3）已删主体 subj-del 的 processing_generation 从 1 回退为 0，违反「恢复隔离阶段重放删除/到期」与「旧任务与备份不复活已删数据」。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB038-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:18aaac72724b30c2ee9be8b6",
+      "requirementId": "VW-E004-R020",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-parent",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB038-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-inherit-001",
+     "actual": "审查 apps/server/src/db/{client,retention-store,backup-store,tombstone-ledger,restore-support}.ts 与 modules/data-lifecycle-service/restore-replay.ts，结合 E06 check:deps（254 文件 0 违规）：全部采用本地 SQLite + Node 标准文件操作与端口注入，保持远端自托管与模块边界，未引入外部云存储或供应商 SDK。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB038-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-inherit-009",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB038-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-inherit-011",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB038-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-inherit-012",
+     "actual": "审查 backup-store.ts（备份文件 0o600 权限，E80 R1 实测 mode=600）、tombstone-ledger.ts（仅存主体伪名引用与请求元数据，不含消息正文或凭据）与 HTTP 路由边界：S020 未新增绕过鉴权的外部路由，删除执行仍受 DATA_ADMIN / data.delete 与 CSRF 保护。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB038-INHERIT-013",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-013",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-inherit-013",
+     "actual": "对照 VW-R-013 核查 db/retention-store.ts 与 data-dictionary.md：到期清理仅清理到期的 technical_log_evidence、technical_logs 与 change_logs，不误删 subjects、subject_scores、score_ledger 或活跃 score_exceptions，未篡改评分引擎职责。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB038-INHERIT-014",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-014",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-inherit-014",
+     "actual": "对照 VW-R-014 核查 db/retention-store.ts 与 modules/audit-store/*：遵循证据（默认 7 天）先于技术日志（默认 14 天）与变更日志（默认 30 天）的分层保留结构，有证据残留的技术日志行跳过删除，保持审计存储结构与脱敏边界。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB038-INHERIT-015",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-015",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-inherit-015",
+     "actual": "对照 VW-R-015 核查 modules/data-lifecycle-service/{cleanup-executor,restore-replay}.ts 与 db/tombstone-ledger.ts：复用 S019 18 个清理面与最小例外标记契约，墓碑账本不可写时在删除动作前以 409 TOMBSTONE_UNAVAILABLE 闭锁拒绝，不破坏 S019 数据请求状态机。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB038-INHERIT-016",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-016",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-inherit-016",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB038-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-inherit-017",
+     "actual": "未满足（阻断项 B12 + B13）：E05 与 E80 R1 实测确认 Q30 PRAGMA secure_delete=ON（读回 1）+ compact() 页面回收、7/14/30 天分层保留与活跃任务保护、0600 有界备份轮换及显式删除墓碑隔离重放可用，但 E80 R3 实测证伪两项核心契约：（1）B12：sweepExpired 未发布 InvalidationBus EXPIRED 事件，频道缩短保留期并物理删空 SQLite 日志/证据后，GET /internal/channels/:id/logs/technical/:logId 仍从 ViewerCache 返回 HTTP 200 及已删消息正文；（2）B13：restoreDatabaseWithLedger / restoreBackup 在 .restoring 隔离阶段仅重放显式删除墓碑而未执行到期清理与页面回收，导致旧备份中已到期清理的数据与原始字节在恢复后复活（缩短保留期场景下直接经 HTTP 200 重新对外返回正文），且已删主体 subjects.processing_generation 从 1 回退为 0。外部不可验证边界已核实：YouTube 平台侧保留策略未知且未冒充平台许可，SQLite secure_delete/VACUUM 仅作用于数据库文件页而不宣称底层 SSD/快照介质擦除。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB038-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "fcad360",
+     "locator": ".kiro/specs/voxward-batch-m8b/evidence/acceptance.md#vw-sub038-inherit-019",
+     "actual": "对照 VW-R-019 核查 db/retention-store.ts 对 channel_settings 中 retention-config 的读取键名与结构（evidenceDays/technicalLogDays/changeLogDays）同 S022 PUT /channels/:id/admin-settings 完全一致，跨模块配置契约对齐且未侵入面板职责。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    }
+   ]
+  }
+ ]
+}

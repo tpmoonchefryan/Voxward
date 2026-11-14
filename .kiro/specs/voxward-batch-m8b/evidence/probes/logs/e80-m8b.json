@@ -1,0 +1,69 @@
+{
+  "candidate": "fcad360",
+  "total": 4,
+  "allProbesCompleted": true,
+  "results": [
+    {
+      "id": "P1_s022_rework1_b10_n12a",
+      "passed": true,
+      "details": {
+        "b10aSubjectRef": "yt-platform-key-77",
+        "b10aBlacklistApplied": true,
+        "b10b1ApprovedScIds": [
+          "ev-sc"
+        ],
+        "b10b1LiveStreamCount": 4,
+        "b10b2BlockedHiddenInInitialSsr": true,
+        "b10b2ExpandableWhenAuthorized": true,
+        "n12aInvalidBoundsStatus": 400
+      }
+    },
+    {
+      "id": "P2_s022_rework1_b11_admin_e2e_and_rbac",
+      "passed": true,
+      "details": {
+        "all13AdminMutationsExercised": true,
+        "q12RewriteHintPopulated": true,
+        "q17RevokeStatus": 403,
+        "q34OwnerDataAdminGranted": true,
+        "q48ModelIdSaved": "kiro-sonnet-4",
+        "q50CandidateStatuses": {
+          "2ec466e8-d5a8-48aa-9a39-2c58a942bc9e": "CONFIRMED",
+          "8980a7c9-7fee-4e32-bedf-c0a845130c90": "REJECTED"
+        },
+        "moderatorModelSettingsHttpStatus": 403
+      }
+    },
+    {
+      "id": "R1_s020_q30_and_backup_rotation",
+      "passed": true,
+      "details": {
+        "secureDeletePragma": 1,
+        "backupFileModeOctal": "600",
+        "compileOptionsCount": 59
+      }
+    },
+    {
+      "id": "R3_s020_defects_b12_b13_empirical_repro",
+      "passed": true,
+      "details": {
+        "b12SqlRowsAfterSweep": {
+          "evidence": 0,
+          "technicalLogs": 0
+        },
+        "b12SecondReadHttpStatus": 200,
+        "b12StaleCacheLeakedDeletedPayload": true,
+        "b13ResurrectedExpiredRowsInRestoredDb": {
+          "naturalExpired": 1,
+          "shortenedConfigExpired": 1
+        },
+        "b13NaturalExpiredBytesResurrectedInDbFile": true,
+        "b13ShortenedConfigResurrectedOverHttp200": true,
+        "b13DeletedSubjectGenerationRollback": {
+          "beforeRestore": 1,
+          "afterRestore": 0
+        }
+      }
+    }
+  ]
+}

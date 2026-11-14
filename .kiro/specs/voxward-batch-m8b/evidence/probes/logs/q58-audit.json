@@ -1,0 +1,91 @@
+{
+  "q58Clean": true,
+  "runs": {
+    "e05-s022-s020-vitest": {
+      "selfcheck": {
+        "guardLoaded": true,
+        "results": [
+          {
+            "host": "oauth2.googleapis.com",
+            "fetch": "refused:ECONNREFUSED",
+            "https": "refused:ECONNREFUSED",
+            "net": "refused:ECONNREFUSED",
+            "dns": "refused:ENOTFOUND"
+          },
+          {
+            "host": "www.googleapis.com",
+            "fetch": "refused:ECONNREFUSED",
+            "https": "refused:ECONNREFUSED",
+            "net": "refused:ECONNREFUSED",
+            "dns": "refused:ENOTFOUND"
+          },
+          {
+            "host": "accounts.google.com",
+            "fetch": "refused:ECONNREFUSED",
+            "https": "refused:ECONNREFUSED",
+            "net": "refused:ECONNREFUSED",
+            "dns": "refused:ENOTFOUND"
+          },
+          {
+            "host": "prod.us-east-1.auth.desktop.kiro.dev",
+            "fetch": "refused:ECONNREFUSED",
+            "https": "refused:ECONNREFUSED",
+            "net": "refused:ECONNREFUSED",
+            "dns": "refused:ENOTFOUND"
+          },
+          {
+            "host": "example.com",
+            "fetch": "refused:ECONNREFUSED",
+            "https": "refused:ECONNREFUSED",
+            "net": "refused:ECONNREFUSED",
+            "dns": "refused:ENOTFOUND"
+          }
+        ]
+      },
+      "shimLines": 0
+    },
+    "e80-m8b": {
+      "selfcheck": {
+        "guardLoaded": true,
+        "results": [
+          {
+            "host": "oauth2.googleapis.com",
+            "fetch": "refused:ECONNREFUSED",
+            "https": "refused:ECONNREFUSED",
+            "net": "refused:ECONNREFUSED",
+            "dns": "refused:ENOTFOUND"
+          },
+          {
+            "host": "www.googleapis.com",
+            "fetch": "refused:ECONNREFUSED",
+            "https": "refused:ECONNREFUSED",
+            "net": "refused:ECONNREFUSED",
+            "dns": "refused:ENOTFOUND"
+          },
+          {
+            "host": "accounts.google.com",
+            "fetch": "refused:ECONNREFUSED",
+            "https": "refused:ECONNREFUSED",
+            "net": "refused:ECONNREFUSED",
+            "dns": "refused:ENOTFOUND"
+          },
+          {
+            "host": "prod.us-east-1.auth.desktop.kiro.dev",
+            "fetch": "refused:ECONNREFUSED",
+            "https": "refused:ECONNREFUSED",
+            "net": "refused:ECONNREFUSED",
+            "dns": "refused:ENOTFOUND"
+          },
+          {
+            "host": "example.com",
+            "fetch": "refused:ECONNREFUSED",
+            "https": "refused:ECONNREFUSED",
+            "net": "refused:ECONNREFUSED",
+            "dns": "refused:ENOTFOUND"
+          }
+        ]
+      },
+      "shimLines": 0
+    }
+  }
+}
