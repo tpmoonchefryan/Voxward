@@ -1,7 +1,7 @@
 <!-- EINZBERN-SPEC:MANAGED-START -->
 # Design
 
-<!-- Einzbern source: work=work:7f0ac0774bc508523d09b5f1 revision=4 sha256=2cef8b13f3e13a963688c186a5933c4c0de61c0ba1f6bb92e1fb14d2d5eebda5 -->
+<!-- Einzbern source: work=work:7f0ac0774bc508523d09b5f1 revision=5 sha256=c70eb6b58bb7b36ba05ff81120a30f8fcbc97c791c38990567229cb8ac7ce1c2 -->
 
 This file records design-source availability. It does not establish a new design authority or claim publication/build evidence.
 
@@ -204,6 +204,10 @@ HTTP（`auth/data-routes.ts`，组合）：
   - 读取（`locateSubjectLogs`）报告全部命中的行。写入（证书化、删除、移除证据）只报告尚未持有证书文本的变更行，因此重复删除不产生新事件。
 - 执行器（`cleanup-executor.ts`）：逐个存储面执行，遇到第一个失败即停；失败项记录错误码（只存代码，不存错误文本）；续作从第一个非 DONE 项开始。`COMPLETED` 的条件是全部 DONE，且（`DELETE_AND_EXCEPT` 时）主体的例外仍然生效。否则为 `PARTIAL_FAILED`：未完成时原因为未清完，例外不生效时原因为 `EXCEPTION_NOT_CONFIRMED`。
 - 任务面（`TASK`）执行前再扫一次主体的技术行，避免晚到的技术行阻塞任务删除（外键）。扫描是幂等的，并会发布它删除的行。
+- **返工 1 补充（B8、B9、N10）**：
+  - **B8（`readCleanupFacts` 关联标识并集）**：`db/subject-cleanup.ts` 的 `readCleanupFacts(channelId, subjectId)` 查询 `channel_events.correlation_id`（条件 `channel_id` 与 `subject_id` 匹配且非空），与 `locateSubjectLogs(subjectId).correlationIds` 取并集、去重并排序。这样即使 7 天保留期已清掉 `technical_logs` 或步骤 4 `CANDIDATE_CARD` 首次失败后从 `PARTIAL_FAILED` 续作，步骤 4 仍能拿到事件 `correlationId` 并清净 `CandidateStore` 卡片（`Q51`）。
+  - **B9（父表面删除前的外键子表幂等预清扫）**：在 `cleanup-executor.ts` 执行外键父表面之前，按依赖顺序幂等预清扫子表面：`VERDICT` 前预清扫 `DELIVERY`；`TASK` 前预清扫 `removeSubjectTechnicalRows`、`DELIVERY`、`VERDICT`；`CHANNEL_EVENT` 前预清扫 `removeSubjectTechnicalRows`、`DELIVERY`、`VERDICT`、`TASK`。这确保例外观众在 `PARTIAL_FAILED` 期间发新不计分消息时，续作不会触发 `SQLITE_CONSTRAINT_FOREIGNKEY`。
+  - **N10（`SCORE_EXCEPTION_CHANGED` 日志证书化说明）**：`DELETE_AND_EXCEPT` 在 `startDeletion` 事务内写入的 `SCORE_EXCEPTION_CHANGED` 变更日志（`targetRef = "subject:<id>"`）会在步骤 1 `CHANGE_LOG` 被一并替换为 `DATA_REQUEST_CERTIFICATE`（保留 `action = SCORE_EXCEPTION_CHANGED`），而 `DATA_REQUEST_CHANGED`（`targetRef = requestId`）保留其原摘要。这是预期行为，不泄露原值且保留审计动作痕迹。
 - 进程内表面的错误码：表面不在注册表中时记为 `SURFACE_NOT_REGISTERED`，不记为完成（修正第 8 节「注册表为空时直接 DONE」的说法：注册表为空时，这些项不会生成，请求也不会因此被记为清理了这些表面）。
 - 同一个执行入口 `POST /channels/:channelId/data/requests/:requestId/execute` 处理两类请求：`DELETE` 先启动（若未启动）再清理；`RESUME_SCORING` 调用恢复计分。这是对第 5 节「RESUME_SCORING 的 HTTP 绑定」的实现方式，未另设路由。
 - 失效总线（Q35）：`buildApp` 只创建一条总线（传入的 `invalidation` 或新建的），查看器缓存与删除路径都使用它。删除路径通过 `DataDeps.publishInvalidation` 发布 `DELETED` 事件，只含标识。

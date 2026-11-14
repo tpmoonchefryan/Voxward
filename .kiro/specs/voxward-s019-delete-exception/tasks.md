@@ -1,12 +1,12 @@
 <!-- EINZBERN-SPEC:MANAGED-START -->
 # Tasks
 
-<!-- Einzbern source: work=work:7f0ac0774bc508523d09b5f1 revision=4 sha256=2cef8b13f3e13a963688c186a5933c4c0de61c0ba1f6bb92e1fb14d2d5eebda5 -->
+<!-- Einzbern source: work=work:7f0ac0774bc508523d09b5f1 revision=5 sha256=c70eb6b58bb7b36ba05ff81120a30f8fcbc97c791c38990567229cb8ac7ce1c2 -->
 
 Exactly one executable task represents the current work item. It is a local Spec checklist only; checking it never changes formal work status or evidence.
 
 - [ ] 1. 实现删除并加入例外的原子流程
-  - Work item: `work:7f0ac0774bc508523d09b5f1` revision 4.
+  - Work item: `work:7f0ac0774bc508523d09b5f1` revision 5.
   - Goal from the current formal source: 删除请求可幂等完成，组合选项从建立例外起阻止所有旧任务和新计分。
   - Scope from the current formal source: 
   - Acceptance from the current formal source: VW-S019-AC001@1 [work:7f0ac0774bc508523d09b5f1/VW-S019-R001@1] 事务后中断、清理部分失败、旧 AI/复盘回调、重复请求、普通删除已有例外主体。: 没有删除到入名单的记分窗口；双部分完成才成功，不保存隐藏分或原值凭证；无法取消的晚到结果丢弃；例外所有新消息仍审核。 (故障注入、并发/幂等及全存储面清理检查。) VW-S019-PARENT@1 [work:18aaac72724b30c2ee9be8b6/VW-E004-R019@1] 事务后中断、清理部分失败、旧 AI/复盘回调、重复请求、普通删除已有例外主体。: 没有删除到入名单的记分窗口；双部分完成才成功，不保存隐藏分或原值凭证；无法取消的晚到结果丢弃；例外所有新消息仍审核。 (复用本单同候选版本的组件/材料证据，保留来源与实际观察；故障注入、并发/幂等及全存储面清理检查。) VW-S019-INHERIT-001@1 [work:8bd4977aa0770aa2f41229a2/VW-R-001@1] 审查本单产出的接口、说明及依赖方向。: 保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S019-INHERIT-009@1 [work:8bd4977aa0770aa2f41229a2/VW-R-009@1] 事务后中断、清理部分失败、旧 AI/复盘回调、重复请求、普通删除已有例外主体。（本单对 VW-R-009 的贡献）: 没有删除到入名单的记分窗口；双部分完成才成功，不保存隐藏分或原值凭证；无法取消的晚到结果丢弃；例外所有新消息仍审核。 继续遵守 VW-R-009 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (故障注入、并发/幂等及全存储面清理检查。) VW-S019-INHERIT-011@1 [work:8bd4977aa0770aa2f41229a2/VW-R-011@1] 审查本单使用的仓储接口、数据字段、事务或部署说明。: 写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S019-INHERIT-012@1 [work:8bd4977aa0770aa2f41229a2/VW-R-012@1] 审查本单暴露的接口、页面、运行权限或文档示例。: 频道/角色/字段校验保留，输出凭据只读可撤销，不泄露生产凭据；不把待审文本当工具指令。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S019-INHERIT-013@1 [work:8bd4977aa0770aa2f41229a2/VW-R-013@1] 事务后中断、清理部分失败、旧 AI/复盘回调、重复请求、普通删除已有例外主体。（本单对 VW-R-013 的贡献）: 没有删除到入名单的记分窗口；双部分完成才成功，不保存隐藏分或原值凭证；无法取消的晚到结果丢弃；例外所有新消息仍审核。 继续遵守 VW-R-013 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (故障注入、并发/幂等及全存储面清理检查。) VW-S019-INHERIT-014@1 [work:8bd4977aa0770aa2f41229a2/VW-R-014@1] 事务后中断、清理部分失败、旧 AI/复盘回调、重复请求、普通删除已有例外主体。（本单对 VW-R-014 的贡献）: 没有删除到入名单的记分窗口；双部分完成才成功，不保存隐藏分或原值凭证；无法取消的晚到结果丢弃；例外所有新消息仍审核。 继续遵守 VW-R-014 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (故障注入、并发/幂等及全存储面清理检查。) VW-S019-INHERIT-015@1 [work:8bd4977aa0770aa2f41229a2/VW-R-015@1] 核对本单与 VW-R-015 对应模块的接口、前置和实际影响。: 本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。 (对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-015 承载。) VW-S019-INHERIT-016@1 [work:8bd4977aa0770aa2f41229a2/VW-R-016@1] 核对本单与 VW-R-016 对应模块的接口、前置和实际影响。: 本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。 (对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-016 承载。) VW-S019-INHERIT-017@1 [work:8bd4977aa0770aa2f41229a2/VW-R-017@1] 事务后中断、清理部分失败、旧 AI/复盘回调、重复请求、普通删除已有例外主体。（本单对 VW-R-017 的贡献）: 没有删除到入名单的记分窗口；双部分完成才成功，不保存隐藏分或原值凭证；无法取消的晚到结果丢弃；例外所有新消息仍审核。 继续遵守 VW-R-017 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (故障注入、并发/幂等及全存储面清理检查。) VW-S019-INHERIT-019@1 [work:8bd4977aa0770aa2f41229a2/VW-R-019@1] 核对本单与 VW-R-019 对应模块的接口、前置和实际影响。: 本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。 (对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-019 承载。)
@@ -49,3 +49,11 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] F-2. 启动冒烟：`bash /home/ryanlan/Code/Voxward/.kiro/specs/voxward-master/tools/smoke.sh <工作树> $KIROCREW_SCRATCH/s019-delete-exception-smoke`。不设 `VOXWARD_DATABASE_FILE`。
 - [x] F-3. 证据：`.kiro/specs/voxward-s019-delete-exception/evidence/self-check.md` 记录命令、退出码、关键输出摘录，随最后一个 commit 提交。
 - [x] F-4. 交付报告：实际模型、commit hash、改动文件、自测结果、AC001 逐条结果、自定选择、偏离、来源缺口、未验证项、与同批包的合并冲突点（`app.ts`、`auth/routes.ts` 与 `package.json`、`pnpm-lock.yaml`、config schema、`check-deps`、contracts `index.ts`）。
+
+### 返工 1（VOXWARD-SUB-036：B8、B9、N10）
+
+- [x] R1-1. 更新 `design.md` 与 `tasks.md` 受管段之外内容（B8、B9、N10），运行 `kiro-specs.mjs check` 达 `SPEC_CURRENT`，先提交规格更新（`VOXWARD-STORY-019: update spec for fix1 (B8, B9, N10)`）。
+- [ ] R1-2. 修复 B8：`apps/server/src/db/subject-cleanup.ts` 的 `readCleanupFacts` 并集查询 `channel_events.correlation_id`（非空）与 `locateSubjectLogs(subjectId).correlationIds`、去重并排序。
+- [ ] R1-3. 修复 B9：`apps/server/src/modules/data-lifecycle-service/cleanup-executor.ts` 在删除 `VERDICT`、`TASK`、`CHANNEL_EVENT` 前按外键依赖顺序幂等预清扫子表。
+- [ ] R1-4. 补充回归测试（`executor.test.ts` 等）：（1）技术日志过期后仍清净 `CandidateStore`；（2）步骤 4 失败后续作清净 `CandidateStore`；（3）`DELIVERY=DONE` 后例外观众发新不计分消息，续作无 `SQLITE_CONSTRAINT_FOREIGNKEY` 收敛至 `COMPLETED`；（4）`TWIN` 隔离不变。
+- [ ] R1-5. 更新 `probe-m7c-s019.mts`（`R1–R3` 断言修复后通过）并在 `guarded.sh` 下运行，完成 `pnpm build`、`pnpm typecheck`、`pnpm check:deps`、`kiro-specs.mjs check`、guarded `pnpm test`、`smoke.sh` 与 `evidence/rework1-self-check.md`。
