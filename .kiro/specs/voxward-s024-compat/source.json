@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:e5f4bbecea9a82b6068a9ca7",
+  "workRevision": 4,
+  "sourceDigest": "c02aa4814c75cca7c0e29e0d69d826b8fcf4da88f808c019ea15c66f704c81bb",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:e5f4bbecea9a82b6068a9ca7",
+    "workRevision": 4,
+    "sourceDigest": "c02aa4814c75cca7c0e29e0d69d826b8fcf4da88f808c019ea15c66f704c81bb",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:e5f4bbecea9a82b6068a9ca7",
+        "externalKey": "VOXWARD-STORY-024",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现兼容输出验证与下游接入指引",
+        "summary": "实现兼容输出验证与下游接入指引；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:1f83883cd1373011cf0f8b49",
+        "scopeDigest": "fed07399dd4a1adc2270c504c0825ab8afd93392e31d9e7dd798e0b94889765d",
+        "relations": {
+          "blockedBy": [
+            "work:26274628cbb8f691b6cf430c"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:1f83883cd1373011cf0f8b49",
+          "supersedes": []
+        },
+        "fieldSha256": "51da9afc424b7763964177559e5d997afdb899ee938110aeb7948a7b91518639",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "f4378a161ba68bddec96af717353677d423c8a41a32806be74360c0e00c0520b",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "64b95a3fc2d8664b63d8b5dab7825b9cd74426941dd970000f2ff54229d1730b",
+    "design.md": "140cc3b3cca5725230d388ad525afe8efe7eb671e7d2c05c5bb2a89d88f37e31",
+    "tasks.md": "63d815acbe03015ddc5f057b5f07a601eb12a83e6902ba0521107bcb800446a7"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "4bd657142f64d09ff8e1d1293c9bc72901a82d77969ca85a16696783a23c2875"
+}
