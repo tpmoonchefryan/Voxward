@@ -51,7 +51,7 @@ beforeEach(async () => {
     SubjectStore.create(tx, { id: "sub-1", channelId: CH1, platformSubjectKey: "viewer-key-1", createdAt: T0 });
   });
   app = buildApp({
-    modules: buildRegistry({ adapters: "synthetic", host: "127.0.0.1", port: 3000, logLevel: "info", dataDir: dir }),
+    modules: buildRegistry({ adapters: "synthetic", host: "127.0.0.1", port: 3000, databaseFile: ":memory:" }),
     logger: false,
     database: db,
   });
