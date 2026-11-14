@@ -1,12 +1,12 @@
 <!-- EINZBERN-SPEC:MANAGED-START -->
 # Tasks
 
-<!-- Einzbern source: work=work:26274628cbb8f691b6cf430c revision=4 sha256=a308b90f072f7658b40e147284f48a5430f406a696db45b3ac8e0861b096b993 -->
+<!-- Einzbern source: work=work:26274628cbb8f691b6cf430c revision=5 sha256=64cb98839c8e4dcfc57ef1f3b5ef059fedc11fc6000347c84642775406a45469 -->
 
 Exactly one executable task represents the current work item. It is a local Spec checklist only; checking it never changes formal work status or evidence.
 
 - [ ] 1. 实现只读输出协议与投递状态
-  - Work item: `work:26274628cbb8f691b6cf430c` revision 4.
+  - Work item: `work:26274628cbb8f691b6cf430c` revision 5.
   - Goal from the current formal source: 下游经可撤销凭据订阅获准展示事件，重连和补发遵守去重与有效期。
   - Scope from the current formal source: 
   - Acceptance from the current formal source: VW-S021-AC001@1 [work:26274628cbb8f691b6cf430c/VW-S021-R001@1] 违规消息、重复投递、断连、过期 SC、人工补发和凭据撤销。: 不输出稳定用户 ID、分数、名单、审核理由或对话；下游不上传弹幕；不承诺不可控消费者网络严格只展示一次。 (协议与字段断言、断连/过期/撤销测试和消费者去重样例。) VW-S021-PARENT@1 [work:1f83883cd1373011cf0f8b49/VW-E005-R021@1] 违规消息、重复投递、断连、过期 SC、人工补发和凭据撤销。: 不输出稳定用户 ID、分数、名单、审核理由或对话；下游不上传弹幕；不承诺不可控消费者网络严格只展示一次。 (复用本单同候选版本的组件/材料证据，保留来源与实际观察；协议与字段断言、断连/过期/撤销测试和消费者去重样例。) VW-S021-INHERIT-001@1 [work:8bd4977aa0770aa2f41229a2/VW-R-001@1] 审查本单产出的接口、说明及依赖方向。: 保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S021-INHERIT-006@1 [work:8bd4977aa0770aa2f41229a2/VW-R-006@1] 违规消息、重复投递、断连、过期 SC、人工补发和凭据撤销。（本单对 VW-R-006 的贡献）: 不输出稳定用户 ID、分数、名单、审核理由或对话；下游不上传弹幕；不承诺不可控消费者网络严格只展示一次。 继续遵守 VW-R-006 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (协议与字段断言、断连/过期/撤销测试和消费者去重样例。) VW-S021-INHERIT-009@1 [work:8bd4977aa0770aa2f41229a2/VW-R-009@1] 审查本单接触的 AI 输入、运行资源、日志或材料。: 只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S021-INHERIT-010@1 [work:8bd4977aa0770aa2f41229a2/VW-R-010@1] 核对本单与 VW-R-010 对应模块的接口、前置和实际影响。: 本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。 (对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。) VW-S021-INHERIT-011@1 [work:8bd4977aa0770aa2f41229a2/VW-R-011@1] 审查本单使用的仓储接口、数据字段、事务或部署说明。: 写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S021-INHERIT-012@1 [work:8bd4977aa0770aa2f41229a2/VW-R-012@1] 违规消息、重复投递、断连、过期 SC、人工补发和凭据撤销。（本单对 VW-R-012 的贡献）: 不输出稳定用户 ID、分数、名单、审核理由或对话；下游不上传弹幕；不承诺不可控消费者网络严格只展示一次。 继续遵守 VW-R-012 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (协议与字段断言、断连/过期/撤销测试和消费者去重样例。) VW-S021-INHERIT-017@1 [work:8bd4977aa0770aa2f41229a2/VW-R-017@1] 审查本单涉及的数据、缓存、任务、关联或恢复说明。: 删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S021-INHERIT-018@1 [work:8bd4977aa0770aa2f41229a2/VW-R-018@1] 违规消息、重复投递、断连、过期 SC、人工补发和凭据撤销。（本单对 VW-R-018 的贡献）: 不输出稳定用户 ID、分数、名单、审核理由或对话；下游不上传弹幕；不承诺不可控消费者网络严格只展示一次。 继续遵守 VW-R-018 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (协议与字段断言、断连/过期/撤销测试和消费者去重样例。) VW-S021-INHERIT-019@1 [work:8bd4977aa0770aa2f41229a2/VW-R-019@1] 核对本单与 VW-R-019 对应模块的接口、前置和实际影响。: 本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-004,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。 (对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-019 承载。)
@@ -51,3 +51,12 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] 3.1 `pnpm install`、`pnpm build`、`pnpm typecheck`、`pnpm test`、`pnpm check:deps` 退出 0。
 - [x] 3.2 `kiro-specs.mjs check` 返回 SPEC_CURRENT。
 - [x] 3.3 `tools/smoke.sh` 冒烟通过（不设 `VOXWARD_DATABASE_FILE`）。
+
+### 返工 1（P-S021-fix1：B7、N1–N4）
+
+- [ ] R1.1 规范刷新与更新：`.kiro/specs/voxward-s021-output/{design.md,tasks.md}`（rev=5 `SPEC_CURRENT`）并先于代码提交。
+- [ ] R1.2 B7 回归测试与修复：`pump.test.ts` 慢订阅者并发改判 `BLOCK` / `CANCELLED` 用例；`output-port.ts`、`output-store.ts`、`delivery.ts` 每行 `sendRow` 前同步重查可发送性与 `is_current = 1`，`markSent` 校验 `is_current = 1`。
+- [ ] R1.3 N1 回归测试与修复：`socket.test.ts` 在线消费者时 `app.close()` 快速返回（`<2000ms`）；`app.ts` `startNativeOutput` 改为 `preClose`。
+- [ ] R1.4 N3 加固：`socket.ts` `WebSocketServer` 设置 `maxPayload: 4096`。
+- [ ] R1.5 N2/N4 文档对齐：`docs/protocol/output-native-v1.md` §3、§10 与 `examples/consumer-dedup/dedupe.mjs` 注释。
+- [ ] R1.6 全量门禁、m7b 探针（E60、E61 R1–R4、E62）、`tools/smoke.sh` 与 `rework1-self-check.md`。

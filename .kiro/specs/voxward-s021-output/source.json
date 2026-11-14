@@ -1,26 +1,26 @@
 {
   "schemaVersion": "einzbern.kiro-spec-source.v1",
   "workId": "work:26274628cbb8f691b6cf430c",
-  "workRevision": 4,
-  "sourceDigest": "a308b90f072f7658b40e147284f48a5430f406a696db45b3ac8e0861b096b993",
+  "workRevision": 5,
+  "sourceDigest": "64cb98839c8e4dcfc57ef1f3b5ef059fedc11fc6000347c84642775406a45469",
   "sourceStamp": {
     "schemaVersion": "einzbern.kiro-spec-source.v1",
     "workId": "work:26274628cbb8f691b6cf430c",
-    "workRevision": 4,
-    "sourceDigest": "a308b90f072f7658b40e147284f48a5430f406a696db45b3ac8e0861b096b993",
+    "workRevision": 5,
+    "sourceDigest": "64cb98839c8e4dcfc57ef1f3b5ef059fedc11fc6000347c84642775406a45469",
     "legacy": false,
     "sources": {
       "work": {
         "id": "work:26274628cbb8f691b6cf430c",
         "externalKey": "VOXWARD-STORY-021",
         "kind": "Story",
-        "revision": 4,
+        "revision": 5,
         "status": "active",
         "title": "实现只读输出协议与投递状态",
         "summary": "实现只读输出协议与投递状态；待交付与验证。",
         "projectId": "project:f824c7861e6888255132af42",
         "parentId": "work:1f83883cd1373011cf0f8b49",
-        "scopeDigest": "4881311c5ac4a4576b279917854af2ac99d6f6d2cf351c100f862eb91009badc",
+        "scopeDigest": "da092a09441f28528c82cdebf70fff0c7142a89a95eb0e88b57108b2b235c953",
         "relations": {
           "blockedBy": [
             "work:029c382b5915050f0c4de600",
@@ -38,10 +38,10 @@
           "parent": "work:1f83883cd1373011cf0f8b49",
           "supersedes": []
         },
-        "fieldSha256": "d5509de692924f3da02821685735eb404158217ef00e190ce3e45bca0316531d",
+        "fieldSha256": "cef4413d4d5428d024cbb3be4d080d2d91fc2ad627e850b9c43890b88a65ffb9",
         "sourceStatus": "complete"
       },
-      "contextDigest": "d3fbd8d905760755a45b0e820b37e05aad74be506b71d39fdf011a871d825a85",
+      "contextDigest": "18182b2b3bd93339487a88a83d3445f00862de81a072f90e7f28c192163c6c10",
       "minuteRevisions": [
         {
           "id": "minutes:92f6353f4d2e04aa552ea04e",
@@ -74,14 +74,14 @@
     }
   },
   "managedSha256": {
-    "requirements.md": "f53c1f324e6e740b71b259d5dca01211c6432ddea2471f29a6b4b757ad3acc37",
-    "design.md": "83da7280f86763c19a61b29fbb0e1f4d4fa6025021ed8374eaea9e2be0f91d67",
-    "tasks.md": "3bbf3d68645fc9f59dd7d4aa62f1bb381d2545fcd9aa01663ce377567dd9fed0"
+    "requirements.md": "e105b9bd6e87b0f6656048e516fb88b5516ed5b8da534edeb93c878f6ef28fe3",
+    "design.md": "7c7f307b72ce351ead961be6f0f7342fd5ddaccfc0a5d85d094759fcff6a71df",
+    "tasks.md": "359c7e71dda0997c349964cf73ebfe5a388bb417794b4bdec1561d87201a6ac8"
   },
   "files": [
     "requirements.md",
     "design.md",
     "tasks.md"
   ],
-  "manifestDigest": "9237651bbca8e303408389e39a7c696b2b5c8c2d2f34e92503a135d6a1b5c6be"
+  "manifestDigest": "a35797cc779848fa834eca94dee61f84788261360961b9c7897f11d8e3b4b74b"
 }
