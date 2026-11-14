@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:4cf6a15287447d5046c0df9c",
+  "workRevision": 4,
+  "sourceDigest": "7bf081914874eb79154e72d1308c332dfc5eba2ca9d8d01865872900ffda1e89",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:4cf6a15287447d5046c0df9c",
+    "workRevision": 4,
+    "sourceDigest": "7bf081914874eb79154e72d1308c332dfc5eba2ca9d8d01865872900ffda1e89",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:4cf6a15287447d5046c0df9c",
+        "externalKey": "VOXWARD-STORY-023",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现万圣节 OBS Overlay 与 Dock 接入",
+        "summary": "实现万圣节 OBS Overlay 与 Dock 接入；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:1f83883cd1373011cf0f8b49",
+        "scopeDigest": "6607bee03d47d1757c970999489858091a0106e72f318b420955c4aa8f1c35c7",
+        "relations": {
+          "blockedBy": [
+            "work:029c382b5915050f0c4de600",
+            "work:26274628cbb8f691b6cf430c"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:1f83883cd1373011cf0f8b49",
+          "supersedes": []
+        },
+        "fieldSha256": "7cbce73b190368cb5dd19fcf354f876a6365013208758be4642b92ed72a1cbba",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "b011248f1129e1f60547815ce5e3fb7718c71ab67f04b71685873048b31c07a2",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "7094a7f2bc7a2d714fd645439a5c52270f68274824404fc4b324188593e781be",
+    "design.md": "270fbfe2542c9f6236c2c4259f96e85d0cbbabdc9af0a549bfd400b58600bb47",
+    "tasks.md": "5fda4c3e44ecff0019b6a46f4cbe6fb7b90d3403fc6bef5469bf5d98e8d334cc"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "e29673ede822a94e4135ab5ac86aaf683fc149f20600a3d8ffbd5749a12e8bbe"
+}
