@@ -2,6 +2,7 @@ import type { InternalClassification } from "@voxward/contracts";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { UntrustedText } from "../../components/untrusted-text";
+import { FoldableBody } from "../dock/DockPage";
 import {
   createModerationApi,
   moderationMessageFor,
@@ -27,6 +28,7 @@ export function ModerationView(props: ModerationViewProps) {
   const caps = new Set(snapshot?.capabilities ?? []);
   const canDecide = caps.has("review.decide");
   const canEditList = caps.has("list.edit");
+  const canViewOriginal = caps.has("message.original");
 
   return (
     <main>
@@ -108,11 +110,11 @@ export function ModerationView(props: ModerationViewProps) {
                     <span>平台删除状态：{item.platformDeleteStatus}</span>
                   </div>
                   <div>
-                    {item.bodyFolded ? (
-                      <span data-testid="moderation-folded-body">违规正文已按权限折叠</span>
-                    ) : (
-                      <UntrustedText text={item.originalText ?? "（无正文）"} />
-                    )}
+                    <FoldableBody
+                      item={item}
+                      canViewOriginal={canViewOriginal}
+                      testId="moderation-folded-body"
+                    />
                   </div>
                   <div>
                     {canDecide ? (

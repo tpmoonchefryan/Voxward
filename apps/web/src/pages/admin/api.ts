@@ -24,6 +24,11 @@ export interface RuleIssueView {
   readonly hint?: string;
 }
 
+export interface SettingsIssueView {
+  readonly code: string;
+  readonly path: string;
+}
+
 export interface RulesStateView {
   readonly version: number;
   readonly ruleSet: unknown;
@@ -74,7 +79,7 @@ export interface ModelSettingsView {
 
 export interface ModelSettingsResponseView {
   readonly settings: ModelSettingsView;
-  readonly issues: readonly { readonly code: string; readonly path: string }[];
+  readonly issues: readonly SettingsIssueView[];
   readonly capabilities: InferenceCapabilities;
   readonly modelFault: FaultBanner | null;
 }
@@ -111,13 +116,20 @@ export class AdminApiFailure extends Error {
   readonly status: number;
   readonly code: string;
   readonly issues?: readonly RuleIssueView[];
+  readonly settingsIssues?: readonly SettingsIssueView[];
 
-  constructor(status: number, code: string, issues?: readonly RuleIssueView[]) {
+  constructor(
+    status: number,
+    code: string,
+    issues?: readonly RuleIssueView[],
+    settingsIssues?: readonly SettingsIssueView[],
+  ) {
     super(code);
     this.name = "AdminApiFailure";
     this.status = status;
     this.code = code;
     this.issues = issues;
+    this.settingsIssues = settingsIssues;
   }
 }
 
@@ -212,8 +224,19 @@ export function createAdminApi(fetcher: FetchLike = (input, init) => fetch(input
       const obj = typeof parsed === "object" && parsed !== null ? (parsed as { error?: unknown; issues?: unknown }) : undefined;
       const code = typeof obj?.error === "string" ? obj.error : "INTERNAL_ERROR";
       if (code === "CSRF_INVALID") csrfToken = undefined;
-      const issues = Array.isArray(obj?.issues) ? (obj.issues as RuleIssueView[]) : undefined;
-      throw new AdminApiFailure(response.status, code, issues);
+      const rawIssues = Array.isArray(obj?.issues) ? obj.issues : undefined;
+      const ruleIssues = rawIssues?.filter(
+        (item): item is RuleIssueView => typeof item === "object" && item !== null && "ref" in item,
+      );
+      const settingsIssues = rawIssues?.filter(
+        (item): item is SettingsIssueView => typeof item === "object" && item !== null && "path" in item,
+      );
+      throw new AdminApiFailure(
+        response.status,
+        code,
+        ruleIssues !== undefined && ruleIssues.length > 0 ? ruleIssues : undefined,
+        settingsIssues !== undefined && settingsIssues.length > 0 ? settingsIssues : undefined,
+      );
     }
     return parsed as T;
   }

@@ -8,6 +8,7 @@ import {
   type ConflictNotice,
   type DockApi,
   type DockSnapshot,
+  type ModerationItemView,
 } from "./api";
 
 const PLATFORM_DELETE_LABEL: Readonly<Record<string, string>> = {
@@ -30,10 +31,50 @@ export interface DockViewProps {
   readonly onResend: (deliveryId: string) => void;
 }
 
+export function FoldableBody({
+  item,
+  canViewOriginal,
+  testId = "folded-body",
+  defaultExpanded = false,
+}: {
+  readonly item: ModerationItemView;
+  readonly canViewOriginal: boolean;
+  readonly testId?: string;
+  readonly defaultExpanded?: boolean;
+}) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  if (!item.bodyFolded) {
+    return <UntrustedText text={item.originalText ?? "（无正文）"} />;
+  }
+  if (!canViewOriginal || item.originalText === null) {
+    return <span data-testid={testId}>违规正文已按权限折叠（缺少 message.original 权限）</span>;
+  }
+  return (
+    <span>
+      {expanded ? (
+        <>
+          <UntrustedText text={item.originalText} />{" "}
+          <button type="button" onClick={() => setExpanded(false)}>
+            收起原文
+          </button>
+        </>
+      ) : (
+        <>
+          <span data-testid={testId}>违规正文已默认折叠</span>{" "}
+          <button type="button" onClick={() => setExpanded(true)}>
+            展开原文
+          </button>
+        </>
+      )}
+    </span>
+  );
+}
+
 export function DockView(props: DockViewProps) {
   const { roomId, snapshot, loading, error, conflict } = props;
   const caps = new Set(snapshot?.capabilities ?? []);
   const canDecide = caps.has("review.decide");
+  const canViewOriginal = caps.has("message.original");
 
   return (
     <main>
@@ -168,6 +209,31 @@ export function DockView(props: DockViewProps) {
             </ul>
           </section>
 
+          <section aria-label="实时流">
+            <h2>实时流</h2>
+            {snapshot.feed.liveStream.length === 0 ? <p>暂无实时流消息。</p> : null}
+            <ul>
+              {snapshot.feed.liveStream.map((item) => (
+                <li key={item.eventId}>
+                  <div>
+                    <span>本地状态：{item.localStatus}</span>
+                    {" | "}
+                    <span>分类：{item.classification}</span>
+                    {item.localStatus === "BLOCK" ? (
+                      <>
+                        {" | "}
+                        <span>平台状态：{PLATFORM_DELETE_LABEL[item.platformDeleteStatus] ?? item.platformDeleteStatus}</span>
+                      </>
+                    ) : null}
+                  </div>
+                  <div>
+                    <FoldableBody item={item} canViewOriginal={canViewOriginal} testId="live-folded-body" />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
           <section aria-label="已拦截复核">
             <h2>已拦截复核</h2>
             {snapshot.feed.blockedItems.length === 0 ? <p>暂无已拦截消息。</p> : null}
@@ -180,11 +246,7 @@ export function DockView(props: DockViewProps) {
                     <span>平台状态：{PLATFORM_DELETE_LABEL[item.platformDeleteStatus] ?? item.platformDeleteStatus}</span>
                   </div>
                   <div>
-                    {item.bodyFolded ? (
-                      <span data-testid="folded-body">违规正文已按权限折叠（缺少 message.original 权限）</span>
-                    ) : (
-                      <UntrustedText text={item.originalText ?? "（无正文）"} />
-                    )}
+                    <FoldableBody item={item} canViewOriginal={canViewOriginal} testId="folded-body" />
                   </div>
                   {canDecide ? (
                     <button type="button" onClick={() => props.onReviewEvent(item.eventId, "ALLOW_MEANINGFUL")}>

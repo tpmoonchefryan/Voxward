@@ -90,7 +90,10 @@ const SCORING_BODY = z
     rewardDelta: z.number().int().min(0).max(100),
     penaltyDelta: z.number().int().min(0).max(500),
   })
-  .strict();
+  .strict()
+  .refine((s) => s.minScore <= s.initialScore && s.initialScore <= s.maxScore, {
+    message: "minScore <= initialScore <= maxScore required",
+  });
 const QUEUE_BODY = z
   .object({
     realtimeConcurrency: z.number().int().min(1).max(64),
