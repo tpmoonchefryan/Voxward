@@ -1,0 +1,32 @@
+{
+  "fixtureId": "s026-manual-coordinator-wiring-v1",
+  "candidateCommit": "fcad360",
+  "channelId": "ch-s026-manual",
+  "baseTimeIso": "2026-11-14T10:20:00.000Z",
+  "manualOverturn": {
+    "eventId": "evt-man-1",
+    "taskId": "task-man-1",
+    "platformMessageId": "yt-man-1",
+    "subjectKey": "viewer-man-1",
+    "correlationId": "corr-man-1",
+    "aiVerdict": "ALLOW_MEANINGFUL",
+    "humanOverturnVerdict": "BLOCK",
+    "operatorRef": "op-mod-1"
+  },
+  "exceptionZeroWindow": {
+    "subjectKey": "viewer-exc-1",
+    "eventId": "evt-exc-1",
+    "platformMessageId": "yt-exc-1",
+    "correlationId": "corr-exc-1"
+  },
+  "coordinatorLanes": {
+    "paidMessageId": "yt-lane-paid",
+    "realtimeMessageId": "yt-lane-rt",
+    "backgroundMessageId": "yt-lane-bg",
+    "unknownTaskId": "task-unknown-999"
+  },
+  "translationPayloadExample": {
+    "text": "こんにちは",
+    "translatedText": "Hello"
+  }
+}

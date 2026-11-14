@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:3ebb2c33e7560e8661143983",
+  "workRevision": 4,
+  "sourceDigest": "32fc7ab328bf09cf86d78cc9900e23be7294c2f172fba1e9ee404d2563c92356",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:3ebb2c33e7560e8661143983",
+    "workRevision": 4,
+    "sourceDigest": "32fc7ab328bf09cf86d78cc9900e23be7294c2f172fba1e9ee404d2563c92356",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:3ebb2c33e7560e8661143983",
+        "externalKey": "VOXWARD-STORY-026",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "验证评分、路由、人工与平台状态闭环",
+        "summary": "验证评分、路由、人工与平台状态闭环；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:79b813cdbe785e9ab7d32228",
+        "scopeDigest": "545fa3fd08277d84384e925ee041d6589b2a19c57aabcdbd04f9bb7fcf860d4e",
+        "relations": {
+          "blockedBy": [
+            "work:210958ccce508a7abf314287",
+            "work:5fd9e2a6d536e627b7e4bf13",
+            "work:685ad243ec946eb7f628c93e",
+            "work:7f0ac0774bc508523d09b5f1",
+            "work:83d8e6716c550b3fa7d657ba",
+            "work:c07537a238d62efa3b9779f6"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:79b813cdbe785e9ab7d32228",
+          "supersedes": []
+        },
+        "fieldSha256": "c2826d453fd3c3f58a6ba14b488d812c08a5d756b3884303ed319c7f1287394e",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "def885c2323ee6ed430304d1ef6ca4f8b61ff0dc9bd2c87965dd656fd6c3d198",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "a4f071c34c9c445ca6c0a96cce196c4e636db2724472d836170ac0549a045914",
+    "design.md": "614e620af5ef85ab98424d9b407c04d3931a8aaca40b29c12691741555702b7b",
+    "tasks.md": "375686617f24ba2d481a33150078dd59954f9afcf1e4a27420a36fafa535e20b"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "45f4c8fa7575870f164c0aa6e7f62b2d6cc3b0700369f951a1d340abe17bdbe7"
+}

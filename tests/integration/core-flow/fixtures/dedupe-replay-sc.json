@@ -1,0 +1,70 @@
+{
+  "fixtureId": "s026-dedupe-replay-sc-v1",
+  "candidateCommit": "fcad360",
+  "channelId": "ch-s026-platform",
+  "nowIso": "2026-11-14T10:10:00.000Z",
+  "replayMaxAgeMs": 300000,
+  "replayBoundaryCases": [
+    { "id": "future", "publishedAtIso": "2026-11-14T10:10:05.000Z", "expected": "LIVE" },
+    { "id": "exact-limit", "publishedAtIso": "2026-11-14T10:05:00.000Z", "expected": "LIVE" },
+    { "id": "one-ms-over", "publishedAtIso": "2026-11-14T10:04:59.999Z", "expected": "STALE_REPLAY" }
+  ],
+  "streamBatch": [
+    {
+      "kind": "youtube#liveChatMessage",
+      "id": "yt-msg-sc-001",
+      "snippet": {
+        "type": "superChatEvent",
+        "publishedAt": "2026-11-14T10:09:00.000Z",
+        "superChatDetails": { "userComment": "Super Chat 応援しています！" }
+      },
+      "authorDetails": {
+        "channelId": "UC-SYNTH-SC-1",
+        "isChatSponsor": true,
+        "isChatModerator": false,
+        "isChatOwner": false,
+        "isVerified": false
+      }
+    },
+    {
+      "kind": "youtube#liveChatMessage",
+      "id": "yt-msg-member-001",
+      "snippet": {
+        "type": "membershipGiftingEvent",
+        "publishedAt": "2026-11-14T10:09:10.000Z"
+      },
+      "authorDetails": {
+        "channelId": "UC-SYNTH-MEM-1",
+        "isChatSponsor": true,
+        "isChatModerator": false,
+        "isChatOwner": false,
+        "isVerified": false
+      }
+    }
+  ],
+  "platformDeleteScenarios": [
+    {
+      "id": "retry-then-succeed",
+      "eventId": "evt-del-1",
+      "platformMessageId": "yt-msg-del-1",
+      "responses": [
+        { "status": "UNKNOWN", "unitsSpent": 50 },
+        { "status": "SUCCEEDED", "unitsSpent": 50 }
+      ],
+      "readBackStillPresent": true,
+      "expectedFinalStatus": "SUCCEEDED",
+      "expectedAttempts": 2,
+      "expectedUnitsSpent": 100
+    },
+    {
+      "id": "quota-exhausted-local-block-preserved",
+      "eventId": "evt-del-2",
+      "platformMessageId": "yt-msg-del-2",
+      "permissionError": "QUOTA_EXCEEDED",
+      "expectedLocalStatus": "blocked",
+      "expectedFinalStatus": "FAILED",
+      "expectedReason": "QUOTA_EXHAUSTED",
+      "expectedAttempts": 0
+    }
+  ]
+}
