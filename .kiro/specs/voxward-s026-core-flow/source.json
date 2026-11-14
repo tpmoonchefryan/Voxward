@@ -1,26 +1,26 @@
 {
   "schemaVersion": "einzbern.kiro-spec-source.v1",
   "workId": "work:3ebb2c33e7560e8661143983",
-  "workRevision": 4,
-  "sourceDigest": "32fc7ab328bf09cf86d78cc9900e23be7294c2f172fba1e9ee404d2563c92356",
+  "workRevision": 5,
+  "sourceDigest": "7bb63f95b1ab8daa7a572ca06c219b7fcfa6a311ad1159e8d01afbe2ec3b81e7",
   "sourceStamp": {
     "schemaVersion": "einzbern.kiro-spec-source.v1",
     "workId": "work:3ebb2c33e7560e8661143983",
-    "workRevision": 4,
-    "sourceDigest": "32fc7ab328bf09cf86d78cc9900e23be7294c2f172fba1e9ee404d2563c92356",
+    "workRevision": 5,
+    "sourceDigest": "7bb63f95b1ab8daa7a572ca06c219b7fcfa6a311ad1159e8d01afbe2ec3b81e7",
     "legacy": false,
     "sources": {
       "work": {
         "id": "work:3ebb2c33e7560e8661143983",
         "externalKey": "VOXWARD-STORY-026",
         "kind": "Story",
-        "revision": 4,
+        "revision": 5,
         "status": "active",
         "title": "验证评分、路由、人工与平台状态闭环",
         "summary": "验证评分、路由、人工与平台状态闭环；待交付与验证。",
         "projectId": "project:f824c7861e6888255132af42",
         "parentId": "work:79b813cdbe785e9ab7d32228",
-        "scopeDigest": "545fa3fd08277d84384e925ee041d6589b2a19c57aabcdbd04f9bb7fcf860d4e",
+        "scopeDigest": "c8deb3da33ca3a8f3145720a035eaf57dfd7d1b5f49f2fd7d0909a5f6ee16dd8",
         "relations": {
           "blockedBy": [
             "work:210958ccce508a7abf314287",
@@ -38,10 +38,10 @@
           "parent": "work:79b813cdbe785e9ab7d32228",
           "supersedes": []
         },
-        "fieldSha256": "c2826d453fd3c3f58a6ba14b488d812c08a5d756b3884303ed319c7f1287394e",
+        "fieldSha256": "e38335163f2e372ef7b40636eb0313b52b703bbef92303d23bc7dfe8e5c0eb5a",
         "sourceStatus": "complete"
       },
-      "contextDigest": "def885c2323ee6ed430304d1ef6ca4f8b61ff0dc9bd2c87965dd656fd6c3d198",
+      "contextDigest": "ec0d1e54899b966d0954cef806955a9100b80e58a9a9b2592b96c2518a109f47",
       "minuteRevisions": [
         {
           "id": "minutes:92f6353f4d2e04aa552ea04e",
@@ -74,14 +74,14 @@
     }
   },
   "managedSha256": {
-    "requirements.md": "a4f071c34c9c445ca6c0a96cce196c4e636db2724472d836170ac0549a045914",
-    "design.md": "614e620af5ef85ab98424d9b407c04d3931a8aaca40b29c12691741555702b7b",
-    "tasks.md": "375686617f24ba2d481a33150078dd59954f9afcf1e4a27420a36fafa535e20b"
+    "requirements.md": "ffab022877ea78661ab5056af00c6ece7a01dd9a163ff53d2bab226e729efe2f",
+    "design.md": "7c543b240b10a76c1fcdfa3a31c6078e5d219c49cc1063a9d24e8177e08a755d",
+    "tasks.md": "46de8fef079615f6ed6ec2f6b8f46929cd24d76050aa95553150ca3afe05b3d7"
   },
   "files": [
     "requirements.md",
     "design.md",
     "tasks.md"
   ],
-  "manifestDigest": "45f4c8fa7575870f164c0aa6e7f62b2d6cc3b0700369f951a1d340abe17bdbe7"
+  "manifestDigest": "d5f297fb53ccab0430c1f1cc75648d255d4bb7af037c1f4b15f68362eb164036"
 }

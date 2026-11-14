@@ -1,7 +1,7 @@
 <!-- EINZBERN-SPEC:MANAGED-START -->
 # Design
 
-<!-- Einzbern source: work=work:3ebb2c33e7560e8661143983 revision=4 sha256=32fc7ab328bf09cf86d78cc9900e23be7294c2f172fba1e9ee404d2563c92356 -->
+<!-- Einzbern source: work=work:3ebb2c33e7560e8661143983 revision=5 sha256=7bb63f95b1ab8daa7a572ca06c219b7fcfa6a311ad1159e8d01afbe2ec3b81e7 -->
 
 This file records design-source availability. It does not establish a new design authority or claim publication/build evidence.
 
@@ -80,3 +80,19 @@ No design authority is configured for the resolved work context. No authority wa
 - `Q57`：验证 `TaskCoordinator` 车道优先级、微批拉取与未知任务/过期任务收敛。
 - 组合根现状对照：`N7`/`N12b`（`NO_SUBJECT_CACHES` 与默认 `CandidateStore` 未注入 `SubjectCacheHub` 的未注入/注入对照）与 `N13`（`createApprovedContentPort` 读取 `TRANSLATION` 原始 JSON 字符串的现状实测）。
 - 门禁约束：`Q58`（全部测试通过 `guarded.sh` 在外发阻断与 kiro shim 下执行）；`Q59`（文档与命令严禁出现作用域包安装写法）。
+
+### 4. Rework 1 返工设计（闭环 Batch m8c `B14` 与 `N16a`）
+- **严格零 `src/**` 边界（D2）**：继续保持 `apps/*/src/**`、`packages/*/src/**`、`scripts/**`、`deploy/**` 与 `vitest.workspace.ts` 零修改；仅更新 `.kiro/specs/voxward-s026-core-flow/**`、`tests/integration/core-flow/**`、`apps/server/test/integration/core-flow/**` 与 `docs/acceptance/core-flow-matrix.md`。
+- **`B14a`（最小可复现缺陷断言与矩阵如实重写）**：
+  - 在 `apps/server/test/integration/core-flow/manual-coordinator-wiring.test.ts` 补充：
+    - `Q55` `C6` 最小可复现断言：`maxScore=10` 下执行 `[-3, +2×6, -3]`（原分 `6`）并改判首条为 `ALLOW_MEANINGFUL`，断言当前实现产出 `currentScore === 9`、`needsManualAdjustment === false`，而真实账本重放值应为 `7`（存在 `+2` 偏差）；保留既有例外零分窗口用例并避免误冠名为已闭环的 `Q55`。
+    - `Q57` `R7` 最小可复现断言：两个 `ReviewRunner` 实例共享同一 `TaskCoordinator` 时，`runnerB` 抽到非本实例入队的 `BACKGROUND` 任务会跳过并调用 `finishBatch`，导致任务滞留 `RUNNING` 直至超时。
+  - 在 `apps/server/test/integration/core-flow/dedupe-replay-sc.test.ts` 补充：
+    - `Q46` 最小可复现断言：`parseStreamItem` 解析含 `memberMilestoneChatDetails.userComment` 的 `memberMilestoneChatEvent` 返回 `text: null`（`toBusinessEvent` 产出 `body: ""`），且 `ChannelEvent` 无任何付费/类型标记字段。
+    - `Q41` 最小可复现断言：稳态轮询（非空 `resumeToken`）在本机时钟快偏超过 `replayMaxAgeMs`（如 `+6m01s`）时误将实时消息判为 `STALE_REPLAY` 丢弃（`delivered === 0, staleReplay === 1`）。
+  - 如实重写 `docs/acceptance/core-flow-matrix.md` §3 与 §4：精确区分已验证局部契约（`Q20`、`Q43`、`Q49` 并发冲突与 `operationId` 幂等、单实例 `PAID > REALTIME > BACKGROUND`、`superChatDetails.userComment`、`classifyReplay` 5 分钟阈值）与仍存在的真实产品缺陷/未装配缺口（`Q39`、`Q41`、`Q46`、`Q52`、`Q55`、`Q57`），严禁将这 6 项笼统标为 `PASS`，并在 §4 逐条给出最小复现用例定位与现象。
+- **`B14b`（必交「异常不扣分」跨模块测试与矩阵行）**：
+  - 新增 `apps/server/test/integration/core-flow/failure-no-penalty.test.ts`，在真实 SQLite + `DecisionService` + `TaskCoordinator` + `ReviewRunner` 上覆盖：① 实时任务经 `TaskCoordinator.reportFailure` 耗尽重试转入 `pending_review`；② 后台 `ReviewRunner` 遇到 AI 超时 / 调用失败 / 非法 JSON 结构（`MODEL_CALL_FAILED` / `AI_OUTPUT_INVALID` -> `FAILED`）。断言目标观众 `subject_scores.current_score` 与 `score_ledger` 行数保持不变（0 扣分），并在 `docs/acceptance/core-flow-matrix.md` §3 新增对应证据行。
+- **`B14c` & `N16a`（仓库相对路径 & 基线版本头说明）**：
+  - 将 `docs/acceptance/core-flow-matrix.md`、`tests/integration/core-flow/README.md` 及 `.kiro/specs/voxward-s026-core-flow/` 内的全部 `file:///`、本机家目录绝对路径与 `.worktrees/` 路径替换为仓库可解析相对路径。
+  - 在 `docs/acceptance/core-flow-matrix.md` 头部清晰注明只读产品 `src/` 基线提交（`6a6af8a`）与本测试套件返工分支/提交关系（`N16a`）。
