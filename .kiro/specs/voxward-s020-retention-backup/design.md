@@ -62,7 +62,9 @@ No design authority is configured for the resolved work context. No authority wa
 | `db/retention-store.ts` | db | drizzle, channel-settings-store, transaction |
 | `db/backup-store.ts` | db | better-sqlite3, node builtins, migrate |
 | `db/tombstone-ledger.ts` | db | node builtins only |
-| `db/restore-support.ts` | db | exception reinstatement port (ScoreExceptionStore) |
+| `db/restore-support.ts` | db | `createRestoreReplayPorts` & `restoreDatabaseWithPorts` (binds `AuditLogPort`, `SubjectCleanupPort`, `reinstateException`, `restoreBackup`; stays in `db` zone without importing modules) |
+| `app.ts` | composition | `AppOptions.tombstoneLedger?` wired into `dataDepsFor`; `restoreDatabaseWithLedger` binding `replayTombstones` |
+| `main.ts` | composition | creates `createTombstoneLedger(join(dirname(config.databaseFile), "tombstones"))` when `databaseFile !== ":memory:"` |
 | `modules/data-lifecycle-service/restore-replay.ts` | module | contracts and same module only; ports injected |
 
 ### 2. Retention (SUB-037)
@@ -95,6 +97,9 @@ Hook: `DataDeps.tombstones` (optional port). `executeRequest` records the DELETE
 
 `replayTombstones(deps, tombstones)` goes through the surfaces in the cleaning order of S019 (`CHANGE_LOG` certificate, four evidence kinds, technical rows, then the database surfaces, with the same pre-sweep for FK order). For `DELETE_AND_EXCEPT` it reinstates the exception marker through the injected port unless a later RESUME exists. A subject that is not in the snapshot needs nothing and counts as `ABSENT`. Failures are recorded by code per tombstone, never text.
 
-### 6. Limits
+### 6. Composition root wiring & limits
 
-No new route, no new background process. Composition (`app.ts`) wiring of the ledger and the scheduler for sweep/backup is the consumer's step and is recorded as an integration handoff.
+- `app.ts`: `AppOptions` accepts optional `readonly tombstoneLedger?: TombstoneLedger`. `buildApp` passes `tombstoneLedger` to `dataDepsFor` as `...(tombstoneLedger ? { tombstones: ledgerRecorder(tombstoneLedger) } : {})` so existing callers passing only `{ modules, database }` remain unaffected. `app.ts` also exports `restoreDatabaseWithLedger`, which delegates to `restoreDatabaseWithPorts` in `db/restore-support.ts` with `replayTombstones` and `CERTIFICATE_SUMMARY`.
+- `main.ts`: when `config.databaseFile !== ":memory:"`, constructs `createTombstoneLedger(join(dirname(config.databaseFile), "tombstones"))` and passes it to `buildApp` without adding any new `VOXWARD_*` environment variables.
+- `db/restore-support.ts`: exports `createRestoreReplayPorts` (binding `createSubjectCleanupPort`, `createAuditLogPort`, `reinstateException`) and `restoreDatabaseWithPorts` (invoking `restoreBackup` with a caller-provided replay function) while respecting the `db` zone import boundary (`scripts/check-deps.mjs`).
+- Limits: no new HTTP route and no new background daemon process; periodic scheduler invocation of `sweepExpired`, `createBackup`, `compact`, and `pruneLedgerForBackups` remains a consumer/deployment step.

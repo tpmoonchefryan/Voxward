@@ -23,5 +23,6 @@ A checked task is local progress only. Formal completion still requires the engi
 - [ ] T4 `db/tombstone-ledger.ts` external ledger, bounded (R-S020-08, R-S020-11)
 - [ ] T5 module `restore-replay.ts` + `DataDeps.tombstones` hook in executor/resume (R-S020-08, R-S020-10)
 - [ ] T6 `restoreBackup` staged restore with checks (R-S020-09, R-S020-10)
-- [ ] T7 tests: Q30, tiers, active task, S019 coordination, bounded backup, zero resurrection, other-subject safety, failed replay keeps live file
-- [ ] T8 `evidence/self-check.md`; gates build, typecheck, check-deps, test, smoke, spec check
+- [x] T7 tests: Q30, tiers, active task, S019 coordination, bounded backup, zero resurrection, other-subject safety, failed replay keeps live file
+- [ ] T8 composition wiring (`app.ts` `tombstoneLedger?` & `restoreDatabaseWithLedger`, `main.ts` non-`:memory:` ledger, `db/restore-support.ts` `createRestoreReplayPorts` & `restoreDatabaseWithPorts`) and E2E test `test/app/s020-tombstone-wiring.test.ts`
+- [ ] T9 `evidence/self-check.md`; gates build, typecheck, check-deps, test, smoke, spec check
