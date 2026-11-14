@@ -18,8 +18,10 @@ import type { VoxwardDatabase } from "./db/client.js";
 import { createDataRequestPort } from "./db/data-request-store.js";
 import { createDecisionStorePort } from "./db/decision-store.js";
 import { createApprovedContentPort, createOutputDeliveryPort, createOutputGrantPort } from "./db/output-store.js";
+import { restoreDatabaseWithPorts } from "./db/restore-support.js";
 import { createSubjectCleanupPort } from "./db/subject-cleanup.js";
 import { createSubjectReadPort } from "./db/subject-read.js";
+import { ledgerRecorder, type TombstoneLedger } from "./db/tombstone-ledger.js";
 import { RETENTION_DAYS } from "./modules/audit-store/content-policy.js";
 import {
   CERTIFICATE_SUMMARY,
@@ -28,7 +30,7 @@ import {
   createViewerCache,
   type InvalidationBus,
 } from "./modules/audit-store/index.js";
-import { createDataRoutes, type DataDeps } from "./modules/data-lifecycle-service/index.js";
+import { createDataRoutes, replayTombstones, type DataDeps } from "./modules/data-lifecycle-service/index.js";
 import {
   createDecisionService,
   createListAdministration,
@@ -76,6 +78,8 @@ export interface AppOptions {
   readonly subjectCaches?: SubjectCacheHub;
   /** Optional candidate card store for moderation/admin routes. */
   readonly candidateStore?: CandidateStore;
+  /** External tombstone ledger for data deletion replay across backup restores (S020). */
+  readonly tombstoneLedger?: TombstoneLedger;
 }
 
 export interface NativeOutputSettings {
@@ -107,6 +111,7 @@ export function buildApp({
   nativeOutput,
   subjectCaches,
   candidateStore,
+  tombstoneLedger,
 }: AppOptions): FastifyInstance {
   const app = Fastify({ logger: logger ? loggerOptions(logStream) : false, frameworkErrors: frameworkErrorReply });
   // One bus for the whole process: the viewer cache and the deletion path both use it (Q35).
@@ -129,7 +134,7 @@ export function buildApp({
     app.addHook("onClose", async () => {
       cache.dispose();
     });
-    const deps = dataDepsFor(database, bus, subjectCaches ?? NO_SUBJECT_CACHES);
+    const deps = dataDepsFor(database, bus, subjectCaches ?? NO_SUBJECT_CACHES, tombstoneLedger);
     app.register(dataLifecycleRoutes, { database, routes: createDataRoutes(deps) });
     app.register(channelPanelRoutes, channelPanelOptionsFor(database, modules, candidateStore));
     startNativeOutput(app, database, outputSubscribers, nativeOutput);
@@ -204,7 +209,12 @@ function errorNameOf(error: unknown): string {
 const NO_SUBJECT_CACHES: SubjectCacheHub = { names: [], forgetSubject: () => 0 };
 
 /** Binds the data module to the database. Each port is one database layer, and the module sees only the ports. */
-function dataDepsFor(database: VoxwardDatabase, bus: InvalidationBus, caches: SubjectCacheHub): DataDeps {
+function dataDepsFor(
+  database: VoxwardDatabase,
+  bus: InvalidationBus,
+  caches: SubjectCacheHub,
+  tombstoneLedger?: TombstoneLedger,
+): DataDeps {
   return {
     requests: createDataRequestPort(database),
     subjects: createSubjectReadPort(database),
@@ -216,7 +226,32 @@ function dataDepsFor(database: VoxwardDatabase, bus: InvalidationBus, caches: Su
     newId: () => randomUUID(),
     now: () => new Date(),
     retentionDays: RETENTION_DAYS,
+    ...(tombstoneLedger !== undefined ? { tombstones: ledgerRecorder(tombstoneLedger) } : {}),
   };
+}
+
+export interface RestoreDatabaseOptions {
+  readonly backupPath: string;
+  readonly targetPath: string;
+  readonly ledger: TombstoneLedger;
+  readonly certificateSummary?: string;
+  readonly newId?: () => string;
+  readonly now?: () => Date;
+}
+
+/**
+ * Restores a backup in isolation and replays all external deletion tombstones before replacing the live file (S020).
+ */
+export function restoreDatabaseWithLedger(options: RestoreDatabaseOptions): void {
+  restoreDatabaseWithPorts({
+    backupPath: options.backupPath,
+    targetPath: options.targetPath,
+    ledger: options.ledger,
+    certificateSummary: options.certificateSummary ?? CERTIFICATE_SUMMARY,
+    newId: options.newId,
+    now: options.now,
+    replayWith: (ports, tombstones) => replayTombstones(ports, tombstones),
+  });
 }
 
 function channelPanelOptionsFor(
