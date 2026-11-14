@@ -1,26 +1,26 @@
 {
   "schemaVersion": "einzbern.kiro-spec-source.v1",
   "workId": "work:ac8ff494373ad248e549ea4a",
-  "workRevision": 4,
-  "sourceDigest": "46ac8f06ef8b2d22ffd721361bd0771d5e486d9e3408923fe0305645215a6a9f",
+  "workRevision": 5,
+  "sourceDigest": "a431679c8a13e4ac215212edf3363f5f017a4c2498fa19963d3ab07fe648281c",
   "sourceStamp": {
     "schemaVersion": "einzbern.kiro-spec-source.v1",
     "workId": "work:ac8ff494373ad248e549ea4a",
-    "workRevision": 4,
-    "sourceDigest": "46ac8f06ef8b2d22ffd721361bd0771d5e486d9e3408923fe0305645215a6a9f",
+    "workRevision": 5,
+    "sourceDigest": "a431679c8a13e4ac215212edf3363f5f017a4c2498fa19963d3ab07fe648281c",
     "legacy": false,
     "sources": {
       "work": {
         "id": "work:ac8ff494373ad248e549ea4a",
         "externalKey": "VOXWARD-STORY-025",
         "kind": "Story",
-        "revision": 4,
+        "revision": 5,
         "status": "active",
         "title": "实现隔离合成演示与有限演示角色",
         "summary": "实现隔离合成演示与有限演示角色；待交付与验证。",
         "projectId": "project:f824c7861e6888255132af42",
         "parentId": "work:1f83883cd1373011cf0f8b49",
-        "scopeDigest": "2afbc010f1807d68674c40d379c0423409de8b618f62faade58f4dea54ba80f2",
+        "scopeDigest": "87392913f5d6aa28c2ef8ebddcf7aec581064dcfc087243c8c5d473751673fe2",
         "relations": {
           "blockedBy": [
             "work:029c382b5915050f0c4de600",
@@ -38,10 +38,10 @@
           "parent": "work:1f83883cd1373011cf0f8b49",
           "supersedes": []
         },
-        "fieldSha256": "8ab13742f818a34d57e03414b62fd8d95a31473c68e9441f964914dc8d56f9c3",
+        "fieldSha256": "a9e3db64e88165477247830d9484c8519272b6426bfdd3d754775e4eead0532e",
         "sourceStatus": "complete"
       },
-      "contextDigest": "fc286fb38f207bca282beb7fa1b4dfecfdeb557768ea7ee1d33d3c3fedbb371e",
+      "contextDigest": "b95c4ea2617a9aa38fd0f458af6313fc3717596923eb5e6f19e1504e6c9c031e",
       "minuteRevisions": [
         {
           "id": "minutes:92f6353f4d2e04aa552ea04e",
@@ -74,14 +74,14 @@
     }
   },
   "managedSha256": {
-    "requirements.md": "7c2c562b431e24ed510ab4dcc56d11c94654db95af4714bd3b5838eb385520e5",
-    "design.md": "414a65edd1f0dea2e659d750e60a77fafa1f8df1e01e92114e13c0bafdff63bc",
-    "tasks.md": "c98e173204e898690578e69a8e4ab1b11553c6a8fcf6dddc0027f8c4ffe56c71"
+    "requirements.md": "f2e7fe00334babb3f432f92d5b551d2525050ab4946463c722935124f6e8d791",
+    "design.md": "5a299a0eea9b515ab794d181c33863cad06ed872f27ca24de6a23fa3c596d8f3",
+    "tasks.md": "a0d277fd5d2892c6163364f35214c47049ec63bf54bdf750af4b848eca48ef33"
   },
   "files": [
     "requirements.md",
     "design.md",
     "tasks.md"
   ],
-  "manifestDigest": "862c240ad771b15f8e5d9be3e4c1bd5dd14b4c184a60435e2f4cbaded957d938"
+  "manifestDigest": "95ad0f6b8c3104cee4b9db6e5e863ef82578723b982e539d848ce0f0593c8b18"
 }

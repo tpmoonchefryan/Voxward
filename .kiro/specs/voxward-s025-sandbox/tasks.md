@@ -1,12 +1,12 @@
 <!-- EINZBERN-SPEC:MANAGED-START -->
 # Tasks
 
-<!-- Einzbern source: work=work:ac8ff494373ad248e549ea4a revision=4 sha256=46ac8f06ef8b2d22ffd721361bd0771d5e486d9e3408923fe0305645215a6a9f -->
+<!-- Einzbern source: work=work:ac8ff494373ad248e549ea4a revision=5 sha256=a431679c8a13e4ac215212edf3363f5f017a4c2498fa19963d3ab07fe648281c -->
 
 Exactly one executable task represents the current work item. It is a local Spec checklist only; checking it never changes formal work status or evidence.
 
 - [ ] 1. 实现隔离合成演示与有限演示角色
-  - Work item: `work:ac8ff494373ad248e549ea4a` revision 4.
+  - Work item: `work:ac8ff494373ad248e549ea4a` revision 5.
   - Goal from the current formal source: 独立 sandbox 可演示评分、审核、精翻、人工、日志和舞台，而不能访问生产数据。
   - Scope from the current formal source: 
   - Acceptance from the current formal source: VW-S025-AC001@1 [work:ac8ff494373ad248e549ea4a/VW-S025-R001@1] 演示角色重置、访问生产 API、提交合成输入至真实实例，触发删除例外与人工场景。: 合成入口仅在隔离沙盒；无真实观众档案/OAuth/生产密钥和一键生产管理员；演示覆盖核心价值。 (隔离/权限与核心演示流程测试。) VW-S025-PARENT@1 [work:1f83883cd1373011cf0f8b49/VW-E005-R025@1] 演示角色重置、访问生产 API、提交合成输入至真实实例，触发删除例外与人工场景。: 合成入口仅在隔离沙盒；无真实观众档案/OAuth/生产密钥和一键生产管理员；演示覆盖核心价值。 (复用本单同候选版本的组件/材料证据，保留来源与实际观察；隔离/权限与核心演示流程测试。) VW-S025-INHERIT-001@1 [work:8bd4977aa0770aa2f41229a2/VW-R-001@1] 审查本单产出的接口、说明及依赖方向。: 保持远端自托管、版本化模块契约和既定栈；不引入生产托管/新本机代理或供应商对象贯穿业务层。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S025-INHERIT-006@1 [work:8bd4977aa0770aa2f41229a2/VW-R-006@1] 核对本单与 VW-R-006 对应模块的接口、前置和实际影响。: 本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。 (对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-006 承载。) VW-S025-INHERIT-009@1 [work:8bd4977aa0770aa2f41229a2/VW-R-009@1] 审查本单接触的 AI 输入、运行资源、日志或材料。: 只使用必要文本和临时编号；不新增完整会话/提示/工具轨迹的长期副本，不宣称 Archive 或应用清理等于提供方删除。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S025-INHERIT-010@1 [work:8bd4977aa0770aa2f41229a2/VW-R-010@1] 核对本单与 VW-R-010 对应模块的接口、前置和实际影响。: 本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-002,VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。 (对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-010 承载。) VW-S025-INHERIT-011@1 [work:8bd4977aa0770aa2f41229a2/VW-R-011@1] 审查本单使用的仓储接口、数据字段、事务或部署说明。: 写入经单后端短事务和服务器本地 SQLite；不让浏览器/AI 直写，不在队列或额外日志复制正文。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S025-INHERIT-012@1 [work:8bd4977aa0770aa2f41229a2/VW-R-012@1] 演示角色重置、访问生产 API、提交合成输入至真实实例，触发删除例外与人工场景。（本单对 VW-R-012 的贡献）: 合成入口仅在隔离沙盒；无真实观众档案/OAuth/生产密钥和一键生产管理员；演示覆盖核心价值。 继续遵守 VW-R-012 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (隔离/权限与核心演示流程测试。) VW-S025-INHERIT-017@1 [work:8bd4977aa0770aa2f41229a2/VW-R-017@1] 审查本单涉及的数据、缓存、任务、关联或恢复说明。: 删除代次、到期和失败状态有真实去向；不创建清理遗漏副本，不让旧任务/恢复重建已删数据；未知外部范围明确。 仅记录本单实际触及和观察的内容；运行时完整验证由对应责任单承接。 (接口/数据字段/文档与原始需求核对；涉及可运行路径时使用本单相应行为证据，不以未涉及冒充已实测。) VW-S025-INHERIT-018@1 [work:8bd4977aa0770aa2f41229a2/VW-R-018@1] 核对本单与 VW-R-018 对应模块的接口、前置和实际影响。: 本单交付保留原始要求且不改变其它模块职责；实施：VOXWARD-EPIC-005；完整验证：VOXWARD-EPIC-006。记录本单的连接/审查证据，未由本单观察的完整行为继续引用责任单的实际结果，不填写虚构通过。 (对照本单交付边界及依赖，复用版本相符的关联证据；完整判据仍由 INIT 的 VW-AC-018 承载。) VW-S025-INHERIT-019@1 [work:8bd4977aa0770aa2f41229a2/VW-R-019@1] 演示角色重置、访问生产 API、提交合成输入至真实实例，触发删除例外与人工场景。（本单对 VW-R-019 的贡献）: 合成入口仅在隔离沙盒；无真实观众档案/OAuth/生产密钥和一键生产管理员；演示覆盖核心价值。 继续遵守 VW-R-019 原始要求；本贡献结果不替代 INIT 对该需求的全量验收。 (隔离/权限与核心演示流程测试。)
@@ -24,3 +24,11 @@ A checked task is local progress only. Formal completion still requires the engi
 - [ ] B4. 实现 `deploy/sandbox/{README.md,sandbox.config.json,sandbox.env.example,start-sandbox.mjs}`。
 - [ ] B5. 实现评审端到端 UI：`apps/web/src/pages/sandbox/{route.tsx,SandboxPage.tsx,api.ts}` 与 `apps/web/src/pages/sandbox/__tests__/SandboxPage.test.tsx`。
 - [ ] C1. 编写 `.kiro/specs/voxward-s025-sandbox/evidence/self-check.md`，运行全套门禁（`pnpm build`、`pnpm typecheck`、`node scripts/check-deps.mjs`、guarded `pnpm test`、`kiro-specs.mjs check`、端口与工作树洁净检查）并提交实现 commit `<IMPL_SHA>`。
+
+## Rework 1 任务拆解（B15, B16, N17a, N17b）
+
+- [ ] R1-A. Spec-First 首提交：刷新 `.kiro/specs/voxward-s025-sandbox/` 至 `rev=5`，补充 Rework 1 设计与任务说明，运行 `kiro-specs.mjs check` 确认 `SPEC_CURRENT` 并单独提交 `.kiro/specs/voxward-s025-sandbox/**`。
+- [ ] R1-B15. 实现独立沙盒 HTTP+SPA 启动器与开发代理：`apps/server/src/sandbox-main.ts`、`scripts/check-deps.mjs`、`apps/server/package.json`、`apps/server/src/main.ts` fail-closed 检查、`deploy/sandbox/start-sandbox.mjs`、`deploy/sandbox/README.md`、`apps/web/vite.config.ts`，并新增 `apps/server/test/demo/isolation/sandbox-launcher.test.ts`。
+- [ ] R1-B16. 修复场景删除权与角色快照/UI 裁剪：`apps/server/src/demo/routes.ts` 强制 `"privacy.delete"` 校验与 `redactSnapshotForCapabilities`、`apps/web/src/pages/sandbox/SandboxPage.tsx` 能力门禁与视图隐藏，补齐前后端回归单测。
+- [ ] R1-N17. 修复 `apps/server/src/demo/scenarios/index.ts` 两处 `scoreExceptions` `isNull(scoreExceptions.removedAt)` 过滤；更新 `.kiro/specs/voxward-s025-sandbox/evidence/self-check.md` 为全量仓库相对路径。
+- [ ] R1-C. 运行 `pnpm build && pnpm typecheck && pnpm run bench:typecheck && node scripts/check-deps.mjs`、guarded `pnpm test` 与 `kiro-specs.mjs check` 后提交实现 commit。
