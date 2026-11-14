@@ -54,9 +54,9 @@ A checked task is local progress only. Formal completion still requires the engi
 
 ### 返工 1（P-S021-fix1：B7、N1–N4）
 
-- [ ] R1.1 规范刷新与更新：`.kiro/specs/voxward-s021-output/{design.md,tasks.md}`（rev=5 `SPEC_CURRENT`）并先于代码提交。
-- [ ] R1.2 B7 回归测试与修复：`pump.test.ts` 慢订阅者并发改判 `BLOCK` / `CANCELLED` 用例；`output-port.ts`、`output-store.ts`、`delivery.ts` 每行 `sendRow` 前同步重查可发送性与 `is_current = 1`，`markSent` 校验 `is_current = 1`。
-- [ ] R1.3 N1 回归测试与修复：`socket.test.ts` 在线消费者时 `app.close()` 快速返回（`<2000ms`）；`app.ts` `startNativeOutput` 改为 `preClose`。
-- [ ] R1.4 N3 加固：`socket.ts` `WebSocketServer` 设置 `maxPayload: 4096`。
-- [ ] R1.5 N2/N4 文档对齐：`docs/protocol/output-native-v1.md` §3、§10 与 `examples/consumer-dedup/dedupe.mjs` 注释。
-- [ ] R1.6 全量门禁、m7b 探针（E60、E61 R1–R4、E62）、`tools/smoke.sh` 与 `rework1-self-check.md`。
+- [x] R1.1 规范刷新与更新：`.kiro/specs/voxward-s021-output/{design.md,tasks.md}`（rev=5 `SPEC_CURRENT`）并先于代码提交。
+- [x] R1.2 B7 回归测试与修复：`pump.test.ts` 慢订阅者并发改判 `BLOCK` / `CANCELLED` 用例；`output-port.ts`、`output-store.ts`、`delivery.ts` 每行 `sendRow` 前同步重查可发送性与 `is_current = 1`，`markSent` 校验 `is_current = 1`。
+- [x] R1.3 N1 回归测试与修复：`socket.test.ts` 在线消费者时 `app.close()` 快速返回（`<2000ms`）；`app.ts` `startNativeOutput` 改为 `preClose`。
+- [x] R1.4 N3 加固：`socket.ts` `WebSocketServer` 设置 `maxPayload: 4096`。
+- [x] R1.5 N2/N4 文档对齐：`docs/protocol/output-native-v1.md` §3、§10 与 `examples/consumer-dedup/dedupe.mjs` 注释。
+- [x] R1.6 全量门禁、m7b 探针（E60、E61 R1–R4、E62）、`tools/smoke.sh` 与 `rework1-self-check.md`。
