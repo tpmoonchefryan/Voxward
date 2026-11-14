@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:92dbcf7ccd1a31c2af310b77",
+  "workRevision": 4,
+  "sourceDigest": "b3830fb7d9b32b8da25820b08fa07d01696500386c93b510e0db92f34592a3d6",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:92dbcf7ccd1a31c2af310b77",
+    "workRevision": 4,
+    "sourceDigest": "b3830fb7d9b32b8da25820b08fa07d01696500386c93b510e0db92f34592a3d6",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:92dbcf7ccd1a31c2af310b77",
+        "externalKey": "VOXWARD-STORY-020",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现保留到期、备份和安全恢复",
+        "summary": "实现保留到期、备份和安全恢复；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:18aaac72724b30c2ee9be8b6",
+        "scopeDigest": "0ea6daed657a745f180976f7a9b9a6ebbf761f3c138bf10ae05917f8e95cccd4",
+        "relations": {
+          "blockedBy": [
+            "work:40166e96c2ab9f8c9746a73a",
+            "work:4c1238d3c3d98f2cc2f7d756",
+            "work:7f0ac0774bc508523d09b5f1"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:18aaac72724b30c2ee9be8b6",
+          "supersedes": []
+        },
+        "fieldSha256": "faecc9df0d1c79f87185ccc6dc59a67deee559c0fc42dd1f3b630d93386184b4",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "54307f84e4a9c20b8843e4f13c75eb9952dcfa1faacec6398d69032c4ac19271",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "9a92b47e942bbd4ae31504bb1911451bb103c110c6140c3f21f47a2f27d80ace",
+    "design.md": "018ffef298663b1aae9b5282f44b9f5c3aebca23224bf21014827f1425dc052a",
+    "tasks.md": "04c6006c9b75ff46bd6b7ac5b07c8f05364bcc34e87cc74a272c4f960153000e"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "90e7c53b68ac53f666319fee67d51d3e3c4f9e7d975765dda753c58917e8f91c"
+}

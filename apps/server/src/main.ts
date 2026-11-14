@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { buildApp } from "./app.js";
 import { describeConfigError, loadConfig } from "./config/load.js";
 import { DatabaseSetupError, openDatabase, type VoxwardDatabase } from "./db/client.js";
 import { runMigrations } from "./db/migrate.js";
+import { createTombstoneLedger } from "./db/tombstone-ledger.js";
 import { buildRegistry } from "./modules/registry.js";
 
 const loaded = loadConfig({ env: process.env, readFile: (path) => readFileSync(path, "utf8") });
@@ -13,7 +15,9 @@ if (!loaded.ok) {
 
 const { config } = loaded;
 const database = openDatabaseOrExit(config.databaseFile);
-const app = buildApp({ modules: buildRegistry(config), database });
+const tombstoneLedger =
+  config.databaseFile !== ":memory:" ? createTombstoneLedger(join(dirname(config.databaseFile), "tombstones")) : undefined;
+const app = buildApp({ modules: buildRegistry(config), database, tombstoneLedger });
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {

@@ -26,5 +26,12 @@ export function resumeScoring(deps: DataDeps, actor: DataActor, subjectRef: stri
     }),
   });
   if (outcome.status === "REQUEST_NOT_ELIGIBLE") return conflict("REQUEST_NOT_ELIGIBLE");
+  if (outcome.status === "RESUMED") {
+    try {
+      deps.tombstones?.record({ kind: "RESUME", requestId, channelId: actor.channelId, subjectId: subjectRef, at: at.toISOString() });
+    } catch {
+      // The exception is already lifted. A missing entry makes a restore keep the exception, the stricter side.
+    }
+  }
   return { status: 200, body: { outcome: outcome.status } };
 }

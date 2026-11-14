@@ -65,6 +65,8 @@ function runCleanup(deps: DataDeps, actor: DataActor, requestId: string): RouteR
   }
   const facts = deps.cleanup.readCleanupFacts(record.channelId, record.subjectId);
   if (facts === undefined) return notFound("SUBJECT_NOT_FOUND");
+  // Fail closed (S020): a deletion that a restore could not repeat must not start removing data.
+  if (!recordTombstone(deps, record, "DELETE")) return conflict("TOMBSTONE_UNAVAILABLE");
 
   const pending = deps.requests
     .readItems(requestId)
@@ -82,8 +84,27 @@ function runCleanup(deps: DataDeps, actor: DataActor, requestId: string): RouteR
     finish(deps, actor, record, "PARTIAL_FAILED", `DATA_REQUEST ${EXCEPTION_NOT_CONFIRMED}`);
   } else {
     finish(deps, actor, record, "COMPLETED", "DATA_REQUEST cleanup completed");
+    recordTombstone(deps, record, "DONE");
   }
   return viewOf(deps, record);
+}
+
+/** Writes one ledger entry. Returns false when the ledger is wired and could not persist it. */
+function recordTombstone(deps: DataDeps, record: DataRequestRecord, kind: "DELETE" | "DONE"): boolean {
+  if (deps.tombstones === undefined) return true;
+  try {
+    deps.tombstones.record({
+      kind,
+      requestId: record.id,
+      channelId: record.channelId,
+      subjectId: record.subjectId,
+      ...(kind === "DELETE" && record.mode !== null ? { mode: record.mode } : {}),
+      at: deps.now().toISOString(),
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Cleans one surface and records its result. Returns true when the surface is DONE, false when it failed. */

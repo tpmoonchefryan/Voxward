@@ -24,6 +24,22 @@ export interface DeletedLogsEvent {
   readonly changeLogIds: readonly string[];
 }
 
+/** One record of the tombstone ledger (S020). It holds ids and a mode, never content. */
+export interface TombstoneRecord {
+  readonly kind: "DELETE" | "DONE" | "RESUME";
+  readonly requestId: string;
+  readonly channelId: string;
+  readonly subjectId: string;
+  /** Set for DELETE only. */
+  readonly mode?: "DELETE_DATA_ONLY" | "DELETE_AND_EXCEPT";
+  readonly at: string;
+}
+
+/** Persists tombstones outside the database, so a restored snapshot cannot roll them back. Throws when it cannot persist. */
+export interface TombstonePort {
+  record(entry: TombstoneRecord): void;
+}
+
 /** Everything the module needs from its binding. Each port is one short transaction, implemented by the database layer. */
 export interface DataDeps {
   readonly requests: DataRequestPort;
@@ -46,6 +62,8 @@ export interface DataDeps {
   readonly certificateSummary: string;
   /** Identifier source. Required: the module cannot import node:crypto. */
   readonly newId: () => string;
+  /** The ledger that restore replays (S020). Absent means no restore protection is wired, and deletions run as before. */
+  readonly tombstones?: TombstonePort;
   /** Server clock. Every timestamp the module writes comes from here. */
   readonly now: () => Date;
   /** Retention in days, from the audit module's table. Passed in because the module cannot import that module. */
