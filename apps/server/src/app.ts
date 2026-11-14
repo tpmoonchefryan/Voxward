@@ -2,13 +2,20 @@ import { randomUUID } from "node:crypto";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import type { OutputSubscriberRegistry, SubjectCacheHub } from "@voxward/contracts";
 import { attachNativeOutput, type ClosedConnection, type NativeOutputTiming } from "./adapters/native-output/socket.js";
+import { channelPanelRoutes } from "./auth/channel-panel-routes.js";
 import { dataLifecycleRoutes } from "./auth/data-routes.js";
 import { databaseViewerAccess } from "./auth/log-viewer-access.js";
 import { logViewerRoutes } from "./auth/log-viewer-routes.js";
 import { authRoutes } from "./auth/routes.js";
 import { createAuditLogPort } from "./db/audit-log.js";
+import {
+  publishConfirmedCandidateTerm,
+  readChannelSetting,
+  writeChannelSetting,
+} from "./db/channel-settings-store.js";
 import type { VoxwardDatabase } from "./db/client.js";
 import { createDataRequestPort } from "./db/data-request-store.js";
+import { createDecisionStorePort } from "./db/decision-store.js";
 import { createApprovedContentPort, createOutputDeliveryPort, createOutputGrantPort } from "./db/output-store.js";
 import { createSubjectCleanupPort } from "./db/subject-cleanup.js";
 import { createSubjectReadPort } from "./db/subject-read.js";
@@ -21,9 +28,29 @@ import {
   type InvalidationBus,
 } from "./modules/audit-store/index.js";
 import { createDataRoutes, type DataDeps } from "./modules/data-lifecycle-service/index.js";
+import {
+  createDecisionService,
+  createListAdministration,
+  DEFAULT_DECISION_LIMITS,
+} from "./modules/decision-service/index.js";
+import { createDecisionRoutes } from "./modules/decision-service/routes.js";
+import {
+  DEFAULT_MODEL_SETTINGS,
+  readModelSettings,
+  writeModelSettings,
+  type ModelSettings,
+  type ModelSettingsStore,
+} from "./modules/inference-provider/index.js";
+import {
+  createCandidateRoutes,
+  createCandidateStore,
+  type CandidateStore,
+} from "./modules/moderation-engine/index.js";
+import { compileRuleSet, type RuleSetInput } from "./modules/moderation-engine/rules/groups.js";
 import { createDeliveryPump } from "./modules/output-adapter/delivery.js";
 import { createSubscriptionRegistry } from "./modules/output-adapter/subscription.js";
 import type { ModuleRegistry } from "./modules/registry.js";
+import { createScoringPlanner } from "./modules/scoring-engine/index.js";
 import { redactUrlText } from "./security/redaction.js";
 
 export interface AppOptions {
@@ -45,6 +72,8 @@ export interface AppOptions {
    * no surface is held, and a deletion cleans none of them.
    */
   readonly subjectCaches?: SubjectCacheHub;
+  /** Optional candidate card store for moderation/admin routes. */
+  readonly candidateStore?: CandidateStore;
 }
 
 export interface NativeOutputSettings {
@@ -75,6 +104,7 @@ export function buildApp({
   invalidation,
   nativeOutput,
   subjectCaches,
+  candidateStore,
 }: AppOptions): FastifyInstance {
   const app = Fastify({ logger: logger ? loggerOptions(logStream) : false, frameworkErrors: frameworkErrorReply });
   // One bus for the whole process: the viewer cache and the deletion path both use it (Q35).
@@ -99,6 +129,7 @@ export function buildApp({
     });
     const deps = dataDepsFor(database, bus, subjectCaches ?? NO_SUBJECT_CACHES);
     app.register(dataLifecycleRoutes, { database, routes: createDataRoutes(deps) });
+    app.register(channelPanelRoutes, channelPanelOptionsFor(database, modules, candidateStore));
     startNativeOutput(app, database, outputSubscribers, nativeOutput);
   }
   return app;
@@ -170,6 +201,69 @@ function dataDepsFor(database: VoxwardDatabase, bus: InvalidationBus, caches: Su
     newId: () => randomUUID(),
     now: () => new Date(),
     retentionDays: RETENTION_DAYS,
+  };
+}
+
+function channelPanelOptionsFor(
+  database: VoxwardDatabase,
+  modules: ModuleRegistry,
+  providedCandidates: CandidateStore | undefined,
+) {
+  const decisionStore = createDecisionStorePort(database, {
+    planner: createScoringPlanner(),
+    changeLogExpiresAt: (occurredAt) =>
+      new Date(Date.parse(occurredAt) + RETENTION_DAYS.metadata * 86_400_000).toISOString(),
+  });
+  const decisionDeps = {
+    store: decisionStore,
+    newId: () => randomUUID(),
+    now: () => new Date(),
+    limits: DEFAULT_DECISION_LIMITS,
+  };
+  const decisions = createDecisionRoutes(
+    createDecisionService(decisionDeps),
+    createListAdministration(decisionDeps),
+  );
+  const candidates = createCandidateRoutes(
+    providedCandidates ??
+      createCandidateStore({
+        newId: () => randomUUID(),
+        now: () => new Date(),
+        rules: {
+          publishConfirmedTerm: (input) => publishConfirmedCandidateTerm(database, input),
+        },
+      }),
+  );
+  const modelStore = (channelId: string): ModelSettingsStore => ({
+    read: async () => readChannelSetting<ModelSettings>(database, channelId, "model-settings", DEFAULT_MODEL_SETTINGS),
+    write: async (next) => writeChannelSetting(database, channelId, "model-settings", next),
+  });
+  const describe = () => modules.inferenceProvider.describe();
+  return {
+    database,
+    decisions,
+    candidates,
+    models: {
+      describe,
+      read: (channelId: string) => readModelSettings({ store: modelStore(channelId), describe }),
+      write: (channelId: string, body: unknown) => writeModelSettings({ store: modelStore(channelId), describe }, body),
+      toggleScTranslation: async (channelId: string, enabled: boolean) => {
+        const store = modelStore(channelId);
+        const current = await store.read();
+        const updated: ModelSettings = { ...current, scTranslationEnabled: enabled };
+        await store.write(updated);
+        return { status: 200, body: { scTranslationEnabled: enabled, settings: updated } };
+      },
+    },
+    rules: {
+      validate: (input: unknown) => {
+        if (typeof input !== "object" || input === null || !("version" in input) || !Array.isArray((input as { groups?: unknown }).groups)) {
+          return { ok: false as const, issues: [{ code: "INVALID_REQUEST", ref: "rule-set" }] };
+        }
+        const compiled = compileRuleSet(input as RuleSetInput);
+        return compiled.ok ? { ok: true as const } : { ok: false as const, issues: compiled.issues };
+      },
+    },
   };
 }
 

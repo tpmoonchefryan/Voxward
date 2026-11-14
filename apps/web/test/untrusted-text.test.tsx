@@ -22,4 +22,12 @@ describe("UntrustedText", () => {
     expect(html).not.toContain("\u0007");
     expect(html).toContain("open https://example.com now");
   });
+
+  it("wraps cleaned text in <bdi> to isolate bidi and zero-width characters (Q15)", () => {
+    const html = renderToStaticMarkup(<UntrustedText text={"abc\u202Edef\u200Bghi\u2066jkl\u2069"} />);
+    expect(html).toContain('<span class="untrusted-text" data-untrusted="true" style="white-space:pre-wrap"><bdi>');
+    expect(html).toContain("</bdi></span>");
+    expect(html).toContain("\u202E");
+    expect(html).toContain("\u200B");
+  });
 });

@@ -10,6 +10,7 @@ export interface Membership {
   readonly accountId: string;
   readonly role: ChannelRole;
   readonly logAccess: boolean;
+  readonly dataAdmin: boolean;
   readonly grantedAt: string;
 }
 
@@ -18,6 +19,7 @@ export interface GrantInput {
   readonly accountId: string;
   readonly role: ChannelRole;
   readonly logAccess: boolean;
+  readonly dataAdmin?: boolean;
   readonly now: Date;
 }
 
@@ -37,6 +39,7 @@ export function grantMembership(tx: ShortTransaction, input: GrantInput): Member
       ),
     )
     .run();
+  const dataAdmin = input.dataAdmin ?? false;
   tx.insert(channelMembers)
     .values({
       id: randomUUID(),
@@ -44,6 +47,7 @@ export function grantMembership(tx: ShortTransaction, input: GrantInput): Member
       accountRef: input.accountId,
       role: input.role,
       logAccess: input.logAccess ? 1 : 0,
+      dataAdmin: dataAdmin ? 1 : 0,
       grantedAt,
     })
     .run();
@@ -52,6 +56,7 @@ export function grantMembership(tx: ShortTransaction, input: GrantInput): Member
     accountId: input.accountId,
     role: input.role,
     logAccess: input.logAccess,
+    dataAdmin,
     grantedAt,
   };
 }
@@ -79,6 +84,7 @@ interface MembershipRow {
   readonly accountRef: string;
   readonly role: string;
   readonly logAccess: number;
+  readonly dataAdmin: number;
   readonly grantedAt: string;
 }
 
@@ -90,19 +96,23 @@ function toMembership(row: MembershipRow): Membership {
     accountId: row.accountRef,
     role: row.role,
     logAccess: row.logAccess === 1,
+    dataAdmin: row.dataAdmin === 1,
     grantedAt: row.grantedAt,
   };
 }
 
+const MEMBERSHIP_COLUMNS = {
+  channelId: channelMembers.channelId,
+  accountRef: channelMembers.accountRef,
+  role: channelMembers.role,
+  logAccess: channelMembers.logAccess,
+  dataAdmin: channelMembers.dataAdmin,
+  grantedAt: channelMembers.grantedAt,
+};
+
 export function findActiveMembership(database: VoxwardDatabase, channelId: string, accountId: string): Membership | undefined {
   const row = database.orm
-    .select({
-      channelId: channelMembers.channelId,
-      accountRef: channelMembers.accountRef,
-      role: channelMembers.role,
-      logAccess: channelMembers.logAccess,
-      grantedAt: channelMembers.grantedAt,
-    })
+    .select(MEMBERSHIP_COLUMNS)
     .from(channelMembers)
     .where(
       and(
@@ -117,13 +127,7 @@ export function findActiveMembership(database: VoxwardDatabase, channelId: strin
 
 export function listActiveMembers(database: VoxwardDatabase, channelId: string): Membership[] {
   return database.orm
-    .select({
-      channelId: channelMembers.channelId,
-      accountRef: channelMembers.accountRef,
-      role: channelMembers.role,
-      logAccess: channelMembers.logAccess,
-      grantedAt: channelMembers.grantedAt,
-    })
+    .select(MEMBERSHIP_COLUMNS)
     .from(channelMembers)
     .where(and(eq(channelMembers.channelId, channelId), isNull(channelMembers.revokedAt)))
     .all()
@@ -133,13 +137,7 @@ export function listActiveMembers(database: VoxwardDatabase, channelId: string):
 /** Every active membership of one account, in any channel. Read only. */
 export function listActiveMembershipsOf(database: VoxwardDatabase, accountId: string): Membership[] {
   return database.orm
-    .select({
-      channelId: channelMembers.channelId,
-      accountRef: channelMembers.accountRef,
-      role: channelMembers.role,
-      logAccess: channelMembers.logAccess,
-      grantedAt: channelMembers.grantedAt,
-    })
+    .select(MEMBERSHIP_COLUMNS)
     .from(channelMembers)
     .where(and(eq(channelMembers.accountRef, accountId), isNull(channelMembers.revokedAt)))
     .all()

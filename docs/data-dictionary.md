@@ -69,6 +69,7 @@
 | `account_ref` | TEXT | 否 | VoxWard 页面账号的内部引用。 |
 | `role` | TEXT | 否 | 取值 `CHANNEL_OWNER`、`MODERATOR`、`DATA_ADMIN`（提案 §2.1）。 |
 | `log_access` | INTEGER | 否 | 默认 0。1 表示已单独授予日志查看器权限。 |
+| `data_admin` | INTEGER | 否 | 默认 0。1 表示已单独授予数据管理权限（Q34，允许主播兼任）。 |
 | `granted_at` | TEXT | 否 | 授权时间。 |
 | `revoked_at` | TEXT | 是 | 撤销时间。为空表示有效。 |
 
@@ -79,6 +80,7 @@
 | `channel_members_active_uq` | 部分唯一索引 | `(channel_id, account_ref)` 在 `revoked_at IS NULL` 时唯一。 |
 | `ck_channel_members_role` | CHECK | `role` 只能取上列三个值。 |
 | `ck_channel_members_log_access` | CHECK | `log_access` 只能是 0 或 1。 |
+| `ck_channel_members_data_admin` | CHECK | `data_admin` 只能是 0 或 1。 |
 
 ### `credential_refs`
 

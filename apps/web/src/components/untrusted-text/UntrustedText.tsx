@@ -12,7 +12,7 @@ export interface UntrustedTextProps {
 export function UntrustedText({ text }: UntrustedTextProps) {
   return (
     <span className="untrusted-text" data-untrusted="true" style={{ whiteSpace: "pre-wrap" }}>
-      {text.replace(CONTROL_CHARACTERS, "")}
+      <bdi>{text.replace(CONTROL_CHARACTERS, "")}</bdi>
     </span>
   );
 }
