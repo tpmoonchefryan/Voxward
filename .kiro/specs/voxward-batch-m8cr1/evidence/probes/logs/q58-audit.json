@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "runs": {
+    "e05-s026-vitest": {
+      "guardLoaded": true,
+      "selfcheckRefusedCount": 5,
+      "shimInvocations": 0,
+      "netEvents": 13,
+      "externalAllowed": 0
+    },
+    "e80-m8cr1": {
+      "guardLoaded": true,
+      "selfcheckRefusedCount": 5,
+      "shimInvocations": 0,
+      "netEvents": 4,
+      "externalAllowed": 0
+    }
+  }
+}

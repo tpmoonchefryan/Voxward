@@ -1,0 +1,20 @@
+{
+  "VOXWARD-STORY-026": {
+    "id": "work:3ebb2c33e7560e8661143983",
+    "externalKey": "VOXWARD-STORY-026",
+    "status": "active",
+    "revision": 5,
+    "acceptanceCount": 22,
+    "existingEvidenceCount": 22,
+    "headEventHash": "108fc16d76405fa00c3eab8035fcc0b2f7e0dfd0c801ba874dca6967519db247"
+  },
+  "VOXWARD-SUB-048": {
+    "id": "work:39c1e2e33d41ec9ee1b74170",
+    "externalKey": "VOXWARD-SUB-048",
+    "status": "active",
+    "revision": 4,
+    "acceptanceCount": 23,
+    "existingEvidenceCount": 23,
+    "headEventHash": "108fc16d76405fa00c3eab8035fcc0b2f7e0dfd0c801ba874dca6967519db247"
+  }
+}

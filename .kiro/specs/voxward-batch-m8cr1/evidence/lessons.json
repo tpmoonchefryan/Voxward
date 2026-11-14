@@ -1,0 +1,17 @@
+[
+ {
+  "subject": "跨多层子目录编写仓库相对 Markdown 链接时须按当前文件目录深度逐条执行路径存在性校验",
+  "summary": "VoxWard S026 Rework 1 在将 docs/acceptance/core-flow-matrix.md（二级目录 docs/acceptance/）与 tests/integration/core-flow/README.md（三级目录 tests/integration/core-flow/）的绝对链接统一改为相对链接时，主矩阵中的 8 个 ../../ 链接全部正确，但直接把相同的两级回退前缀 ../../docs/acceptance/core-flow-matrix.md 复制到了三级目录 README.md 中，少了一级 ../ 导致相对目标落在不存在的 tests/docs/ 下。",
+  "snippet": "在提交包含仓库相对链接的 Markdown 文档前，除了用正则扫描清零本地绝对路径外，还应对每个 [label](relPath) 执行 path.resolve(path.dirname(docFile), relPath) 的文件存在性断言，防止不同目录深度的文档间复制粘贴 ../ 层级出错。",
+  "body": "第 m8c-r1 批 E80 P4 实测检出（N18a）：docs/acceptance/core-flow-matrix.md 的 8 个相对链接全部解析通过，而三级子目录 tests/integration/core-flow/README.md:17 写成 ../../docs/acceptance/core-flow-matrix.md（缺少一级 ../）。",
+  "tags": ["voxward", "documentation", "relative-links", "markdown", "repo-hygiene"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "tests/integration/core-flow/README.md",
+    "docs/acceptance/core-flow-matrix.md",
+    ".kiro/specs/voxward-batch-m8cr1/evidence/judgment.md"
+   ]
+  }
+ }
+]

@@ -1,0 +1,61 @@
+{
+  "allProbesCompleted": true,
+  "checkCount": 4,
+  "checks": [
+    {
+      "id": "P1_q55_c6_reproducer_verified_and_documented_fail_open",
+      "passed": true,
+      "details": {
+        "afterScore": 9,
+        "trueReplayScore": 7,
+        "needsManualAdjustment": false
+      }
+    },
+    {
+      "id": "P2_q46_q41_q57_r7_reproducers_verified",
+      "passed": true,
+      "details": {
+        "milestoneText": null,
+        "steadyStateStaleReplay": 1,
+        "runnerBItemsLength": 0
+      }
+    },
+    {
+      "id": "P3_b14b_positive_score_preserved_without_penalty_across_realtime_and_review_failures",
+      "passed": true,
+      "details": {
+        "initialScore": 2,
+        "finalScore": 2,
+        "initialLedgerCount": 1,
+        "finalLedgerCount": 1,
+        "scoringCalls": 0,
+        "bgStatuses": [
+          "FAILED:MODEL_CALL_FAILED",
+          "FAILED:AI_OUTPUT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "P4_b14c_n16a_and_matrix_integrity_verified",
+      "passed": true,
+      "details": {
+        "filesAudited": 14,
+        "pathViolationsCount": 0,
+        "resolvedMarkdownLinksCount": 8,
+        "resolvedLinks": [
+          "docs/acceptance/core-flow-matrix.md -> ../../tests/integration/core-flow/README.md",
+          "docs/acceptance/core-flow-matrix.md -> ../../tests/integration/core-flow/fixtures/routing-scoring.json",
+          "docs/acceptance/core-flow-matrix.md -> ../../tests/integration/core-flow/fixtures/dedupe-replay-sc.json",
+          "docs/acceptance/core-flow-matrix.md -> ../../tests/integration/core-flow/fixtures/manual-coordinator-wiring.json",
+          "docs/acceptance/core-flow-matrix.md -> ../../apps/server/test/integration/core-flow/routing-scoring.test.ts",
+          "docs/acceptance/core-flow-matrix.md -> ../../apps/server/test/integration/core-flow/dedupe-replay-sc.test.ts",
+          "docs/acceptance/core-flow-matrix.md -> ../../apps/server/test/integration/core-flow/manual-coordinator-wiring.test.ts",
+          "docs/acceptance/core-flow-matrix.md -> ../../apps/server/test/integration/core-flow/failure-no-penalty.test.ts"
+        ],
+        "nonBlockingBrokenLinks": [
+          "tests/integration/core-flow/README.md -> ../../docs/acceptance/core-flow-matrix.md"
+        ]
+      }
+    }
+  ]
+}
