@@ -1,7 +1,7 @@
 /**
  * Consumer-side deduplication for the native output protocol, version 1. The server may send a frame again after a failed
  * pass, so a consumer keeps the delivery identifiers it has shown and skips repeats. A frame is never shown at or after its
- * `validUntil`. The protocol promises at-least-once delivery, and this module turns that into one display per delivery.
+ * `validUntil`. This module turns repeated deliveries into at most one display per delivery identifier.
  */
 
 const DELIVERY_TYPES = new Set(["DELIVER", "WARD_BLOCKED"]);

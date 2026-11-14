@@ -74,7 +74,7 @@ const REFUSAL_STATUS_TEXT = { 401: "Unauthorized", 404: "Not Found", 500: "Inter
  */
 export function attachNativeOutput(server: Server, options: NativeOutputOptions): NativeOutputEndpoint {
   const timing: NativeOutputTiming = { ...DEFAULT_NATIVE_OUTPUT_TIMING, ...options.timing };
-  const socketServer = new WebSocketServer({ noServer: true, handleProtocols: () => NATIVE_OUTPUT_PROTOCOL });
+  const socketServer = new WebSocketServer({ noServer: true, maxPayload: 4096, handleProtocols: () => NATIVE_OUTPUT_PROTOCOL });
 
   function refuse(socket: Duplex, status: 401 | 404 | 500, reason: string): void {
     // A client may drop the connection while the refusal is being written. That is not a server failure.

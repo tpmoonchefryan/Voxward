@@ -48,9 +48,11 @@ export type SendFailureOutcome = "RETRY" | "FAILED" | "NOT_PENDING";
 export interface OutputDeliveryPort {
   /** PENDING rows of one channel that are not expired and belong to the current verdict, in delivery order. */
   readSendable(input: { readonly channelId: string; readonly nowIso: string; readonly limit: number }): readonly SendableDelivery[];
+  /** Re-reads one row synchronously right before sending. Returns undefined when not PENDING, expired, or not current. */
+  readSendableRow(input: { readonly deliveryId: string; readonly nowIso: string }): SendableDelivery | undefined;
   /** Marks PENDING rows whose `validUntil` has passed as EXPIRED. Returns how many changed. */
   expireDue(input: { readonly nowIso: string; readonly limit: number }): number;
-  /** Compare-and-set PENDING to SENT, only while the row is still PENDING and not expired. */
+  /** Compare-and-set PENDING to SENT, only while the row is still PENDING, not expired, and tied to a current verdict. */
   markSent(input: { readonly deliveryId: string; readonly nowIso: string }): boolean;
   /** Counts one failed send. The row becomes FAILED once `maxAttempts` failures are reached. */
   recordSendFailure(input: { readonly deliveryId: string; readonly nowIso: string; readonly maxAttempts: number }): SendFailureOutcome;

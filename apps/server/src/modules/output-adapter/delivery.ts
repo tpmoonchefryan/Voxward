@@ -62,8 +62,10 @@ export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
     const rows = options.delivery.readSendable({ channelId, nowIso: options.now().toISOString(), limit: options.batchLimit });
     for (const row of rows) {
       const nowIso = options.now().toISOString();
-      if (decideSend(row, nowIso) !== "SEND") continue;
-      const outcome = await sendRow(channelId, row, nowIso);
+      // Re-read synchronously right before sending: an earlier in-flight send may have yielded while this row was overturned or cancelled.
+      const currentRow = options.delivery.readSendableRow({ deliveryId: row.deliveryId, nowIso });
+      if (currentRow === undefined || decideSend(currentRow, nowIso) !== "SEND") continue;
+      const outcome = await sendRow(channelId, currentRow, nowIso);
       if (outcome === "SENT") report.sent += 1;
       else if (outcome === "FAILED") report.failed += 1;
       else if (outcome === "RETRY") {

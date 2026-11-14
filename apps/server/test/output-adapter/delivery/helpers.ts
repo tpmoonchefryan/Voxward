@@ -1,4 +1,4 @@
-import type { NativeFrame, OutputSubscriber, OutputSubscriberRegistry, Verdict } from "@voxward/contracts";
+import { createVerdict, type NativeFrame, type OutputSubscriber, type OutputSubscriberRegistry, type Verdict } from "@voxward/contracts";
 import { createDecisionStorePort } from "../../../src/db/decision-store.js";
 import { createApprovedContentPort, createOutputDeliveryPort } from "../../../src/db/output-store.js";
 import { technicalLogEvidence, technicalLogs } from "../../../src/db/schema/index.js";
@@ -54,6 +54,24 @@ export function addDeliveryEvent(
     changeActorRef: "mod-1",
     validUntil: DEADLINE,
   });
+}
+
+/** Overturns an event's initial verdict (`verdict-<eventId>`, generation 0) to BLOCK through the real decision store. */
+export function overturnToBlock(db: OpenDatabase, eventId: string): void {
+  const result = decisionStore(db).commitOverturn({
+    eventId,
+    operationId: `op-overturn-${eventId}`,
+    expectedVerdictId: `verdict-${eventId}`,
+    expectedGeneration: 0,
+    verdict: createVerdict("BLOCK"),
+    actorRef: "mod-2",
+    decidedAt: DECIDED_AT,
+    validUntil: DEADLINE,
+    deliverable: true,
+  });
+  if (result.status !== "overturned") {
+    throw new Error(`unexpected overturn status: ${result.status}`);
+  }
 }
 
 /** Writes the approved text of one event under its correlation identifier, the way the Technical Log does. */

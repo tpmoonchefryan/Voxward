@@ -1,7 +1,7 @@
 <!-- EINZBERN-SPEC:MANAGED-START -->
 # Design
 
-<!-- Einzbern source: work=work:26274628cbb8f691b6cf430c revision=4 sha256=a308b90f072f7658b40e147284f48a5430f406a696db45b3ac8e0861b096b993 -->
+<!-- Einzbern source: work=work:26274628cbb8f691b6cf430c revision=5 sha256=64cb98839c8e4dcfc57ef1f3b5ef059fedc11fc6000347c84642775406a45469 -->
 
 This file records design-source availability. It does not establish a new design authority or claim publication/build evidence.
 
@@ -88,6 +88,7 @@ No design authority is configured for the resolved work context. No authority wa
 | `apps/server/src/adapters/native-output/socket.ts` | adapter | contracts、外部包 `ws`、builtin；不导入模块或 db |
 | `apps/server/src/db/output-store.ts` | db | contracts、db、builtin、`drizzle-orm` |
 | `apps/server/src/auth/routes.ts`（增加签发与撤销路由） | auth | 既有导入，加 `db/output-store.js` |
+| `apps/server/src/auth/output-grants.ts`（凭据签发辅助） | auth | `contracts`、`db`、`builtin`（与 `auth` 分区既有规则一致） |
 | `apps/server/src/app.ts`（组合） | composition | 既有导入，加 `adapters/native-output`、`modules/output-adapter`、`db/output-store` |
 | `apps/server/src/security/redaction.ts`（Q25） | security | security、builtin |
 
@@ -120,13 +121,14 @@ No design authority is configured for the resolved work context. No authority wa
 
 ### 6. 存储端口与投递状态（SUB-040，m6 复验 N2／Q56）
 
-端口（contracts）：`OutputDeliveryPort`（读取可发送行、CAS 置为 SENT、批量置为 EXPIRED、记录一次失败、置为 FAILED）、`ApprovedContentPort`（读取已批准文本，来自 `technical_log_evidence` 中 `MESSAGE_TEXT` 与 `TRANSLATION` 且未过期的记录）、`OutputGrantPort`（凭据解析、授权有效性）、`OutputSubscriber`（发送、积压、终止）。每个端口方法都是一次短同步事务，不跨 `await`。
+端口（contracts）：`OutputDeliveryPort`（读取可发送行、按 `deliveryId` 同步重查单行是否仍可发送、CAS 置为 SENT、批量置为 EXPIRED、记录一次失败、置为 FAILED）、`ApprovedContentPort`（读取已批准文本，来自 `technical_log_evidence` 中 `MESSAGE_TEXT` 与 `TRANSLATION` 且未过期的记录）、`OutputGrantPort`（凭据解析、授权有效性）、`OutputSubscriber`（发送、积压、终止）。每个端口方法都是一次短同步事务，不跨 `await`。
 
 状态规则（在既有 `deliveries.status` 上运行，不改表）：
 
 - 只读取 `PENDING`、`valid_until > now`、所属 verdict `is_current = 1` 的行，按 `platform_order, delivery_sequence, id` 排序，每个频道每轮最多 50 行（自定）。
+- 同一频道上一行异步发送期间，后续行可能被改判（旧 verdict 的 `is_current` 置为 0）或被取消（`CANCELLED`）。因此每行调用 `sendRow` 前必须在同一同步段内重查该行是否仍满足 `status = 'PENDING'`、`valid_until > now` 且所属 verdict `is_current = 1`；不满足则跳过，绝不发出原文。
 - 每轮先把 `PENDING` 且 `valid_until <= now` 的行 CAS 为 `EXPIRED`。`EXPIRED` 行永不发送。
-- 对该频道的每个在线订阅者发送；全部成功后，在同一个短事务里执行 `UPDATE ... SET status='SENT' WHERE id=? AND status='PENDING' AND valid_until > ?`，要求影响行数为 1（比较状态）。`SENT` 表示已交给所有在线连接，不表示消费者已展示。
+- 对该频道的每个在线订阅者发送；全部成功后，在同一个短事务里执行 `UPDATE ... SET status='SENT' ... WHERE id=? AND status='PENDING' AND valid_until > ?` 且要求所属 verdict `is_current = 1`（比较状态与当前裁决），影响行数为 1 才算 `SENT`。`SENT` 表示已交给所有在线连接，不表示消费者已展示。
 - 没有在线订阅者时行保持 `PENDING`，待连接后发送。已 `SENT` 的行不随重连再次发送，过期行也不补播。
 - 任一订阅者失败或超时：`attempts` 加一；达到上限（自定 3）时 CAS 为 `FAILED`。同一频道内遇到未成功的行即停止本轮，保持顺序。
 - 已批准文本缺失时（证据已过期或不存在）：CAS 为 `FAILED`，原因 `CONTENT_UNAVAILABLE`，不当作违规处理。
@@ -139,7 +141,7 @@ No design authority is configured for the resolved work context. No authority wa
 ### 8. 传输与组合
 
 - `adapters/native-output/socket.ts`：用 `ws`（`noServer` 模式）接收升级请求，解析子协议，调用注入的授权函数，建立 `OutputSubscriber`，发送 `HELLO`，运行心跳与授权复查，关闭时通知注入的回调。它不知道数据库与模块。
-- `app.ts`：`buildApp` 在有 `database` 时装配以下组件：`ws` 网关挂到 `app.server` 的 `upgrade` 事件；投递泵每 250 ms 运行一轮（自定，`unref`）；`deliver()` 唤醒对应频道。`onClose` 时停止计时器并关闭连接。`auth/routes.ts` 的撤销路由通过选项回调网关。
+- `app.ts`：`buildApp` 在有 `database` 时装配以下组件：`ws` 网关挂到 `app.server` 的 `upgrade` 事件；投递泵每 250 ms 运行一轮（自定，`unref`）；`deliver()` 唤醒对应频道。`preClose` 时停止计时器并关闭连接（先于 Fastify `server.close()` 等候升级连接结束）。`auth/routes.ts` 的撤销路由通过选项回调网关。
 - 注册表 `modules/registry.ts` 的 `outputAdapter` 绑定仍为合成适配器，行为不变。原生端点不经注册表。自定。
 
 ### 9. Q25：错误与日志脱敏
@@ -191,6 +193,7 @@ No design authority is configured for the resolved work context. No authority wa
 | 第 8 节：关闭连接 | 先发送关闭帧，`closeGraceMs`（1 s，自定）后若对端未完成关闭握手则强制断开。 | 对端无响应时关闭帧可能永远不被读取，需要真实断开（设计要求「真实断开」）。 |
 | 第 6 节：投递泵的在线消费者读取时机 | 发送时读取在线消费者（SUB-040 修正）。无在线消费者时行保持 `PENDING`，不计尝试次数。发送期间有新消费者加入时，该行不标记 `SENT`，下一轮发给全部消费者；已收到的消费者按 `deliveryId` 去重。 | 原实现在轮次开始时读取一次消费者，消费者离开后仍会把行标为 `SENT`；与「`SENT` 表示已交给所有在线连接」不符。 |
 | 第 8 节：`ws` 写回调成功值 | 写回调以真值判定失败；`ws` 与 Node 在成功时传入 `null`。 | 实测确认：以 `undefined` 判定会把每次成功写入都计为失败（自定实现细节）。 |
+| 返工 1（B7、N1–N4） | 1) `OutputDeliveryPort` 增加单行同步可发送性重查（`PENDING`、`valid_until > now`、verdict `is_current = 1`），`delivery.ts` 在每行 `sendRow` 前同步重查并刷新 `row`，`markSent` 短事务同时校验 verdict `is_current = 1`；2) `app.ts` 的 `startNativeOutput` 改用 `preClose` 钩子停泵并关闭连接，避免 `app.close()` 在在线 WebSocket 消费者存在时阻塞；3) `socket.ts` 的 `new WebSocketServer` 设置 `maxPayload: 4096`（自定小上限，下游不上传数据帧）；4) `docs/protocol/output-native-v1.md` §3 补充同 `platformOrder` 的 `WARD_BLOCKED` 下游撤回说明（N2），§10 澄清 S003 `auth_output_tokens` 当前无路由使用且共用 `vwo_` 前缀（N4）；`examples/consumer-dedup/dedupe.mjs` 移除「promises at-least-once delivery」表述（N4）。 | 第 m7b 批验收打回 B7 与非阻断建议 N1–N4 收口。 |
 
 传输层（`apps/server/src/adapters/native-output/socket.ts`）、`ws` 与 `@types/ws` 依赖、`apps/server/package.json` 的 `--external:ws`、端点测试 `test/output-adapter/protocol/socket.test.ts`，均已完成并通过测试。Origin 不做同源判断，凭据是唯一授权依据（自定，见第 4 节）。
 

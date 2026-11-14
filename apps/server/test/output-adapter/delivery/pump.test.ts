@@ -10,6 +10,7 @@ import {
   attemptsOf,
   fakeConsumer,
   idsOf,
+  overturnToBlock,
   pumpFor,
   statusOf,
 } from "./helpers.js";
@@ -208,5 +209,87 @@ describe("delivery pump (VW-SUB040-AC001, m6 N2)", () => {
     expect(second.sent).toBe(1);
     expect(statusOf(db, "d-k1")).toBe("SENT");
     expect(idsOf(late.frames)).toEqual(["d-k1"]);
+  });
+
+  it("B7: a row overturned to BLOCK while an earlier row is in flight is never sent as cleartext DELIVER", async () => {
+    addDeliveryEvent(db, { eventId: "event-l1", subjectKey: "viewer-l1", platformOrder: 1, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-l1" });
+    addDeliveryEvent(db, { eventId: "event-l2", subjectKey: "viewer-l2", platformOrder: 2, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-l2" });
+    addApprovedText(db, "event-l1", "first safe");
+    addApprovedText(db, "event-l2", "overturned secret");
+
+    let releaseFirst!: () => void;
+    const firstInFlight = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const frames: Array<import("@voxward/contracts").NativeFrame> = [];
+    registry.attach({
+      grantId: "grant-1",
+      channelId: "channel-a",
+      async send(frame) {
+        frames.push(frame);
+        if (frame.type === "DELIVER" && frame.deliveryId === "d-l1") {
+          await firstInFlight;
+        }
+      },
+      bufferedAmount: () => 0,
+      close: () => undefined,
+    });
+
+    const pass = pumpFor(db, registry, clock).runPass();
+    await Promise.resolve();
+    overturnToBlock(db, "event-l2");
+    releaseFirst();
+    await pass;
+
+    expect(idsOf(frames)).toEqual(["d-l1"]);
+    expect(JSON.stringify(frames)).not.toContain("overturned secret");
+    expect(statusOf(db, "d-l2")).toBe("PENDING");
+    const oldVerdict = db.database.sqlite.prepare("SELECT is_current FROM verdicts WHERE id = 'verdict-event-l2'").get() as { is_current: number };
+    expect(oldVerdict.is_current).toBe(0);
+  });
+
+  it("B7: a row marked CANCELLED while an earlier row is in flight is never sent", async () => {
+    addDeliveryEvent(db, { eventId: "event-m1", subjectKey: "viewer-m1", platformOrder: 1, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-m1" });
+    addDeliveryEvent(db, { eventId: "event-m2", subjectKey: "viewer-m2", platformOrder: 2, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-m2" });
+    addApprovedText(db, "event-m1", "first safe");
+    addApprovedText(db, "event-m2", "cancelled secret");
+
+    let releaseFirst!: () => void;
+    const firstInFlight = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const frames: Array<import("@voxward/contracts").NativeFrame> = [];
+    registry.attach({
+      grantId: "grant-1",
+      channelId: "channel-a",
+      async send(frame) {
+        frames.push(frame);
+        if (frame.type === "DELIVER" && frame.deliveryId === "d-m1") {
+          await firstInFlight;
+        }
+      },
+      bufferedAmount: () => 0,
+      close: () => undefined,
+    });
+
+    const pass = pumpFor(db, registry, clock).runPass();
+    await Promise.resolve();
+    db.database.sqlite.prepare("UPDATE deliveries SET status = 'CANCELLED' WHERE id = 'd-m2'").run();
+    releaseFirst();
+    await pass;
+
+    expect(idsOf(frames)).toEqual(["d-m1"]);
+    expect(JSON.stringify(frames)).not.toContain("cancelled secret");
+    expect(statusOf(db, "d-m2")).toBe("CANCELLED");
+  });
+
+  it("B7: markSent returns false when the row's verdict is no longer current", () => {
+    addDeliveryEvent(db, { eventId: "event-n1", subjectKey: "viewer-n1", platformOrder: 1, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-n1" });
+    const port = createOutputDeliveryPort(db.database);
+
+    expect(port.readSendable({ channelId: "channel-a", nowIso: DECIDED_AT, limit: 10 }).map((r) => r.deliveryId)).toEqual(["d-n1"]);
+    db.database.sqlite.prepare("UPDATE verdicts SET is_current = 0 WHERE id = 'verdict-event-n1'").run();
+    expect(port.markSent({ deliveryId: "d-n1", nowIso: DECIDED_AT })).toBe(false);
+    expect(statusOf(db, "d-n1")).toBe("PENDING");
   });
 });
