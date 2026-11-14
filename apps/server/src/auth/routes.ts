@@ -68,11 +68,11 @@ const ROLE = z.enum(CHANNEL_ROLES);
 const LOGIN_BODY = z
   .object({ loginName: z.string().min(1).max(64), password: z.string().min(1).max(512) })
   .strict();
-const MEMBER_BODY = z.object({ accountId: ID, role: ROLE, logAccess: z.boolean() }).strict();
+const MEMBER_BODY = z.object({ accountId: ID, role: ROLE, logAccess: z.boolean(), dataAdmin: z.boolean().optional() }).strict();
 const BATCH_BODY = z
   .object({
     items: z
-      .array(z.object({ channelId: ID, accountId: ID, role: ROLE, logAccess: z.boolean() }).strict())
+      .array(z.object({ channelId: ID, accountId: ID, role: ROLE, logAccess: z.boolean(), dataAdmin: z.boolean().optional() }).strict())
       .min(1)
       .max(100),
   })
@@ -189,7 +189,14 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
     const body = parseBody(MEMBER_BODY, request.body);
     requireKnownAccount(database, body.accountId);
     const membership = runShortTransaction(database, (tx) =>
-      grantMembership(tx, { channelId, accountId: body.accountId, role: body.role, logAccess: body.logAccess, now: new Date() }),
+      grantMembership(tx, {
+        channelId,
+        accountId: body.accountId,
+        role: body.role,
+        logAccess: body.logAccess,
+        dataAdmin: body.dataAdmin ?? false,
+        now: new Date(),
+      }),
     );
     return reply.code(201).send(membership);
   });
@@ -272,6 +279,7 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
           accountId: item.accountId,
           role: item.role,
           logAccess: item.logAccess,
+          dataAdmin: item.dataAdmin ?? false,
           now,
         }),
       ),

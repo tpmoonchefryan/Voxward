@@ -50,6 +50,13 @@
       "when": 1794421014194,
       "tag": "0006_data_deletion_targets",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1794646946020,
+      "tag": "0007_heavy_excalibur",
+      "breakpoints": true
     }
   ]
 }

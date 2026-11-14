@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest 
 import type { VoxwardDatabase } from "../db/client.js";
 import { authenticateRequest } from "./guard.js";
 import { findActiveMembership } from "./members.js";
-import { capabilitiesOf } from "./permissions.js";
+import { capabilitiesOfMembership } from "./permissions.js";
 
 /**
  * HTTP binding for the data-panel routes. The module that implements them is bound by the composition layer, so this
@@ -60,7 +60,7 @@ function actorFor(database: VoxwardDatabase, request: FastifyRequest, channelId:
   return {
     accountId: allowed.principal.accountId,
     channelId,
-    capabilities: new Set<string>(capabilitiesOf(membership.role)),
+    capabilities: new Set<string>(capabilitiesOfMembership(membership)),
   };
 }
 

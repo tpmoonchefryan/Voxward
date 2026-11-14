@@ -42,6 +42,7 @@ export const channelMembers = sqliteTable(
     accountRef: text("account_ref").notNull(),
     role: text("role").notNull(),
     logAccess: integer("log_access").notNull().default(0),
+    dataAdmin: integer("data_admin").notNull().default(0),
     grantedAt: text("granted_at").notNull(),
     revokedAt: text("revoked_at"),
   },
@@ -51,6 +52,7 @@ export const channelMembers = sqliteTable(
       .where(sql.raw("revoked_at IS NULL")),
     check("ck_channel_members_role", inList("role", CHANNEL_ROLES)),
     check("ck_channel_members_log_access", flag("log_access")),
+    check("ck_channel_members_data_admin", flag("data_admin")),
   ],
 );
 

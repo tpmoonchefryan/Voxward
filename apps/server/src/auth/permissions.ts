@@ -44,9 +44,13 @@ const DOWNSTREAM_CAPABILITIES: ReadonlySet<Capability> = new Set<Capability>(["o
 /** A membership with log_access = 1 adds the log viewer to any role. */
 const LOG_ACCESS_CAPABILITIES: ReadonlySet<Capability> = new Set<Capability>(["logs.view"]);
 
+/** A membership with data_admin = 1 adds data handling to any role (Q34), so an owner can also act as data admin. */
+const DATA_ADMIN_CAPABILITIES: ReadonlySet<Capability> = new Set<Capability>(["subject.evidence", "data.handle"]);
+
 export interface MembershipRights {
   readonly role: ChannelRole;
   readonly logAccess: boolean;
+  readonly dataAdmin?: boolean;
 }
 
 export function isChannelRole(value: unknown): value is ChannelRole {
@@ -59,7 +63,8 @@ export function capabilitiesOf(role: ChannelRole): readonly Capability[] {
 
 export function membershipAllows(rights: MembershipRights, capability: Capability): boolean {
   if (ROLE_CAPABILITIES[rights.role].has(capability)) return true;
-  return rights.logAccess && LOG_ACCESS_CAPABILITIES.has(capability);
+  if (rights.logAccess && LOG_ACCESS_CAPABILITIES.has(capability)) return true;
+  return rights.dataAdmin === true && DATA_ADMIN_CAPABILITIES.has(capability);
 }
 
 /** Every capability one membership holds, the role's and the log-access grant together. */
