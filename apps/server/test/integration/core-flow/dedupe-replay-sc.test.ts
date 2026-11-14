@@ -24,6 +24,7 @@ import {
   createIdentityTracker,
   createInMemoryMessageIdStore,
   parseStreamItem,
+  runStreamList,
   toBusinessEvent,
 } from "../../../src/modules/platform-source/index.js";
 import { createScoringPlanner } from "../../../src/modules/scoring-engine/index.js";
@@ -303,5 +304,92 @@ describe("S026 Core Flow: Dedupe, Replay Boundaries, SC/PAID, and Platform Delet
         expect(result.platform?.reason).toBe(scenario.expectedReason);
       }
     }
+  });
+
+  it("reproduces Q46 milestone userComment drop and missing paid flag on ChannelEvent (as-is without modifying src/)", () => {
+    const milestoneRaw = {
+      kind: "youtube#liveChatMessage",
+      id: "yt-milestone-custom-text",
+      snippet: {
+        type: "memberMilestoneChatEvent",
+        publishedAt: "2026-11-14T10:09:30.000Z",
+        memberMilestoneChatDetails: { userComment: "2周年おめでとうございます！" },
+      },
+      authorDetails: { channelId: "UC-MILE-1", isChatSponsor: true },
+    };
+    const scRaw = {
+      kind: "youtube#liveChatMessage",
+      id: "yt-sc-flag-check",
+      snippet: {
+        type: "superChatEvent",
+        publishedAt: "2026-11-14T10:09:31.000Z",
+        superChatDetails: { userComment: "SC hello" },
+      },
+      authorDetails: { channelId: "UC-SC-FLAG", isChatSponsor: true },
+    };
+
+    const parsedMilestone = parseStreamItem(milestoneRaw)!;
+    const parsedSc = parseStreamItem(scRaw)!;
+    const tracker = createIdentityTracker({ capacity: 10 });
+    const mileOut = toBusinessEvent(
+      { message: parsedMilestone, receivedAtMs: Date.parse(fixture.nowIso), order: 1 },
+      { channelId: fixture.channelId, senderRefOf: (c) => `ref:${c}`, newId: () => "c-m1", identities: tracker },
+    );
+    const scOut = toBusinessEvent(
+      { message: parsedSc, receivedAtMs: Date.parse(fixture.nowIso), order: 2 },
+      { channelId: fixture.channelId, senderRefOf: (c) => `ref:${c}`, newId: () => "c-s1", identities: tracker },
+    );
+
+    // Known Q46 defect in src/: memberMilestoneChatDetails.userComment is dropped to null -> body ""
+    expect(parsedMilestone.text).toBeNull();
+    expect(mileOut.message.event.body).toBe("");
+    // ChannelEvent has no paid/type flag for downstream automatic PAID lane routing
+    expect("paidText" in scOut.message.event || "type" in scOut.message.event).toBe(false);
+  });
+
+  it("reproduces Q41 steady-state poll dropping live messages on +6m01s local clock skew (as-is without modifying src/)", async () => {
+    const scRaw = {
+      kind: "youtube#liveChatMessage",
+      id: "yt-q41-clock-skew",
+      snippet: {
+        type: "superChatEvent",
+        publishedAt: "2026-11-14T10:09:31.000Z",
+        superChatDetails: { userComment: "SC live message" },
+      },
+      authorDetails: { channelId: "UC-Q41-SKEW", isChatSponsor: true },
+    };
+
+    const delivered: unknown[] = [];
+    const streamRes = await runStreamList({
+      liveChatId: "lc-q41",
+      resumeToken: "steady-state-page-token-1",
+      config: {
+        replayMaxAgeMs: 300_000,
+        dedupeCapacity: 100,
+        reconnectInitialMs: 1_000,
+        reconnectMaxMs: 10_000,
+        reconnectFactor: 2,
+        rateLimitFloorMs: 5_000,
+        maxConsecutiveFailures: 3,
+      },
+      dedupe: createInMemoryMessageIdStore(10),
+      now: () => Date.parse("2026-11-14T10:15:32.000Z"), // +6m01s ahead of publishedAt
+      sleep: async () => undefined,
+      sink: {
+        deliver: async (m) => {
+          delivered.push(m);
+        },
+      },
+      transport: {
+        async *connect() {
+          yield { kind: "RESPONSE" as const, response: { items: [scRaw], offlineAt: "2026-11-14T10:10:00.000Z" } };
+        },
+      },
+    });
+
+    // Known Q41 defect in src/: steady-state poll still calls classifyReplay and drops live item as STALE_REPLAY
+    expect(streamRes.stats.staleReplay).toBe(1);
+    expect(streamRes.stats.delivered).toBe(0);
+    expect(delivered).toHaveLength(0);
   });
 });

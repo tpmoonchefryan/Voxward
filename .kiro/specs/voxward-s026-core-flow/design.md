@@ -94,5 +94,5 @@ No design authority is configured for the resolved work context. No authority wa
 - **`B14b`（必交「异常不扣分」跨模块测试与矩阵行）**：
   - 新增 `apps/server/test/integration/core-flow/failure-no-penalty.test.ts`，在真实 SQLite + `DecisionService` + `TaskCoordinator` + `ReviewRunner` 上覆盖：① 实时任务经 `TaskCoordinator.reportFailure` 耗尽重试转入 `pending_review`；② 后台 `ReviewRunner` 遇到 AI 超时 / 调用失败 / 非法 JSON 结构（`MODEL_CALL_FAILED` / `AI_OUTPUT_INVALID` -> `FAILED`）。断言目标观众 `subject_scores.current_score` 与 `score_ledger` 行数保持不变（0 扣分），并在 `docs/acceptance/core-flow-matrix.md` §3 新增对应证据行。
 - **`B14c` & `N16a`（仓库相对路径 & 基线版本头说明）**：
-  - 将 `docs/acceptance/core-flow-matrix.md`、`tests/integration/core-flow/README.md` 及 `.kiro/specs/voxward-s026-core-flow/` 内的全部 `file:///`、本机家目录绝对路径与 `.worktrees/` 路径替换为仓库可解析相对路径。
+  - 将 `docs/acceptance/core-flow-matrix.md`、`tests/integration/core-flow/README.md` 及 `.kiro/specs/voxward-s026-core-flow/` 内的全部本地绝对 URI、家目录绝对路径与临时工作树路径替换为仓库可解析相对路径。
   - 在 `docs/acceptance/core-flow-matrix.md` 头部清晰注明只读产品 `src/` 基线提交（`6a6af8a`）与本测试套件返工分支/提交关系（`N16a`）。
