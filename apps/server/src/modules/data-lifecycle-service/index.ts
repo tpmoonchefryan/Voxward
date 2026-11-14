@@ -18,6 +18,7 @@ export { startDeletionRequest } from "./delete-with-exception.js";
 export { executeRequest } from "./cleanup-executor.js";
 export { cleaningRank, deletionTargets, EVIDENCE_SURFACES, type CleanupTarget } from "./cleanup-targets.js";
 export { preferenceMarkerOf, PREFERENCE_PURPOSE, type PreferenceMarker } from "./preference-marker.js";
+export { replayTombstones, type ReplayDeps, type ReplayFailure, type ReplayReport } from "./restore-replay.js";
 export { resumeScoring } from "./resume-scoring.js";
 export { createDataRoutes, type DataRoutes } from "./routes.js";
 export {
@@ -26,4 +27,6 @@ export {
   type DataDeps,
   type DeletedLogsEvent,
   type RouteResponse,
+  type TombstonePort,
+  type TombstoneRecord,
 } from "./types.js";

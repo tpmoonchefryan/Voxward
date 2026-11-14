@@ -21,7 +21,7 @@ export interface OpenDatabaseOptions {
 
 export const DEFAULT_BUSY_TIMEOUT_MS = 5000;
 
-export type DatabaseSetupCode = "WAL_UNAVAILABLE" | "DIRECTORY_UNAVAILABLE";
+export type DatabaseSetupCode = "WAL_UNAVAILABLE" | "DIRECTORY_UNAVAILABLE" | "SECURE_DELETE_UNAVAILABLE";
 
 export class DatabaseSetupError extends Error {
   readonly code: DatabaseSetupCode;
@@ -48,6 +48,11 @@ export function openDatabase({ filePath, busyTimeoutMs = DEFAULT_BUSY_TIMEOUT_MS
     // Durability over throughput. The choice is recorded in the spec; the trade-off has not been measured.
     sqlite.pragma("synchronous = FULL");
     sqlite.pragma("foreign_keys = ON");
+    // Q30: freed pages and deleted cells are overwritten with zeros, so a deleted row does not stay readable in the file.
+    sqlite.pragma("secure_delete = ON");
+    if (sqlite.pragma("secure_delete", { simple: true }) !== 1) {
+      throw new DatabaseSetupError("secure_delete could not be enabled", "SECURE_DELETE_UNAVAILABLE");
+    }
   } catch (error) {
     sqlite.close();
     throw error;
