@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:7fca6e51424bb603b416c643",
+  "workRevision": 4,
+  "sourceDigest": "eb560713cbf608f0286eaf1b5fab6833bb230d37d62d229ca4a0cce4162b070f",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:7fca6e51424bb603b416c643",
+    "workRevision": 4,
+    "sourceDigest": "eb560713cbf608f0286eaf1b5fab6833bb230d37d62d229ca4a0cce4162b070f",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:7fca6e51424bb603b416c643",
+        "externalKey": "VOXWARD-STORY-022",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "实现主播 Dock、房管与管理页面",
+        "summary": "实现主播 Dock、房管与管理页面；待交付与验证。",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:1f83883cd1373011cf0f8b49",
+        "scopeDigest": "cbf7a1fb58ef1ae21e7e1c79e8b5cd93e09e312fffe0f06731e40ca8dbc0d505",
+        "relations": {
+          "blockedBy": [
+            "work:029c382b5915050f0c4de600",
+            "work:210958ccce508a7abf314287",
+            "work:2d989e13eeb4a9b2a8bde05d",
+            "work:5fd9e2a6d536e627b7e4bf13",
+            "work:685ad243ec946eb7f628c93e",
+            "work:83d8e6716c550b3fa7d657ba",
+            "work:8f928245aa79a29f26ad28a6",
+            "work:df1b9e57f926fbd8f7302a95",
+            "work:fd4f81864ddb33703517e12f"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:1f83883cd1373011cf0f8b49",
+          "supersedes": []
+        },
+        "fieldSha256": "8235dfd1723572476d7cb7922188c435f0610a0a15aff87ea1c9425b340c893b",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "d9ec8d8cb1e422e2d20c7ccaff27d441fbef18171ff9832b9b7eed6965df8c8a",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "a289d78e024212a81120148f141a62c98237b12e00a372f6f9eb3d4d186cd3f7",
+    "design.md": "a014499ecab06d48c725cf5a47151afb6111b5e074d5b976fa4b08d506171fa3",
+    "tasks.md": "8cb9c0dd9dfda7330f85a60cebf20da2c84d3c2fe3fe2b9200a4d8a604aceb79"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "fc68bb2acd24ee359fb4ad9cac352a52735029f6bff89cf136313ca91d896fcb"
+}
