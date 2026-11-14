@@ -10,7 +10,7 @@ import {
   type DemoCapability,
   type DemoRole,
 } from "./demo-roles.js";
-import { createSandboxRuntime, type SandboxRuntime } from "./scenarios/index.js";
+import { createSandboxRuntime, type SandboxRuntime, type SandboxSnapshot } from "./scenarios/index.js";
 
 export interface SandboxRoutesOptions {
   readonly database: VoxwardDatabase;
@@ -72,6 +72,35 @@ function requireDemoCapability(
   return { role: auth.role, capabilities: auth.capabilities };
 }
 
+export function redactSnapshotForCapabilities(
+  snapshot: SandboxSnapshot,
+  capabilities: readonly DemoCapability[],
+): SandboxSnapshot {
+  const canReview = capabilities.includes("review.decide");
+  const canLogs = capabilities.includes("logs.read");
+  const canStage = capabilities.includes("stage.read");
+  const canInspectSubjects = canReview || canLogs;
+
+  return {
+    banner: snapshot.banner,
+    syntheticOnly: snapshot.syntheticOnly,
+    channelId: snapshot.channelId,
+    subjects: canInspectSubjects ? snapshot.subjects : [],
+    reviewQueue: canReview ? snapshot.reviewQueue : [],
+    blockedItems: canReview
+      ? snapshot.blockedItems
+      : canLogs
+        ? snapshot.blockedItems.map((item) => ({ ...item, originalText: null }))
+        : [],
+    approvedStage: canStage ? snapshot.approvedStage : [],
+    changeLogs: canLogs ? snapshot.changeLogs : [],
+    technicalLogs: canLogs ? snapshot.technicalLogs : [],
+    dataRequests: canLogs ? snapshot.dataRequests : [],
+    candidateCards: canInspectSubjects ? snapshot.candidateCards : [],
+    cacheEntryCount: canInspectSubjects ? snapshot.cacheEntryCount : 0,
+  };
+}
+
 export const sandboxRoutes: FastifyPluginAsync<SandboxRoutesOptions> = async (
   app: FastifyInstance,
   options: SandboxRoutesOptions,
@@ -97,7 +126,7 @@ export const sandboxRoutes: FastifyPluginAsync<SandboxRoutesOptions> = async (
     return {
       role: actor.role,
       capabilities: actor.capabilities,
-      snapshot: runtime.snapshot(),
+      snapshot: redactSnapshotForCapabilities(runtime.snapshot(), actor.capabilities),
     };
   });
 
@@ -106,10 +135,16 @@ export const sandboxRoutes: FastifyPluginAsync<SandboxRoutesOptions> = async (
     if (actor === undefined) return;
     const parsed = SCENARIO_BODY.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: "INVALID_REQUEST" });
+    if (
+      (parsed.data.scenario === "privacy-delete" || parsed.data.scenario === "privacy-delete-and-except") &&
+      !hasDemoCapability(actor.role, "privacy.delete")
+    ) {
+      return reply.code(403).send({ error: "FORBIDDEN" });
+    }
     const result = await runtime.runScenario(parsed.data.scenario, {
       subjectKey: parsed.data.subjectKey,
     });
-    return { ok: true, result, snapshot: runtime.snapshot() };
+    return { ok: true, result, snapshot: redactSnapshotForCapabilities(runtime.snapshot(), actor.capabilities) };
   });
 
   app.post("/sandbox-api/events", async (request, reply) => {
@@ -118,7 +153,7 @@ export const sandboxRoutes: FastifyPluginAsync<SandboxRoutesOptions> = async (
     const parsed = CUSTOM_EVENT_BODY.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: "INVALID_REQUEST" });
     const result = await runtime.ingestCustom(parsed.data);
-    return { ok: true, result, snapshot: runtime.snapshot() };
+    return { ok: true, result, snapshot: redactSnapshotForCapabilities(runtime.snapshot(), actor.capabilities) };
   });
 
   app.post<{ Params: { taskId: string } }>("/sandbox-api/review/:taskId/decide", async (request, reply) => {
@@ -129,7 +164,12 @@ export const sandboxRoutes: FastifyPluginAsync<SandboxRoutesOptions> = async (
     const mapped =
       parsed.data.classification === "ALLOW" ? "ALLOW_MEANINGFUL" : parsed.data.classification;
     const outcome = await runtime.decideReview(request.params.taskId, mapped);
-    return reply.code(outcome.status).send({ ...(outcome.body as Record<string, unknown>), snapshot: runtime.snapshot() });
+    return reply
+      .code(outcome.status)
+      .send({
+        ...(outcome.body as Record<string, unknown>),
+        snapshot: redactSnapshotForCapabilities(runtime.snapshot(), actor.capabilities),
+      });
   });
 
   app.post("/sandbox-api/privacy", async (request, reply) => {
@@ -139,13 +179,13 @@ export const sandboxRoutes: FastifyPluginAsync<SandboxRoutesOptions> = async (
     if (!parsed.success) return reply.code(400).send({ error: "INVALID_REQUEST" });
     const scenario = parsed.data.mode === "DELETE_AND_EXCEPT" ? "privacy-delete-and-except" : "privacy-delete";
     const result = await runtime.runScenario(scenario, { subjectKey: parsed.data.subjectKey });
-    return { ok: true, result, snapshot: runtime.snapshot() };
+    return { ok: true, result, snapshot: redactSnapshotForCapabilities(runtime.snapshot(), actor.capabilities) };
   });
 
   app.post("/sandbox-api/reset", async (request, reply) => {
     const actor = requireDemoCapability(request, reply, "sandbox.reset");
     if (actor === undefined) return;
     const result = runtime.reset();
-    return { ok: true, ...result, snapshot: runtime.snapshot() };
+    return { ok: true, ...result, snapshot: redactSnapshotForCapabilities(runtime.snapshot(), actor.capabilities) };
   });
 };

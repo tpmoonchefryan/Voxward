@@ -103,4 +103,48 @@ describe("SandboxPage", () => {
     expect(html).toContain("DELETE_AND_EXCEPT");
     expect(html).toContain("记分例外：是");
   });
+
+  it("disables privacy delete scenario buttons when role lacks privacy.delete", () => {
+    const html = renderToStaticMarkup(
+      <SandboxView
+        role="DEMO_MODERATOR"
+        capabilities={["sandbox.read", "sandbox.scenario", "review.decide", "logs.read"]}
+        snapshot={SAMPLE_SNAPSHOT}
+        loading={false}
+        error={null}
+        onSelectRole={() => {}}
+        onTriggerScenario={() => {}}
+        onDecideReview={() => {}}
+        onReset={() => {}}
+      />,
+    );
+
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>隐私仅删除 \(DELETE\)<\/button>/);
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>删除并加例外 \(DELETE_AND_EXCEPT\)<\/button>/);
+  });
+
+  it("hides review queue, blocked originalText, subject details, and logs for DEMO_STAGE_VIEWER", () => {
+    const html = renderToStaticMarkup(
+      <SandboxView
+        role="DEMO_STAGE_VIEWER"
+        capabilities={["sandbox.read", "stage.read"]}
+        snapshot={SAMPLE_SNAPSHOT}
+        loading={false}
+        error={null}
+        onSelectRole={() => {}}
+        onTriggerScenario={() => {}}
+        onDecideReview={() => {}}
+        onReset={() => {}}
+      />,
+    );
+
+    expect(html).toContain("SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）");
+    expect(html).toContain("Thanks for the awesome stream!");
+    expect(html).not.toContain("<h2>人工审核队列");
+    expect(html).not.toContain("已拦截内容");
+    expect(html).not.toContain("观众评分与隐私例外状态");
+    expect(html).not.toContain("变更日志");
+    expect(html).not.toContain("spam-link-xyz");
+    expect(html).not.toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+  });
 });

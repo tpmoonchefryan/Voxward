@@ -41,10 +41,12 @@ export function SandboxView(props: SandboxViewProps) {
   const { role, capabilities, snapshot, loading, error, onSelectRole, onTriggerScenario, onDecideReview, onReset } = props;
   const caps = new Set(capabilities);
   const canScenario = caps.has("sandbox.scenario");
+  const canPrivacyDelete = caps.has("privacy.delete");
   const canDecide = caps.has("review.decide");
   const canReset = caps.has("sandbox.reset");
   const canStage = caps.has("stage.read");
   const canLogs = caps.has("logs.read");
+  const canInspectSubjects = canDecide || canLogs;
 
   return (
     <main>
@@ -80,16 +82,20 @@ export function SandboxView(props: SandboxViewProps) {
       <section aria-label="预设场景与重置">
         <h2>预设演示场景</h2>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {SCENARIO_BUTTONS.map((btn) => (
-            <button
-              key={btn.id}
-              type="button"
-              disabled={!canScenario || loading}
-              onClick={() => onTriggerScenario(btn.id)}
-            >
-              {btn.label}
-            </button>
-          ))}
+          {SCENARIO_BUTTONS.map((btn) => {
+            const isPrivacyBtn = btn.id === "privacy-delete" || btn.id === "privacy-delete-and-except";
+            const allowed = canScenario && (!isPrivacyBtn || canPrivacyDelete);
+            return (
+              <button
+                key={btn.id}
+                type="button"
+                disabled={!allowed || loading}
+                onClick={() => onTriggerScenario(btn.id)}
+              >
+                {btn.label}
+              </button>
+            );
+          })}
           <button type="button" disabled={!canReset || loading} onClick={onReset}>
             一键重置沙盒
           </button>
@@ -104,38 +110,38 @@ export function SandboxView(props: SandboxViewProps) {
 
       {snapshot !== null ? (
         <>
-          <section aria-label="评分与隐私状态">
-            <h2>观众评分与隐私例外状态（内存缓存条数：{snapshot.cacheEntryCount}）</h2>
-            <ul>
-              {snapshot.subjects.map((sub) => (
-                <li key={sub.subjectId}>
-                  <UntrustedText text={sub.subjectKey} /> — 分数：{sub.currentScore} ｜ 代次：
-                  {sub.processingGeneration} ｜ 记分例外：{sub.hasException ? "是" : "否"}
-                </li>
-              ))}
-            </ul>
-          </section>
+          {canInspectSubjects ? (
+            <section aria-label="评分与隐私状态">
+              <h2>观众评分与隐私例外状态（内存缓存条数：{snapshot.cacheEntryCount}）</h2>
+              <ul>
+                {snapshot.subjects.map((sub) => (
+                  <li key={sub.subjectId}>
+                    <UntrustedText text={sub.subjectKey} /> — 分数：{sub.currentScore} ｜ 代次：
+                    {sub.processingGeneration} ｜ 记分例外：{sub.hasException ? "是" : "否"}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
-          <section aria-label="人工审核队列">
-            <h2>人工审核队列（{snapshot.reviewQueue.length}）</h2>
-            <ul>
-              {snapshot.reviewQueue.map((item) => (
-                <li key={item.taskId}>
-                  <UntrustedText text={item.subjectRef} />：<UntrustedText text={item.originalText ?? ""} />{" "}
-                  {canDecide ? (
-                    <>
-                      <button type="button" onClick={() => onDecideReview(item.taskId, "ALLOW")}>
-                        放行
-                      </button>
-                      <button type="button" onClick={() => onDecideReview(item.taskId, "BLOCK")}>
-                        拦截
-                      </button>
-                    </>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </section>
+          {canDecide ? (
+            <section aria-label="人工审核队列">
+              <h2>人工审核队列（{snapshot.reviewQueue.length}）</h2>
+              <ul>
+                {snapshot.reviewQueue.map((item) => (
+                  <li key={item.taskId}>
+                    <UntrustedText text={item.subjectRef} />：<UntrustedText text={item.originalText ?? ""} />{" "}
+                    <button type="button" onClick={() => onDecideReview(item.taskId, "ALLOW")}>
+                      放行
+                    </button>
+                    <button type="button" onClick={() => onDecideReview(item.taskId, "BLOCK")}>
+                      拦截
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           {canStage ? (
             <section aria-label="舞台已批准输出">
@@ -159,17 +165,19 @@ export function SandboxView(props: SandboxViewProps) {
             </section>
           ) : null}
 
-          <section aria-label="已拦截内容">
-            <h2>已拦截内容（{snapshot.blockedItems.length}）</h2>
-            <ul>
-              {snapshot.blockedItems.map((item) => (
-                <li key={item.eventId}>
-                  <UntrustedText text={item.subjectRef} /> [{item.classification}]：
-                  <UntrustedText text={item.originalText ?? "（已折叠）"} />
-                </li>
-              ))}
-            </ul>
-          </section>
+          {canInspectSubjects ? (
+            <section aria-label="已拦截内容">
+              <h2>已拦截内容（{snapshot.blockedItems.length}）</h2>
+              <ul>
+                {snapshot.blockedItems.map((item) => (
+                  <li key={item.eventId}>
+                    <UntrustedText text={item.subjectRef} /> [{item.classification}]：
+                    <UntrustedText text={canDecide ? (item.originalText ?? "（已折叠）") : "（已折叠）"} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           {canLogs ? (
             <section aria-label="日志与数据请求监视">

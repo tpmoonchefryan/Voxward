@@ -7,6 +7,12 @@ import { runMigrations } from "./db/migrate.js";
 import { createTombstoneLedger } from "./db/tombstone-ledger.js";
 import { buildRegistry } from "./modules/registry.js";
 
+const sandboxEnabledRaw = process.env.VOXWARD_SANDBOX_ENABLED?.trim().toLowerCase();
+if (sandboxEnabledRaw === "1" || sandboxEnabledRaw === "true" || sandboxEnabledRaw === "yes" || sandboxEnabledRaw === "on") {
+  process.stderr.write("PRODUCTION_STARTUP_FAILED: VOXWARD_SANDBOX_ENABLED must not be set on production main.ts\n");
+  process.exit(1);
+}
+
 const loaded = loadConfig({ env: process.env, readFile: (path) => readFileSync(path, "utf8") });
 if (!loaded.ok) {
   process.stderr.write(`${describeConfigError(loaded.error)}\n`);

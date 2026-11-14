@@ -12,6 +12,7 @@ export default defineConfig({
       "/internal": "http://127.0.0.1:3000",
       "/auth": "http://127.0.0.1:3000",
       "/channels": "http://127.0.0.1:3000",
+      "/sandbox-api": process.env.VOXWARD_SANDBOX_ORIGIN ?? "http://127.0.0.1:3100",
     },
   },
 });

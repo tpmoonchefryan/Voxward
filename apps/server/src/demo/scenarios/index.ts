@@ -7,7 +7,7 @@ import {
   type SubjectCacheHub,
   type Verdict,
 } from "@voxward/contracts";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { createAuditLogPort } from "../../db/audit-log.js";
 import { readDockAndModerationFeed } from "../../db/channel-panel-read.js";
 import { publishConfirmedCandidateTerm } from "../../db/channel-settings-store.js";
@@ -183,7 +183,13 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
       const exc = database.orm
         .select({ id: scoreExceptions.id })
         .from(scoreExceptions)
-        .where(and(eq(scoreExceptions.channelId, SANDBOX_CHANNEL_ID), eq(scoreExceptions.subjectId, existing.id)))
+        .where(
+          and(
+            eq(scoreExceptions.channelId, SANDBOX_CHANNEL_ID),
+            eq(scoreExceptions.subjectId, existing.id),
+            isNull(scoreExceptions.removedAt),
+          ),
+        )
         .get();
       return { id: existing.id, processingGeneration: existing.processingGeneration, hasException: exc !== undefined };
     }
@@ -534,7 +540,7 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
         database.orm
           .select({ subjectId: scoreExceptions.subjectId })
           .from(scoreExceptions)
-          .where(eq(scoreExceptions.channelId, SANDBOX_CHANNEL_ID))
+          .where(and(eq(scoreExceptions.channelId, SANDBOX_CHANNEL_ID), isNull(scoreExceptions.removedAt)))
           .all()
           .map((r) => r.subjectId),
       );
