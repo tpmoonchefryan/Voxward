@@ -1,0 +1,39 @@
+[
+  {
+    "run": "e08-test",
+    "guardLoaded": true,
+    "netFiles": 184,
+    "kinds": {
+      "loaded": 185,
+      "ipc": 36,
+      "dns": 1,
+      "loopback": 33,
+      "fetch-loopback": 14
+    },
+    "shimLines": 0
+  },
+  {
+    "run": "e60-s019",
+    "guardLoaded": true,
+    "netFiles": 2,
+    "kinds": {
+      "loaded": 3,
+      "ipc": 1,
+      "fetch-loopback": 16,
+      "loopback": 2
+    },
+    "shimLines": 0
+  },
+  {
+    "run": "e70-s022",
+    "guardLoaded": true,
+    "netFiles": 2,
+    "kinds": {
+      "loaded": 3,
+      "ipc": 1,
+      "fetch-loopback": 37,
+      "loopback": 2
+    },
+    "shimLines": 0
+  }
+]

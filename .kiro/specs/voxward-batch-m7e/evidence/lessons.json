@@ -1,0 +1,52 @@
+[
+ {
+  "subject": "面板读模型与写接口混用 subjects.id 和 platform_subject_key 会让前端名单操作在联调时 100% 报 404",
+  "summary": "VoxWard S022 的 db/channel-panel-read.ts 在组装待审队列和信息流时把 subjectRef 填成了内部 UUID（channel_events.subject_id，即 subjects.id），而后端 POST /channels/:id/lists/subjects（db/decision-store.ts editSubjectList）按外部伪名键 subjects.platform_subject_key 查询主体。前端组件单测只向 ModerationView 传了内存 mock 回调，没有经过真实快照输出直连写接口，掩盖了键空间错配，导致点击「加入频道黑名单」恒返回 404 SUBJECT_NOT_FOUND。",
+  "snippet": "读模型对外暴露供后续写操作回传的引用字段（如 subjectRef）时，必须与目标写路由查询的列同属一个键空间，并在契约注释标明是内部 subjectId 还是 platformSubjectKey；验收探针应直接取 GET 快照字段原样回传 POST 写接口验证闭环。",
+  "body": "第 m7e 批 E70 D1 实测复现（B10a）：在真实 buildApp + SQLite 上写入待审消息后，GET /moderation-snapshot 返回 queue[0].subjectRef 为内部 UUID（subj-...），按 ModerationPage.tsx:136 同一路径调用 client.editSubjectList(channelId, item.subjectRef, \"BLACKLIST\") 即返回 HTTP 404（reason: SUBJECT_NOT_FOUND），list_entries 落库 0 行；改传该主体的 platform_subject_key 则返回 200。",
+  "tags": ["voxward", "contracts", "identifier-mismatch", "moderation-ui", "integration-testing"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/channel-panel-read.ts",
+    "apps/server/src/db/decision-store.ts",
+    "apps/web/src/pages/moderation/ModerationPage.tsx",
+    "packages/contracts/src/ports/channel-panel.ts",
+    ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "可选链判非 null（obj?.prop !== null）在左值缺失时恒为 true，会把无证据普通/噪声消息误归入 Super Chat",
+  "summary": "db/channel-panel-read.ts 用 evEvidence?.translationJson !== null 判断是否把已放行消息归入 approvedSc（「获准 Super Chat」）。当事件没有 technical_log_evidence 行（规则快通、ALLOW_NOISE 噪声或 7 天日志到期清理后）时，可选链返回 undefined，而 JavaScript 中 undefined !== null 求值为 true，导致连 ALLOW_NOISE 噪声弹幕也全部混入获准 SC 列表；同时因 queue.read 角色均持有 message.original，仅靠服务端 !includeOriginal 计算 bodyFolded 会让违规正文对全部真实登录角色明文展开。",
+  "snippet": "在 TypeScript/JavaScript 中对可选链结果判断「存在且非 null」必须写 != null（同时排除 null 与 undefined）或显式判 !== undefined && !== null，切勿写 ?.prop !== null；「默认折叠、按权限可展开」属于前端视图初始折叠状态 + 服务端权限位组合，不能把「有展开权限」等同于「默认不折叠」。",
+  "body": "第 m7e 批 E70 D2 实测复现（B10b）：写入一条无 technical_log_evidence 的 ALLOW_NOISE 消息与一条普通 ALLOW_MEANINGFUL 聊天消息后，GET /dock-snapshot 的 feed.approvedSc 同时包含这两条非 SC 消息，SSR 渲染 DockPage 将噪声弹幕展示在「获准 Super Chat」栏且缺失 liveStream 实时流区块；同时 CHANNEL_OWNER 与 MODERATOR 查看本地拦截消息时 bodyFolded 均为 false，页面默认明文直出违规原文。",
+  "tags": ["voxward", "typescript", "optional-chaining", "dock-ui", "rbac"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/server/src/db/channel-panel-read.ts",
+    "apps/server/src/auth/permissions.ts",
+    "apps/web/src/pages/dock/DockPage.tsx",
+    "apps/web/src/pages/moderation/ModerationPage.tsx",
+    ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md"
+   ]
+  }
+ },
+ {
+  "subject": "只对纯展示子视图传合成 props 做测试，会漏掉容器组件未接线写 API 与未渲染真实后端字段的半成品缺口",
+  "summary": "S022 在 apps/web/src/pages/admin/api.ts 中封装了 13 个管理端变更方法并在测试中向纯视图组件 AdminView 传入手工构造的 ruleIssues 等 props，但实际路由挂载的容器组件 AdminPage.tsx 只接线了其中 3 组操作，其余 10 个变更方法（saveModelSettings、publishRules、grantMember、editTerm、editSubjectList、saveAdminSettings、输出授权/令牌签发吊销）在组件树中 0 次调用，且模型配置区块只显示 providerName 和布尔开关，完全丢弃了后端返回的真实模型 ID 与推理档位。",
+  "snippet": "管理台验收不仅要测后端路由和纯展示函数组件，还必须从路由入口容器组件（如 AdminPage）检查：（1）后端返回的真实参数集合是否实际出现在渲染输出中；（2）api 客户端封装的每个写方法在容器组件中是否有真实触发路径，避免「API 写了、子视图写了局部提示框，但容器没连线」。",
+  "body": "第 m7e 批 E70 D3 实测复现（B11）：通过 PUT /channels/:id/model-settings 保存真实模型 gpt-5.4-mini / gpt-5.4 与推理档位后，SSR 渲染真实数据驱动的 AdminPage，输出 HTML 不含任何模型 ID 或推理档位，也没有保存控件；静态核对确认 AdminApi 中 10 个写方法在 AdminPage.tsx 中调用次数为 0，且 ruleIssues 只挂在 GET refresh 的 catch 分支上，正常运行时恒为空数组，Q12 正则改写提示在真实页面永远无法触发。",
+  "tags": ["voxward", "react", "admin-panel", "ui-wiring", "acceptance-testing"],
+  "sources": {
+   "projectId": "project:f824c7861e6888255132af42",
+   "references": [
+    "apps/web/src/pages/admin/AdminPage.tsx",
+    "apps/web/src/pages/admin/api.ts",
+    "apps/server/src/auth/channel-panel-routes.ts",
+    ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md"
+   ]
+  }
+ }
+]

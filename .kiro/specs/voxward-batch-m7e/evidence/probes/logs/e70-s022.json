@@ -1,0 +1,144 @@
+{
+  "total": 7,
+  "allPassed": true,
+  "results": [
+    {
+      "id": "P1-q15-untrusted-text-bdi-and-escaping",
+      "ok": true,
+      "detail": {
+        "html": "<span class=\"untrusted-text\" data-untrusted=\"true\" style=\"white-space:pre-wrap\"><bdi>Hello ‮&lt;script&gt;alert(1)&lt;/script&gt;‬ ​‍﻿ {{tpl}} https://example.test/x</bdi></span>"
+      }
+    },
+    {
+      "id": "P2-q34-migration-check-constraint-and-owner-data-admin-grant",
+      "ok": true,
+      "detail": {
+        "checkConstraintRejected": true,
+        "beforeJson": {
+          "dataHandle": false
+        },
+        "grantSelfDa": {
+          "channelId": "room-m7e-1",
+          "accountId": "3fac36b9-87b5-4744-adb7-c8e64d187a85",
+          "role": "CHANNEL_OWNER",
+          "logAccess": true,
+          "dataAdmin": true,
+          "grantedAt": "2026-11-14T09:59:58.905Z"
+        },
+        "afterJson": {
+          "dataHandle": true
+        }
+      }
+    },
+    {
+      "id": "P3-rbac-csrf-bearer-and-cross-channel-isolation",
+      "ok": true,
+      "detail": {
+        "unauthDock": 401,
+        "bearerDock": 403,
+        "noCsrfToggle": 403,
+        "daDock": 403,
+        "modModelGet": 403,
+        "ownerCrossCh2": 403
+      }
+    },
+    {
+      "id": "P4-backend-q48-q12-q50-and-multimod-409",
+      "ok": true,
+      "detail": {
+        "savedModel": {
+          "modelId": "claude-sonnet-4",
+          "reasoning": "low"
+        },
+        "modelUnsupportedStatus": 422,
+        "q12Hint": "write the alternatives as top-level branches, such as a|b, or split them into several rules",
+        "confirmedStatus": "CONFIRMED",
+        "rejectedStatus": "REJECTED",
+        "mod1Decide": {
+          "conflict": false,
+          "status": "committed"
+        },
+        "mod2Decide": {
+          "conflict": true,
+          "reason": "TASK_NOT_OPEN",
+          "current": {
+            "contractVersion": "1",
+            "verdictId": "4d45d868-1825-4783-a79a-c80d57498d6e",
+            "seq": 1,
+            "classification": "ALLOW_NOISE",
+            "downstream": "ALLOW",
+            "source": "MANUAL",
+            "decidedAt": "2026-11-14T09:59:58.939Z"
+          }
+        }
+      }
+    },
+    {
+      "id": "D1-defect-b10a-moderation-ban-button-passes-uuid-causing-404",
+      "ok": true,
+      "detail": {
+        "itemSubjectRef": "sub-uuid-viewer-1",
+        "actualPlatformSubjectKey": "derived-yt-key-1",
+        "banErrorStatus": 404,
+        "banRawBody": {
+          "status": "refused",
+          "reason": "SUBJECT_NOT_FOUND"
+        },
+        "listCountAfterBanClick": 0
+      }
+    },
+    {
+      "id": "D2-defect-b10b-approvedsc-pollution-missing-dock-livestream-and-unfolded-blocked-body",
+      "ok": true,
+      "detail": {
+        "noiseEventInApprovedSc": true,
+        "approvedScEventIds": [
+          "ev-race-1"
+        ],
+        "blockedItemBodyFoldedForRealMod": false,
+        "blockedRawExposedByDefault": true,
+        "dockRendersLiveStreamSection": false,
+        "q17PostRevokeStatus": 403
+      }
+    },
+    {
+      "id": "D3-defect-b11-admin-page-omits-model-params-and-leaves-10-mutations-unwired",
+      "ok": true,
+      "detail": {
+        "backendSavedRealtimeModel": {
+          "modelId": "claude-sonnet-4",
+          "reasoning": "low"
+        },
+        "backendCapabilityModels": [
+          {
+            "modelId": "claude-sonnet-4",
+            "reasoningLevels": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          {
+            "modelId": "nova-lite",
+            "reasoningLevels": []
+          }
+        ],
+        "rendersSavedOrAvailableModelIds": false,
+        "hasFormInputsOrSelects": false,
+        "unwiredMutationsCount": 10,
+        "unwiredMutations": [
+          "publishRules",
+          "editSubjectList",
+          "editTerm",
+          "grantMember",
+          "saveModelSettings",
+          "saveAdminSettings",
+          "issueOutputGrant",
+          "revokeOutputGrant",
+          "issueOutputToken",
+          "revokeOutputToken"
+        ]
+      }
+    }
+  ]
+}

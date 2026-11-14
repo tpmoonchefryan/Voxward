@@ -1,0 +1,124 @@
+{
+  "total": 6,
+  "allPassed": true,
+  "results": [
+    {
+      "id": "F1-http-rbac-q34-q29-q35-n10-and-18-surfaces",
+      "ok": true,
+      "detail": {
+        "ownerPlainStatus": 403,
+        "modStatus": 403,
+        "crossStatus": 403,
+        "bearerStatus": 403,
+        "ownerDualCreateStatus": 201,
+        "execution": "COMPLETED",
+        "targetCount": 18,
+        "postTechStatus": 404,
+        "postSubjItems": [
+          {
+            "id": "12af1d8e-6425-49bc-a3cc-9ff5c94f9d53",
+            "channelId": "channel-1",
+            "occurredAt": "2026-11-14T09:56:56.191Z",
+            "actor": {
+              "kind": "ACCOUNT",
+              "ref": "4a89a789-aa6e-47f2-8c94-d8b7ea2b7572"
+            },
+            "changeKind": "SCORE_EXCEPTION_CHANGED",
+            "outcome": "SUCCEEDED",
+            "summary": "DATA_REQUEST_CERTIFICATE",
+            "correlationId": "subject:subject-1"
+          },
+          {
+            "id": "chg-f1-subj",
+            "channelId": "channel-1",
+            "occurredAt": "2026-11-10T10:00:00.000Z",
+            "actor": {
+              "kind": "SYSTEM",
+              "ref": "synthetic-actor"
+            },
+            "changeKind": "LIST_CHANGED",
+            "outcome": "SUCCEEDED",
+            "summary": "DATA_REQUEST_CERTIFICATE",
+            "correlationId": "subject:subject-1"
+          }
+        ],
+        "repeatExecution": "COMPLETED"
+      }
+    },
+    {
+      "id": "F2-b8-closed-candidate-cards-cleared-from-channel-events-correlations",
+      "ok": true,
+      "detail": {
+        "execA": "COMPLETED",
+        "afterACards": [
+          "twin-must-survive"
+        ],
+        "run1": "PARTIAL_FAILED",
+        "run2": "COMPLETED",
+        "afterBCards": [
+          "twin-must-survive"
+        ]
+      }
+    },
+    {
+      "id": "F3-b9-closed-resume-from-verdict",
+      "ok": true,
+      "detail": {
+        "failTarget": "VERDICT",
+        "postCommitScoring": "refused",
+        "resumeExecution": "COMPLETED",
+        "subjEventsLeft": 0,
+        "subjTechLeft": 0,
+        "twinEventsLeft": 1
+      }
+    },
+    {
+      "id": "F3-b9-closed-resume-from-task",
+      "ok": true,
+      "detail": {
+        "failTarget": "TASK",
+        "postCommitScoring": "refused",
+        "resumeExecution": "COMPLETED",
+        "subjEventsLeft": 0,
+        "subjTechLeft": 0,
+        "twinEventsLeft": 1
+      }
+    },
+    {
+      "id": "F3-b9-closed-resume-from-channel_event",
+      "ok": true,
+      "detail": {
+        "failTarget": "CHANNEL_EVENT",
+        "postCommitScoring": "refused",
+        "resumeExecution": "COMPLETED",
+        "subjEventsLeft": 0,
+        "subjTechLeft": 0,
+        "twinEventsLeft": 1
+      }
+    },
+    {
+      "id": "F4-stale-generation-scoring-guard-marker-and-resume",
+      "ok": true,
+      "detail": {
+        "lateGen0Commit": {
+          "status": "conflict",
+          "reason": "STALE_GENERATION",
+          "current": null
+        },
+        "afterCleanupCommit": {
+          "status": "conflict",
+          "reason": "TASK_NOT_FOUND",
+          "current": null
+        },
+        "refusedReason": "EXCEPTION_ACTIVE",
+        "markerKeys": [
+          "createdAt",
+          "purpose",
+          "subjectId"
+        ],
+        "resumeStatus": 200,
+        "exceptionAfterResume": null
+      }
+    }
+  ]
+}

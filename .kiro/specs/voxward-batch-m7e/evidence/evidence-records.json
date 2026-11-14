@@ -1,0 +1,929 @@
+{
+ "note": "草稿，供主线程链写。targets[].evidence 中每一行严格只含引擎允许的八个键且顺序固定，可由 close-batch.cjs 原样并入对应工单 content.evidence（STORY-019 与 SUB-036 原有 d047636 证据自动保留，新增本轮 a7a80ae 证据）。60 行：satisfied 43、failed 17、unverified 0。VOXWARD-STORY-019（12/12 satisfied）与 VOXWARD-SUB-036（13/13 satisfied）复验通过，可传 DONE_KEYS=VOXWARD-SUB-036,VOXWARD-STORY-019 先行关单（VOXWARD-SUB-035 已是 done）；VOXWARD-STORY-022（6/11 satisfied、5 failed）、VOXWARD-SUB-041（6/12 satisfied、6 failed）、VOXWARD-SUB-042（6/12 satisfied、6 failed）因阻断 B10、B11 打回，仅链写证据留痕、不关单。locator 指向 .kiro/specs/voxward-batch-m7e/evidence/acceptance.md。",
+ "candidate": {
+  "codeVersion": "a7a80ae",
+  "fullSha": "a7a80aeb2605151dd18956298fe68f57dca194ca",
+  "note": "引擎按字符串精确比较 evidence.codeVersion 与完成候选。VOXWARD-SUB-036 与 VOXWARD-STORY-019 在 a7a80ae 上全部行均为 satisfied，可立即以 a7a80ae 关单；VOXWARD-STORY-022、VOXWARD-SUB-041、VOXWARD-SUB-042 含 failed 行，须在 S022 返工后的新候选上窄范围复验。写入时以读回的 revision 为准。"
+ },
+ "readFrom": {
+  "command": "预取实时工单快照 wave1c/show/VOXWARD-{STORY-019,SUB-036,STORY-022,SUB-041,SUB-042}.json（einzbern.mjs work-show --workspace <Ether> --external-key <KEY>）",
+  "libraryVersion": 21537,
+  "headEventHash": "0de17833e4ce5c389e92402eeb25b479f22fef04ea76e318854fee51fb79720e"
+ },
+ "shapeCheck": "生成脚本逐行校验：键名与顺序严格为 [acceptanceId, acceptanceVersion, requirement, codeVersion, locator, actual, outcome, kind] 八键、requirement 含三键且版本为正整数、outcome 与 kind 属合法枚举、kind 按 method 前缀规则确定（30 行 source-behavior-review + 30 行 machine）、actual 非空且含具体实测/审查依据、locator 锚点在 acceptance.md 中唯一存在且与标题一一对应、每单行数与实时快照完全一致（12+13+11+12+12=60），并通过 close-batch.cjs 干跑校验。未调用引擎写入。",
+ "counts": {
+  "total": 60,
+  "satisfied": 43,
+  "failed": 17,
+  "unverified": 0,
+  "byTarget": {
+   "VOXWARD-STORY-019": {
+    "total": 12,
+    "satisfied": 12,
+    "failed": 0,
+    "unverified": 0
+   },
+   "VOXWARD-SUB-036": {
+    "total": 13,
+    "satisfied": 13,
+    "failed": 0,
+    "unverified": 0
+   },
+   "VOXWARD-STORY-022": {
+    "total": 11,
+    "satisfied": 6,
+    "failed": 5,
+    "unverified": 0
+   },
+   "VOXWARD-SUB-041": {
+    "total": 12,
+    "satisfied": 6,
+    "failed": 6,
+    "unverified": 0
+   },
+   "VOXWARD-SUB-042": {
+    "total": 12,
+    "satisfied": 6,
+    "failed": 6,
+    "unverified": 0
+   }
+  }
+ },
+ "targets": [
+  {
+   "externalKey": "VOXWARD-STORY-019",
+   "workId": "work:7f0ac0774bc508523d09b5f1",
+   "revision": 5,
+   "evidence": [
+    {
+     "acceptanceId": "VW-S019-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:7f0ac0774bc508523d09b5f1",
+      "requirementId": "VW-S019-R001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-ac001",
+     "actual": "候选 a7a80ae 复验通过（合入返工提交 051f09c，相对 d8ed897 仅改动 S019 spec、db/subject-cleanup.ts、cleanup-executor.ts 与 executor.test.ts，0 处触及已关单 VOXWARD-SUB-035 的交付文件）：install --frozen-lockfile、build、typecheck、check:deps（235 文件 0 违规）、默认冒烟（dev/dist /healthz 均 200 且退出后无监听）及拦截下全量测试（155 文件 1902 项）全部退出 0（E02–E08）。前轮阻断 B8 与 B9 已在 E60（probe-m7e-s019-fix1.mts，6 组断言全绿）实测闭环：（1）B8 关闭（E60 F2）：db/subject-cleanup.ts:34-42 的 readCleanupFacts 并集读取 channel_events.correlation_id（同频道同主体）与 locateSubjectLogs(subjectId).correlationIds；无论技术日志已按 7 天保留期提前清空，还是第 1 轮在步骤 3 删除 technical_logs 后于步骤 4 CANDIDATE_CARD 首次抛错置 PARTIAL_FAILED 并在第 2 轮续作，CandidateStore 中目标主体关联卡片均清零（0 张残留），同频道 TWIN 卡片完好保留；（2）B9 关闭（E60 F3）：cleanup-executor.ts:101-140 在执行 VERDICT 前幂等补扫 DELIVERY，在 TASK 前补扫技术日志 + DELIVERY + VERDICT，在 CHANNEL_EVENT 前补扫技术日志 + DELIVERY + VERDICT + TASK；分别在步骤 11 VERDICT、步骤 12 TASK、步骤 13 CHANNEL_EVENT 首次注入故障置 PARTIAL_FAILED，期间写入例外观众的不计分新审核消息（含 event/task/verdict/delivery/technical_log），撤销故障后二次 execute 均一次收敛为 COMPLETED（无 SQLITE_CONSTRAINT_FOREIGNKEY），TWIN 数据完好；（3）端到端闭环（E60 F1、F4）：单短事务确认例外 + 提升 processing_generation + 登记 18 个表面（15 个数据库表面 + Q7 昵称缓存 + Q42 身份缓存 + Q51 候选词卡片）、零记分窗口（EXCEPTION_ACTIVE）、代次 0 旧任务晚到丢弃（STALE_GENERATION）、例外新消息继续常规审核不计分、DELETE_DATA_ONLY 不撤销例外、preferenceMarkerOf 最小标记不含旧分或昵称、RESUME_SCORING 恢复计分、Q29 主体级 Change Log 证书化（含 N10 已在 design.md §11 注明）、Q35 共享 InvalidationBus 失效及 Q34 CHANNEL_OWNER 兼任 dataAdmin=true 时的 /channels/:id/data/* 权限判定全部成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S019-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:18aaac72724b30c2ee9be8b6",
+      "requirementId": "VW-E004-R019",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-parent",
+     "actual": "候选 a7a80ae 复验通过（合入返工提交 051f09c，相对 d8ed897 仅改动 S019 spec、db/subject-cleanup.ts、cleanup-executor.ts 与 executor.test.ts，0 处触及已关单 VOXWARD-SUB-035 的交付文件）：install --frozen-lockfile、build、typecheck、check:deps（235 文件 0 违规）、默认冒烟（dev/dist /healthz 均 200 且退出后无监听）及拦截下全量测试（155 文件 1902 项）全部退出 0（E02–E08）。前轮阻断 B8 与 B9 已在 E60（probe-m7e-s019-fix1.mts，6 组断言全绿）实测闭环：（1）B8 关闭（E60 F2）：db/subject-cleanup.ts:34-42 的 readCleanupFacts 并集读取 channel_events.correlation_id（同频道同主体）与 locateSubjectLogs(subjectId).correlationIds；无论技术日志已按 7 天保留期提前清空，还是第 1 轮在步骤 3 删除 technical_logs 后于步骤 4 CANDIDATE_CARD 首次抛错置 PARTIAL_FAILED 并在第 2 轮续作，CandidateStore 中目标主体关联卡片均清零（0 张残留），同频道 TWIN 卡片完好保留；（2）B9 关闭（E60 F3）：cleanup-executor.ts:101-140 在执行 VERDICT 前幂等补扫 DELIVERY，在 TASK 前补扫技术日志 + DELIVERY + VERDICT，在 CHANNEL_EVENT 前补扫技术日志 + DELIVERY + VERDICT + TASK；分别在步骤 11 VERDICT、步骤 12 TASK、步骤 13 CHANNEL_EVENT 首次注入故障置 PARTIAL_FAILED，期间写入例外观众的不计分新审核消息（含 event/task/verdict/delivery/technical_log），撤销故障后二次 execute 均一次收敛为 COMPLETED（无 SQLITE_CONSTRAINT_FOREIGNKEY），TWIN 数据完好；（3）端到端闭环（E60 F1、F4）：单短事务确认例外 + 提升 processing_generation + 登记 18 个表面（15 个数据库表面 + Q7 昵称缓存 + Q42 身份缓存 + Q51 候选词卡片）、零记分窗口（EXCEPTION_ACTIVE）、代次 0 旧任务晚到丢弃（STALE_GENERATION）、例外新消息继续常规审核不计分、DELETE_DATA_ONLY 不撤销例外、preferenceMarkerOf 最小标记不含旧分或昵称、RESUME_SCORING 恢复计分、Q29 主体级 Change Log 证书化（含 N10 已在 design.md §11 注明）、Q35 共享 InvalidationBus 失效及 Q34 CHANNEL_OWNER 兼任 dataAdmin=true 时的 /channels/:id/data/* 权限判定全部成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S019-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-inherit-001",
+     "actual": "候选 a7a80ae 源码与依赖核对（E06 check:deps 235 文件 0 违规、E09 负面对照、E10 kiro-specs check SPEC_CURRENT）：S019 返工仅改动 db/subject-cleanup.ts 与 data-lifecycle-service/cleanup-executor.ts，packages/contracts 保持 CONTRACT_VERSION = \"1\"，业务模块不导入 db/fastify/供应商 SDK，保持远端自托管单后端与既定 TypeScript/SQLite 栈。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S019-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-inherit-009",
+     "actual": "候选 a7a80ae 复验通过（合入返工提交 051f09c，相对 d8ed897 仅改动 S019 spec、db/subject-cleanup.ts、cleanup-executor.ts 与 executor.test.ts，0 处触及已关单 VOXWARD-SUB-035 的交付文件）：install --frozen-lockfile、build、typecheck、check:deps（235 文件 0 违规）、默认冒烟（dev/dist /healthz 均 200 且退出后无监听）及拦截下全量测试（155 文件 1902 项）全部退出 0（E02–E08）。前轮阻断 B8 与 B9 已在 E60（probe-m7e-s019-fix1.mts，6 组断言全绿）实测闭环：（1）B8 关闭（E60 F2）：db/subject-cleanup.ts:34-42 的 readCleanupFacts 并集读取 channel_events.correlation_id（同频道同主体）与 locateSubjectLogs(subjectId).correlationIds；无论技术日志已按 7 天保留期提前清空，还是第 1 轮在步骤 3 删除 technical_logs 后于步骤 4 CANDIDATE_CARD 首次抛错置 PARTIAL_FAILED 并在第 2 轮续作，CandidateStore 中目标主体关联卡片均清零（0 张残留），同频道 TWIN 卡片完好保留；（2）B9 关闭（E60 F3）：cleanup-executor.ts:101-140 在执行 VERDICT 前幂等补扫 DELIVERY，在 TASK 前补扫技术日志 + DELIVERY + VERDICT，在 CHANNEL_EVENT 前补扫技术日志 + DELIVERY + VERDICT + TASK；分别在步骤 11 VERDICT、步骤 12 TASK、步骤 13 CHANNEL_EVENT 首次注入故障置 PARTIAL_FAILED，期间写入例外观众的不计分新审核消息（含 event/task/verdict/delivery/technical_log），撤销故障后二次 execute 均一次收敛为 COMPLETED（无 SQLITE_CONSTRAINT_FOREIGNKEY），TWIN 数据完好；（3）端到端闭环（E60 F1、F4）：单短事务确认例外 + 提升 processing_generation + 登记 18 个表面（15 个数据库表面 + Q7 昵称缓存 + Q42 身份缓存 + Q51 候选词卡片）、零记分窗口（EXCEPTION_ACTIVE）、代次 0 旧任务晚到丢弃（STALE_GENERATION）、例外新消息继续常规审核不计分、DELETE_DATA_ONLY 不撤销例外、preferenceMarkerOf 最小标记不含旧分或昵称、RESUME_SCORING 恢复计分、Q29 主体级 Change Log 证书化（含 N10 已在 design.md §11 注明）、Q35 共享 InvalidationBus 失效及 Q34 CHANNEL_OWNER 兼任 dataAdmin=true 时的 /channels/:id/data/* 权限判定全部成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S019-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-inherit-011",
+     "actual": "候选 a7a80ae 核对 db/subject-cleanup.ts、db/data-request-store.ts 与 cleanup-executor.ts：启动与每个存储面清理均走服务端本地 SQLite 短事务（runShortTransaction），readCleanupFacts 只做主键与 correlation_id 投影查询，不在队列、偏好标记或变更日志中复制消息正文或旧分数（E60 F1–F3）。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S019-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-inherit-012",
+     "actual": "候选 a7a80ae 核对 auth/data-routes.ts、auth/permissions.ts 与 E60 F4 实测：/channels/:id/data/* 强制要求已登录会话、CSRF 与同频道 data.handle 能力（DATA_ADMIN 角色，或经 Q34 显式授予 dataAdmin=true 的 CHANNEL_OWNER 返回 200；dataAdmin=false 的 CHANNEL_OWNER、MODERATOR、跨频道成员与 Bearer 输出令牌均返回 403），请求体经 Zod 严格校验，不将待审文本当作工具指令。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S019-INHERIT-013",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-013",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-inherit-013",
+     "actual": "候选 a7a80ae 复验通过（合入返工提交 051f09c，相对 d8ed897 仅改动 S019 spec、db/subject-cleanup.ts、cleanup-executor.ts 与 executor.test.ts，0 处触及已关单 VOXWARD-SUB-035 的交付文件）：install --frozen-lockfile、build、typecheck、check:deps（235 文件 0 违规）、默认冒烟（dev/dist /healthz 均 200 且退出后无监听）及拦截下全量测试（155 文件 1902 项）全部退出 0（E02–E08）。前轮阻断 B8 与 B9 已在 E60（probe-m7e-s019-fix1.mts，6 组断言全绿）实测闭环：（1）B8 关闭（E60 F2）：db/subject-cleanup.ts:34-42 的 readCleanupFacts 并集读取 channel_events.correlation_id（同频道同主体）与 locateSubjectLogs(subjectId).correlationIds；无论技术日志已按 7 天保留期提前清空，还是第 1 轮在步骤 3 删除 technical_logs 后于步骤 4 CANDIDATE_CARD 首次抛错置 PARTIAL_FAILED 并在第 2 轮续作，CandidateStore 中目标主体关联卡片均清零（0 张残留），同频道 TWIN 卡片完好保留；（2）B9 关闭（E60 F3）：cleanup-executor.ts:101-140 在执行 VERDICT 前幂等补扫 DELIVERY，在 TASK 前补扫技术日志 + DELIVERY + VERDICT，在 CHANNEL_EVENT 前补扫技术日志 + DELIVERY + VERDICT + TASK；分别在步骤 11 VERDICT、步骤 12 TASK、步骤 13 CHANNEL_EVENT 首次注入故障置 PARTIAL_FAILED，期间写入例外观众的不计分新审核消息（含 event/task/verdict/delivery/technical_log），撤销故障后二次 execute 均一次收敛为 COMPLETED（无 SQLITE_CONSTRAINT_FOREIGNKEY），TWIN 数据完好；（3）端到端闭环（E60 F1、F4）：单短事务确认例外 + 提升 processing_generation + 登记 18 个表面（15 个数据库表面 + Q7 昵称缓存 + Q42 身份缓存 + Q51 候选词卡片）、零记分窗口（EXCEPTION_ACTIVE）、代次 0 旧任务晚到丢弃（STALE_GENERATION）、例外新消息继续常规审核不计分、DELETE_DATA_ONLY 不撤销例外、preferenceMarkerOf 最小标记不含旧分或昵称、RESUME_SCORING 恢复计分、Q29 主体级 Change Log 证书化（含 N10 已在 design.md §11 注明）、Q35 共享 InvalidationBus 失效及 Q34 CHANNEL_OWNER 兼任 dataAdmin=true 时的 /channels/:id/data/* 权限判定全部成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S019-INHERIT-014",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-014",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-inherit-014",
+     "actual": "候选 a7a80ae 复验通过（合入返工提交 051f09c，相对 d8ed897 仅改动 S019 spec、db/subject-cleanup.ts、cleanup-executor.ts 与 executor.test.ts，0 处触及已关单 VOXWARD-SUB-035 的交付文件）：install --frozen-lockfile、build、typecheck、check:deps（235 文件 0 违规）、默认冒烟（dev/dist /healthz 均 200 且退出后无监听）及拦截下全量测试（155 文件 1902 项）全部退出 0（E02–E08）。前轮阻断 B8 与 B9 已在 E60（probe-m7e-s019-fix1.mts，6 组断言全绿）实测闭环：（1）B8 关闭（E60 F2）：db/subject-cleanup.ts:34-42 的 readCleanupFacts 并集读取 channel_events.correlation_id（同频道同主体）与 locateSubjectLogs(subjectId).correlationIds；无论技术日志已按 7 天保留期提前清空，还是第 1 轮在步骤 3 删除 technical_logs 后于步骤 4 CANDIDATE_CARD 首次抛错置 PARTIAL_FAILED 并在第 2 轮续作，CandidateStore 中目标主体关联卡片均清零（0 张残留），同频道 TWIN 卡片完好保留；（2）B9 关闭（E60 F3）：cleanup-executor.ts:101-140 在执行 VERDICT 前幂等补扫 DELIVERY，在 TASK 前补扫技术日志 + DELIVERY + VERDICT，在 CHANNEL_EVENT 前补扫技术日志 + DELIVERY + VERDICT + TASK；分别在步骤 11 VERDICT、步骤 12 TASK、步骤 13 CHANNEL_EVENT 首次注入故障置 PARTIAL_FAILED，期间写入例外观众的不计分新审核消息（含 event/task/verdict/delivery/technical_log），撤销故障后二次 execute 均一次收敛为 COMPLETED（无 SQLITE_CONSTRAINT_FOREIGNKEY），TWIN 数据完好；（3）端到端闭环（E60 F1、F4）：单短事务确认例外 + 提升 processing_generation + 登记 18 个表面（15 个数据库表面 + Q7 昵称缓存 + Q42 身份缓存 + Q51 候选词卡片）、零记分窗口（EXCEPTION_ACTIVE）、代次 0 旧任务晚到丢弃（STALE_GENERATION）、例外新消息继续常规审核不计分、DELETE_DATA_ONLY 不撤销例外、preferenceMarkerOf 最小标记不含旧分或昵称、RESUME_SCORING 恢复计分、Q29 主体级 Change Log 证书化（含 N10 已在 design.md §11 注明）、Q35 共享 InvalidationBus 失效及 Q34 CHANNEL_OWNER 兼任 dataAdmin=true 时的 /channels/:id/data/* 权限判定全部成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S019-INHERIT-015",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-015",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-inherit-015",
+     "actual": "候选 a7a80ae 边界核对（E06、E08、E60 F1–F4）：S019 在 data-lifecycle-service、db/subject-cleanup 与缓存失效端口边界内完成返工，未改动 scoring-engine、decision-service、output-adapter 或 moderation-engine 职责；关联 Q7/Q21/Q29/Q35/Q42/Q51 在本单边界内均实测闭环，EPIC-004/006 的跨全链路完整判据继续由对应责任单承载。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S019-INHERIT-016",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-016",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-inherit-016",
+     "actual": "候选 a7a80ae 边界核对（E06、E08、E60 F1–F4）：S019 在 data-lifecycle-service、db/subject-cleanup 与缓存失效端口边界内完成返工，未改动 scoring-engine、decision-service、output-adapter 或 moderation-engine 职责；关联 Q7/Q21/Q29/Q35/Q42/Q51 在本单边界内均实测闭环，EPIC-004/006 的跨全链路完整判据继续由对应责任单承载。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S019-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-inherit-017",
+     "actual": "候选 a7a80ae 复验通过（合入返工提交 051f09c，相对 d8ed897 仅改动 S019 spec、db/subject-cleanup.ts、cleanup-executor.ts 与 executor.test.ts，0 处触及已关单 VOXWARD-SUB-035 的交付文件）：install --frozen-lockfile、build、typecheck、check:deps（235 文件 0 违规）、默认冒烟（dev/dist /healthz 均 200 且退出后无监听）及拦截下全量测试（155 文件 1902 项）全部退出 0（E02–E08）。前轮阻断 B8 与 B9 已在 E60（probe-m7e-s019-fix1.mts，6 组断言全绿）实测闭环：（1）B8 关闭（E60 F2）：db/subject-cleanup.ts:34-42 的 readCleanupFacts 并集读取 channel_events.correlation_id（同频道同主体）与 locateSubjectLogs(subjectId).correlationIds；无论技术日志已按 7 天保留期提前清空，还是第 1 轮在步骤 3 删除 technical_logs 后于步骤 4 CANDIDATE_CARD 首次抛错置 PARTIAL_FAILED 并在第 2 轮续作，CandidateStore 中目标主体关联卡片均清零（0 张残留），同频道 TWIN 卡片完好保留；（2）B9 关闭（E60 F3）：cleanup-executor.ts:101-140 在执行 VERDICT 前幂等补扫 DELIVERY，在 TASK 前补扫技术日志 + DELIVERY + VERDICT，在 CHANNEL_EVENT 前补扫技术日志 + DELIVERY + VERDICT + TASK；分别在步骤 11 VERDICT、步骤 12 TASK、步骤 13 CHANNEL_EVENT 首次注入故障置 PARTIAL_FAILED，期间写入例外观众的不计分新审核消息（含 event/task/verdict/delivery/technical_log），撤销故障后二次 execute 均一次收敛为 COMPLETED（无 SQLITE_CONSTRAINT_FOREIGNKEY），TWIN 数据完好；（3）端到端闭环（E60 F1、F4）：单短事务确认例外 + 提升 processing_generation + 登记 18 个表面（15 个数据库表面 + Q7 昵称缓存 + Q42 身份缓存 + Q51 候选词卡片）、零记分窗口（EXCEPTION_ACTIVE）、代次 0 旧任务晚到丢弃（STALE_GENERATION）、例外新消息继续常规审核不计分、DELETE_DATA_ONLY 不撤销例外、preferenceMarkerOf 最小标记不含旧分或昵称、RESUME_SCORING 恢复计分、Q29 主体级 Change Log 证书化（含 N10 已在 design.md §11 注明）、Q35 共享 InvalidationBus 失效及 Q34 CHANNEL_OWNER 兼任 dataAdmin=true 时的 /channels/:id/data/* 权限判定全部成立。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S019-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s019-inherit-019",
+     "actual": "候选 a7a80ae 边界核对（E06、E08、E60 F1–F4）：S019 在 data-lifecycle-service、db/subject-cleanup 与缓存失效端口边界内完成返工，未改动 scoring-engine、decision-service、output-adapter 或 moderation-engine 职责；关联 Q7/Q21/Q29/Q35/Q42/Q51 在本单边界内均实测闭环，EPIC-004/006 的跨全链路完整判据继续由对应责任单承载。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    }
+   ]
+  },
+  {
+   "externalKey": "VOXWARD-SUB-036",
+   "workId": "work:11fe17ddd33774eb6ef1ed6b",
+   "revision": 4,
+   "evidence": [
+    {
+     "acceptanceId": "VW-SUB036-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:11fe17ddd33774eb6ef1ed6b",
+      "requirementId": "VW-SUB036-R001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-ac001",
+     "actual": "候选 a7a80ae 实测通过（E02–E08、E60 F1–F4）：SUB-036 负责的 18 个存储面（15 个 SQLite 表面 + CANDIDATE_CARD/NICKNAME_VERDICT/IDENTITY_TRACKER 3 个进程内表面）分步清理、双部分完成门禁（例外未确认时置 PARTIAL_FAILED + EXCEPTION_NOT_CONFIRMED，不虚报 COMPLETED）与幂等续作全部成立。前轮归属本单的两项阻断已全部修复并经独立探针验证：（1）B8 关闭（db/subject-cleanup.ts:34-42，E60 F2）：readCleanupFacts 并入 channel_events.correlation_id 后，7 天技术日志过期场景与步骤 4 CANDIDATE_CARD 失败续作场景均删净候选词卡片且保留同频道 TWIN 卡片；（2）B9 关闭（cleanup-executor.ts:101-140，E60 F3）：VERDICT、TASK、CHANNEL_EVENT 三处外键父表面在续作前按拓扑逆序幂等前扫子表面，PARTIAL_FAILED 期间例外观众产生新审核消息后重试一次即达 COMPLETED；完成后重复调用 execute 幂等返回 COMPLETED（E60 F1）。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB036-STORY",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:7f0ac0774bc508523d09b5f1",
+      "requirementId": "VW-S019-R001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-story",
+     "actual": "候选 a7a80ae 实测通过（E02–E08、E60 F1–F4）：SUB-036 负责的 18 个存储面（15 个 SQLite 表面 + CANDIDATE_CARD/NICKNAME_VERDICT/IDENTITY_TRACKER 3 个进程内表面）分步清理、双部分完成门禁（例外未确认时置 PARTIAL_FAILED + EXCEPTION_NOT_CONFIRMED，不虚报 COMPLETED）与幂等续作全部成立。前轮归属本单的两项阻断已全部修复并经独立探针验证：（1）B8 关闭（db/subject-cleanup.ts:34-42，E60 F2）：readCleanupFacts 并入 channel_events.correlation_id 后，7 天技术日志过期场景与步骤 4 CANDIDATE_CARD 失败续作场景均删净候选词卡片且保留同频道 TWIN 卡片；（2）B9 关闭（cleanup-executor.ts:101-140，E60 F3）：VERDICT、TASK、CHANNEL_EVENT 三处外键父表面在续作前按拓扑逆序幂等前扫子表面，PARTIAL_FAILED 期间例外观众产生新审核消息后重试一次即达 COMPLETED；完成后重复调用 execute 幂等返回 COMPLETED（E60 F1）。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB036-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:18aaac72724b30c2ee9be8b6",
+      "requirementId": "VW-E004-R019",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-parent",
+     "actual": "候选 a7a80ae 实测通过（E02–E08、E60 F1–F4）：SUB-036 负责的 18 个存储面（15 个 SQLite 表面 + CANDIDATE_CARD/NICKNAME_VERDICT/IDENTITY_TRACKER 3 个进程内表面）分步清理、双部分完成门禁（例外未确认时置 PARTIAL_FAILED + EXCEPTION_NOT_CONFIRMED，不虚报 COMPLETED）与幂等续作全部成立。前轮归属本单的两项阻断已全部修复并经独立探针验证：（1）B8 关闭（db/subject-cleanup.ts:34-42，E60 F2）：readCleanupFacts 并入 channel_events.correlation_id 后，7 天技术日志过期场景与步骤 4 CANDIDATE_CARD 失败续作场景均删净候选词卡片且保留同频道 TWIN 卡片；（2）B9 关闭（cleanup-executor.ts:101-140，E60 F3）：VERDICT、TASK、CHANNEL_EVENT 三处外键父表面在续作前按拓扑逆序幂等前扫子表面，PARTIAL_FAILED 期间例外观众产生新审核消息后重试一次即达 COMPLETED；完成后重复调用 execute 幂等返回 COMPLETED（E60 F1）。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB036-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-inherit-001",
+     "actual": "候选 a7a80ae 源码与依赖核对（E06 check:deps 235 文件 0 违规、E09 负面对照、E10 kiro-specs check SPEC_CURRENT）：SUB-036 返工仅改动 db/subject-cleanup.ts 与 data-lifecycle-service/cleanup-executor.ts，packages/contracts 保持 CONTRACT_VERSION = \"1\"，业务模块不导入 db/fastify/供应商 SDK，保持远端自托管单后端与既定 TypeScript/SQLite 栈。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB036-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-inherit-009",
+     "actual": "候选 a7a80ae 实测通过（E02–E08、E60 F1–F4）：SUB-036 负责的 18 个存储面（15 个 SQLite 表面 + CANDIDATE_CARD/NICKNAME_VERDICT/IDENTITY_TRACKER 3 个进程内表面）分步清理、双部分完成门禁（例外未确认时置 PARTIAL_FAILED + EXCEPTION_NOT_CONFIRMED，不虚报 COMPLETED）与幂等续作全部成立。前轮归属本单的两项阻断已全部修复并经独立探针验证：（1）B8 关闭（db/subject-cleanup.ts:34-42，E60 F2）：readCleanupFacts 并入 channel_events.correlation_id 后，7 天技术日志过期场景与步骤 4 CANDIDATE_CARD 失败续作场景均删净候选词卡片且保留同频道 TWIN 卡片；（2）B9 关闭（cleanup-executor.ts:101-140，E60 F3）：VERDICT、TASK、CHANNEL_EVENT 三处外键父表面在续作前按拓扑逆序幂等前扫子表面，PARTIAL_FAILED 期间例外观众产生新审核消息后重试一次即达 COMPLETED；完成后重复调用 execute 幂等返回 COMPLETED（E60 F1）。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB036-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-inherit-011",
+     "actual": "候选 a7a80ae 核对 db/subject-cleanup.ts、db/data-request-store.ts 与 cleanup-executor.ts：启动与每个存储面清理均走服务端本地 SQLite 短事务（runShortTransaction），readCleanupFacts 只做主键与 correlation_id 投影查询，不在队列、偏好标记或变更日志中复制消息正文或旧分数（E60 F1–F3）。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB036-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-inherit-012",
+     "actual": "候选 a7a80ae 核对 auth/data-routes.ts、auth/permissions.ts 与 E60 F4 实测：/channels/:id/data/* 强制要求已登录会话、CSRF 与同频道 data.handle 能力（DATA_ADMIN 角色，或经 Q34 显式授予 dataAdmin=true 的 CHANNEL_OWNER 返回 200；dataAdmin=false 的 CHANNEL_OWNER、MODERATOR、跨频道成员与 Bearer 输出令牌均返回 403），请求体经 Zod 严格校验，不将待审文本当作工具指令。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB036-INHERIT-013",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-013",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-inherit-013",
+     "actual": "候选 a7a80ae 实测通过（E02–E08、E60 F1–F4）：SUB-036 负责的 18 个存储面（15 个 SQLite 表面 + CANDIDATE_CARD/NICKNAME_VERDICT/IDENTITY_TRACKER 3 个进程内表面）分步清理、双部分完成门禁（例外未确认时置 PARTIAL_FAILED + EXCEPTION_NOT_CONFIRMED，不虚报 COMPLETED）与幂等续作全部成立。前轮归属本单的两项阻断已全部修复并经独立探针验证：（1）B8 关闭（db/subject-cleanup.ts:34-42，E60 F2）：readCleanupFacts 并入 channel_events.correlation_id 后，7 天技术日志过期场景与步骤 4 CANDIDATE_CARD 失败续作场景均删净候选词卡片且保留同频道 TWIN 卡片；（2）B9 关闭（cleanup-executor.ts:101-140，E60 F3）：VERDICT、TASK、CHANNEL_EVENT 三处外键父表面在续作前按拓扑逆序幂等前扫子表面，PARTIAL_FAILED 期间例外观众产生新审核消息后重试一次即达 COMPLETED；完成后重复调用 execute 幂等返回 COMPLETED（E60 F1）。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB036-INHERIT-014",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-014",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-inherit-014",
+     "actual": "候选 a7a80ae 实测通过（E02–E08、E60 F1–F4）：SUB-036 负责的 18 个存储面（15 个 SQLite 表面 + CANDIDATE_CARD/NICKNAME_VERDICT/IDENTITY_TRACKER 3 个进程内表面）分步清理、双部分完成门禁（例外未确认时置 PARTIAL_FAILED + EXCEPTION_NOT_CONFIRMED，不虚报 COMPLETED）与幂等续作全部成立。前轮归属本单的两项阻断已全部修复并经独立探针验证：（1）B8 关闭（db/subject-cleanup.ts:34-42，E60 F2）：readCleanupFacts 并入 channel_events.correlation_id 后，7 天技术日志过期场景与步骤 4 CANDIDATE_CARD 失败续作场景均删净候选词卡片且保留同频道 TWIN 卡片；（2）B9 关闭（cleanup-executor.ts:101-140，E60 F3）：VERDICT、TASK、CHANNEL_EVENT 三处外键父表面在续作前按拓扑逆序幂等前扫子表面，PARTIAL_FAILED 期间例外观众产生新审核消息后重试一次即达 COMPLETED；完成后重复调用 execute 幂等返回 COMPLETED（E60 F1）。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB036-INHERIT-015",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-015",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-inherit-015",
+     "actual": "候选 a7a80ae 边界核对（E06、E08、E60 F1–F4）：SUB-036 在 data-lifecycle-service、db/subject-cleanup 与缓存失效端口边界内完成返工，未改动 scoring-engine、decision-service、output-adapter 或 moderation-engine 职责；关联 Q7/Q21/Q29/Q35/Q42/Q51 在本单边界内均实测闭环，EPIC-004/006 的跨全链路完整判据继续由对应责任单承载。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB036-INHERIT-016",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-016",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-inherit-016",
+     "actual": "候选 a7a80ae 边界核对（E06、E08、E60 F1–F4）：SUB-036 在 data-lifecycle-service、db/subject-cleanup 与缓存失效端口边界内完成返工，未改动 scoring-engine、decision-service、output-adapter 或 moderation-engine 职责；关联 Q7/Q21/Q29/Q35/Q42/Q51 在本单边界内均实测闭环，EPIC-004/006 的跨全链路完整判据继续由对应责任单承载。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB036-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-inherit-017",
+     "actual": "候选 a7a80ae 实测通过（E02–E08、E60 F1–F4）：SUB-036 负责的 18 个存储面（15 个 SQLite 表面 + CANDIDATE_CARD/NICKNAME_VERDICT/IDENTITY_TRACKER 3 个进程内表面）分步清理、双部分完成门禁（例外未确认时置 PARTIAL_FAILED + EXCEPTION_NOT_CONFIRMED，不虚报 COMPLETED）与幂等续作全部成立。前轮归属本单的两项阻断已全部修复并经独立探针验证：（1）B8 关闭（db/subject-cleanup.ts:34-42，E60 F2）：readCleanupFacts 并入 channel_events.correlation_id 后，7 天技术日志过期场景与步骤 4 CANDIDATE_CARD 失败续作场景均删净候选词卡片且保留同频道 TWIN 卡片；（2）B9 关闭（cleanup-executor.ts:101-140，E60 F3）：VERDICT、TASK、CHANNEL_EVENT 三处外键父表面在续作前按拓扑逆序幂等前扫子表面，PARTIAL_FAILED 期间例外观众产生新审核消息后重试一次即达 COMPLETED；完成后重复调用 execute 幂等返回 COMPLETED（E60 F1）。",
+     "outcome": "satisfied",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB036-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub036-inherit-019",
+     "actual": "候选 a7a80ae 边界核对（E06、E08、E60 F1–F4）：SUB-036 在 data-lifecycle-service、db/subject-cleanup 与缓存失效端口边界内完成返工，未改动 scoring-engine、decision-service、output-adapter 或 moderation-engine 职责；关联 Q7/Q21/Q29/Q35/Q42/Q51 在本单边界内均实测闭环，EPIC-004/006 的跨全链路完整判据继续由对应责任单承载。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    }
+   ]
+  },
+  {
+   "externalKey": "VOXWARD-STORY-022",
+   "workId": "work:7fca6e51424bb603b416c643",
+   "revision": 4,
+   "evidence": [
+    {
+     "acceptanceId": "VW-S022-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:7fca6e51424bb603b416c643",
+      "requirementId": "VW-S022-R001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-ac001",
+     "actual": "候选 a7a80ae 实测（E02–E08、E70 P1–P4 及 D1–D3）：浏览器纯 Web 访问（无需本地软件）、UntrustedText <bdi> 双向隔离与 HTML 转义（Q15，E70 P1）、channel_members.data_admin 迁移 0007 与 RBAC/CSRF/跨频道/Bearer 401/403 边界（Q34，E70 P2–P3）、多人并发裁决先到 200 后到 409 CONFLICT（E70 P4）、SC 精翻开关、平台删除 PLATFORM_DELETED 与本地拦截分开标记、系统故障横幅不伪装违规（Q48）及成员撤权即刻 403（Q17，E70 D2）虽已成立，但存在两项阻断缺陷使本行 expected 不成立：（1）B10（SUB-041，E70 D1、D2）：① db/channel-panel-read.ts:144,201,237,255 将队列与信息流的 subjectRef 填为内部主键 subjects.id 而非 platform_subject_key，ModerationPage.tsx:136,219 点击「加入频道黑名单」把它作为 subjectKey 发往 POST /channels/:id/lists/subjects，db/decision-store.ts:463-468 按 platform_subject_key 查找恒返回 404 SUBJECT_NOT_FOUND（list_entries 写入 0 行）；② channel-panel-read.ts:250 使用 evEvidence?.translationJson !== null，无证据行时 undefined !== null 为 true，导致 ALLOW_NOISE 噪声弹幕与普通非 SC 放行弹幕全部混入 approvedSc（「获准 Super Chat」），且 DockPage 未渲染 snapshot.feed.liveStream 实时流；③ 因 queue.read 角色均持有 message.original（auth/permissions.ts:33,37），channel-panel-read.ts:231 的 bodyFolded 对全部真实会话恒为 false，DockPage 与 ModerationPage 直接明文展示违规原文而未按提案 §7.1 默认折叠；（2）B11（SUB-042，E70 D3）：AdminPage.tsx:181-198「模型配置（Q48）」仅渲染 providerName 与 scTranslationEnabled 布尔文本，完全丢弃 GET /model-settings 返回的真实模型列表（modelId、reasoningLevels）与当前三档任务模型选择，且无编辑保存控件（「模型参数真实」在页面上不成立）；同时 AdminPage.tsx 未接线 AdminApi 中 10 个变更方法（publishRules、editSubjectList、editTerm、grantMember、saveModelSettings、saveAdminSettings、issueOutputGrant、revokeOutputGrant、issueOutputToken、revokeOutputToken），导致规则发布与 Q12 正则改写提示（ruleIssues 仅挂在 GET refresh catch 上恒为空）、成员邀请与授权（Q17/Q34）、计分/队列/保留及输出凭据签发吊销均无法在 /admin 页面操作。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S022-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:1f83883cd1373011cf0f8b49",
+      "requirementId": "VW-E005-R022",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-parent",
+     "actual": "候选 a7a80ae 实测（E02–E08、E70 P1–P4 及 D1–D3）：浏览器纯 Web 访问（无需本地软件）、UntrustedText <bdi> 双向隔离与 HTML 转义（Q15，E70 P1）、channel_members.data_admin 迁移 0007 与 RBAC/CSRF/跨频道/Bearer 401/403 边界（Q34，E70 P2–P3）、多人并发裁决先到 200 后到 409 CONFLICT（E70 P4）、SC 精翻开关、平台删除 PLATFORM_DELETED 与本地拦截分开标记、系统故障横幅不伪装违规（Q48）及成员撤权即刻 403（Q17，E70 D2）虽已成立，但存在两项阻断缺陷使本行 expected 不成立：（1）B10（SUB-041，E70 D1、D2）：① db/channel-panel-read.ts:144,201,237,255 将队列与信息流的 subjectRef 填为内部主键 subjects.id 而非 platform_subject_key，ModerationPage.tsx:136,219 点击「加入频道黑名单」把它作为 subjectKey 发往 POST /channels/:id/lists/subjects，db/decision-store.ts:463-468 按 platform_subject_key 查找恒返回 404 SUBJECT_NOT_FOUND（list_entries 写入 0 行）；② channel-panel-read.ts:250 使用 evEvidence?.translationJson !== null，无证据行时 undefined !== null 为 true，导致 ALLOW_NOISE 噪声弹幕与普通非 SC 放行弹幕全部混入 approvedSc（「获准 Super Chat」），且 DockPage 未渲染 snapshot.feed.liveStream 实时流；③ 因 queue.read 角色均持有 message.original（auth/permissions.ts:33,37），channel-panel-read.ts:231 的 bodyFolded 对全部真实会话恒为 false，DockPage 与 ModerationPage 直接明文展示违规原文而未按提案 §7.1 默认折叠；（2）B11（SUB-042，E70 D3）：AdminPage.tsx:181-198「模型配置（Q48）」仅渲染 providerName 与 scTranslationEnabled 布尔文本，完全丢弃 GET /model-settings 返回的真实模型列表（modelId、reasoningLevels）与当前三档任务模型选择，且无编辑保存控件（「模型参数真实」在页面上不成立）；同时 AdminPage.tsx 未接线 AdminApi 中 10 个变更方法（publishRules、editSubjectList、editTerm、grantMember、saveModelSettings、saveAdminSettings、issueOutputGrant、revokeOutputGrant、issueOutputToken、revokeOutputToken），导致规则发布与 Q12 正则改写提示（ruleIssues 仅挂在 GET refresh catch 上恒为空）、成员邀请与授权（Q17/Q34）、计分/队列/保留及输出凭据签发吊销均无法在 /admin 页面操作。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-inherit-001",
+     "actual": "候选 a7a80ae 源码与依赖边界核对（E02–E06、E09、E10 SPEC_CURRENT）：packages/contracts 新增 ports/channel-panel.ts 并保持 CONTRACT_VERSION = \"1\"；apps/web 仅依赖 react、react-dom、react-router 与 @voxward/contracts，零导入 apps/server 模块或供应商 SDK（check:deps 235 文件 0 违规）；前端经同源 HTTP Cookie + X-CSRF-Token 访问自托管 Fastify 后端，不引入第三方托管后端或房管本地代理软件。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-006",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-006",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-inherit-006",
+     "actual": "候选 a7a80ae 边界与连接核对（E06、E08、E70 P4）：S022 通过 auth/channel-panel-routes.ts 调用既有 ModerationEngine（compileRuleBundle 含 Q12 REGEX_HINTS、CandidateStore Q50）、DecisionService、ScoringEngine 与 OutputAdapter 端口，未篡改 EPIC-002 各引擎内部裁决或编译语义（后端 PUT /rules 在 E70 P4 实测正确返回 REGEX_UNSAFE 400 与改写建议；/admin 前端未接线问题已在 VW-S022-AC001/SUB042-AC001 记为 B11），EPIC-002/006 完整判据继续由对应责任单承载。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-inherit-009",
+     "actual": "候选 a7a80ae 数据字段与页面响应核对（db/channel-panel-read.ts、db/model-settings-store.ts、apps/web/src/pages/**、E70 P1–P4）：channel_model_settings 表仅存模型 ID、推理档位与布尔开关，面板快照只读取既有事件/任务/裁决与短期技术日志摘要字段（不含完整提示词、会话上下文或工具轨迹副本），且页面与文档未宣称本地配置或清理等于上游 AI 提供方删除。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-010",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-010",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-inherit-010",
+     "actual": "候选 a7a80ae 实测（E02–E08、E70 P1–P4 及 D1–D3）：浏览器纯 Web 访问（无需本地软件）、UntrustedText <bdi> 双向隔离与 HTML 转义（Q15，E70 P1）、channel_members.data_admin 迁移 0007 与 RBAC/CSRF/跨频道/Bearer 401/403 边界（Q34，E70 P2–P3）、多人并发裁决先到 200 后到 409 CONFLICT（E70 P4）、SC 精翻开关、平台删除 PLATFORM_DELETED 与本地拦截分开标记、系统故障横幅不伪装违规（Q48）及成员撤权即刻 403（Q17，E70 D2）虽已成立，但存在两项阻断缺陷使本行 expected 不成立：（1）B10（SUB-041，E70 D1、D2）：① db/channel-panel-read.ts:144,201,237,255 将队列与信息流的 subjectRef 填为内部主键 subjects.id 而非 platform_subject_key，ModerationPage.tsx:136,219 点击「加入频道黑名单」把它作为 subjectKey 发往 POST /channels/:id/lists/subjects，db/decision-store.ts:463-468 按 platform_subject_key 查找恒返回 404 SUBJECT_NOT_FOUND（list_entries 写入 0 行）；② channel-panel-read.ts:250 使用 evEvidence?.translationJson !== null，无证据行时 undefined !== null 为 true，导致 ALLOW_NOISE 噪声弹幕与普通非 SC 放行弹幕全部混入 approvedSc（「获准 Super Chat」），且 DockPage 未渲染 snapshot.feed.liveStream 实时流；③ 因 queue.read 角色均持有 message.original（auth/permissions.ts:33,37），channel-panel-read.ts:231 的 bodyFolded 对全部真实会话恒为 false，DockPage 与 ModerationPage 直接明文展示违规原文而未按提案 §7.1 默认折叠；（2）B11（SUB-042，E70 D3）：AdminPage.tsx:181-198「模型配置（Q48）」仅渲染 providerName 与 scTranslationEnabled 布尔文本，完全丢弃 GET /model-settings 返回的真实模型列表（modelId、reasoningLevels）与当前三档任务模型选择，且无编辑保存控件（「模型参数真实」在页面上不成立）；同时 AdminPage.tsx 未接线 AdminApi 中 10 个变更方法（publishRules、editSubjectList、editTerm、grantMember、saveModelSettings、saveAdminSettings、issueOutputGrant、revokeOutputGrant、issueOutputToken、revokeOutputToken），导致规则发布与 Q12 正则改写提示（ruleIssues 仅挂在 GET refresh catch 上恒为空）、成员邀请与授权（Q17/Q34）、计分/队列/保留及输出凭据签发吊销均无法在 /admin 页面操作。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-inherit-011",
+     "actual": "候选 a7a80ae 仓储与事务核对（db/migrations/0007_heavy_excalibur.sql、db/model-settings-store.ts、db/admin-panel-store.ts、db/channel-panel-read.ts、E70 P2/P4）：新增 channel_model_settings 与 channel_members.data_admin 均落在服务端本地 SQLite 并经 runShortTransaction 短事务写入；浏览器仅调后端 HTTP JSON 接口、无直连数据库或 AI 提供方，也没有在面板读模型中新建正文副本表。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-inherit-012",
+     "actual": "候选 a7a80ae 实测（E02–E08、E70 P1–P4 及 D1–D3）：浏览器纯 Web 访问（无需本地软件）、UntrustedText <bdi> 双向隔离与 HTML 转义（Q15，E70 P1）、channel_members.data_admin 迁移 0007 与 RBAC/CSRF/跨频道/Bearer 401/403 边界（Q34，E70 P2–P3）、多人并发裁决先到 200 后到 409 CONFLICT（E70 P4）、SC 精翻开关、平台删除 PLATFORM_DELETED 与本地拦截分开标记、系统故障横幅不伪装违规（Q48）及成员撤权即刻 403（Q17，E70 D2）虽已成立，但存在两项阻断缺陷使本行 expected 不成立：（1）B10（SUB-041，E70 D1、D2）：① db/channel-panel-read.ts:144,201,237,255 将队列与信息流的 subjectRef 填为内部主键 subjects.id 而非 platform_subject_key，ModerationPage.tsx:136,219 点击「加入频道黑名单」把它作为 subjectKey 发往 POST /channels/:id/lists/subjects，db/decision-store.ts:463-468 按 platform_subject_key 查找恒返回 404 SUBJECT_NOT_FOUND（list_entries 写入 0 行）；② channel-panel-read.ts:250 使用 evEvidence?.translationJson !== null，无证据行时 undefined !== null 为 true，导致 ALLOW_NOISE 噪声弹幕与普通非 SC 放行弹幕全部混入 approvedSc（「获准 Super Chat」），且 DockPage 未渲染 snapshot.feed.liveStream 实时流；③ 因 queue.read 角色均持有 message.original（auth/permissions.ts:33,37），channel-panel-read.ts:231 的 bodyFolded 对全部真实会话恒为 false，DockPage 与 ModerationPage 直接明文展示违规原文而未按提案 §7.1 默认折叠；（2）B11（SUB-042，E70 D3）：AdminPage.tsx:181-198「模型配置（Q48）」仅渲染 providerName 与 scTranslationEnabled 布尔文本，完全丢弃 GET /model-settings 返回的真实模型列表（modelId、reasoningLevels）与当前三档任务模型选择，且无编辑保存控件（「模型参数真实」在页面上不成立）；同时 AdminPage.tsx 未接线 AdminApi 中 10 个变更方法（publishRules、editSubjectList、editTerm、grantMember、saveModelSettings、saveAdminSettings、issueOutputGrant、revokeOutputGrant、issueOutputToken、revokeOutputToken），导致规则发布与 Q12 正则改写提示（ruleIssues 仅挂在 GET refresh catch 上恒为空）、成员邀请与授权（Q17/Q34）、计分/队列/保留及输出凭据签发吊销均无法在 /admin 页面操作。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-inherit-017",
+     "actual": "候选 a7a80ae 生命周期与缓存边界核对（db/channel-panel-read.ts、auth/channel-panel-routes.ts、apps/server/src/app.ts、E60 F1、E70 P4）：面板快照直接按需查询 SQLite 当前状态，不建立持久主体数据副本（不新增 S019 清理遗漏面）；人工裁决提交继续经 DecisionService.commit 校验 subjectProcessingGeneration（旧代次 STALE_GENERATION 拒绝）；候选词卡片走 CandidateStore 内存上限淘汰与 S019 correlationId 清理钩子（默认组合根 CandidateStore 与 subjectCaches 的装配说明见 judgment.md N12b）。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-018",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-018",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-inherit-018",
+     "actual": "候选 a7a80ae 交付边界核对（E06、E08、E70 P3–P4）：S022 仅在查看/操作层读取 OutputAdapter 授权与令牌元数据并通过既有端口方法操作，未绕过 S021 只读输出边界或更改 OutputAdapter 传输职责（/admin 前端输出凭据签发/吊销按钮未接线已在 B11 记录），VW-R-018 的跨模块完整验证仍归 EPIC-005/006 对应责任单。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-S022-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-s022-inherit-019",
+     "actual": "候选 a7a80ae 实测（E02–E08、E70 P1–P4 及 D1–D3）：浏览器纯 Web 访问（无需本地软件）、UntrustedText <bdi> 双向隔离与 HTML 转义（Q15，E70 P1）、channel_members.data_admin 迁移 0007 与 RBAC/CSRF/跨频道/Bearer 401/403 边界（Q34，E70 P2–P3）、多人并发裁决先到 200 后到 409 CONFLICT（E70 P4）、SC 精翻开关、平台删除 PLATFORM_DELETED 与本地拦截分开标记、系统故障横幅不伪装违规（Q48）及成员撤权即刻 403（Q17，E70 D2）虽已成立，但存在两项阻断缺陷使本行 expected 不成立：（1）B10（SUB-041，E70 D1、D2）：① db/channel-panel-read.ts:144,201,237,255 将队列与信息流的 subjectRef 填为内部主键 subjects.id 而非 platform_subject_key，ModerationPage.tsx:136,219 点击「加入频道黑名单」把它作为 subjectKey 发往 POST /channels/:id/lists/subjects，db/decision-store.ts:463-468 按 platform_subject_key 查找恒返回 404 SUBJECT_NOT_FOUND（list_entries 写入 0 行）；② channel-panel-read.ts:250 使用 evEvidence?.translationJson !== null，无证据行时 undefined !== null 为 true，导致 ALLOW_NOISE 噪声弹幕与普通非 SC 放行弹幕全部混入 approvedSc（「获准 Super Chat」），且 DockPage 未渲染 snapshot.feed.liveStream 实时流；③ 因 queue.read 角色均持有 message.original（auth/permissions.ts:33,37），channel-panel-read.ts:231 的 bodyFolded 对全部真实会话恒为 false，DockPage 与 ModerationPage 直接明文展示违规原文而未按提案 §7.1 默认折叠；（2）B11（SUB-042，E70 D3）：AdminPage.tsx:181-198「模型配置（Q48）」仅渲染 providerName 与 scTranslationEnabled 布尔文本，完全丢弃 GET /model-settings 返回的真实模型列表（modelId、reasoningLevels）与当前三档任务模型选择，且无编辑保存控件（「模型参数真实」在页面上不成立）；同时 AdminPage.tsx 未接线 AdminApi 中 10 个变更方法（publishRules、editSubjectList、editTerm、grantMember、saveModelSettings、saveAdminSettings、issueOutputGrant、revokeOutputGrant、issueOutputToken、revokeOutputToken），导致规则发布与 Q12 正则改写提示（ruleIssues 仅挂在 GET refresh catch 上恒为空）、成员邀请与授权（Q17/Q34）、计分/队列/保留及输出凭据签发吊销均无法在 /admin 页面操作。",
+     "outcome": "failed",
+     "kind": "machine"
+    }
+   ]
+  },
+  {
+   "externalKey": "VOXWARD-SUB-041",
+   "workId": "work:c95e166bcc76634a8520d9cc",
+   "revision": 3,
+   "evidence": [
+    {
+     "acceptanceId": "VW-SUB041-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:c95e166bcc76634a8520d9cc",
+      "requirementId": "VW-SUB041-R001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-ac001",
+     "actual": "候选 a7a80ae 实测（E70 P1、P3、P4、D1、D2）：SUB-041 交付的 /dock/:channelId 与 /moderation/:channelId 在纯浏览器访问、UntrustedText <bdi> 隔离（Q15）、跨频道/未登录/Bearer 拒绝、多人同时处理冲突提示（409 CONFLICT）、SC 精翻开关、平台删除（PLATFORM_DELETED）与本地拦截（LOCAL_BLOCK）徽标分离、以及系统/模型故障横幅独立展示不伪装违规上已验证成立；但因阻断 B10 判为 failed：（1）B10a（E70 D1）：channel-panel-read.ts 将 subjectRef 设为内部 UUID subjects.id，而 decision-store.ts editSubjectList 按 subjects.platform_subject_key 查询，导致审核台「加入频道黑名单」操作 100% 返回 HTTP 404 SUBJECT_NOT_FOUND（权限内核心审核动作与后端契约不一致、无法生效）；（2）B10b（E70 D2）：channel-panel-read.ts:250 的 evEvidence?.translationJson !== null 在无技术日志证据行时因 undefined !== null === true 将 ALLOW_NOISE 噪声消息也塞入 approvedSc，普通非 SC 放行消息同样混入「获准 Super Chat」且 DockPage 缺失 liveStream 实时流区块；同时所有具 queue.read 权限的角色均具 message.original，页面未实现违规正文默认折叠与按权限展开（违反提案 §7.1 与本单需求 VW-SUB041-R001）。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB041-STORY",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:7fca6e51424bb603b416c643",
+      "requirementId": "VW-S022-R001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-story",
+     "actual": "候选 a7a80ae 实测（E70 P1、P3、P4、D1、D2）：SUB-041 交付的 /dock/:channelId 与 /moderation/:channelId 在纯浏览器访问、UntrustedText <bdi> 隔离（Q15）、跨频道/未登录/Bearer 拒绝、多人同时处理冲突提示（409 CONFLICT）、SC 精翻开关、平台删除（PLATFORM_DELETED）与本地拦截（LOCAL_BLOCK）徽标分离、以及系统/模型故障横幅独立展示不伪装违规上已验证成立；但因阻断 B10 判为 failed：（1）B10a（E70 D1）：channel-panel-read.ts 将 subjectRef 设为内部 UUID subjects.id，而 decision-store.ts editSubjectList 按 subjects.platform_subject_key 查询，导致审核台「加入频道黑名单」操作 100% 返回 HTTP 404 SUBJECT_NOT_FOUND（权限内核心审核动作与后端契约不一致、无法生效）；（2）B10b（E70 D2）：channel-panel-read.ts:250 的 evEvidence?.translationJson !== null 在无技术日志证据行时因 undefined !== null === true 将 ALLOW_NOISE 噪声消息也塞入 approvedSc，普通非 SC 放行消息同样混入「获准 Super Chat」且 DockPage 缺失 liveStream 实时流区块；同时所有具 queue.read 权限的角色均具 message.original，页面未实现违规正文默认折叠与按权限展开（违反提案 §7.1 与本单需求 VW-SUB041-R001）。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB041-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:1f83883cd1373011cf0f8b49",
+      "requirementId": "VW-E005-R022",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-parent",
+     "actual": "复用候选 a7a80ae 上 E70（P1–P4、D1–D3）实测证据：SUB-041 本身存在阻断 B10（审核台「加入频道黑名单」因 subjectRef=subjects.id 对比 platform_subject_key 恒报 404 SUBJECT_NOT_FOUND；approvedSc 因 undefined !== null 混入普通/噪声弹幕且 Dock 缺实时流；违规原文对真实房管/频道主会话未默认折叠），且同批合入的 SUB-042 存在阻断 B11（/admin 未展示和编辑真实模型参数及 10 项管理写接口未接线），故本行判为 failed。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-inherit-001",
+     "actual": "候选 a7a80ae 源码与依赖边界核对（E02–E06、E09、E10 SPEC_CURRENT）：packages/contracts 新增 ports/channel-panel.ts 并保持 CONTRACT_VERSION = \"1\"；apps/web 仅依赖 react、react-dom、react-router 与 @voxward/contracts，零导入 apps/server 模块或供应商 SDK（check:deps 235 文件 0 违规）；前端经同源 HTTP Cookie + X-CSRF-Token 访问自托管 Fastify 后端，不引入第三方托管后端或房管本地代理软件。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-006",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-006",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-inherit-006",
+     "actual": "候选 a7a80ae 边界与连接核对（E06、E08、E70 P4）：S022 通过 auth/channel-panel-routes.ts 调用既有 ModerationEngine（compileRuleBundle 含 Q12 REGEX_HINTS、CandidateStore Q50）、DecisionService、ScoringEngine 与 OutputAdapter 端口，未篡改 EPIC-002 各引擎内部裁决或编译语义（后端 PUT /rules 在 E70 P4 实测正确返回 REGEX_UNSAFE 400 与改写建议；/admin 前端未接线问题已在 VW-S022-AC001/SUB042-AC001 记为 B11），EPIC-002/006 完整判据继续由对应责任单承载。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-inherit-009",
+     "actual": "候选 a7a80ae 数据字段与页面响应核对（db/channel-panel-read.ts、db/model-settings-store.ts、apps/web/src/pages/**、E70 P1–P4）：channel_model_settings 表仅存模型 ID、推理档位与布尔开关，面板快照只读取既有事件/任务/裁决与短期技术日志摘要字段（不含完整提示词、会话上下文或工具轨迹副本），且页面与文档未宣称本地配置或清理等于上游 AI 提供方删除。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-010",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-010",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-inherit-010",
+     "actual": "复用候选 a7a80ae 上 E70（P1–P4、D1–D3）实测证据：SUB-041 本身存在阻断 B10（审核台「加入频道黑名单」因 subjectRef=subjects.id 对比 platform_subject_key 恒报 404 SUBJECT_NOT_FOUND；approvedSc 因 undefined !== null 混入普通/噪声弹幕且 Dock 缺实时流；违规原文对真实房管/频道主会话未默认折叠），且同批合入的 SUB-042 存在阻断 B11（/admin 未展示和编辑真实模型参数及 10 项管理写接口未接线），故本行判为 failed。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-inherit-011",
+     "actual": "候选 a7a80ae 仓储与事务核对（db/migrations/0007_heavy_excalibur.sql、db/model-settings-store.ts、db/admin-panel-store.ts、db/channel-panel-read.ts、E70 P2/P4）：新增 channel_model_settings 与 channel_members.data_admin 均落在服务端本地 SQLite 并经 runShortTransaction 短事务写入；浏览器仅调后端 HTTP JSON 接口、无直连数据库或 AI 提供方，也没有在面板读模型中新建正文副本表。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-inherit-012",
+     "actual": "复用候选 a7a80ae 上 E70（P1–P4、D1–D3）实测证据：SUB-041 本身存在阻断 B10（审核台「加入频道黑名单」因 subjectRef=subjects.id 对比 platform_subject_key 恒报 404 SUBJECT_NOT_FOUND；approvedSc 因 undefined !== null 混入普通/噪声弹幕且 Dock 缺实时流；违规原文对真实房管/频道主会话未默认折叠），且同批合入的 SUB-042 存在阻断 B11（/admin 未展示和编辑真实模型参数及 10 项管理写接口未接线），故本行判为 failed。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-inherit-017",
+     "actual": "候选 a7a80ae 生命周期与缓存边界核对（db/channel-panel-read.ts、auth/channel-panel-routes.ts、apps/server/src/app.ts、E60 F1、E70 P4）：面板快照直接按需查询 SQLite 当前状态，不建立持久主体数据副本（不新增 S019 清理遗漏面）；人工裁决提交继续经 DecisionService.commit 校验 subjectProcessingGeneration（旧代次 STALE_GENERATION 拒绝）；候选词卡片走 CandidateStore 内存上限淘汰与 S019 correlationId 清理钩子（默认组合根 CandidateStore 与 subjectCaches 的装配说明见 judgment.md N12b）。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-018",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-018",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-inherit-018",
+     "actual": "候选 a7a80ae 交付边界核对（E06、E08、E70 P3–P4）：S022 仅在查看/操作层读取 OutputAdapter 授权与令牌元数据并通过既有端口方法操作，未绕过 S021 只读输出边界或更改 OutputAdapter 传输职责（/admin 前端输出凭据签发/吊销按钮未接线已在 B11 记录），VW-R-018 的跨模块完整验证仍归 EPIC-005/006 对应责任单。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB041-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub041-inherit-019",
+     "actual": "复用候选 a7a80ae 上 E70（P1–P4、D1–D3）实测证据：SUB-041 本身存在阻断 B10（审核台「加入频道黑名单」因 subjectRef=subjects.id 对比 platform_subject_key 恒报 404 SUBJECT_NOT_FOUND；approvedSc 因 undefined !== null 混入普通/噪声弹幕且 Dock 缺实时流；违规原文对真实房管/频道主会话未默认折叠），且同批合入的 SUB-042 存在阻断 B11（/admin 未展示和编辑真实模型参数及 10 项管理写接口未接线），故本行判为 failed。",
+     "outcome": "failed",
+     "kind": "machine"
+    }
+   ]
+  },
+  {
+   "externalKey": "VOXWARD-SUB-042",
+   "workId": "work:daf3dd02919cc74d68f2cf3b",
+   "revision": 3,
+   "evidence": [
+    {
+     "acceptanceId": "VW-SUB042-AC001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:daf3dd02919cc74d68f2cf3b",
+      "requirementId": "VW-SUB042-R001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-ac001",
+     "actual": "候选 a7a80ae 实测（E70 P2–P4、D2、D3）：后端 SQLite ModelSettingsStore（Q48）、迁移 0007 channel_members.data_admin 检查约束（Q34）、管理路由 RBAC/CSRF/跨频道 403 门禁、成员撤权即刻 403（Q17）、候选词卡片确认/忽略（Q50，list.edit 门禁）以及连接/模型故障横幅展示均已实测成立，MODERATOR 访问 /admin 时无权限区块亦被隐藏或禁用；但因阻断 B11（E70 D3）判为 failed：（1）AdminPage.tsx:181-198「模型配置（Q48）」只渲染 providerName 与 scTranslationEnabled 文本，完全未展示后端 GET /model-settings 返回的真实可选模型列表（modelId、reasoningLevels）与已保存的三类任务模型配置（realtimeModeration、scTranslation、review），也无修改模型参数的表单与 saveModelSettings 调用（违反 scenario「修改模型参数」与 expected「模型参数真实」；且 admin/api.ts:215 将 SettingsIssue[] 错标为 RuleIssueView[]）；（2）AdminPage.tsx 中 publishRules、editSubjectList、editTerm、grantMember、saveModelSettings、saveAdminSettings、issueOutputGrant/revokeOutputGrant、issueOutputToken/revokeOutputToken 共 10 个写方法 0 处调用，导致有权限的 CHANNEL_OWNER 也无法在页面上发布规则或触发显示 Q12 引擎安全正则改写提示（ruleIssues 仅在 GET refresh 异常分支赋值，正常恒为空数组）、无法邀请成员或授予 dataAdmin/logAccess（Q17/Q34）、无法修改计分/队列/保留配置与管理输出凭据。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB042-STORY",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:7fca6e51424bb603b416c643",
+      "requirementId": "VW-S022-R001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-story",
+     "actual": "候选 a7a80ae 实测（E70 P2–P4、D2、D3）：后端 SQLite ModelSettingsStore（Q48）、迁移 0007 channel_members.data_admin 检查约束（Q34）、管理路由 RBAC/CSRF/跨频道 403 门禁、成员撤权即刻 403（Q17）、候选词卡片确认/忽略（Q50，list.edit 门禁）以及连接/模型故障横幅展示均已实测成立，MODERATOR 访问 /admin 时无权限区块亦被隐藏或禁用；但因阻断 B11（E70 D3）判为 failed：（1）AdminPage.tsx:181-198「模型配置（Q48）」只渲染 providerName 与 scTranslationEnabled 文本，完全未展示后端 GET /model-settings 返回的真实可选模型列表（modelId、reasoningLevels）与已保存的三类任务模型配置（realtimeModeration、scTranslation、review），也无修改模型参数的表单与 saveModelSettings 调用（违反 scenario「修改模型参数」与 expected「模型参数真实」；且 admin/api.ts:215 将 SettingsIssue[] 错标为 RuleIssueView[]）；（2）AdminPage.tsx 中 publishRules、editSubjectList、editTerm、grantMember、saveModelSettings、saveAdminSettings、issueOutputGrant/revokeOutputGrant、issueOutputToken/revokeOutputToken 共 10 个写方法 0 处调用，导致有权限的 CHANNEL_OWNER 也无法在页面上发布规则或触发显示 Q12 引擎安全正则改写提示（ruleIssues 仅在 GET refresh 异常分支赋值，正常恒为空数组）、无法邀请成员或授予 dataAdmin/logAccess（Q17/Q34）、无法修改计分/队列/保留配置与管理输出凭据。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB042-PARENT",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:1f83883cd1373011cf0f8b49",
+      "requirementId": "VW-E005-R022",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-parent",
+     "actual": "复用候选 a7a80ae 上 E70（P1–P4、D1–D3）实测证据：SUB-042 存在阻断 B11（/admin 页面未展示或修改真实模型参数与推理档位，且规则发布/Q12 提示、成员邀请授权 Q17/Q34、队列保留计分及输出凭据共 10 项管理变更未接线），且同批 SUB-041 存在阻断 B10（审核台加黑名单 404 SUBJECT_NOT_FOUND、approvedSc 混入噪声/普通弹幕、违规正文未默认折叠），故本行判为 failed。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-001",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-001",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-inherit-001",
+     "actual": "候选 a7a80ae 源码与依赖边界核对（E02–E06、E09、E10 SPEC_CURRENT）：packages/contracts 新增 ports/channel-panel.ts 并保持 CONTRACT_VERSION = \"1\"；apps/web 仅依赖 react、react-dom、react-router 与 @voxward/contracts，零导入 apps/server 模块或供应商 SDK（check:deps 235 文件 0 违规）；前端经同源 HTTP Cookie + X-CSRF-Token 访问自托管 Fastify 后端，不引入第三方托管后端或房管本地代理软件。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-006",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-006",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-inherit-006",
+     "actual": "候选 a7a80ae 边界与连接核对（E06、E08、E70 P4）：S022 通过 auth/channel-panel-routes.ts 调用既有 ModerationEngine（compileRuleBundle 含 Q12 REGEX_HINTS、CandidateStore Q50）、DecisionService、ScoringEngine 与 OutputAdapter 端口，未篡改 EPIC-002 各引擎内部裁决或编译语义（后端 PUT /rules 在 E70 P4 实测正确返回 REGEX_UNSAFE 400 与改写建议；/admin 前端未接线问题已在 VW-S022-AC001/SUB042-AC001 记为 B11），EPIC-002/006 完整判据继续由对应责任单承载。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-009",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-009",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-inherit-009",
+     "actual": "候选 a7a80ae 数据字段与页面响应核对（db/channel-panel-read.ts、db/model-settings-store.ts、apps/web/src/pages/**、E70 P1–P4）：channel_model_settings 表仅存模型 ID、推理档位与布尔开关，面板快照只读取既有事件/任务/裁决与短期技术日志摘要字段（不含完整提示词、会话上下文或工具轨迹副本），且页面与文档未宣称本地配置或清理等于上游 AI 提供方删除。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-010",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-010",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-inherit-010",
+     "actual": "复用候选 a7a80ae 上 E70（P1–P4、D1–D3）实测证据：SUB-042 存在阻断 B11（/admin 页面未展示或修改真实模型参数与推理档位，且规则发布/Q12 提示、成员邀请授权 Q17/Q34、队列保留计分及输出凭据共 10 项管理变更未接线），且同批 SUB-041 存在阻断 B10（审核台加黑名单 404 SUBJECT_NOT_FOUND、approvedSc 混入噪声/普通弹幕、违规正文未默认折叠），故本行判为 failed。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-011",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-011",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-inherit-011",
+     "actual": "候选 a7a80ae 仓储与事务核对（db/migrations/0007_heavy_excalibur.sql、db/model-settings-store.ts、db/admin-panel-store.ts、db/channel-panel-read.ts、E70 P2/P4）：新增 channel_model_settings 与 channel_members.data_admin 均落在服务端本地 SQLite 并经 runShortTransaction 短事务写入；浏览器仅调后端 HTTP JSON 接口、无直连数据库或 AI 提供方，也没有在面板读模型中新建正文副本表。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-012",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-012",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-inherit-012",
+     "actual": "复用候选 a7a80ae 上 E70（P1–P4、D1–D3）实测证据：SUB-042 存在阻断 B11（/admin 页面未展示或修改真实模型参数与推理档位，且规则发布/Q12 提示、成员邀请授权 Q17/Q34、队列保留计分及输出凭据共 10 项管理变更未接线），且同批 SUB-041 存在阻断 B10（审核台加黑名单 404 SUBJECT_NOT_FOUND、approvedSc 混入噪声/普通弹幕、违规正文未默认折叠），故本行判为 failed。",
+     "outcome": "failed",
+     "kind": "machine"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-017",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-017",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-inherit-017",
+     "actual": "候选 a7a80ae 生命周期与缓存边界核对（db/channel-panel-read.ts、auth/channel-panel-routes.ts、apps/server/src/app.ts、E60 F1、E70 P4）：面板快照直接按需查询 SQLite 当前状态，不建立持久主体数据副本（不新增 S019 清理遗漏面）；人工裁决提交继续经 DecisionService.commit 校验 subjectProcessingGeneration（旧代次 STALE_GENERATION 拒绝）；候选词卡片走 CandidateStore 内存上限淘汰与 S019 correlationId 清理钩子（默认组合根 CandidateStore 与 subjectCaches 的装配说明见 judgment.md N12b）。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-018",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-018",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-inherit-018",
+     "actual": "候选 a7a80ae 交付边界核对（E06、E08、E70 P3–P4）：S022 仅在查看/操作层读取 OutputAdapter 授权与令牌元数据并通过既有端口方法操作，未绕过 S021 只读输出边界或更改 OutputAdapter 传输职责（/admin 前端输出凭据签发/吊销按钮未接线已在 B11 记录），VW-R-018 的跨模块完整验证仍归 EPIC-005/006 对应责任单。",
+     "outcome": "satisfied",
+     "kind": "source-behavior-review"
+    },
+    {
+     "acceptanceId": "VW-SUB042-INHERIT-019",
+     "acceptanceVersion": 1,
+     "requirement": {
+      "workId": "work:8bd4977aa0770aa2f41229a2",
+      "requirementId": "VW-R-019",
+      "version": 1
+     },
+     "codeVersion": "a7a80ae",
+     "locator": ".kiro/specs/voxward-batch-m7e/evidence/acceptance.md#vw-sub042-inherit-019",
+     "actual": "复用候选 a7a80ae 上 E70（P1–P4、D1–D3）实测证据：SUB-042 存在阻断 B11（/admin 页面未展示或修改真实模型参数与推理档位，且规则发布/Q12 提示、成员邀请授权 Q17/Q34、队列保留计分及输出凭据共 10 项管理变更未接线），且同批 SUB-041 存在阻断 B10（审核台加黑名单 404 SUBJECT_NOT_FOUND、approvedSc 混入噪声/普通弹幕、违规正文未默认折叠），故本行判为 failed。",
+     "outcome": "failed",
+     "kind": "machine"
+    }
+   ]
+  }
+ ]
+}
