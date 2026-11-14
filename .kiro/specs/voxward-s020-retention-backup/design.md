@@ -1,7 +1,7 @@
 <!-- EINZBERN-SPEC:MANAGED-START -->
 # Design
 
-<!-- Einzbern source: work=work:92dbcf7ccd1a31c2af310b77 revision=4 sha256=b3830fb7d9b32b8da25820b08fa07d01696500386c93b510e0db92f34592a3d6 -->
+<!-- Einzbern source: work=work:92dbcf7ccd1a31c2af310b77 revision=5 sha256=4bc3e4e5c8dd98cfde01e28b85cef85cb084050ea836dd13260091711d245bd8 -->
 
 This file records design-source availability. It does not establish a new design authority or claim publication/build evidence.
 
@@ -103,3 +103,18 @@ Hook: `DataDeps.tombstones` (optional port). `executeRequest` records the DELETE
 - `main.ts`: when `config.databaseFile !== ":memory:"`, constructs `createTombstoneLedger(join(dirname(config.databaseFile), "tombstones"))` and passes it to `buildApp` without adding any new `VOXWARD_*` environment variables.
 - `db/restore-support.ts`: exports `createRestoreReplayPorts` (binding `createSubjectCleanupPort`, `createAuditLogPort`, `reinstateException`) and `restoreDatabaseWithPorts` (invoking `restoreBackup` with a caller-provided replay function) while respecting the `db` zone import boundary (`scripts/check-deps.mjs`).
 - Limits: no new HTTP route and no new background daemon process; periodic scheduler invocation of `sweepExpired`, `createBackup`, `compact`, and `pruneLedgerForBackups` remains a consumer/deployment step.
+
+### 7. Rework 1: B12, B13, and N15c (author-owned)
+
+- **B12 (`VOXWARD-SUB-037`, ViewerCache invalidation on expiry)**:
+  - `db/retention-store.ts`: Define `RetentionExpiredBatch { readonly logIds: readonly string[]; readonly correlationIds: readonly string[]; readonly changeLogIds: readonly string[] }` and `RetentionStoreOptions { readonly onExpired?: (batch: RetentionExpiredBatch) => void }`; extend `createRetentionStore(database, options?)`. In each `runShortTransaction` batch of `sweepExpired`:
+    - `technical_log_evidence`: `SELECT e.id, l.id AS logId, l.correlation_id AS correlationId` via `JOIN technical_logs`, then delete by those exact `e.id`s.
+    - `technical_logs`: `SELECT id AS logId, correlation_id AS correlationId`, then delete by those exact `id`s.
+    - `change_logs`: `SELECT id`, then delete by those exact `id`s.
+    - After commit, if any collected array is non-empty, invoke `options?.onExpired?.({ logIds: [...new Set(logIds)], correlationIds: [...new Set(correlationIds)], changeLogIds })`. (`db` zone never imports `modules/*`.)
+  - `app.ts`: When `database !== undefined`, create `const retention = createRetentionStore(database, { onExpired: (b) => bus.publish({ reason: "EXPIRED", logIds: b.logIds, correlationIds: b.correlationIds, changeLogIds: b.changeLogIds }) })`, decorate `app.decorate("retention", retention)` (with `FastifyInstance` module augmentation), and add `retentionSweepIntervalMs?: number` to `AppOptions` (non-overlapping `setInterval` + `.unref()`, cleared in `preClose`).
+- **N15c (Process entrypoint retention timer)**:
+  - `main.ts`: Pass `retentionSweepIntervalMs: config.databaseFile === ":memory:" ? undefined : 60_000` to `buildApp`.
+- **B13 (`VOXWARD-SUB-038`, Restore generation bump + staged expiry sweep & compact)**:
+  - `db/restore-support.ts` & `modules/data-lifecycle-service/restore-replay.ts`: Add `bumpGenerationForTombstone: (input: { readonly subjectId: string; readonly requestId: string }) => void` to `RestoreReplayPorts` and `ReplayDeps`. On `staged`, `runShortTransaction` checks whether `requestId` already exists in `dataRequests`; if absent, calls `SubjectStore.bumpGeneration(tx, subjectId)`. In `replayTombstones`, trigger `bumpGenerationForTombstone` for each `DELETE` / `DELETE_AND_EXCEPT` tombstone whose `requestId` is not in the snapshot.
+  - `db/backup-store.ts` & `db/restore-support.ts`: Add `now?: () => Date` to `RestoreOptions` and forward it. In `restoreBackup` on the `staged` (`.restoring`) database, after `options.replay` succeeds and before `isConsistent(staged)` / `staged.close()` / `renameSync`, loop `createRetentionStore(staged).sweepExpired({ nowIso })` until all `removed` counts are `0`, then call `retention.compact()`, throwing `BackupError("RESTORE_COMPACT_FAILED")` if `!compacted.compacted`.

@@ -6,7 +6,9 @@ import { buildApp, restoreDatabaseWithLedger } from "../../src/app.js";
 import { createAccount } from "../../src/auth/login.js";
 import { grantMembership } from "../../src/auth/members.js";
 import type { ServerConfig } from "../../src/config/schema.js";
+import { createAuditLogPort } from "../../src/db/audit-log.js";
 import { createBackup } from "../../src/db/backup-store.js";
+import { writeChannelSetting } from "../../src/db/channel-settings-store.js";
 import { openDatabase, type VoxwardDatabase } from "../../src/db/client.js";
 import { SubjectStore } from "../../src/db/repository.js";
 import { channels } from "../../src/db/schema/index.js";
@@ -14,7 +16,7 @@ import { createTombstoneLedger, TOMBSTONE_FILE, type TombstoneLedger } from "../
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 import { CHANNEL, SUBJECT, TWIN } from "../data-lifecycle-service/fixtures.js";
-import { count, day, MARKER, seedViewerHistory } from "../data-lifecycle-service/s020/seed.js";
+import { count, day, evidence, MARKER, seedViewerHistory, techLog } from "../data-lifecycle-service/s020/seed.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
 
 /*
@@ -169,5 +171,134 @@ describe("S020 composition root tombstone wiring", () => {
     expect(executed.json()).toEqual({ error: "TOMBSTONE_UNAVAILABLE" });
     expect(count(database, "technical_logs where subject_id = ?", SUBJECT)).toBe(1);
     expect(count(database, "channel_events where subject_id = ?", SUBJECT)).toBe(1);
+  });
+
+  it("evicts ViewerCache entries via EXPIRED invalidation when app.retention.sweepExpired removes shortened-retention logs (B12)", async () => {
+    const viewerAccount = (await createAccount(database, { loginName: "viewer", displayName: "Viewer", password: PASSWORD, now: NOW })).accountId;
+    runShortTransaction(database, (tx) => {
+      grantMembership(tx, { channelId: CHANNEL, accountId: viewerAccount, role: "CHANNEL_OWNER", logAccess: true, now: NOW });
+    });
+    const logs = createAuditLogPort(database);
+    const secretText = "B12_DELETED_EXPIRED_SECRET_TEXT";
+    logs.insertTechnicalLog(techLog("log-b12", "corr-b12", null, null, day(7)), [
+      evidence("ev-b12", "MESSAGE_TEXT", secretText, day(7)),
+    ]);
+
+    app = buildApp({ modules: buildRegistry(config), logger: false, database, tombstoneLedger: ledger });
+    const loginRes = await app.inject({ method: "POST", url: "/auth/login", payload: { loginName: "viewer", password: PASSWORD } });
+    expect(loginRes.statusCode).toBe(200);
+    const headers = { cookie: String(loginRes.headers["set-cookie"]).split(";")[0] ?? "" };
+
+    const firstGet = await app.inject({
+      method: "GET",
+      url: `/internal/channels/${CHANNEL}/logs/technical/log-b12`,
+      headers,
+    });
+    expect(firstGet.statusCode).toBe(200);
+    expect(firstGet.body).toContain(secretText);
+
+    writeChannelSetting(database, CHANNEL, "retention-config", {
+      changeLogDays: 30,
+      technicalLogDays: 1,
+      evidenceDays: 1,
+    });
+
+    const swept = app.retention?.sweepExpired({ nowIso: day(2) });
+    expect(swept?.removed).toMatchObject({ evidence: 1, technicalLogs: 1 });
+    expect(count(database, "technical_log_evidence where id = 'ev-b12'")).toBe(0);
+    expect(count(database, "technical_logs where id = 'log-b12'")).toBe(0);
+
+    const afterSweepGet = await app.inject({
+      method: "GET",
+      url: `/internal/channels/${CHANNEL}/logs/technical/log-b12`,
+      headers,
+    });
+    expect(afterSweepGet.statusCode).toBe(404);
+  });
+
+  it("runs periodic retention sweeps when retentionSweepIntervalMs is configured and stops cleanly on close (N15c)", async () => {
+    const logs = createAuditLogPort(database);
+    const pastIso = "2020-01-01T00:00:00.000Z";
+    logs.insertTechnicalLog(techLog("log-timer", "corr-timer", null, null, pastIso), [
+      evidence("ev-timer", "MESSAGE_TEXT", "expired-by-timer", pastIso),
+    ]);
+
+    app = buildApp({
+      modules: buildRegistry(config),
+      logger: false,
+      database,
+      tombstoneLedger: ledger,
+      retentionSweepIntervalMs: 25,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    expect(count(database, "technical_log_evidence where id = 'ev-timer'")).toBe(0);
+    expect(count(database, "technical_logs where id = 'log-timer'")).toBe(0);
+
+    await app.close();
+    app = undefined;
+  });
+
+  it("bumps processing_generation and sweeps/compacts expired rows in restoreDatabaseWithLedger (B13)", async () => {
+    const viewerAccount = (await createAccount(database, { loginName: "viewer13", displayName: "Viewer13", password: PASSWORD, now: NOW })).accountId;
+    runShortTransaction(database, (tx) => {
+      grantMembership(tx, { channelId: CHANNEL, accountId: viewerAccount, role: "DATA_ADMIN", logAccess: true, now: NOW });
+    });
+    const logs = createAuditLogPort(database);
+    const expiredSecret = "B13_SHORTENED_CFG_RESURRECTED_HTTP";
+    logs.insertTechnicalLog(techLog("log-b13-cfg", "corr-b13-cfg", null, null, day(30)), [
+      evidence("ev-b13-cfg", "MESSAGE_TEXT", expiredSecret, day(30)),
+    ]);
+    writeChannelSetting(database, CHANNEL, "retention-config", {
+      changeLogDays: 30,
+      technicalLogDays: 1,
+      evidenceDays: 1,
+    });
+
+    const { created: backup } = createBackup(database, { directory: backupsDir, limits: LIMITS, nowIso: day(0) });
+    app = buildApp({ modules: buildRegistry(config), logger: false, database, tombstoneLedger: ledger });
+
+    const session = await signIn(app);
+    const headers = { cookie: session.cookie, "x-csrf-token": session.csrf };
+    const requestId = await createAndVerifyDelete(app, headers, "DELETE_DATA_ONLY");
+    const executed = await app.inject({ method: "POST", url: `/channels/${CHANNEL}/data/requests/${requestId}/execute`, headers });
+    expect(executed.statusCode).toBe(200);
+
+    const targetPath = database.filePath;
+    await app.close();
+    app = undefined;
+    database.close();
+
+    restoreDatabaseWithLedger({
+      backupPath: backup.path,
+      targetPath,
+      ledger,
+      now: () => new Date(day(2)),
+    });
+
+    const reopened = openDatabase({ filePath: targetPath });
+    try {
+      const gen = reopened.sqlite
+        .prepare("select processing_generation as g from subjects where id = ?")
+        .get(SUBJECT) as { g: number };
+      expect(gen.g).toBe(1);
+      expect(count(reopened, "technical_log_evidence where id = 'ev-b13-cfg'")).toBe(0);
+      expect(count(reopened, "technical_logs where id = 'log-b13-cfg'")).toBe(0);
+      expect(readFileSync(targetPath).toString("latin1")).not.toContain(expiredSecret);
+
+      app = buildApp({ modules: buildRegistry(config), logger: false, database: reopened, tombstoneLedger: ledger });
+      const loginRes = await app.inject({ method: "POST", url: "/auth/login", payload: { loginName: "viewer13", password: PASSWORD } });
+      expect(loginRes.statusCode).toBe(200);
+      const getRes = await app.inject({
+        method: "GET",
+        url: `/internal/channels/${CHANNEL}/logs/technical/log-b13-cfg`,
+        headers: { cookie: String(loginRes.headers["set-cookie"]).split(";")[0] ?? "" },
+      });
+      expect(getRes.statusCode).toBe(404);
+      await app.close();
+      app = undefined;
+    } finally {
+      reopened.close();
+    }
   });
 });

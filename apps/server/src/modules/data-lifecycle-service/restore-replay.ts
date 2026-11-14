@@ -12,6 +12,8 @@ export interface ReplayDeps {
     readonly requestId: string;
     readonly at: string;
   }) => void;
+  /** Bumps `processing_generation` on the restored database if the deletion request predates the snapshot. */
+  readonly bumpGenerationForTombstone: (input: { readonly subjectId: string; readonly requestId: string }) => void;
   readonly certificateSummary: string;
   readonly now: () => Date;
 }
@@ -34,6 +36,7 @@ interface SubjectPlan {
   readonly channelId: string;
   readonly subjectId: string;
   readonly requestId: string;
+  readonly requestIds: string[];
   exception: { readonly requestId: string; readonly at: string } | null;
 }
 
@@ -48,7 +51,14 @@ export function replayTombstones(deps: ReplayDeps, tombstones: readonly Tombston
   for (const entry of tombstones) {
     const key = `${entry.channelId}\u0000${entry.subjectId}`;
     if (entry.kind === "DELETE") {
-      const plan = plans.get(key) ?? { channelId: entry.channelId, subjectId: entry.subjectId, requestId: entry.requestId, exception: null };
+      const plan = plans.get(key) ?? {
+        channelId: entry.channelId,
+        subjectId: entry.subjectId,
+        requestId: entry.requestId,
+        requestIds: [],
+        exception: null,
+      };
+      if (!plan.requestIds.includes(entry.requestId)) plan.requestIds.push(entry.requestId);
       if (entry.mode === "DELETE_AND_EXCEPT") plan.exception = { requestId: entry.requestId, at: entry.at };
       plans.set(key, plan);
     } else if (entry.kind === "RESUME") {
@@ -69,6 +79,9 @@ export function replayTombstones(deps: ReplayDeps, tombstones: readonly Tombston
       cleanSubject(deps, plan);
       if (plan.exception !== null) {
         deps.reinstateException({ channelId: plan.channelId, subjectId: plan.subjectId, ...plan.exception });
+      }
+      for (const requestId of plan.requestIds) {
+        deps.bumpGenerationForTombstone({ subjectId: plan.subjectId, requestId });
       }
       replayed += 1;
     } catch (error) {

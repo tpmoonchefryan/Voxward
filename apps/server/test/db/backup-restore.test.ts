@@ -3,14 +3,15 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createAuditLogPort } from "../../src/db/audit-log.js";
 import { BackupError, createBackup, listBackups, pruneBackups, restoreBackup, pruneLedgerForBackups } from "../../src/db/backup-store.js";
+import { writeChannelSetting } from "../../src/db/channel-settings-store.js";
 import { openDatabase, type VoxwardDatabase } from "../../src/db/client.js";
-import { reinstateException } from "../../src/db/restore-support.js";
+import { bumpGenerationForTombstone, reinstateException } from "../../src/db/restore-support.js";
 import { createSubjectCleanupPort } from "../../src/db/subject-cleanup.js";
 import { createTombstoneLedger, ledgerRecorder, TombstoneLedgerError, TOMBSTONE_FILE, type TombstoneLedger } from "../../src/db/tombstone-ledger.js";
 import { CERTIFICATE_SUMMARY } from "../../src/modules/audit-store/index.js";
 import { executeRequest, replayTombstones } from "../../src/modules/data-lifecycle-service/index.js";
 import { actorFor, CHANNEL, openDataFixture, SUBJECT, TWIN, type DataFixture } from "../data-lifecycle-service/fixtures.js";
-import { count, day, MARKER, seedViewerHistory } from "../data-lifecycle-service/s020/seed.js";
+import { changeLog, count, day, evidence, MARKER, seedViewerHistory, techLog } from "../data-lifecycle-service/s020/seed.js";
 import { removeDirectory, scratchDirectory, T0 } from "./helpers.js";
 
 /*
@@ -66,6 +67,7 @@ function replayOn(staged: VoxwardDatabase, tombstones: Parameters<typeof replayT
       cleanup: createSubjectCleanupPort(staged),
       logs: createAuditLogPort(staged),
       reinstateException: (input) => reinstateException(staged, { ...input, id: `restored-${++n}` }),
+      bumpGenerationForTombstone: (input) => bumpGenerationForTombstone(staged, input),
       certificateSummary: CERTIFICATE_SUMMARY,
       now: () => new Date(T0),
     },
@@ -259,5 +261,58 @@ describe("restore with replay (zero resurrection)", () => {
     ledger.record({ kind: "DELETE", requestId: "r-x", channelId: CHANNEL, subjectId: "subject-never-existed", mode: "DELETE_DATA_ONLY", at: T0 });
     const report = replayOn(database, ledger.read());
     expect(report).toMatchObject({ complete: true, replayed: 0, absent: 1, failed: [] });
+  });
+
+  it("advances processing_generation for post-backup deletions and sweeps/compacts expired rows during restore (B13)", () => {
+    seedViewerHistory(database);
+    const logs = createAuditLogPort(database);
+    const natMarker = "B13_NATURALLY_EXPIRED_SWEPT_BYTES";
+    const cfgMarker = "B13_SHORTENED_CFG_RESURRECTED_BYTES";
+    logs.insertTechnicalLog(techLog("log-nat", "corr-nat", null, null, day(14)), [
+      evidence("ev-nat", "MESSAGE_TEXT", natMarker, day(1)),
+    ]);
+    logs.insertTechnicalLog(techLog("log-cfg", "corr-cfg", null, null, day(30)), [
+      evidence("ev-cfg", "MESSAGE_TEXT", cfgMarker, day(30)),
+    ]);
+    logs.insertChangeLog(changeLog("change-nat", "corr-nat", "MANUAL_VERDICT", day(1)));
+    writeChannelSetting(database, CHANNEL, "retention-config", {
+      changeLogDays: 30,
+      technicalLogDays: 14,
+      evidenceDays: 1,
+    });
+
+    const genBefore = database.sqlite
+      .prepare("select processing_generation as g from subjects where id = ?")
+      .get(SUBJECT) as { g: number };
+    expect(genBefore.g).toBe(0);
+
+    const { created } = createBackup(database, { directory: backups, limits: LIMITS, nowIso: stamp(0) });
+    runDeletion(SUBJECT, "DELETE_DATA_ONLY");
+    const livePath = database.filePath;
+    database.close();
+
+    restoreBackup({
+      backupPath: created.path,
+      targetPath: livePath,
+      ledger,
+      now: () => new Date(day(2)),
+      replay: replayOn,
+    });
+
+    const restored = openDatabase({ filePath: livePath });
+    try {
+      const genAfter = restored.sqlite
+        .prepare("select processing_generation as g from subjects where id = ?")
+        .get(SUBJECT) as { g: number };
+      expect(genAfter.g).toBe(1);
+      expect(count(restored, "technical_log_evidence where id in ('ev-nat', 'ev-cfg')")).toBe(0);
+      expect(count(restored, "change_logs where id = 'change-nat'")).toBe(0);
+      const rawBytes = readFileSync(livePath).toString("latin1");
+      expect(rawBytes).not.toContain(natMarker);
+      expect(rawBytes).not.toContain(cfgMarker);
+      expect(rawBytes).not.toContain(MARKER);
+    } finally {
+      restored.close();
+    }
   });
 });

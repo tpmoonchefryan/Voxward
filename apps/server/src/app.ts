@@ -19,6 +19,7 @@ import { createDataRequestPort } from "./db/data-request-store.js";
 import { createDecisionStorePort } from "./db/decision-store.js";
 import { createApprovedContentPort, createOutputDeliveryPort, createOutputGrantPort } from "./db/output-store.js";
 import { restoreDatabaseWithPorts } from "./db/restore-support.js";
+import { createRetentionStore, type RetentionStore } from "./db/retention-store.js";
 import { createSubjectCleanupPort } from "./db/subject-cleanup.js";
 import { createSubjectReadPort } from "./db/subject-read.js";
 import { ledgerRecorder, type TombstoneLedger } from "./db/tombstone-ledger.js";
@@ -80,6 +81,8 @@ export interface AppOptions {
   readonly candidateStore?: CandidateStore;
   /** External tombstone ledger for data deletion replay across backup restores (S020). */
   readonly tombstoneLedger?: TombstoneLedger;
+  /** Optional periodic retention sweep interval in milliseconds (N15c). */
+  readonly retentionSweepIntervalMs?: number;
 }
 
 export interface NativeOutputSettings {
@@ -98,6 +101,7 @@ const DELIVERY_MAX_ATTEMPTS = 3;
 declare module "fastify" {
   interface FastifyInstance {
     readonly modules: ModuleRegistry;
+    readonly retention?: RetentionStore;
   }
 }
 
@@ -112,6 +116,7 @@ export function buildApp({
   subjectCaches,
   candidateStore,
   tombstoneLedger,
+  retentionSweepIntervalMs,
 }: AppOptions): FastifyInstance {
   const app = Fastify({ logger: logger ? loggerOptions(logStream) : false, frameworkErrors: frameworkErrorReply });
   // One bus for the whole process: the viewer cache and the deletion path both use it (Q35).
@@ -134,6 +139,37 @@ export function buildApp({
     app.addHook("onClose", async () => {
       cache.dispose();
     });
+    const retention = createRetentionStore(database, {
+      onExpired: (batch) =>
+        bus.publish({
+          reason: "EXPIRED",
+          logIds: batch.logIds,
+          correlationIds: batch.correlationIds,
+          changeLogIds: batch.changeLogIds,
+        }),
+    });
+    app.decorate("retention", retention);
+    if (retentionSweepIntervalMs !== undefined) {
+      if (!Number.isFinite(retentionSweepIntervalMs) || retentionSweepIntervalMs <= 0) {
+        throw new RangeError("retentionSweepIntervalMs must be a positive number");
+      }
+      let sweeping = false;
+      const retentionTimer = setInterval(() => {
+        if (sweeping) return;
+        sweeping = true;
+        try {
+          retention.sweepExpired({ nowIso: new Date().toISOString() });
+        } catch (error) {
+          app.log.error({ errorName: errorNameOf(error) }, "retention sweep failed");
+        } finally {
+          sweeping = false;
+        }
+      }, retentionSweepIntervalMs);
+      retentionTimer.unref();
+      app.addHook("preClose", async () => {
+        clearInterval(retentionTimer);
+      });
+    }
     const deps = dataDepsFor(database, bus, subjectCaches ?? NO_SUBJECT_CACHES, tombstoneLedger);
     app.register(dataLifecycleRoutes, { database, routes: createDataRoutes(deps) });
     app.register(channelPanelRoutes, channelPanelOptionsFor(database, modules, candidateStore));
