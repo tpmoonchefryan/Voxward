@@ -1,7 +1,7 @@
 <!-- EINZBERN-SPEC:MANAGED-START -->
 # Design
 
-<!-- Einzbern source: work=work:7fca6e51424bb603b416c643 revision=4 sha256=eb560713cbf608f0286eaf1b5fab6833bb230d37d62d229ca4a0cce4162b070f -->
+<!-- Einzbern source: work=work:7fca6e51424bb603b416c643 revision=5 sha256=d0008642bbdcdd52a8364cc2d6b32156000b1c4d939eaedb8922042e24c651b4 -->
 
 This file records design-source availability. It does not establish a new design authority or claim publication/build evidence.
 
@@ -136,3 +136,13 @@ All `/channels/:channelId/...` routes authenticate via `authenticateRequest` (se
 - `apps/server/test/db/schema.test.ts` & `constraints.test.ts`: `channel_members.data_admin` column, `0007` migration, CHECK constraint `ck_channel_members_data_admin`.
 - `apps/server/test/auth/s022-routes.test.ts`: Multi-moderator `409` conflict, SC translation toggle, model fault vs content violation, member revocation immediate `403`, `message.original` folding, local vs platform delete separation, Q12 regex hints, Q34 `dataAdmin` on `CHANNEL_OWNER`, Q48 channel-scoped model settings, Q50 candidate confirm/reject, cross-channel & multi-role negative tests.
 - `apps/web/src/pages/dock/__tests__/`, `apps/web/src/pages/moderation/__tests__/`, `apps/web/src/pages/admin/__tests__/`: API client CSRF/error mapping + `renderToStaticMarkup` view tests for role gating, folding, conflict banners, fault banners, and `<bdi>` isolation.
+
+### 7. Rework 1 Design (`B10`, `B11`, `N12a`)
+- **`B10a` (Subject Key Space Consistency)**: In `apps/server/src/db/channel-panel-read.ts`, both `events` and `queueRows` queries `innerJoin(subjects, eq(subjects.id, channelEvents.subjectId))` and select `subjectKey: subjects.platformSubjectKey`. `QueueItem.subjectRef`, `ModerationItem.subjectRef`, and `ScFeedItem.subjectRef` return `platformSubjectKey`, matching `db/decision-store.ts` `editSubjectList` so `POST /channels/:id/lists/subjects` succeeds (`200`) and persists `list_entries`.
+- **`B10b-1` (`approvedSc` Filtering & Dock `liveStream`)**: In `apps/server/src/db/channel-panel-read.ts`, query `tasks` with `inArray(tasks.eventId, eventIds)` and `eq(tasks.kind, "PAID_TEXT_REVIEW")` to build `paidEventIds`. Only push to `approvedSc` when `!isBlocked && (paidEventIds.has(ev.eventId) || evEvidence?.translationJson != null)` (`!= null` excludes both `null` and `undefined`). In `DockView` (`apps/web/src/pages/dock/DockPage.tsx`), render `<section aria-label="实时流"><h2>实时流</h2>...` for `snapshot.feed.liveStream`.
+- **`B10b-2` (Default Folded Blocked Body + Role-Controlled Expand)**: In `apps/server/src/db/channel-panel-read.ts`, set `const bodyFolded = isBlocked;` (always default-folded for blocked items), while retaining `originalText` only when `options.includeOriginal` is true (`null` otherwise). In `DockView` and `ModerationView`, items with `item.bodyFolded === true` render collapsed by default (never rendering `item.originalText` in initial/SSR output), and when `caps.has("message.original") && item.originalText !== null`, provide a local `useState` "展开原文 / 收起原文" toggle button to explicitly reveal `<UntrustedText text={item.originalText} />`.
+- **`B11` (`/admin` Real Model Controls & 10 Admin Mutations)**:
+  - Fix `apps/web/src/pages/admin/api.ts` so `SettingsIssueView` (`{ code, path }`) and `RuleIssueView` (`{ code, ref, hint }`) are distinct and not conflated in `AdminApiFailure`.
+  - In `AdminPage.tsx` / `AdminView`, render real `<select>` controls for `realtimeModeration`, `scTranslation`, and `review` model IDs and `reasoningLevels` from `modelSettings.capabilities.models`, wired to `saveModelSettings`, displaying returned `issues`.
+  - Wire the remaining 10 `AdminApi` mutations gated by `caps` (`list.edit`, `score.config`, `members.manage`, `output.manage`, `tokens.manage`): `publishRules` (updating `ruleIssues` on 400 `REGEX_HINTS` for Q12), `editTerm`, `editSubjectList`, `grantMember` (Q17/Q34), `saveAdminSettings`, and `issueOutputGrant` / `revokeOutputGrant` / `issueOutputToken` / `revokeOutputToken`.
+- **`N12a` (Scoring Bounds Validation)**: In `apps/server/src/auth/channel-panel-routes.ts`, add `.refine((s) => s.minScore <= s.initialScore && s.initialScore <= s.maxScore)` to `SCORING_BODY` so invalid order returns `400`.

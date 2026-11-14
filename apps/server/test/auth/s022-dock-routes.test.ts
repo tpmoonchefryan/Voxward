@@ -209,7 +209,7 @@ describe("S022 Dock & Moderation HTTP routes (VOXWARD-SUB-041)", () => {
     expect(body.scTranslationEnabled).toBe(true);
     expect(body.faults.platformFault.code).toBe("YT_ERR");
     expect(body.faults.modelFault.code).toBe("KIRO_ERR");
-    expect(body.feed.blockedItems[0]?.bodyFolded).toBe(false);
+    expect(body.feed.blockedItems[0]?.bodyFolded).toBe(true);
     expect(body.feed.blockedItems[0]?.originalText).toBe("secret blocked body");
   });
 

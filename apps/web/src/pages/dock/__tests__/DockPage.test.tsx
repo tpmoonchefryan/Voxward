@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { DockView } from "../DockPage";
+import { DockView, FoldableBody } from "../DockPage";
 import type { DockSnapshot } from "../api";
 
 const SNAPSHOT: DockSnapshot = {
@@ -90,5 +90,61 @@ describe("DockView", () => {
     expect(html).toContain("本地状态：BLOCK");
     expect(html).toContain("平台状态：平台删除失败");
     expect(html).toContain("违规正文已按权限折叠");
+    expect(html).toContain("实时流");
+  });
+
+  it("B10b-1 & B10b-2: renders liveStream, folds blocked body by default even with message.original, and expands explicitly", () => {
+    const withOrig: DockSnapshot = {
+      ...SNAPSHOT,
+      capabilities: ["queue.read", "review.decide", "message.original"],
+      feed: {
+        ...SNAPSHOT.feed,
+        blockedItems: [
+          {
+            ...SNAPSHOT.feed.blockedItems[0]!,
+            originalText: "secret-bad-word",
+          },
+        ],
+        liveStream: [
+          {
+            eventId: "ev-live-1",
+            correlationId: "corr-live-1",
+            subjectRef: "sub-live-1",
+            localStatus: "ALLOW",
+            classification: "ALLOW_NOISE",
+            platformDeleteStatus: "NOT_APPLICABLE",
+            bodyFolded: false,
+            originalText: "normal live chat",
+            decidedAt: "2026-11-14T00:00:00.000Z",
+            deliveryId: null,
+            deliveryStatus: null,
+          },
+        ],
+      },
+    };
+    const html = renderToStaticMarkup(
+      <DockView
+        roomId="ch-1"
+        snapshot={withOrig}
+        loading={false}
+        error={null}
+        conflict={null}
+        onToggleSc={() => {}}
+        onDecideTask={() => {}}
+        onReviewEvent={() => {}}
+        onResend={() => {}}
+      />,
+    );
+    expect(html).toContain("normal live chat");
+    expect(html).toContain("违规正文已默认折叠");
+    expect(html).toContain("展开原文");
+    expect(html).not.toContain("secret-bad-word");
+
+    const expandedHtml = renderToStaticMarkup(
+      <FoldableBody item={withOrig.feed.blockedItems[0]!} canViewOriginal={true} defaultExpanded={true} />,
+    );
+    expect(expandedHtml).toContain("secret-bad-word");
+    expect(expandedHtml).toContain("收起原文");
+    expect(expandedHtml).toContain("<bdi>");
   });
 });

@@ -1,26 +1,26 @@
 {
   "schemaVersion": "einzbern.kiro-spec-source.v1",
   "workId": "work:7fca6e51424bb603b416c643",
-  "workRevision": 4,
-  "sourceDigest": "eb560713cbf608f0286eaf1b5fab6833bb230d37d62d229ca4a0cce4162b070f",
+  "workRevision": 5,
+  "sourceDigest": "d0008642bbdcdd52a8364cc2d6b32156000b1c4d939eaedb8922042e24c651b4",
   "sourceStamp": {
     "schemaVersion": "einzbern.kiro-spec-source.v1",
     "workId": "work:7fca6e51424bb603b416c643",
-    "workRevision": 4,
-    "sourceDigest": "eb560713cbf608f0286eaf1b5fab6833bb230d37d62d229ca4a0cce4162b070f",
+    "workRevision": 5,
+    "sourceDigest": "d0008642bbdcdd52a8364cc2d6b32156000b1c4d939eaedb8922042e24c651b4",
     "legacy": false,
     "sources": {
       "work": {
         "id": "work:7fca6e51424bb603b416c643",
         "externalKey": "VOXWARD-STORY-022",
         "kind": "Story",
-        "revision": 4,
+        "revision": 5,
         "status": "active",
         "title": "实现主播 Dock、房管与管理页面",
         "summary": "实现主播 Dock、房管与管理页面；待交付与验证。",
         "projectId": "project:f824c7861e6888255132af42",
         "parentId": "work:1f83883cd1373011cf0f8b49",
-        "scopeDigest": "cbf7a1fb58ef1ae21e7e1c79e8b5cd93e09e312fffe0f06731e40ca8dbc0d505",
+        "scopeDigest": "e6f4e156de8436cd56b9e10f76a8b44385e6ed2f6f6c281663671e758e65251e",
         "relations": {
           "blockedBy": [
             "work:029c382b5915050f0c4de600",
@@ -41,10 +41,10 @@
           "parent": "work:1f83883cd1373011cf0f8b49",
           "supersedes": []
         },
-        "fieldSha256": "8235dfd1723572476d7cb7922188c435f0610a0a15aff87ea1c9425b340c893b",
+        "fieldSha256": "61f39272ac1fbcaf3228e803cbc3940e44aa67259a8538eaa1800a9a0eb517ff",
         "sourceStatus": "complete"
       },
-      "contextDigest": "d9ec8d8cb1e422e2d20c7ccaff27d441fbef18171ff9832b9b7eed6965df8c8a",
+      "contextDigest": "7831dcb9154025ccab31f0518c3be0d82c98c41c522ab8e006a3471681d188cf",
       "minuteRevisions": [
         {
           "id": "minutes:92f6353f4d2e04aa552ea04e",
@@ -77,14 +77,14 @@
     }
   },
   "managedSha256": {
-    "requirements.md": "a289d78e024212a81120148f141a62c98237b12e00a372f6f9eb3d4d186cd3f7",
-    "design.md": "a014499ecab06d48c725cf5a47151afb6111b5e074d5b976fa4b08d506171fa3",
-    "tasks.md": "8cb9c0dd9dfda7330f85a60cebf20da2c84d3c2fe3fe2b9200a4d8a604aceb79"
+    "requirements.md": "fcdb055115a225ea93d86afb6e93f385deefcb56ba4bf865bb9229b2d88b83f6",
+    "design.md": "ade5442f2b7557a24e9181e6285052ba1175f8f4ed4928b96906c4c45a8ba5d0",
+    "tasks.md": "1924c14e1835a518a9f04220590d8bce82a3457dafaa6fb965745d52fcfc6919"
   },
   "files": [
     "requirements.md",
     "design.md",
     "tasks.md"
   ],
-  "manifestDigest": "fc68bb2acd24ee359fb4ad9cac352a52735029f6bff89cf136313ca91d896fcb"
+  "manifestDigest": "e3ccd966afdb748b3bfebb61b771d4f5dbae8af7c7d47b87c7a2af77b83ea45e"
 }

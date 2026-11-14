@@ -67,4 +67,36 @@ describe("ModerationView", () => {
     expect(html).toContain("违规正文已按权限折叠");
     expect(html).toContain("加入频道黑名单");
   });
+
+  it("folds blocked body by default even when message.original is present", () => {
+    const withOrig: ModerationSnapshot = {
+      ...MOD_SNAPSHOT,
+      capabilities: ["queue.read", "review.decide", "list.edit", "message.original"],
+      feed: {
+        ...MOD_SNAPSHOT.feed,
+        liveStream: [
+          {
+            ...MOD_SNAPSHOT.feed.liveStream[0]!,
+            originalText: "hidden-violation-text",
+          },
+        ],
+      },
+    };
+    const html = renderToStaticMarkup(
+      <ModerationView
+        channelId="ch-1"
+        snapshot={withOrig}
+        loading={false}
+        error={null}
+        conflict={null}
+        onDecideTask={() => {}}
+        onReviewEvent={() => {}}
+        onResend={() => {}}
+        onBanSubject={() => {}}
+      />,
+    );
+    expect(html).toContain("违规正文已默认折叠");
+    expect(html).toContain("展开原文");
+    expect(html).not.toContain("hidden-violation-text");
+  });
 });

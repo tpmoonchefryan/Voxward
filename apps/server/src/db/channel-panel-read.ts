@@ -142,10 +142,12 @@ export function readDockAndModerationFeed(
     .select({
       eventId: channelEvents.id,
       subjectId: channelEvents.subjectId,
+      subjectKey: subjects.platformSubjectKey,
       correlationId: channelEvents.correlationId,
       receivedAt: channelEvents.receivedAt,
     })
     .from(channelEvents)
+    .innerJoin(subjects, eq(subjects.id, channelEvents.subjectId))
     .where(eq(channelEvents.channelId, channelId))
     .orderBy(desc(channelEvents.platformOrder))
     .limit(50)
@@ -190,6 +192,16 @@ export function readDockAndModerationFeed(
     if (!deliveryByEvent.has(d.eventId)) deliveryByEvent.set(d.eventId, { id: d.id, status: d.status });
   }
 
+  const paidTaskRows =
+    eventIds.length === 0
+      ? []
+      : database.orm
+          .select({ eventId: tasks.eventId })
+          .from(tasks)
+          .where(and(inArray(tasks.eventId, eventIds), eq(tasks.kind, "PAID_TEXT_REVIEW")))
+          .all();
+  const paidEventIds = new Set(paidTaskRows.map((t) => t.eventId));
+
   const queueRows = database.orm
     .select({
       taskId: tasks.id,
@@ -198,10 +210,11 @@ export function readDockAndModerationFeed(
       status: tasks.status,
       deadlineAt: tasks.deadlineAt,
       correlationId: channelEvents.correlationId,
-      subjectId: channelEvents.subjectId,
+      subjectKey: subjects.platformSubjectKey,
     })
     .from(tasks)
     .innerJoin(channelEvents, eq(channelEvents.id, tasks.eventId))
+    .innerJoin(subjects, eq(subjects.id, channelEvents.subjectId))
     .where(and(eq(tasks.channelId, channelId), inArray(tasks.status, ["QUEUED", "RUNNING", "PENDING_REVIEW"])))
     .orderBy(desc(tasks.createdAt))
     .limit(50)
@@ -211,7 +224,7 @@ export function readDockAndModerationFeed(
     taskId: row.taskId,
     eventId: row.eventId,
     correlationId: row.correlationId,
-    subjectRef: row.subjectId,
+    subjectRef: row.subjectKey,
     kind: row.kind,
     status: row.status,
     deadlineAt: row.deadlineAt,
@@ -228,13 +241,13 @@ export function readDockAndModerationFeed(
     const evEvidence = evidence.get(ev.correlationId);
     const del = deliveryByEvent.get(ev.eventId) ?? null;
     const isBlocked = verdict.downstream === "BLOCK";
-    const bodyFolded = isBlocked && !options.includeOriginal;
-    const originalText = bodyFolded ? null : (evEvidence?.messageText ?? null);
+    const bodyFolded = isBlocked;
+    const originalText = isBlocked && !options.includeOriginal ? null : (evEvidence?.messageText ?? null);
 
     const item: ModerationItem = {
       eventId: ev.eventId,
       correlationId: ev.correlationId,
-      subjectRef: ev.subjectId,
+      subjectRef: ev.subjectKey,
       localStatus: isBlocked ? "BLOCK" : "ALLOW",
       classification: verdict.classification,
       platformDeleteStatus: isBlocked ? (platformDeletes[ev.eventId] ?? "PENDING") : "NOT_APPLICABLE",
@@ -247,12 +260,12 @@ export function readDockAndModerationFeed(
     liveStream.push(item);
     if (isBlocked) {
       blockedItems.push(item);
-    } else if (verdict.classification === "ALLOW_MEANINGFUL" || evEvidence?.translationJson !== null) {
+    } else if (!isBlocked && (paidEventIds.has(ev.eventId) || evEvidence?.translationJson != null)) {
       const sc = parseTranslationPayload(evEvidence?.translationJson ?? null);
       approvedSc.push({
         eventId: ev.eventId,
         correlationId: ev.correlationId,
-        subjectRef: ev.subjectId,
+        subjectRef: ev.subjectKey,
         originalText: evEvidence?.messageText ?? null,
         translation: sc.translation,
         notes: sc.notes,
