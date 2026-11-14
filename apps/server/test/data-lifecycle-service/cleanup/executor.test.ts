@@ -296,6 +296,104 @@ describe("failure, resume and completion (VW-SUB036-AC001 and VW-SUB036-PARENT)"
   });
 });
 
+describe("rework1 regressions: B8 candidate correlations and B9 resume FK sweep", () => {
+  it("B8: clears CandidateStore via channel_events.correlation_id even when technical_logs have expired", () => {
+    database.orm.delete(technicalLogEvidence).run();
+    database.orm.delete(technicalLogs).where(eq(technicalLogs.subjectId, SUBJECT)).run();
+    database.orm.delete(technicalLogs).where(eq(technicalLogs.taskId, "task-1")).run();
+
+    const requestId = verifiedDelete(SUBJECT, "DELETE_AND_EXCEPT");
+    const response = executeRequest(depsWith(), actorFor("DATA_ADMIN"), requestId);
+
+    expect(executionOf(response)).toBe("COMPLETED");
+    expect(candidates.listCards(CHANNEL).map((card) => card.term)).toEqual(["synthetic-term-2"]);
+  });
+
+  it("B8: clears CandidateStore on resume after step 4 CANDIDATE_CARD fails and TECHNICAL_LOG is already DONE", () => {
+    const actor = actorFor("DATA_ADMIN");
+    const requestId = verifiedDelete(SUBJECT, "DELETE_AND_EXCEPT");
+    let failCardOnce = true;
+    const flakyHub: SubjectCacheHub = {
+      names: ["CANDIDATE_CARD", "NICKNAME_VERDICT", "IDENTITY_TRACKER"],
+      forgetSubject(name, channelId, platformSubjectKey, correlationIds) {
+        if (failCardOnce && name === "CANDIDATE_CARD") {
+          failCardOnce = false;
+          throw Object.assign(new Error("transient card failure"), { code: "CARD_RETRY" });
+        }
+        return hub().forgetSubject(name, channelId, platformSubjectKey, correlationIds);
+      },
+    };
+
+    const first = executeRequest(depsWith(createSubjectCleanupPort(database), flakyHub), actor, requestId);
+    expect(executionOf(first)).toBe("PARTIAL_FAILED");
+    expect(itemOf(requestId, "TECHNICAL_LOG")?.itemState).toBe("DONE");
+    expect(itemOf(requestId, "CANDIDATE_CARD")).toMatchObject({ itemState: "FAILED", errorCode: "CARD_RETRY" });
+
+    const second = executeRequest(depsWith(), actor, requestId);
+    expect(executionOf(second)).toBe("COMPLETED");
+    expect(candidates.listCards(CHANNEL).map((card) => card.term)).toEqual(["synthetic-term-2"]);
+  });
+
+  it("B9: resumes cleanly when an excepted subject sends a new unscored message after DELIVERY=DONE (VERDICT failure)", () => {
+    const actor = actorFor("DATA_ADMIN");
+    const requestId = verifiedDelete(SUBJECT, "DELETE_AND_EXCEPT");
+
+    const first = executeRequest(depsWith(failingOnce(createSubjectCleanupPort(database), "VERDICT")), actor, requestId);
+    expect(executionOf(first)).toBe("PARTIAL_FAILED");
+    expect(itemOf(requestId, "DELIVERY")?.itemState).toBe("DONE");
+    expect(itemOf(requestId, "VERDICT")?.itemState).toBe("FAILED");
+
+    seedNewUnscoredMessage("event-late-1", "task-late-1", "verdict-late-1", "delivery-late-1", "log-late-1");
+
+    const second = executeRequest(depsWith(), actor, requestId);
+    expect(executionOf(second)).toBe("COMPLETED");
+    expect(database.orm.select().from(channelEvents).where(eq(channelEvents.subjectId, SUBJECT)).all()).toHaveLength(0);
+    expect(database.orm.select().from(channelEvents).where(eq(channelEvents.subjectId, TWIN)).all()).toHaveLength(1);
+    expect(database.orm.select().from(tasks).where(eq(tasks.id, "task-2")).all()).toHaveLength(1);
+  });
+
+  it("B9: resumes cleanly when an excepted subject sends a new unscored message after TASK=DONE (CHANNEL_EVENT failure)", () => {
+    const actor = actorFor("DATA_ADMIN");
+    const requestId = verifiedDelete(SUBJECT, "DELETE_AND_EXCEPT");
+
+    const first = executeRequest(depsWith(failingOnce(createSubjectCleanupPort(database), "CHANNEL_EVENT")), actor, requestId);
+    expect(executionOf(first)).toBe("PARTIAL_FAILED");
+    expect(itemOf(requestId, "TASK")?.itemState).toBe("DONE");
+    expect(itemOf(requestId, "CHANNEL_EVENT")?.itemState).toBe("FAILED");
+
+    seedNewUnscoredMessage("event-late-2", "task-late-2", "verdict-late-2", "delivery-late-2", "log-late-2");
+
+    const second = executeRequest(depsWith(), actor, requestId);
+    expect(executionOf(second)).toBe("COMPLETED");
+    expect(database.orm.select().from(channelEvents).where(eq(channelEvents.subjectId, SUBJECT)).all()).toHaveLength(0);
+    expect(database.orm.select().from(channelEvents).where(eq(channelEvents.subjectId, TWIN)).all()).toHaveLength(1);
+    expect(database.orm.select().from(deliveries).where(eq(deliveries.id, "delivery-2")).all()).toHaveLength(1);
+  });
+});
+
+function seedNewUnscoredMessage(
+  eventId: string,
+  taskId: string,
+  verdictId: string,
+  deliveryId: string,
+  logId: string,
+): void {
+  seedOpenTask(database, {
+    channelId: CHANNEL,
+    subjectKey: "synthetic-key-1",
+    subjectId: SUBJECT,
+    eventId,
+    platformMessageRef: `msg-${eventId}`,
+    taskId,
+    platformOrder: 2,
+  });
+  createAuditLogPort(database).insertTechnicalLog(techLog(logId, `corr-${eventId}`, SUBJECT, taskId), [
+    evidence(`ev-${logId}`, "MESSAGE_TEXT", "late unscored message"),
+  ]);
+  database.orm.insert(verdicts).values(verdictRow(verdictId, eventId, taskId)).run();
+  database.orm.insert(deliveries).values(deliveryRow(deliveryId, eventId, verdictId)).run();
+}
+
 describe("explicit resumption of scoring (VW-SUB036-STORY)", () => {
   it("lifts the exception only through a verified RESUME_SCORING request", () => {
     const actor = actorFor("DATA_ADMIN");

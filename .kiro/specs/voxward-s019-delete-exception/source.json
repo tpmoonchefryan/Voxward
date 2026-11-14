@@ -1,26 +1,26 @@
 {
   "schemaVersion": "einzbern.kiro-spec-source.v1",
   "workId": "work:7f0ac0774bc508523d09b5f1",
-  "workRevision": 4,
-  "sourceDigest": "2cef8b13f3e13a963688c186a5933c4c0de61c0ba1f6bb92e1fb14d2d5eebda5",
+  "workRevision": 5,
+  "sourceDigest": "c70eb6b58bb7b36ba05ff81120a30f8fcbc97c791c38990567229cb8ac7ce1c2",
   "sourceStamp": {
     "schemaVersion": "einzbern.kiro-spec-source.v1",
     "workId": "work:7f0ac0774bc508523d09b5f1",
-    "workRevision": 4,
-    "sourceDigest": "2cef8b13f3e13a963688c186a5933c4c0de61c0ba1f6bb92e1fb14d2d5eebda5",
+    "workRevision": 5,
+    "sourceDigest": "c70eb6b58bb7b36ba05ff81120a30f8fcbc97c791c38990567229cb8ac7ce1c2",
     "legacy": false,
     "sources": {
       "work": {
         "id": "work:7f0ac0774bc508523d09b5f1",
         "externalKey": "VOXWARD-STORY-019",
         "kind": "Story",
-        "revision": 4,
+        "revision": 5,
         "status": "active",
         "title": "实现删除并加入例外的原子流程",
         "summary": "实现删除并加入例外的原子流程；待交付与验证。",
         "projectId": "project:f824c7861e6888255132af42",
         "parentId": "work:18aaac72724b30c2ee9be8b6",
-        "scopeDigest": "cc8d5a41ac10d70b700cbd4207f0e9b15f4e7472e907ed7675df9d68122bd1ef",
+        "scopeDigest": "7a829c27773f2efe30a73e297dbaaf7d90baa0eeff227f6c9018c795dbe6c828",
         "relations": {
           "blockedBy": [
             "work:210958ccce508a7abf314287",
@@ -37,10 +37,10 @@
           "parent": "work:18aaac72724b30c2ee9be8b6",
           "supersedes": []
         },
-        "fieldSha256": "065bf02925a4046d666dea504c8094db24192036aae1701701bc9765d5cc5789",
+        "fieldSha256": "7bac247607c766423da1f76f04cae77cb4bfd2c90a78b2b7101c42135e94c594",
         "sourceStatus": "complete"
       },
-      "contextDigest": "c9c2b2690aa4a38cbcaa27f74f92fcde17a378ba9a89f6deebd1ac877d173120",
+      "contextDigest": "5c7d2756268c6ec7832b51d587ca5a2d3944f25f9721a537649712b3f852b910",
       "minuteRevisions": [
         {
           "id": "minutes:92f6353f4d2e04aa552ea04e",
@@ -73,14 +73,14 @@
     }
   },
   "managedSha256": {
-    "requirements.md": "850c24db964c54a653c6edc368243d9ede76d19bdb56d3ca2cbf88dae65b6104",
-    "design.md": "3974eb3cb57f67177928963b596d37f0410ffb9bc61dc67ea1ff8e3a8a4f31b0",
-    "tasks.md": "647a419ef4bf112032782a6eae90d27e68f7b8af85f65935909db0637d450691"
+    "requirements.md": "2fbf8b501c869e5b0062dc61077bc4e7a4fbc0057ecd4b4e91dbf8e3a9e48e39",
+    "design.md": "47b82a6fee29e900be5a5f8cac733f72871cc79e328935d7feefdb491e4911a5",
+    "tasks.md": "3c49fc23e1efa1396a6690708f2435de2b753cff0f2848122aa5c2c9b06f50ca"
   },
   "files": [
     "requirements.md",
     "design.md",
     "tasks.md"
   ],
-  "manifestDigest": "288d03737035c4b630d182cbfb88453e9a1dd880d39b787443a228787201f19d"
+  "manifestDigest": "68f7c8689c4ea8d8bd3a9c9fba1df98c4e2388c4bf9db31c7726782e07a7be17"
 }
