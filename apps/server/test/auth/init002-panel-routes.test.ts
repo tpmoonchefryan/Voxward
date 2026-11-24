@@ -168,18 +168,22 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     });
     expect(badRegex.statusCode).toBe(400);
 
-    // Valid CSV import
+    // Valid CSV import (including UTF-8 BOM and RFC-4180 quoted regex pattern with comma)
     const csvRes = await app.inject({
       method: "POST",
       url: `/channels/${CH1}/term-entries/import-csv`,
       headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
       payload: {
         listKind: "BLACKLIST",
-        csvText: "term,category,matchKind\nbuy-cheap,scam-links,EXACT\nfree-nitro|airdrop,scam-links,REGEX",
+        csvText:
+          '\uFEFFterm,category,matchKind\nbuy-cheap,scam-links,EXACT\nfree-nitro|airdrop,scam-links,REGEX\n"加微[vV]信?\\d{4,8}",scam-links,REGEX',
       },
     });
     expect(csvRes.statusCode).toBe(200);
-    expect((csvRes.json() as { imported: number }).imported).toBe(2);
+    expect((csvRes.json() as { imported: number; errors: unknown[] })).toMatchObject({
+      imported: 3,
+      errors: [],
+    });
 
     // Manual blacklist with YouTube sync banId + unban
     const blkUser = await app.inject({

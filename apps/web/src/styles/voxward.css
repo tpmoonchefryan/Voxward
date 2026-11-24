@@ -656,3 +656,46 @@ body.vw-stage-body {
   justify-content: flex-end;
   padding-top: var(--tcrn-space-1);
 }
+
+.vw-chain-list-header {
+  font-size: var(--tcrn-type-size-caption);
+  font-weight: var(--tcrn-type-weight-medium);
+  color: var(--tcrn-color-ink-2);
+}
+
+.vw-chain-step {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--tcrn-color-line-2);
+  background: var(--tcrn-color-panel-2);
+  color: var(--tcrn-color-ink);
+  border-radius: var(--tcrn-radius-control);
+  padding: var(--tcrn-space-2) var(--tcrn-space-3);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-1);
+  cursor: pointer;
+  transition:
+    background-color var(--tcrn-motion-duration-fill) var(--tcrn-motion-ease),
+    border-color var(--tcrn-motion-duration-fill) var(--tcrn-motion-ease);
+}
+
+.vw-chain-step:hover {
+  background: var(--tcrn-color-hover);
+}
+
+.vw-chain-step:focus-visible {
+  box-shadow: var(--tcrn-focus-ring);
+  outline: none;
+}
+
+.vw-chain-step--active {
+  border-color: var(--tcrn-color-acc);
+  background: var(--tcrn-color-acc-bg);
+}
+
+.vw-chain-step__title {
+  font-weight: var(--tcrn-type-weight-medium);
+  color: var(--tcrn-color-ink);
+}

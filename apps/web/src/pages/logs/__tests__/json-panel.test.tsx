@@ -41,6 +41,9 @@ describe("validated JSON panel", () => {
       <JsonPanelView detail={detailWith([{ kind: "VALIDATED_JSON", state: "AVAILABLE", payload: JSON_PAYLOAD }])} />,
     );
 
+    expect(html).toContain("日志详情 · #1 JSON_VALIDATE");
+    expect(html).toContain("log-1");
+    expect(html).toContain("阶段数据");
     expect(html).toContain("task-1");
     expect(html).toContain("model-synthetic");
     expect(html).toContain("契约版本");

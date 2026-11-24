@@ -54,13 +54,18 @@ function DataList({ data }: { readonly data: TechnicalData }) {
   const entries = Object.entries(data);
   if (entries.length === 0) return null;
   return (
-    <KeyValueList
-      items={entries.map(([key, value]) => ({
-        key,
-        label: key,
-        value: value === null ? "无" : <IsolatedText text={String(value)} />,
-      }))}
-    />
+    <div className="vw-stack-sm">
+      <span className="vw-caption">阶段数据</span>
+      <div className="vw-row-wrap">
+        {entries.map(([key, value]) => (
+          <Badge key={key} tone="neutral">
+            <span className="vw-mono">
+              {key}: {value === null ? "无" : <IsolatedText text={String(value)} />}
+            </span>
+          </Badge>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -103,7 +108,14 @@ export function JsonPanelView({ detail }: { readonly detail: LogViewerTechnicalD
     <section aria-label="日志详情" className="vw-stack-md">
       <Card>
         <div className="vw-stack-sm">
-          <strong>节点元数据</strong>
+          <div className="vw-row-between">
+            <strong>{`日志详情 · #${detail.sequence} ${detail.stage}`}</strong>
+            <Badge tone="neutral">
+              <span className="vw-mono">
+                <IsolatedText text={detail.id} />
+              </span>
+            </Badge>
+          </div>
           <KeyValueList
             items={[
               {

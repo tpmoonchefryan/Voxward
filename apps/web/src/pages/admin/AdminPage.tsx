@@ -86,6 +86,36 @@ function TermRowActions({
   );
 }
 
+export function buildTermCsvTemplate(
+  listKind: "BLACKLIST" | "WHITELIST",
+  categories: readonly TermCategoryView[],
+): { readonly filename: string; readonly content: string } {
+  const scoped = categories.filter((c) => c.listKind === listKind);
+  if (listKind === "WHITELIST") {
+    const primaryCat = scoped[0]?.code ?? "friendly";
+    return {
+      filename: "voxward-whitelist-template.csv",
+      content: [
+        "term,category,matchKind",
+        `今晚歌单太神了,${primaryCat},EXACT`,
+        `安可,${primaryCat},CONTAINS`,
+      ].join("\n"),
+    };
+  }
+  const primaryCat = scoped[0]?.code ?? "spam";
+  const secondaryCat =
+    scoped.find((c) => c.code === "sensitive")?.code ?? scoped[1]?.code ?? primaryCat;
+  return {
+    filename: "voxward-blacklist-template.csv",
+    content: [
+      "term,category,matchKind",
+      `免费领返利,${primaryCat},EXACT`,
+      `加群返利,${primaryCat},CONTAINS`,
+      `加微[vV]信?\\d{6},${secondaryCat},REGEX`,
+    ].join("\n"),
+  };
+}
+
 export interface AdminPageProps {
   readonly api?: AdminApi;
 }
@@ -95,6 +125,7 @@ export function AdminPage({ api }: AdminPageProps) {
   const { activeChannelId } = useVoxWardShell();
   const channelId = params.channelId ?? activeChannelId;
   const adminClient = useMemo(() => api ?? createAdminApi(), [api]);
+  const csvFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [section, setSection] = useState<SettingsSectionId>("blacklist");
 
@@ -246,12 +277,42 @@ export function AdminPage({ api }: AdminPageProps) {
     setShowAddTermForm(false);
   };
 
+  const handleDownloadCsvTemplate = () => {
+    const { filename, content } = buildTermCsvTemplate(activeListKind, categories);
+    if (typeof document !== "undefined" && typeof URL.createObjectURL === "function") {
+      const blob = new Blob([`\uFEFF${content}`], { type: "text/csv;charset=utf-8" });
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(href);
+    }
+    setNotice({
+      tone: "positive",
+      text: `已下载${activeListKind === "BLACKLIST" ? "黑名单" : "白名单"} CSV 模板（${filename}）。`,
+    });
+  };
+
+  const handleCsvFileSelected = async (file: File | null) => {
+    if (file === null) return;
+    const text = (await file.text()).replace(/^\uFEFF/, "");
+    setCsvText(text);
+    setNotice({
+      tone: "positive",
+      text: `已载入文件 ${file.name}，可预览后点击「校验并导入 CSV」。`,
+    });
+  };
+
   const handleCsvImport = async () => {
-    if (!csvText.trim()) return;
+    const normalized = csvText.replace(/^\uFEFF/, "");
+    if (!normalized.trim()) return;
     setBusy(true);
     setNotice(null);
     try {
-      const res = await adminClient.importTermEntriesCsv(channelId, activeListKind, csvText);
+      const res = await adminClient.importTermEntriesCsv(channelId, activeListKind, normalized);
       setEntries(res.entries);
       setCsvText("");
       setShowCsvImport(false);
@@ -530,6 +591,14 @@ export function AdminPage({ api }: AdminPageProps) {
                   <div className="vw-row-wrap">
                     <Button
                       size="sm"
+                      variant="quiet"
+                      data-download-csv-template=""
+                      onClick={handleDownloadCsvTemplate}
+                    >
+                      下载 CSV 模板
+                    </Button>
+                    <Button
+                      size="sm"
                       variant={showCsvImport ? "primary" : "secondary"}
                       onClick={() => {
                         setShowCsvImport((prev) => !prev);
@@ -594,7 +663,7 @@ export function AdminPage({ api }: AdminPageProps) {
                           onChange={(event) => setNewTermText(event.target.value)}
                           placeholder={
                             newTermMatchKind === "REGEX"
-                              ? "例如：加微[vV]信?\\d{4,10}（禁止回溯量词与零宽断言）"
+                              ? "例如：加微[vV]信?\\d{4,8}（禁止回溯量词与零宽断言）"
                               : "输入触发拦截或放行的词条文本"
                           }
                         />
@@ -651,7 +720,36 @@ export function AdminPage({ api }: AdminPageProps) {
 
                 {showCsvImport ? (
                   <div className="vw-panel-card vw-panel-card--quiet">
-                    <strong>CSV 批量导入（格式：term,category,matchKind）</strong>
+                    <div className="vw-row-between">
+                      <strong>CSV 批量导入（格式：term,category,matchKind）</strong>
+                      <div className="vw-row-wrap">
+                        <Button size="sm" variant="secondary" onClick={handleDownloadCsvTemplate}>
+                          下载 CSV 模板
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => csvFileInputRef.current?.click()}
+                        >
+                          选择 CSV 文件
+                        </Button>
+                        <input
+                          ref={csvFileInputRef}
+                          type="file"
+                          accept=".csv,text/csv"
+                          hidden
+                          aria-label="选择 CSV 模板文件"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0] ?? null;
+                            event.target.value = "";
+                            void handleCsvFileSelected(file);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <span className="vw-caption">
+                      {`列说明：term（词条文本或受限正则）、category（上方分类代码，如 ${defaultCatForList}）、matchKind（EXACT / CONTAINS / REGEX）。`}
+                    </span>
                     <div className="vw-field-col--wide">
                       <label className="vw-field-label" htmlFor="term-csv-box">
                         每行一条规则

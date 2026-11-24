@@ -688,6 +688,36 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     },
   );
 
+  const parseCsvFields = (line: string): string[] => {
+    const fields: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i += 1) {
+      const ch = line[i] ?? "";
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') {
+          current += '"';
+          i += 1;
+        } else if (ch === '"') {
+          inQuotes = false;
+        } else {
+          current += ch;
+        }
+        continue;
+      }
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ",") {
+        fields.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    fields.push(current);
+    return fields;
+  };
+
   app.post<{ Params: { channelId: string }; Body: unknown }>(
     "/channels/:channelId/term-entries/import-csv",
     async (request, reply) => {
@@ -696,6 +726,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       const parsed = TERM_CSV_IMPORT_BODY.safeParse(request.body);
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
       const lines = parsed.data.csvText
+        .replace(/^\uFEFF/, "")
         .split(/\r?\n/)
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
@@ -703,8 +734,15 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       const added: ExtendedTermEntry[] = [];
       const errors: Array<{ readonly line: number; readonly message: string }> = [];
       for (const [idx, line] of lines.entries()) {
-        if (idx === 0 && /^term\s*,\s*category\s*,\s*matchKind$/i.test(line)) continue;
-        const parts = line.split(",").map((p) => p.trim());
+        const parts = parseCsvFields(line).map((p) => p.trim());
+        if (
+          idx === 0 &&
+          parts[0]?.toLowerCase() === "term" &&
+          parts[1]?.toLowerCase() === "category" &&
+          parts[2]?.toLowerCase() === "matchkind"
+        ) {
+          continue;
+        }
         const [term = "", categoryCode = "spam", rawKind = "EXACT"] = parts;
         const matchKind = rawKind.toUpperCase();
         if (!term) {

@@ -211,6 +211,14 @@ export function LogViewerPage({ fetchImpl }: { readonly fetchImpl?: FetchLike })
                                     <strong>{`#${item.sequence} ${item.stage}`}</strong>
                                     {techStatusBadge(item.status)}
                                   </div>
+                                  <div className="vw-row-between">
+                                    <span className="vw-mono vw-caption">
+                                      <UntrustedText text={item.correlationId} />
+                                    </span>
+                                    {item.latencyMs !== null ? (
+                                      <span className="vw-caption">{`${item.latencyMs} ms`}</span>
+                                    ) : null}
+                                  </div>
                                   <span className="vw-caption">
                                     {new Date(item.occurredAt).toLocaleString()}
                                   </span>
