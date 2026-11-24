@@ -1,5 +1,11 @@
 <div align="center">
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/voxward-icon-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/voxward-icon.svg">
+  <img alt="VoxWard" src="./docs/assets/voxward-icon.svg" width="88" height="88">
+</picture>
+
 # VoxWard
 
 Cross-language livestream danmaku & chat moderation, channel-scoped trust scoring, and Super Chat translation middleware for VTuber broadcasts.
@@ -9,13 +15,17 @@ Cross-language livestream danmaku & chat moderation, channel-scoped trust scorin
 [![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
+[![discussions](https://img.shields.io/badge/Discussions-Streamer%20Pilots-0b6b65?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/discussions)
 
-[Kiroween Judge Quickstart](#kiroween-2026-judge-quickstart) · [Architecture](#frankenstein-architecture) · [Core Capabilities](#core-capabilities) · [Self-Hosting](#self-hosted-deployment) · [Documentation Index](#documentation-index)
+[Previews](#interface-preview) · [Judge Quickstart](#kiroween-2026-judge-quickstart) · [Architecture](#frankenstein-architecture) · [Self-Hosting](#self-hosted-deployment) · [Roadmap](#roadmap-toward-v10) · [Documentation](#documentation-index)
 
 </div>
 
 > [!NOTE]
 > Built by **tpmoonchefryan** for **Kiroween 2026 (Frankenstein Track)** under **Apache-2.0**. The default experience ships in **Halloween theme + English (`en`)** with live 5-language switching (`English`, `简体中文`, `日本語`, `한국어`, `Français`).
+
+> [!IMPORTANT]
+> **Pre-Release Notice**: `rc0.1.0` is a **pre-release candidate** and has **not yet been validated in live broadcast production**. Streamers or VTuber channels interested in real-world deployment are warmly encouraged to contact the maintainer via [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) — real streamer demand will guide a future production-validated release.
 
 ---
 
@@ -31,7 +41,33 @@ VoxWard separates concerns cleanly into a self-hosted middleware:
 
 ---
 
+## Interface Preview
+
+![VoxWard Interactive Sandbox Moderation Workbench](./docs/assets/preview-sandbox-desk.png)
+
+*Interactive Sandbox Moderation Desk in default Halloween theme + English: live stream simulator, split pending queue, pinned countdown Super Chat bar, and bilingual SC translation cards.*
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="./docs/assets/preview-login-halloween.png" alt="VoxWard Halloween Login Screen">
+      <br>
+      <sub><b>Default Login (<code>/login</code>)</b> · Halloween theme + 5-language selector</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="./docs/assets/preview-sandbox-stage.png" alt="VoxWard OBS Overlay Stage Preview">
+      <br>
+      <sub><b>Read-Only OBS Overlay Stage</b> · Clean multilingual danmaku &amp; SC stream</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
 ## Kiroween 2026 Judge Quickstart
+
+- **Runtime Prerequisites**: `Node.js >= 24`, `pnpm 12.18` (zero external database needed — embedded SQLite WAL).
+- **Tech Stack**: TypeScript, Fastify 5, React 19, Vite, Drizzle ORM + `better-sqlite3`, WebSocket (`ws`), `@tcrn/ui-react@4.2.0`, Docker & k3s (`local-path` + Traefik).
 
 Reviewers can evaluate the complete frontend + backend pipeline in **zero-credential Sandbox mode** (no YouTube API key or LLM API key required). The launcher fails closed if real production secrets are present.
 
@@ -92,6 +128,18 @@ This repository preserves its Kiro development artifacts in-tree:
 - **Incremental Specs & Acceptance Evidence**: [`.kiro/specs/`](./.kiro/specs/)
 - **Local Skills & Harness Metadata**: [`.kiro/skills/mana-orchestrate/`](./.kiro/skills/mana-orchestrate/), [`.kiro/README.md`](./.kiro/README.md)
 
+## Repository Structure
+
+```text
+Voxward/
+├── apps/server/        # Fastify 5 REST/WS server, SQLite WAL & AI adapters
+├── apps/web/           # React 19 + Vite console, pure dock & OBS overlay
+├── packages/contracts/ # Shared verdicts, task states & protocol schemas
+├── deploy/             # Zero-secret sandbox, k3s manifests & Linux templates
+├── docs/               # Deployment guides, OBS/YouTube setup, i18n & assets
+└── .kiro/              # Steering rules, incremental specs & harness config
+```
+
 ---
 
 ## Self-Hosted Deployment
@@ -112,6 +160,12 @@ External dependencies explicitly left outside synthetic verification (see [`docs
 - Live host execution of an isolated `kiro-cli` OS user (`VW-S029-KIRO-REAL`) and live AI provider latency/cost benchmarks (`VOXWARD-SUB-050`).
 - Operator-owned Google Cloud OAuth verification and YouTube API quota/policy confirmation for channel-scoped scoring.
 - Container and k3s deployment assets ([`Dockerfile`](./Dockerfile), [`deploy/k3s/`](./deploy/k3s/)) are statically validated for YAML syntax, runtime invariants, and path hygiene; live `docker build` and cluster `kubectl apply` remain to be executed on the operator's build host / target k3s cluster.
+
+## Roadmap Toward v1.0
+
+1. **Live YouTube Broadcast & OAuth Verification**: Complete operator-owned Google Cloud OAuth verification and stress-test sustained live ingestion under production API quotas.
+2. **Real AI & Host Runtime Benchmarks**: Measure end-to-end latency and cost across isolated `kiro-cli` (`VW-S029-KIRO-REAL`) and hosted LLM providers (`VOXWARD-SUB-050`).
+3. **Streamer Pilot & Production Hardening**: Partner with early broadcasters via [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) to validate real-stream reliability and deliver a production-verified v1.0 release.
 
 ---
 

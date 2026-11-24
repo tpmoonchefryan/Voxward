@@ -1,6 +1,12 @@
-> 注：本ドキュメントは[英語版](./README.md)を正文とします · `synced-to: ed4a3f04d6252f8b49e1d2f0af7615e782f96c8571a84329221b8e43caed2196`
+> 注：本ドキュメントは[英語版](./README.md)を正文とします · `synced-to: 03a4a0214d64a5fbb531715c2693872629852b977d7e29c2f9cd3ed1f8927438`
 
 <div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/voxward-icon-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/voxward-icon.svg">
+  <img alt="VoxWard" src="./docs/assets/voxward-icon.svg" width="88" height="88">
+</picture>
 
 # VoxWard
 
@@ -11,13 +17,17 @@
 [![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
+[![discussions](https://img.shields.io/badge/Discussions-配信者パイロット募集-0b6b65?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/discussions)
 
-[Kiroween 審査員向けクイックスタート](#kiroween-2026-審査員向けクイックスタート) · [アーキテクチャ](#frankenstein-アーキテクチャ) · [主な機能](#主な機能) · [セルフホスト運用](#セルフホスト運用) · [ドキュメント一覧](#ドキュメント一覧)
+[画面プレビュー](#画面プレビュー) · [クイックスタート](#kiroween-2026-審査員向けクイックスタート) · [アーキテクチャ](#frankenstein-アーキテクチャ) · [セルフホスト](#セルフホスト運用) · [ロードマップ](#v10-ロードマップ) · [ドキュメント](#ドキュメント一覧)
 
 </div>
 
 > [!NOTE]
 > **tpmoonchefryan** が **Apache-2.0** の下で **Kiroween 2026（Frankenstein トラック）** 向けに開発しました。初期画面は **Halloween テーマ + 英語（`en`）** で起動し、UI から **5 言語**（`English`、`简体中文`、`日本語`、`한국어`、`Français`）へ即座に切り替えられます。
+
+> [!IMPORTANT]
+> **プレリリースのお知らせ**：現在の `rc0.1.0` は**プレリリース版**であり、実際の配信環境での本番検証は未実施です。実配信での導入・試用をご希望の配信者・運営チームの方は、[**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) より直接ご連絡ください。実際の需要を踏まえ、本番検証済みバージョンの提供を検討・推進します。
 
 ---
 
@@ -33,7 +43,33 @@ VoxWard は責務を分離したセルフホスト型ミドルウェアとして
 
 ---
 
+## 画面プレビュー
+
+![VoxWard インタラクティブサンドボックス モデレーション画面](./docs/assets/preview-sandbox-desk.png)
+
+*初期設定の Halloween テーマ + 英語 UI によるインタラクティブサンドボックス画面：ライブストリームシミュレーター、分割保留キュー、カウントダウン付きピン留め SC バー、対訳 Super Chat カード。*
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="./docs/assets/preview-login-halloween.png" alt="VoxWard Halloween ログイン画面">
+      <br>
+      <sub><b>標準ログイン画面（<code>/login</code>）</b> · Halloween テーマ + 5 言語切替</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="./docs/assets/preview-sandbox-stage.png" alt="VoxWard OBS オーバーレイプレビュー">
+      <br>
+      <sub><b>読み取り専用 OBS オーバーレイプレビュー</b> · 透過向け多言語チャット・SC 表示</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
 ## Kiroween 2026 審査員向けクイックスタート
+
+- **動作前提**：`Node.js >= 24`、`pnpm 12.18`（外部データベース不要 — 組込み SQLite WAL）。
+- **技術スタック**：TypeScript、Fastify 5、React 19、Vite、Drizzle ORM + `better-sqlite3`、WebSocket (`ws`)、`@tcrn/ui-react@4.2.0`、Docker & k3s（`local-path` + Traefik）。
 
 Google Cloud 認証情報、YouTube OAuth トークン、外部 AI API キーなしで**ゼロシークレットのサンドボックス環境**を起動できます（本番シークレットが設定されている場合は安全のため fail-closed で起動を拒否します）：
 
@@ -62,7 +98,7 @@ flowchart LR
     YT["YouTube Live Chat v3 / 合成ストリーム"] --> IN["チャンネル受信・重複排除"]
     IN --> BASE["決定的ルールエンジン (完全一致 / 部分一致 / 正規化 / 制限正規表現)"]
     BASE -->|ブロック| STORE["SQLite WAL 台帳・審査キュー"]
-    BASE -->|通過| ROUTE{"スコア閾値 / 例外フラグ / 有料 SC"}
+    BASE -->|通過| ROUTE{"スコア閾値 / 例外 / 有料 SC"}
     ROUTE -->|高速許可| OUT["読み取り専用出力ポート (output-native-v1)"]
     ROUTE -->|AI 分類・翻訳| AI["隔離 AI アダプター (Synthetic / Kiro CLI / OpenAI / Anthropic)"]
     AI -->|検証済み JSON のみ| STORE
@@ -90,9 +126,21 @@ flowchart LR
 
 本リポジトリには開発で活用した Kiro アーティファクトが含まれています：
 
-- **Steering ルール**: [`.kiro/steering/`](./.kiro/steering/)
-- **仕様・受け入れ記録**: [`.kiro/specs/`](./.kiro/specs/)
-- **Skill / ローカルハーネス**: [`.kiro/skills/mana-orchestrate/`](./.kiro/skills/mana-orchestrate/), [`.kiro/README.md`](./.kiro/README.md)
+- **Steering ルール**：[`.kiro/steering/`](./.kiro/steering/)
+- **仕様・受け入れ記録**：[`.kiro/specs/`](./.kiro/specs/)
+- **Skill / ローカルハーネス**：[`.kiro/skills/mana-orchestrate/`](./.kiro/skills/mana-orchestrate/), [`.kiro/README.md`](./.kiro/README.md)
+
+## リポジトリ構成
+
+```text
+Voxward/
+├── apps/server/        # Fastify 5 API/WS サーバー、SQLite WAL、AI アダプター
+├── apps/web/           # React 19 + Vite 管理画面、Pure Dock、OBS オーバーレイ
+├── packages/contracts/ # 判定結果・タスク状態・出力プロトコル共有契約
+├── deploy/             # ゼロシークレット環境、k3s マニフェスト、Linux テンプレート
+├── docs/               # 構築ガイド、OBS/YouTube 設定、5 言語訳、画像資産
+└── .kiro/              # Steering ルール、スペック、ハーネス設定
+```
 
 ---
 
@@ -100,10 +148,10 @@ flowchart LR
 
 本番デプロイは HTTPS リバースプロキシ（Caddy 等）背後の Linux サーバー（`127.0.0.1:3000` ループバック待機）、またはマルチステージ [`Dockerfile`](./Dockerfile) と [`deploy/k3s/`](./deploy/k3s/) Kustomize マニフェストによる単一ノード **k3s** クラスター（SQLite WAL 保護のため `replicas: 1` + `Recreate` + `local-path` RWO、`enableServiceLinks: false`、Traefik HTTPS/WSS、`HttpOnly; Secure; SameSite=Strict` Cookie、ワンタイムオーナー初期化）に対応しています。
 
-- Linux systemd / プロキシテンプレート: [`deploy/server/README.md`](./deploy/server/README.md)
-- k3s コンテナ・マニフェスト（`/sandbox` + 本番）: [`deploy/k3s/README.md`](./deploy/k3s/README.md)
-- リモート構築手順: [`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
-- OBS / YouTube 連携設定: [`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
+- Linux systemd / プロキシテンプレート：[`deploy/server/README.md`](./deploy/server/README.md)
+- k3s コンテナ・マニフェスト（`/sandbox` + 本番）：[`deploy/k3s/README.md`](./deploy/k3s/README.md)
+- リモート構築手順：[`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
+- OBS / YouTube 連携設定：[`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
 
 ### 検証範囲と外部未検証境界
 
@@ -114,6 +162,12 @@ flowchart LR
 - 隔離 Linux ユーザー下での実 `kiro-cli` 実行（`VW-S029-KIRO-REAL`）および実モデルのレイテンシ・コスト計測（`VOXWARD-SUB-050`）。
 - 運用者自身の Google Cloud プロジェクトによる YouTube OAuth 審査・クオータ申請とプラットフォーム規約確認。
 - コンテナおよび k3s デプロイ定義（[`Dockerfile`](./Dockerfile)、[`deploy/k3s/`](./deploy/k3s/)）は YAML 構文・ランタイム不変条件・パス衛生チェックの静的検証済みですが、実際の `docker build` およびクラスターへの `kubectl apply` はビルド環境および対象 k3s クラスターでの実行が必要です。
+
+## v1.0 ロードマップ
+
+1. **実配信 YouTube 連携と OAuth 審査検証**：運用者側の Google Cloud OAuth 審査を完了し、実クオータ環境下での長時間取り込み負荷試験を実施。
+2. **実 AI ランタイム・コスト計測**：隔離 `kiro-cli`（`VW-S029-KIRO-REAL`）および商用 LLM プロバイダーにおける実遅延・トークンコストの計測（`VOXWARD-SUB-050`）。
+3. **配信者パイロットと本番品質版の提供**：[**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) を通じて希望する配信者と試験導入を行い、フィードバックを反映した本番検証済み v1.0 をリリース。
 
 ---
 

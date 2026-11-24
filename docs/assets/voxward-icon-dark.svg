@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="96" height="96" role="img" aria-label="VoxWard">
+  <rect width="48" height="48" rx="12" fill="#3fc7b7"/>
+  <path d="M10.5 12.75L18 12.75L24 30.75L30 12.75L37.5 12.75L27.375 38.25L20.625 38.25Z" fill="#07211e"/>
+  <path d="M24 9.75L27.75 15L24 20.25L20.25 15Z" fill="#07211e"/>
+</svg>

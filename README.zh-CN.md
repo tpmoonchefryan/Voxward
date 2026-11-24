@@ -1,6 +1,12 @@
-> 说明：本文档以[英文原版](./README.md)为准 · `synced-to: ed4a3f04d6252f8b49e1d2f0af7615e782f96c8571a84329221b8e43caed2196`
+> 说明：本文档以[英文原版](./README.md)为准 · `synced-to: 03a4a0214d64a5fbb531715c2693872629852b977d7e29c2f9cd3ed1f8927438`
 
 <div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/voxward-icon-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/voxward-icon.svg">
+  <img alt="VoxWard" src="./docs/assets/voxward-icon.svg" width="88" height="88">
+</picture>
 
 # VoxWard
 
@@ -11,13 +17,17 @@
 [![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
+[![discussions](https://img.shields.io/badge/Discussions-主播试点联系-0b6b65?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/discussions)
 
-[评委零配置速览](#kiroween-2026-评委速览) · [系统架构](#frankenstein-架构) · [核心能力](#核心能力) · [自托管部署](#自托管部署) · [文档导航](#文档导航)
+[界面预览](#界面实景预览) · [评委速览](#kiroween-2026-评委速览) · [系统架构](#frankenstein-架构) · [自托管部署](#自托管部署) · [路线图](#迈向-v10-路线图) · [文档导航](#文档导航)
 
 </div>
 
 > [!NOTE]
 > 由 **tpmoonchefryan** 基于 **Apache-2.0** 为 **Kiroween 2026（Frankenstein 赛道）** 构建。默认首屏为 **万圣节（Halloween）主题 + 英文（`en`）**，支持在界面中实时切换 **五种语言**（`English`、`简体中文`、`日本語`、`한국어`、`Français`）。
+
+> [!IMPORTANT]
+> **预发布版本声明**：当前 `rc0.1.0` 为**预发布版本**，尚未进行真实直播间生产测试。如果有主播或运营团队希望实际试用，欢迎直接通过 [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) 联系作者——后续会结合真实使用需求评估并交付经生产验证的正式版本。
 
 ---
 
@@ -33,7 +43,33 @@ VoxWard 将职责拆解为自托管中间件的协同流水线：
 
 ---
 
+## 界面实景预览
+
+![VoxWard 交互沙盒审核工作台](./docs/assets/preview-sandbox-desk.png)
+
+*默认万圣节主题 + 英文界面的交互沙盒工作台：顶部实时弹幕流模拟器、左侧待审队列与操作栏、右侧置顶 SC 倒计时胶囊与双语精翻卡片。*
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="./docs/assets/preview-login-halloween.png" alt="VoxWard 万圣节默认登录页">
+      <br>
+      <sub><b>默认登录首屏（<code>/login</code>）</b> · Halloween 主题 + 五语选择器</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="./docs/assets/preview-sandbox-stage.png" alt="VoxWard OBS 投屏舞台预览">
+      <br>
+      <sub><b>只读 OBS 投屏舞台预览</b> · 纯净多语弹幕与 Super Chat 流</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
 ## Kiroween 2026 评委速览
+
+- **运行前提**：`Node.js >= 24`、`pnpm 12.18`（无需额外安装外部数据库，内嵌 SQLite WAL）。
+- **技术栈**：TypeScript、Fastify 5、React 19、Vite、Drizzle ORM + `better-sqlite3`、WebSocket (`ws`)、`@tcrn/ui-react@4.2.0`、Docker 与 k3s（`local-path` + Traefik）。
 
 评审无需准备 Google Cloud 凭据、YouTube OAuth 令牌或外部 LLM API Key，可直接启动**零密钥合成演示沙盒**（若环境变量中误配真实密钥，沙盒守卫会自动 fail-closed 拒绝启动）：
 
@@ -62,7 +98,7 @@ flowchart LR
     YT["YouTube Live Chat v3 / 合成数据源"] --> IN["频道拉流与去重接入"]
     IN --> BASE["确定性规则引擎（精确 / 子串 / 归一化 / 受限正则）"]
     BASE -->|明确拦截| STORE["SQLite WAL 账本与待审队列"]
-    BASE -->|通过基础检查| ROUTE{"信任分阈值 / 计分例外 / 付费 SC"}
+    BASE -->|通过基础检查| ROUTE{"信任分阈值 / 例外 / 付费 SC"}
     ROUTE -->|快速放行| OUT["只读输出协议端口 (output-native-v1)"]
     ROUTE -->|AI 分类 / 精翻| AI["隔离 AI 适配器 (Synthetic / Kiro CLI / OpenAI / Anthropic)"]
     AI -->|校验后结构化 JSON| STORE
@@ -94,6 +130,18 @@ flowchart LR
 - **分步 Specs 与验收记录**：[`.kiro/specs/`](./.kiro/specs/)
 - **项目级 Skill 与本地 Hook 架构**：[`.kiro/skills/mana-orchestrate/`](./.kiro/skills/mana-orchestrate/), [`.kiro/README.md`](./.kiro/README.md)
 
+## 仓库目录速览
+
+```text
+Voxward/
+├── apps/server/        # Fastify 5 服务、SQLite WAL 账本与隔离 AI 适配器
+├── apps/web/           # React 19 + Vite 控制台、纯净弹幕姬与 OBS 舞台
+├── packages/contracts/ # 跨前后端共享的裁决枚举、任务状态与契约定义
+├── deploy/             # 零密钥沙盒、k3s 清单（生产 + /sandbox）与主机模板
+├── docs/               # 运维手册、OBS/YouTube 配置、五语译本与视觉资产
+└── .kiro/              # Steering 规则、Specs 验收记录与本地 Harness
+```
+
 ---
 
 ## 自托管部署
@@ -114,6 +162,12 @@ flowchart LR
 - 真实独立 Linux 运行账号下的 `kiro-cli` 调用实测（`VW-S029-KIRO-REAL`）与真实模型延迟/费用基准（`VOXWARD-SUB-050`）。
 - 部署方独立 Google Cloud 项目 OAuth 审核及 YouTube API 配额与频道计分用途合规确认。
 - 容器与 k3s 部署清单（[`Dockerfile`](./Dockerfile)、[`deploy/k3s/`](./deploy/k3s/)）已完成 YAML 语法、运行约束与脱敏卫生静态校验；实际 `docker build` 与集群 `kubectl apply` 需在构建机及目标 k3s 集群上执行验证。
+
+## 迈向 v1.0 路线图
+
+1. **真实 YouTube 直播压测与 OAuth 审核**：完成部署侧 Google Cloud OAuth 审核与真实频道配额下的长时拉流压测。
+2. **真实 AI 与宿主机基准实测**：补充隔离 `kiro-cli`（`VW-S029-KIRO-REAL`）及商用大模型在实际直播弹幕下的延迟与费用基线（`VOXWARD-SUB-050`）。
+3. **主播试点与生产验证交付**：通过 [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) 对接有意实际使用的主播团队开展试点，结合反馈打磨并交付经过真实直播验证的 v1.0 正式版本。
 
 ---
 

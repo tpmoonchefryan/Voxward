@@ -1,6 +1,12 @@
-> Remarque : la [version anglaise](./README.md) fait foi · `synced-to: ed4a3f04d6252f8b49e1d2f0af7615e782f96c8571a84329221b8e43caed2196`
+> Remarque : la [version anglaise](./README.md) fait foi · `synced-to: 03a4a0214d64a5fbb531715c2693872629852b977d7e29c2f9cd3ed1f8927438`
 
 <div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/voxward-icon-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/voxward-icon.svg">
+  <img alt="VoxWard" src="./docs/assets/voxward-icon.svg" width="88" height="88">
+</picture>
 
 # VoxWard
 
@@ -11,13 +17,17 @@ Intergiciel auto-hébergé de modération de chat et danmaku en direct, notation
 [![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
+[![discussions](https://img.shields.io/badge/Discussions-Pilotes%20Streamers-0b6b65?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/discussions)
 
-[Démarrage rapide Jury](#démarrage-rapide-jury-kiroween-2026) · [Architecture](#architecture-frankenstein) · [Fonctionnalités](#fonctionnalités-principales) · [Auto-hébergement](#déploiement-auto-hébergé) · [Documentation](#index-de-la-documentation)
+[Aperçus](#aperçu-de-linterface) · [Démarrage Jury](#démarrage-rapide-jury-kiroween-2026) · [Architecture](#architecture-frankenstein) · [Auto-hébergement](#déploiement-auto-hébergé) · [Feuille de route](#feuille-de-route-vers-la-v10) · [Documentation](#index-de-la-documentation)
 
 </div>
 
 > [!NOTE]
 > Développé par **tpmoonchefryan** sous licence **Apache-2.0** pour **Kiroween 2026 (Catégorie Frankenstein)**. L'interface démarre par défaut en **thème Halloween + anglais (`en`)** avec bascule dynamique en **5 langues** (`English`, `简体中文`, `日本語`, `한국어`, `Français`).
+
+> [!IMPORTANT]
+> **Avis de pré-version** : cette version (`rc0.1.0`) est une **pré-version** qui n'a **pas encore été testée en conditions réelles de diffusion en production**. Si vous êtes streamer ou équipe VTuber intéressé(e) par une utilisation réelle, contactez directement le mainteneur via [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) — les retours d'usage guideront la livraison d'une version validée en production.
 
 ---
 
@@ -33,7 +43,33 @@ VoxWard sépare proprement les responsabilités dans un intergiciel auto-héberg
 
 ---
 
+## Aperçu de l'interface
+
+![Bureau de modération du bac à sable interactif VoxWard](./docs/assets/preview-sandbox-desk.png)
+
+*Bureau de modération du bac à sable interactif en thème Halloween + anglais par défaut : simulateur de flux en direct, file d'attente scindée, barre de Super Chats épinglés avec compte à rebours et cartes bilingues.*
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="./docs/assets/preview-login-halloween.png" alt="Écran de connexion Halloween VoxWard">
+      <br>
+      <sub><b>Connexion par défaut (<code>/login</code>)</b> · Thème Halloween + sélecteur 5 langues</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="./docs/assets/preview-sandbox-stage.png" alt="Aperçu Scène OBS VoxWard">
+      <br>
+      <sub><b>Scène OBS en lecture seule</b> · Flux danmaku multilingue &amp; Super Chats</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
 ## Démarrage rapide Jury Kiroween 2026
+
+- **Prérequis d'exécution** : `Node.js >= 24`, `pnpm 12.18` (aucune base de données externe requise — SQLite WAL embarqué).
+- **Pile technique** : TypeScript, Fastify 5, React 19, Vite, Drizzle ORM + `better-sqlite3`, WebSocket (`ws`), `@tcrn/ui-react@4.2.0`, Docker & k3s (`local-path` + Traefik).
 
 Aucune clé API YouTube ou LLM n'est requise. Le bac à sable synthétique échoue en sécurité (fail-closed) si des secrets de production sont présents dans l'environnement :
 
@@ -94,6 +130,18 @@ Ce dépôt conserve ses artefacts de développement Kiro :
 - **Spécifications et preuves d'acceptation** : [`.kiro/specs/`](./.kiro/specs/)
 - **Skill local et harnais** : [`.kiro/skills/mana-orchestrate/`](./.kiro/skills/mana-orchestrate/), [`.kiro/README.md`](./.kiro/README.md)
 
+## Structure du dépôt
+
+```text
+Voxward/
+├── apps/server/        # Serveur Fastify 5 REST/WS, SQLite WAL & adaptateurs IA
+├── apps/web/           # Console React 19 + Vite, Pure Dock & overlay OBS
+├── packages/contracts/ # Verdicts partagés, états de tâches & schémas protocole
+├── deploy/             # Bac à sable sans secrets, manifestes k3s & modèles Linux
+├── docs/               # Guides de déploiement, OBS/YouTube, traductions & médias
+└── .kiro/              # Règles Steering, spécifications et configuration harnais
+```
+
 ---
 
 ## Déploiement auto-hébergé
@@ -114,6 +162,12 @@ Pour `rc0.1.0` : `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm bui
 - Exécution réelle de `kiro-cli` sous compte Linux dédié (`VW-S029-KIRO-REAL`) et mesures de latence/coût réelles (`VOXWARD-SUB-050`).
 - Vérification OAuth Google Cloud et confirmation des quotas/règles YouTube pour le scoring par chaîne auprès de la plateforme.
 - Les fichiers conteneur et k3s ([`Dockerfile`](./Dockerfile), [`deploy/k3s/`](./deploy/k3s/)) ont été validés statiquement (syntaxe YAML, invariants d'exécution et hygiène des chemins) ; `docker build` et `kubectl apply` doivent être exécutés sur votre hôte de build / cluster k3s cible.
+
+## Feuille de route vers la v1.0
+
+1. **Diffusions YouTube réelles & OAuth** : finaliser la vérification OAuth Google Cloud côté opérateur et tester l'ingestion continue sous quotas de production.
+2. **Benchmarks IA en conditions réelles** : mesurer la latence et le coût de bout en bout avec `kiro-cli` isolé (`VW-S029-KIRO-REAL`) et des fournisseurs LLM hébergés (`VOXWARD-SUB-050`).
+3. **Pilotes streamers & durcissement** : collaborer avec les premiers créateurs via [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) afin de valider la fiabilité en direct et publier une v1.0 vérifiée en production.
 
 ---
 

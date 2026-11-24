@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: GitHub Discussions (Streamer Pilots & Questions)
+    url: https://github.com/tpmoonchefryan/Voxward/discussions
+    about: Ask questions, share feedback, or reach out if you want to trial VoxWard in a live broadcast toward a production-validated release.
   - name: Report a security vulnerability
     url: https://github.com/tpmoonchefryan/Voxward/security/advisories/new
     about: Privately report security vulnerabilities via GitHub Security Advisories instead of opening a public issue.

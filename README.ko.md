@@ -1,6 +1,12 @@
-> 참고: 이 문서는 [영문 원본](./README.md)을 정본으로 합니다 · `synced-to: ed4a3f04d6252f8b49e1d2f0af7615e782f96c8571a84329221b8e43caed2196`
+> 참고: 이 문서는 [영문 원본](./README.md)을 정본으로 합니다 · `synced-to: 03a4a0214d64a5fbb531715c2693872629852b977d7e29c2f9cd3ed1f8927438`
 
 <div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/voxward-icon-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/voxward-icon.svg">
+  <img alt="VoxWard" src="./docs/assets/voxward-icon.svg" width="88" height="88">
+</picture>
 
 # VoxWard
 
@@ -11,13 +17,17 @@
 [![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
+[![discussions](https://img.shields.io/badge/Discussions-스트리머%20파일럿-0b6b65?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/discussions)
 
-[심사위원 빠른 시작](#kiroween-2026-심사위원-빠른-시작) · [아키텍처](#frankenstein-아키텍처) · [핵심 기능](#핵심-기능) · [셀프 호스팅](#셀프-호스팅-배포) · [문서 안내](#문서-안내)
+[화면 미리보기](#화면-미리보기) · [빠른 시작](#kiroween-2026-심사위원-빠른-시작) · [아키텍처](#frankenstein-아키텍처) · [셀프 호스팅](#셀프-호스팅-배포) · [로드맵](#v10-로드맵) · [문서 안내](#문서-안내)
 
 </div>
 
 > [!NOTE]
 > **tpmoonchefryan** 이 **Apache-2.0** 라이선스로 **Kiroween 2026(Frankenstein 트랙)** 출품을 위해 개발했습니다. 초기 화면은 **Halloween 테마 + 영어(`en`)** 로 시작하며 UI에서 **5개 언어**(`English`, `简体中文`, `日本語`, `한국어`, `Français`)를 즉시 전환할 수 있습니다.
+
+> [!IMPORTANT]
+> **프리릴리스 안내**: 현재 `rc0.1.0`은 **프리릴리스 버전**이며 실제 방송 운영 환경에서의 프로덕션 테스트는 아직 수행되지 않았습니다. 실제 방송에서 사용을 희망하는 스트리머나 운영 팀은 [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) 로 직접 연락해 주세요. 실제 수요를 바탕으로 향후 프로덕션 검증 정식 버전 제공을 추진할 예정입니다.
 
 ---
 
@@ -33,7 +43,33 @@ VoxWard는 역할을 명확히 나눈 셀프 호스팅 미들웨어입니다:
 
 ---
 
+## 화면 미리보기
+
+![VoxWard 인터랙티브 샌드박스 검토 워크벤치](./docs/assets/preview-sandbox-desk.png)
+
+*기본 Halloween 테마 + 영어 UI 인터랙티브 샌드박스 워크벤치: 라이브 스트림 시뮬레이터, 분할 대기열, 카운트다운 고정 SC 바 및 이중 언어 번역 카드.*
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="./docs/assets/preview-login-halloween.png" alt="VoxWard Halloween 기본 로그인 화면">
+      <br>
+      <sub><b>기본 로그인 화면 (<code>/login</code>)</b> · Halloween 테마 + 5개 언어 선택</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="./docs/assets/preview-sandbox-stage.png" alt="VoxWard OBS 오버레이 스테이지 미리보기">
+      <br>
+      <sub><b>읽기 전용 OBS 스테이지 미리보기</b> · 깔끔한 다국어 탄막 및 SC 스트림</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
 ## Kiroween 2026 심사위원 빠른 시작
+
+- **실행 전제 조건**: `Node.js >= 24`, `pnpm 12.18` (외부 DB 불필요 — 내장 SQLite WAL 사용).
+- **기술 스택**: TypeScript, Fastify 5, React 19, Vite, Drizzle ORM + `better-sqlite3`, WebSocket (`ws`), `@tcrn/ui-react@4.2.0`, Docker & k3s (`local-path` + Traefik).
 
 심사위원은 Google Cloud 자격 증명, YouTube OAuth 토큰 또는 외부 AI API 키 없이 **무비밀(Zero-Secret) 샌드박스**를 실행할 수 있습니다(운영 비밀 값이 감지되면 fail-closed로 시작을 거부합니다):
 
@@ -94,6 +130,18 @@ flowchart LR
 - **단계별 Specs 및 인수 기록**: [`.kiro/specs/`](./.kiro/specs/)
 - **프로젝트 Skill 및 로컬 하네스**: [`.kiro/skills/mana-orchestrate/`](./.kiro/skills/mana-orchestrate/), [`.kiro/README.md`](./.kiro/README.md)
 
+## 저장소 구조
+
+```text
+Voxward/
+├── apps/server/        # Fastify 5 REST/WS 서버, SQLite WAL 및 AI 어댑터
+├── apps/web/           # React 19 + Vite 콘솔, Pure Dock 및 OBS 오버레이
+├── packages/contracts/ # 판정 열거형, 작업 상태 및 공유 프로토콜 스키마
+├── deploy/             # 무비밀 샌드박스, k3s 매니페스트 및 Linux 템플릿
+├── docs/               # 배포 매뉴얼, OBS/YouTube 설정, 5개 언어 번역 및 자산
+└── .kiro/              # Steering 규칙, 단계별 Specs 및 하네스 설정
+```
+
 ---
 
 ## 셀프 호스팅 배포
@@ -114,6 +162,12 @@ flowchart LR
 - 격리된 Linux 계정에서 실제 `kiro-cli` 런타임 실행(`VW-S029-KIRO-REAL`) 및 실제 모델 지연·비용 벤치마크(`VOXWARD-SUB-050`).
 - 운영자의 Google Cloud 프로젝트 OAuth 앱 검증 및 YouTube API 할당량·정책 확인.
 - 컨테이너 및 k3s 배포 자산([`Dockerfile`](./Dockerfile), [`deploy/k3s/`](./deploy/k3s/))은 YAML 구문, 런타임 불변 조건 및 경로 위생에 대해 정적 검증을 마쳤으며, 실제 `docker build`와 클러스터 `kubectl apply`는 운영자의 빌드 호스트 및 대상 k3s 클러스터에서 실행해야 합니다.
+
+## v1.0 로드맵
+
+1. **실제 YouTube 라이브 연동 및 OAuth 검증**: 운영자 Google Cloud OAuth 앱 검증을 완료하고 실제 채널 할당량 환경에서 장시간 부하 테스트를 진행합니다.
+2. **실제 AI 런타임 벤치마크**: 격리된 `kiro-cli`(`VW-S029-KIRO-REAL`) 및 상용 LLM 제공자의 실제 지연 시간·비용 지표를 측정합니다(`VOXWARD-SUB-050`).
+3. **스트리머 파일럿 및 프로덕션 안정화**: [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) 로 참여한 스트리머와 실방송 시범 운영을 진행한 뒤 프로덕션 검증을 마친 v1.0을 출시합니다.
 
 ---
 
