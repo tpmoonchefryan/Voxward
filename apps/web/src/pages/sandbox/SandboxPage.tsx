@@ -88,6 +88,7 @@ function toDockSnapshot(
   snap: SandboxSnapshot | null,
   simulatedChats: readonly SimulatedChatEntry[],
   simulatedScs: readonly SimulatedScEntry[],
+  blockedFallbackIso: string,
 ): DockSnapshot {
   const chId = snap?.channelId ?? "ch_sandbox_1";
   const scMap = new Map<string, DockSnapshot["feed"]["approvedSc"][number]>();
@@ -149,7 +150,6 @@ function toDockSnapshot(
       deliveryStatus: "DELIVERED",
     });
   }
-  const nowIso = new Date().toISOString();
   for (const item of snap?.blockedItems ?? []) {
     streamMap.set(item.eventId, {
       eventId: item.eventId,
@@ -160,7 +160,7 @@ function toDockSnapshot(
       platformDeleteStatus: "NOT_APPLICABLE",
       bodyFolded: false,
       originalText: item.originalText,
-      decidedAt: nowIso,
+      decidedAt: blockedFallbackIso,
       deliveryId: null,
       deliveryStatus: null,
     });
@@ -307,9 +307,14 @@ export function SandboxView({
   const canPrivacy = caps.has("privacy.delete");
   const canStage = caps.has("stage.read") || role === "DEMO_STAGE_VIEWER";
 
+  const blockedFallbackIso = useMemo(() => {
+    void snapshot;
+    return new Date().toISOString();
+  }, [snapshot]);
+
   const dockSnap = useMemo(
-    () => toDockSnapshot(snapshot, simulatedChats, simulatedScs),
-    [snapshot, simulatedChats, simulatedScs],
+    () => toDockSnapshot(snapshot, simulatedChats, simulatedScs, blockedFallbackIso),
+    [snapshot, simulatedChats, simulatedScs, blockedFallbackIso],
   );
   const sandboxStageState = useMemo(() => toSandboxStageState(dockSnap), [dockSnap]);
 

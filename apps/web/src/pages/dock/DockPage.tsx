@@ -116,9 +116,11 @@ export function PureDockSurface({
     return merged.sort((a, b) => a.decidedAtMs - b.decidedAtMs);
   }, [chatMessages, scItems]);
 
-  const latestEntryId = unifiedTimeline[unifiedTimeline.length - 1]?.id ?? "";
-  const streamKey = unifiedTimeline.length > 0 ? `${unifiedTimeline.length}:${latestEntryId}` : "";
-  const { viewportRef, handleScroll, handleWheel } = useLiveStreamAutoScroll(streamKey);
+  const streamItemIds = useMemo(
+    () => unifiedTimeline.map((entry) => (entry.kind === "sc" ? `sc-${entry.id}` : `chat-${entry.id}`)),
+    [unifiedTimeline],
+  );
+  const { viewportRef, trackRef, handleScroll, handleWheel } = useLiveStreamAutoScroll(streamItemIds);
 
   return (
     <main
@@ -163,34 +165,36 @@ export function PureDockSurface({
               description="通过审核的直播对话与 Super Chat 将在同一时间流中实时呈现，点击顶部醒目条可展开卡片。"
             />
           ) : (
-            <div className="vw-stream-track">
-              {unifiedTimeline.map((entry) => (
-                <div
-                  key={entry.kind === "sc" ? `sc-${entry.id}` : `chat-${entry.id}`}
-                  className="vw-stream-item"
-                  data-stream-kind={entry.kind}
-                >
-                  {entry.kind === "sc" ? (
-                    <SuperChatCard item={entry.item} />
-                  ) : (
-                    <article className="vw-chat-row">
-                      <div className="vw-row-between">
-                        <strong>
-                          <UntrustedText text={entry.author} />
-                        </strong>
-                        <span className="vw-caption">
-                          {new Date(entry.decidedAt).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      {entry.originalText !== null ? (
-                        <div>
-                          <UntrustedText text={entry.originalText} />
+            <div className="vw-stream-clip">
+              <div ref={trackRef} className="vw-stream-track">
+                {unifiedTimeline.map((entry) => (
+                  <div
+                    key={entry.kind === "sc" ? `sc-${entry.id}` : `chat-${entry.id}`}
+                    className="vw-stream-item"
+                    data-stream-kind={entry.kind}
+                  >
+                    {entry.kind === "sc" ? (
+                      <SuperChatCard item={entry.item} />
+                    ) : (
+                      <article className="vw-chat-row">
+                        <div className="vw-row-between">
+                          <strong>
+                            <UntrustedText text={entry.author} />
+                          </strong>
+                          <span className="vw-caption">
+                            {new Date(entry.decidedAt).toLocaleTimeString()}
+                          </span>
                         </div>
-                      ) : null}
-                    </article>
-                  )}
-                </div>
-              ))}
+                        {entry.originalText !== null ? (
+                          <div>
+                            <UntrustedText text={entry.originalText} />
+                          </div>
+                        ) : null}
+                      </article>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

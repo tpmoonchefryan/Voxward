@@ -162,9 +162,11 @@ export function ModerationWorkbench({
     return combined.sort((a, b) => a.decidedAtMs - b.decidedAtMs);
   }, [liveStream, scTickerItems]);
 
-  const latestStreamId = unifiedStream[unifiedStream.length - 1]?.id ?? "";
-  const streamKey = unifiedStream.length > 0 ? `${unifiedStream.length}:${latestStreamId}` : "";
-  const { viewportRef, handleScroll, handleWheel } = useLiveStreamAutoScroll(streamKey);
+  const streamItemIds = useMemo(
+    () => unifiedStream.map((entry) => (entry.kind === "sc" ? `sc-${entry.id}` : `chat-${entry.id}`)),
+    [unifiedStream],
+  );
+  const { viewportRef, trackRef, handleScroll, handleWheel } = useLiveStreamAutoScroll(streamItemIds);
 
   const blacklistCategories = useMemo(
     () => categories.filter((c) => c.listKind === "BLACKLIST"),
@@ -498,84 +500,86 @@ export function ModerationWorkbench({
                   onScroll={handleScroll}
                   onWheel={handleWheel}
                 >
-                  <div className="vw-stream-track">
-                    {unifiedStream.map((streamEntry) => {
-                      if (streamEntry.kind === "sc") {
+                  <div className="vw-stream-clip">
+                    <div ref={trackRef} className="vw-stream-track">
+                      {unifiedStream.map((streamEntry) => {
+                        if (streamEntry.kind === "sc") {
+                          return (
+                            <div
+                              key={`sc-${streamEntry.id}`}
+                              className="vw-stream-item"
+                              data-stream-kind="sc"
+                            >
+                              <SuperChatCard item={streamEntry.item} />
+                            </div>
+                          );
+                        }
+
+                        const entry = streamEntry.entry;
+                        const expanded = expandedEventIds.includes(entry.eventId);
+                        const rowText = entry.originalText ?? "";
+                        const isLong = rowText.length > 100;
+
                         return (
                           <div
-                            key={`sc-${streamEntry.id}`}
+                            key={`chat-${entry.eventId}`}
                             className="vw-stream-item"
-                            data-stream-kind="sc"
+                            data-stream-kind="chat"
                           >
-                            <SuperChatCard item={streamEntry.item} />
-                          </div>
-                        );
-                      }
-
-                      const entry = streamEntry.entry;
-                      const expanded = expandedEventIds.includes(entry.eventId);
-                      const rowText = entry.originalText ?? "";
-                      const isLong = rowText.length > 100;
-
-                      return (
-                        <div
-                          key={`chat-${entry.eventId}`}
-                          className="vw-stream-item"
-                          data-stream-kind="chat"
-                        >
-                          <article
-                            className={
-                              entry.localStatus === "BLOCK"
-                                ? "vw-chat-row vw-chat-row--flagged"
-                                : "vw-chat-row"
-                            }
-                          >
-                            <div className="vw-row-between">
-                              <strong>
-                                <UntrustedText text={entry.subjectRef} />
-                              </strong>
-                              <div className="vw-row-wrap">
-                                <Badge tone={entry.localStatus === "BLOCK" ? "danger" : "positive"}>
-                                  {classificationLabel(entry.classification)}
-                                </Badge>
+                            <article
+                              className={
+                                entry.localStatus === "BLOCK"
+                                  ? "vw-chat-row vw-chat-row--flagged"
+                                  : "vw-chat-row"
+                              }
+                            >
+                              <div className="vw-row-between">
+                                <strong>
+                                  <UntrustedText text={entry.subjectRef} />
+                                </strong>
+                                <div className="vw-row-wrap">
+                                  <Badge tone={entry.localStatus === "BLOCK" ? "danger" : "positive"}>
+                                    {classificationLabel(entry.classification)}
+                                  </Badge>
+                                </div>
                               </div>
-                            </div>
-                            {rowText ? (
-                              <div>
-                                <UntrustedText
-                                  text={
-                                    entry.bodyFolded && !expanded && isLong
-                                      ? `${rowText.slice(0, 100)}…`
-                                      : rowText
-                                  }
-                                />
-                                {entry.bodyFolded || isLong ? (
+                              {rowText ? (
+                                <div>
+                                  <UntrustedText
+                                    text={
+                                      entry.bodyFolded && !expanded && isLong
+                                        ? `${rowText.slice(0, 100)}…`
+                                        : rowText
+                                    }
+                                  />
+                                  {entry.bodyFolded || isLong ? (
+                                    <Button
+                                      size="sm"
+                                      variant="quiet"
+                                      onClick={() => toggleExpandBody(entry.eventId)}
+                                    >
+                                      {expanded ? "收起内容" : "查看原文"}
+                                    </Button>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                              {entry.deliveryId && entry.deliveryStatus === "FAILED" ? (
+                                <div className="vw-row-between">
+                                  <span className="vw-caption">下游投屏投递失败</span>
                                   <Button
                                     size="sm"
-                                    variant="quiet"
-                                    onClick={() => toggleExpandBody(entry.eventId)}
+                                    variant="secondary"
+                                    onClick={() => void handleResend(entry.deliveryId!)}
                                   >
-                                    {expanded ? "收起内容" : "查看原文"}
+                                    重新投递
                                   </Button>
-                                ) : null}
-                              </div>
-                            ) : null}
-                            {entry.deliveryId && entry.deliveryStatus === "FAILED" ? (
-                              <div className="vw-row-between">
-                                <span className="vw-caption">下游投屏投递失败</span>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  onClick={() => void handleResend(entry.deliveryId!)}
-                                >
-                                  重新投递
-                                </Button>
-                              </div>
-                            ) : null}
-                          </article>
-                        </div>
-                      );
-                    })}
+                                </div>
+                              ) : null}
+                            </article>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}

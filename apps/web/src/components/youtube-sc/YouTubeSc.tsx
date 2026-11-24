@@ -1,5 +1,23 @@
-import { useCallback, useEffect, useRef, useState, type WheelEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type WheelEvent } from "react";
 import { UntrustedText } from "../untrusted-text/UntrustedText";
+
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+function readTranslateY(el: HTMLElement): number {
+  const tf = getComputedStyle(el).transform;
+  if (!tf || tf === "none") return 0;
+  if (tf.startsWith("matrix3d(")) {
+    const parts = tf.slice(9, -1).split(",");
+    const ty = Number.parseFloat(parts[13] ?? "0");
+    return Number.isFinite(ty) ? ty : 0;
+  }
+  if (tf.startsWith("matrix(")) {
+    const parts = tf.slice(7, -1).split(",");
+    const ty = Number.parseFloat(parts[5] ?? "0");
+    return Number.isFinite(ty) ? ty : 0;
+  }
+  return 0;
+}
 
 export interface ScTierDescriptor {
   readonly id: "t1" | "t2" | "t3" | "t4" | "t5" | "t6" | "t7";
@@ -139,7 +157,7 @@ export function SuperChatTicker({
               <UntrustedText text={item.author} />
             </span>
             <span>{item.amountText ?? tier.label}</span>
-            <span>{formatTickerCountdown(remainingSec)}</span>
+            <span className="vw-sc-ticker__countdown">{formatTickerCountdown(remainingSec)}</span>
             <progress
               className="vw-sc-ticker__progress"
               max={100}
@@ -233,56 +251,131 @@ export function SuperChatOverlayBar({ items }: { readonly items: readonly SuperC
 }
 
 /**
- * Keeps a chronological bottom-up live chat viewport pinned to the latest message
- * at the bottom unless the viewer manually scrolls upward to inspect history.
+ * Animates bottom-up live chat & SC entries with deterministic FLIP track
+ * translation inside an overflow-clipped wrapper so scrollHeight stays
+ * invariant and new messages never overshoot upward or bounce back.
  */
-export function useLiveStreamAutoScroll(streamKey: string) {
+export function useLiveStreamAutoScroll(
+  itemIds: readonly string[],
+  options: { readonly syncScroll?: boolean } = {},
+) {
+  const syncScroll = options.syncScroll ?? true;
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
   const stickToBottomRef = useRef(true);
   const initializedRef = useRef(false);
-  const autoScrollUntilRef = useRef(0);
+  const prevIdsRef = useRef<readonly string[]>([]);
+  const activeAnimRef = useRef<Animation | null>(null);
 
   const handleScroll = useCallback(() => {
     const el = viewportRef.current;
     if (!el) return;
     const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
-    if (distance <= 48) {
-      stickToBottomRef.current = true;
-    } else if (performance.now() >= autoScrollUntilRef.current) {
-      stickToBottomRef.current = false;
-    }
+    stickToBottomRef.current = distance <= 48;
   }, []);
 
   const handleWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
     if (event.deltaY < 0) {
-      autoScrollUntilRef.current = 0;
       stickToBottomRef.current = false;
+      activeAnimRef.current?.cancel();
+      activeAnimRef.current = null;
     }
   }, []);
 
-  useEffect(() => {
-    const el = viewportRef.current;
-    if (!streamKey || !el || !stickToBottomRef.current) {
+  const joinedKey = itemIds.join("\u0000");
+
+  useIsomorphicLayoutEffect(() => {
+    const prevIds = prevIdsRef.current;
+    prevIdsRef.current = itemIds;
+
+    const track = trackRef.current;
+    const viewport = viewportRef.current;
+    if (itemIds.length === 0 || !track || (syncScroll && !viewport)) {
+      if (itemIds.length === 0) {
+        initializedRef.current = false;
+      }
       return;
     }
+
+    if (syncScroll && !stickToBottomRef.current) {
+      return;
+    }
+
     if (!initializedRef.current) {
-      el.scrollTop = el.scrollHeight;
+      if (syncScroll && viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
       initializedRef.current = true;
       return;
     }
+
+    const prevSet = new Set(prevIds);
+    let newTailCount = 0;
+    for (let i = itemIds.length - 1; i >= 0; i -= 1) {
+      if (prevSet.has(itemIds[i]!)) {
+        break;
+      }
+      newTailCount += 1;
+    }
+
+    if (newTailCount === 0) {
+      return;
+    }
+
+    const residualY = activeAnimRef.current !== null ? readTranslateY(track) : 0;
+    activeAnimRef.current?.cancel();
+    activeAnimRef.current = null;
+
+    if (syncScroll && viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+
+    if (newTailCount >= itemIds.length) {
+      return;
+    }
+
     const reduced =
       typeof window !== "undefined" &&
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!reduced && typeof el.scrollTo === "function") {
-      autoScrollUntilRef.current = performance.now() + 450;
-      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-    } else {
-      el.scrollTop = el.scrollHeight;
+    if (reduced || typeof track.animate !== "function") {
+      return;
     }
-  }, [streamKey]);
 
-  return { viewportRef, handleScroll, handleWheel };
+    const cs = getComputedStyle(track);
+    const gap = Number.parseFloat(cs.rowGap || cs.gap || "0") || 0;
+    const children = track.children;
+    let addedHeight = 0;
+    for (let i = Math.max(0, children.length - newTailCount); i < children.length; i += 1) {
+      const child = children[i];
+      if (!child) continue;
+      addedHeight += child.getBoundingClientRect().height;
+      if (i > 0) addedHeight += gap;
+    }
+
+    if (addedHeight <= 0) {
+      return;
+    }
+
+    const maxClamp = viewport ? viewport.clientHeight : 600;
+    const shiftPx = Math.min(addedHeight + Math.max(0, residualY), maxClamp);
+    const anim = track.animate(
+      [{ transform: `translateY(${shiftPx}px)` }, { transform: "translateY(0)" }],
+      { duration: 240, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    );
+    activeAnimRef.current = anim;
+    const clearIfCurrent = () => {
+      if (activeAnimRef.current === anim) {
+        activeAnimRef.current = null;
+      }
+    };
+    anim.onfinish = clearIfCurrent;
+    anim.oncancel = clearIfCurrent;
+    // joinedKey encodes exact ordered itemIds snapshot
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joinedKey, syncScroll]);
+
+  return { viewportRef, trackRef, handleScroll, handleWheel };
 }
 
 export function SuperChatCard({ item }: { readonly item: SuperChatItemDisplay }) {

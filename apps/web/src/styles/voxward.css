@@ -643,6 +643,8 @@ body.vw-stage-body {
   height: 34rem;
   max-height: 34rem;
   overflow-y: auto;
+  overflow-anchor: none;
+  overscroll-behavior-y: contain;
   display: flex;
   flex-direction: column;
   padding-top: 44px;
@@ -666,12 +668,17 @@ body.vw-stage-body {
   max-height: calc(100vh - 9rem);
 }
 
-.vw-stream-track {
+.vw-stream-clip {
   margin-top: auto;
   flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.vw-stream-track {
   display: flex;
   flex-direction: column;
   gap: var(--tcrn-space-2);
+  will-change: transform;
 }
 
 .vw-stream-item {
@@ -728,17 +735,15 @@ body.vw-stage-body {
 
 @media (prefers-reduced-motion: no-preference) {
   .vw-stream-item {
-    animation: vw-stream-in var(--tcrn-motion-duration-move) var(--tcrn-motion-ease) both;
+    animation: vw-stream-in var(--tcrn-motion-duration-fill) var(--tcrn-motion-ease) both;
   }
 
   @keyframes vw-stream-in {
     from {
       opacity: 0;
-      transform: translateY(16px);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
     }
   }
 }

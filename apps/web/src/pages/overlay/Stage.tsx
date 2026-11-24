@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { SuperChatCard } from "../../components/youtube-sc";
+import { useEffect, useMemo, useState } from "react";
+import { SuperChatCard, useLiveStreamAutoScroll } from "../../components/youtube-sc";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
 import {
   buildOverlaySubprotocols,
@@ -78,9 +78,18 @@ export function StageView({ state, previewMode = false }: StageViewProps) {
       ]
     : state.activeDeliveries;
 
-  const orderedDeliveries = [...effectiveDeliveries].sort(
-    (a, b) => a.platformOrder - b.platformOrder || a.deliverySequence - b.deliverySequence,
+  const orderedDeliveries = useMemo(
+    () =>
+      [...effectiveDeliveries].sort(
+        (a, b) => a.platformOrder - b.platformOrder || a.deliverySequence - b.deliverySequence,
+      ),
+    [effectiveDeliveries],
   );
+  const deliveryIds = useMemo(
+    () => orderedDeliveries.map((item) => item.deliveryId),
+    [orderedDeliveries],
+  );
+  const { trackRef } = useLiveStreamAutoScroll(deliveryIds, { syncScroll: false });
 
   return (
     <main
@@ -93,43 +102,45 @@ export function StageView({ state, previewMode = false }: StageViewProps) {
       ) : null}
 
       <section aria-label="OBS Chat Feed" className="vw-obs-chat-list">
-        {orderedDeliveries.map((item) => {
-          const isSc = isSuperChatItem(item);
-          if (isSc) {
-            const scDisplay = parseObsScDisplay(item);
+        <div ref={trackRef} className="vw-obs-stream-track">
+          {orderedDeliveries.map((item) => {
+            const isSc = isSuperChatItem(item);
+            if (isSc) {
+              const scDisplay = parseObsScDisplay(item);
+              return (
+                <div key={item.deliveryId} className="vw-obs-stream-item" data-stream-kind="sc">
+                  <SuperChatCard
+                    item={{
+                      id: item.deliveryId,
+                      author: scDisplay.author,
+                      amountText: scDisplay.amountText,
+                      text: item.text,
+                      translation: item.translation,
+                    }}
+                  />
+                </div>
+              );
+            }
+
             return (
-              <div key={item.deliveryId} className="vw-obs-stream-item" data-stream-kind="sc">
-                <SuperChatCard
-                  item={{
-                    id: item.deliveryId,
-                    author: scDisplay.author,
-                    amountText: scDisplay.amountText,
-                    text: item.text,
-                    translation: item.translation,
-                  }}
-                />
+              <div key={item.deliveryId} className="vw-obs-stream-item" data-stream-kind="chat">
+                <article className="vw-obs-chat-item">
+                  <span className="vw-obs-chat-item__author">
+                    <UntrustedText text={item.label ?? SAFE_ANONYMOUS_ALIAS} />
+                  </span>
+                  <span>
+                    <UntrustedText text={item.text} />
+                  </span>
+                  {item.translation ? (
+                    <div className="vw-obs-chat-item__tr">
+                      <UntrustedText text={item.translation} />
+                    </div>
+                  ) : null}
+                </article>
               </div>
             );
-          }
-
-          return (
-            <div key={item.deliveryId} className="vw-obs-stream-item" data-stream-kind="chat">
-              <article className="vw-obs-chat-item">
-                <span className="vw-obs-chat-item__author">
-                  <UntrustedText text={item.label ?? SAFE_ANONYMOUS_ALIAS} />
-                </span>
-                <span>
-                  <UntrustedText text={item.text} />
-                </span>
-                {item.translation ? (
-                  <div className="vw-obs-chat-item__tr">
-                    <UntrustedText text={item.translation} />
-                  </div>
-                ) : null}
-              </article>
-            </div>
-          );
-        })}
+          })}
+        </div>
       </section>
     </main>
   );
