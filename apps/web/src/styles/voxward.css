@@ -677,6 +677,8 @@ body.vw-stage-body {
   overflow-y: auto;
   overflow-anchor: none;
   overscroll-behavior-y: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   display: flex;
   flex-direction: column;
   padding-top: 44px;
@@ -692,6 +694,12 @@ body.vw-stage-body {
     var(--tcrn-color-ink) 48px,
     var(--tcrn-color-ink) 100%
   );
+}
+
+.vw-stream-viewport::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .vw-stream-clip {
