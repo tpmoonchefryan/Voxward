@@ -2,15 +2,15 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { LogViewerEvidence, LogViewerTechnicalDetail, TechnicalData } from "@voxward/contracts";
 import { Badge, Card, EmptyState, KeyValueList } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
+import {
+  DEFAULT_VOXWARD_LOCALE,
+  LOGS_COPY,
+  pickLocale,
+  type LogsCopy,
+  type VoxWardLocale,
+} from "../../i18n";
 import { describeLogError, fetchTechnicalDetail, type FetchLike } from "./api";
 import { IsolatedText } from "./IsolatedText";
-
-const EVIDENCE_LABELS: Readonly<Record<LogViewerEvidence["kind"], string>> = {
-  MESSAGE_TEXT: "消息原文",
-  TRANSLATION: "译文",
-  ITEM_ID_MAP: "临时编号映射",
-  VALIDATED_JSON: "校验后 JSON",
-};
 
 /** Pretty-prints a validated JSON payload. A payload that does not parse is shown as it is, and says so. */
 export function formatValidatedJson(payload: string): { readonly text: string; readonly parsed: boolean } {
@@ -21,22 +21,22 @@ export function formatValidatedJson(payload: string): { readonly text: string; r
   }
 }
 
-function evidenceBody(item: LogViewerEvidence): ReactNode {
+function evidenceBody(item: LogViewerEvidence, copy: LogsCopy["jsonPanel"]): ReactNode {
   if (item.state === "EXPIRED") {
     return (
       <div className="vw-row-wrap">
-        <Badge tone="neutral">内容已到期</Badge>
+        <Badge tone="neutral">{copy.expiredBadge}</Badge>
       </div>
     );
   }
   if (item.payload === null) {
-    return <span className="vw-muted">空</span>;
+    return <span className="vw-muted">{copy.emptyPayload}</span>;
   }
   if (item.kind === "VALIDATED_JSON") {
     const formatted = formatValidatedJson(item.payload);
     return (
       <div className="vw-stack-sm">
-        {!formatted.parsed ? <Badge tone="warning">未通过 JSON 解析</Badge> : null}
+        {!formatted.parsed ? <Badge tone="warning">{copy.invalidJsonBadge}</Badge> : null}
         <pre>
           <IsolatedText text={formatted.text} />
         </pre>
@@ -50,17 +50,23 @@ function evidenceBody(item: LogViewerEvidence): ReactNode {
   );
 }
 
-function DataList({ data }: { readonly data: TechnicalData }) {
+function DataList({
+  data,
+  copy,
+}: {
+  readonly data: TechnicalData;
+  readonly copy: LogsCopy["jsonPanel"];
+}) {
   const entries = Object.entries(data);
   if (entries.length === 0) return null;
   return (
     <div className="vw-stack-sm">
-      <span className="vw-caption">阶段数据</span>
+      <span className="vw-caption">{copy.stageData}</span>
       <div className="vw-row-wrap">
         {entries.map(([key, value]) => (
           <Badge key={key} tone="neutral">
             <span className="vw-mono">
-              {key}: {value === null ? "无" : <IsolatedText text={String(value)} />}
+              {key}: {value === null ? copy.none : <IsolatedText text={String(value)} />}
             </span>
           </Badge>
         ))}
@@ -73,15 +79,22 @@ export interface JsonPanelProps {
   readonly channelId: string;
   readonly logId: string;
   readonly fetchImpl?: FetchLike;
+  readonly locale?: VoxWardLocale;
 }
 
 type DetailState =
   | { readonly status: "loading" }
-  | { readonly status: "error"; readonly message: string }
+  | { readonly status: "error"; readonly error: unknown }
   | { readonly status: "ready"; readonly detail: LogViewerTechnicalDetail };
 
-export function JsonPanel({ channelId, logId, fetchImpl }: JsonPanelProps) {
+export function JsonPanel({
+  channelId,
+  logId,
+  fetchImpl,
+  locale = DEFAULT_VOXWARD_LOCALE,
+}: JsonPanelProps) {
   const [state, setState] = useState<DetailState>({ status: "loading" });
+  const copy = pickLocale(LOGS_COPY, locale).jsonPanel;
 
   useEffect(() => {
     let active = true;
@@ -91,25 +104,34 @@ export function JsonPanel({ channelId, logId, fetchImpl }: JsonPanelProps) {
         if (active) setState({ status: "ready", detail });
       })
       .catch((error: unknown) => {
-        if (active) setState({ status: "error", message: describeLogError(error) });
+        if (active) setState({ status: "error", error });
       });
     return () => {
       active = false;
     };
   }, [channelId, logId, fetchImpl]);
 
-  if (state.status === "loading") return <EmptyState title="正在加载详情…" />;
-  if (state.status === "error") return <BannerNotice tone="danger">{state.message}</BannerNotice>;
-  return <JsonPanelView detail={state.detail} />;
+  if (state.status === "loading") return <EmptyState title={copy.loadingTitle} />;
+  if (state.status === "error") {
+    return <BannerNotice tone="danger">{describeLogError(state.error, locale)}</BannerNotice>;
+  }
+  return <JsonPanelView detail={state.detail} locale={locale} />;
 }
 
-export function JsonPanelView({ detail }: { readonly detail: LogViewerTechnicalDetail }) {
+export function JsonPanelView({
+  detail,
+  locale = DEFAULT_VOXWARD_LOCALE,
+}: {
+  readonly detail: LogViewerTechnicalDetail;
+  readonly locale?: VoxWardLocale;
+}) {
+  const copy = pickLocale(LOGS_COPY, locale).jsonPanel;
   return (
-    <section aria-label="日志详情" className="vw-stack-md">
+    <section aria-label={copy.aria} className="vw-stack-md">
       <Card>
         <div className="vw-stack-sm">
           <div className="vw-row-between">
-            <strong>{`日志详情 · #${detail.sequence} ${detail.stage}`}</strong>
+            <strong>{copy.headerTitle(detail.sequence, detail.stage)}</strong>
             <Badge tone="neutral">
               <span className="vw-mono">
                 <IsolatedText text={detail.id} />
@@ -120,50 +142,50 @@ export function JsonPanelView({ detail }: { readonly detail: LogViewerTechnicalD
             items={[
               {
                 key: "taskId",
-                label: "任务",
-                value: detail.taskId === null ? "无" : <IsolatedText text={detail.taskId} />,
+                label: copy.labelTask,
+                value: detail.taskId === null ? copy.none : <IsolatedText text={detail.taskId} />,
               },
               {
                 key: "modelRef",
-                label: "模型",
-                value: detail.modelRef === null ? "无" : <IsolatedText text={detail.modelRef} />,
+                label: copy.labelModel,
+                value: detail.modelRef === null ? copy.none : <IsolatedText text={detail.modelRef} />,
               },
               {
                 key: "contractVersion",
-                label: "契约版本",
+                label: copy.labelContract,
                 value: <IsolatedText text={detail.contractVersion} />,
               },
               {
                 key: "ruleTemplateVersion",
-                label: "规则模板版本",
+                label: copy.labelRuleVer,
                 value:
                   detail.ruleTemplateVersion === null ? (
-                    "无"
+                    copy.none
                   ) : (
                     <IsolatedText text={detail.ruleTemplateVersion} />
                   ),
               },
               {
                 key: "batchId",
-                label: "批次",
-                value: detail.batchId === null ? "无" : <IsolatedText text={detail.batchId} />,
+                label: copy.labelBatch,
+                value: detail.batchId === null ? copy.none : <IsolatedText text={detail.batchId} />,
               },
               {
                 key: "errorCode",
-                label: "错误代码",
-                value: detail.errorCode === null ? "无" : <IsolatedText text={detail.errorCode} />,
+                label: copy.labelErrorCode,
+                value: detail.errorCode === null ? copy.none : <IsolatedText text={detail.errorCode} />,
               },
             ]}
           />
-          {detail.data === null ? null : <DataList data={detail.data} />}
+          {detail.data === null ? null : <DataList data={detail.data} copy={copy} />}
         </div>
       </Card>
 
       {detail.evidence.map((item) => (
         <Card key={item.kind} tone="quiet">
           <details>
-            <summary>{EVIDENCE_LABELS[item.kind]}</summary>
-            {evidenceBody(item)}
+            <summary>{copy.evidenceLabels[item.kind]}</summary>
+            {evidenceBody(item, copy)}
           </details>
         </Card>
       ))}

@@ -92,8 +92,8 @@ describe("Pure Streamer Dock (VW-Draft-02)", () => {
     expect(html).toContain("vw-stream-viewport");
     expect(html).toContain("vw-stream-track");
     expect(html).toContain("vw-stream-item");
-    expect(html).toContain("纯净弹幕姬");
-    expect(html).toContain("纯净弹幕流");
+    expect(html).toContain("Pure Danmaku Dock");
+    expect(html).toContain("Live Chat Stream");
     expect(html).toContain("data-sc-overlay-bar");
     expect(html).toContain('data-sc-ticker-id="ev-sc-1"');
     expect(html).toContain("vw-sc-tier--t5");
@@ -101,19 +101,17 @@ describe("Pure Streamer Dock (VW-Draft-02)", () => {
     expect(html.indexOf("Oldest top chat")).toBeLessThan(html.indexOf("Nice stream"));
     expect(html.indexOf("Nice stream")).toBeLessThan(html.indexOf("Newest bottom chat"));
     expect(html).not.toContain("Hidden spam message");
-    expect(html).not.toContain("恢复积分放行");
-    expect(html).not.toContain("不加分放行");
-    expect(html).not.toContain("已确认拦截");
+    expect(html).not.toContain("Allow (Restore Score)");
+    expect(html).not.toContain("Allow (No Score)");
+    expect(html).not.toContain("Confirmed Block");
     expect(html).not.toContain("ALLOW_MEANINGFUL");
     expect(html).not.toContain("ALLOW_NOISE");
     expect(html).not.toContain("DELIVERED");
     expect(html).not.toContain("corr-early");
     expect(html).not.toContain("corr-late");
-    expect(html).not.toContain("收起置顶卡片");
     expect(html).not.toContain("vw-dock-grid");
-    expect(html).not.toContain("SC 精翻");
-    expect(html).not.toContain("确认拦截");
-    expect(html).not.toContain("退款");
+    expect(html).not.toContain("SC Translation");
+    expect(html).not.toContain("Confirm Block");
     expect(html).not.toContain("tcrn-product-shell");
   });
 
@@ -145,7 +143,7 @@ describe("Pure Streamer Dock (VW-Draft-02)", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(html).toContain("纯净弹幕姬");
+    expect(html).toContain("Pure Danmaku Dock");
     expect(html).toContain("vw-yt-stream-panel");
     expect(html).not.toContain("data-sc-overlay-bar");
     expect(html).not.toContain("tcrn-product-shell");

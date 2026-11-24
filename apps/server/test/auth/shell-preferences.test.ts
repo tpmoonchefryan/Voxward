@@ -56,15 +56,37 @@ describe("shell preferences HTTP persistence & tcrn.shell-preference-evidence.v1
     });
     expect(noCsrf.statusCode).toBe(403);
 
-    // Initial pins for alice (default scope)
+    // Initial defaults for alice (default scope: halloween + en + default pins)
     const initRes = await app.inject({
       method: "GET",
       url: "/auth/shell-preferences?tenant=ch-1&product=voxward",
       headers: { cookie: alice.cookie },
     });
     expect(initRes.statusCode).toBe(200);
-    const initialPins = (initRes.json() as { pins: string[] }).pins;
+    const initBody = initRes.json() as { pins: string[]; theme: string; locale: string };
+    const initialPins = initBody.pins;
     expect(initialPins).toEqual(["moderation", "blocked", "data"]);
+    expect(initBody.theme).toBe("halloween");
+    expect(initBody.locale).toBe("en");
+
+    // Verify all 5 supported locales & theme switching persist and reject unsupported locales
+    for (const loc of ["zh-CN", "ja", "ko", "fr", "en"] as const) {
+      const locPut = await app.inject({
+        method: "PUT",
+        url: "/auth/shell-preferences",
+        headers: { cookie: alice.cookie, "x-csrf-token": alice.csrf },
+        payload: { tenant: "ch-1", product: "voxward", pins: initialPins, theme: "dark", locale: loc },
+      });
+      expect(locPut.statusCode).toBe(200);
+      expect((locPut.json() as { locale: string; theme: string })).toMatchObject({ locale: loc, theme: "dark" });
+    }
+    const badLocalePut = await app.inject({
+      method: "PUT",
+      url: "/auth/shell-preferences",
+      headers: { cookie: alice.cookie, "x-csrf-token": alice.csrf },
+      payload: { tenant: "ch-1", product: "voxward", pins: initialPins, locale: "xx-YY" },
+    });
+    expect(badLocalePut.statusCode).toBe(400);
 
     // 1) Pin: append "guides"
     const pinnedList = [...initialPins, "guides"];
@@ -169,7 +191,7 @@ describe("shell preferences HTTP persistence & tcrn.shell-preference-evidence.v1
       isolatedTenantReadback: tenant2Pins,
       isolatedProductReadback: product2Pins,
       failureReported: noCsrf.statusCode === 403 && unauth.statusCode === 401,
-      command: "pnpm -C /home/ryanlan/Code/Voxward exec vitest run apps/server/test/auth/shell-preferences.test.ts",
+      command: "pnpm exec vitest run apps/server/test/auth/shell-preferences.test.ts",
     };
     writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`, "utf8");
   });

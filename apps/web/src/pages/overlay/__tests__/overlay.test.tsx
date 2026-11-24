@@ -5,10 +5,12 @@ import { StageView } from "../Stage";
 import {
   buildOverlaySubprotocols,
   buildOverlayWsUrl,
+  closeMessageFor,
   createInitialStageState,
   parseOverlayCredential,
   reduceStageFrame,
   SAFE_ANONYMOUS_ALIAS,
+  safeAnonymousAliasFor,
 } from "../api";
 
 describe("overlay pure protocol and StageView rendering (VW-Draft-01)", () => {
@@ -158,5 +160,26 @@ describe("overlay pure protocol and StageView rendering (VW-Draft-01)", () => {
     expect(retractedHtml).toContain("直播加油！");
     expect(retractedHtml).not.toContain("拦截提示");
     expect(retractedHtml).not.toContain("静音");
+  });
+
+  it("supports all 5 locales for credential errors, close messages, and anonymous alias", () => {
+    expect(safeAnonymousAliasFor("en")).toBe("Viewer");
+    expect(safeAnonymousAliasFor("zh-CN")).toBe("匿名观众");
+    expect(safeAnonymousAliasFor("ja")).toBe("匿名視聴者");
+    expect(safeAnonymousAliasFor("ko")).toBe("익명 시청자");
+    expect(safeAnonymousAliasFor("fr")).toBe("Spectateur");
+
+    const frMissing = parseOverlayCredential(
+      { pathname: "/overlay/ch_1", search: "", hash: "" },
+      "fr",
+    );
+    expect(frMissing.ok).toBe(false);
+    if (!frMissing.ok) {
+      expect(frMissing.message).toContain("#vwo_...");
+    }
+
+    expect(closeMessageFor(4403, "ja")).toContain("4403");
+    expect(closeMessageFor(4400, "ko")).toContain("4400");
+    expect(closeMessageFor(4408, "en")).toContain("4408");
   });
 });

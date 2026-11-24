@@ -10,6 +10,14 @@ import {
   type SuperChatItemDisplay,
 } from "../../components/youtube-sc";
 import {
+  DEFAULT_VOXWARD_LOCALE,
+  DOCK_COPY,
+  pickLocale,
+  type VoxWardLocale,
+} from "../../i18n";
+import { useVoxWardGuestPrefs } from "../../shell/guest-prefs-context";
+import { createShellPreferencesClient } from "../../shell/shell-preferences-api";
+import {
   createDockApi,
   dockMessageFor,
   type DockApi,
@@ -22,6 +30,7 @@ export interface PureDockSurfaceProps {
   readonly initialSnapshot?: DockSnapshot | null;
   readonly standalone?: boolean;
   readonly pollIntervalMs?: number;
+  readonly locale?: VoxWardLocale;
 }
 
 type UnifiedStreamEntry =
@@ -46,18 +55,20 @@ export function PureDockSurface({
   initialSnapshot = null,
   standalone = false,
   pollIntervalMs = 3000,
+  locale = DEFAULT_VOXWARD_LOCALE,
 }: PureDockSurfaceProps) {
   const client = useMemo(() => api ?? createDockApi(), [api]);
+  const copy = pickLocale(DOCK_COPY, locale);
   const [snapshot, setSnapshot] = useState<DockSnapshot | null>(initialSnapshot);
-  const [errorText, setErrorText] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<unknown>(null);
 
   const loadSnapshot = useCallback(async () => {
     try {
       const next = await client.getDock(channelId);
       setSnapshot(next);
-      setErrorText(null);
+      setErrorCode(null);
     } catch (error) {
-      setErrorText(dockMessageFor(error));
+      setErrorCode(error);
     }
   }, [channelId, client]);
 
@@ -74,6 +85,8 @@ export function PureDockSurface({
     }, pollIntervalMs);
     return () => window.clearInterval(timer);
   }, [loadSnapshot, pollIntervalMs]);
+
+  const errorText = errorCode === null ? null : dockMessageFor(errorCode, locale);
 
   const chatMessages = useMemo(
     () => (snapshot?.feed.liveStream ?? []).filter((item) => item.localStatus === "ALLOW"),
@@ -125,31 +138,31 @@ export function PureDockSurface({
   return (
     <main
       className={standalone ? "vw-dock-shell" : "vw-dock-shell vw-dock-shell--embedded"}
-      aria-label="纯净弹幕姬"
+      aria-label={copy.dockAria}
     >
       {errorText ? <BannerNotice tone="danger">{errorText}</BannerNotice> : null}
 
       {snapshot?.faults.platformFault ? (
-        <BannerNotice tone="warning" title="直播平台连接提示">
+        <BannerNotice tone="warning" title={copy.platformFaultTitle}>
           {snapshot.faults.platformFault.message}
         </BannerNotice>
       ) : null}
 
       {snapshot?.faults.modelFault ? (
-        <BannerNotice tone="warning" title="AI 服务降级提示">
+        <BannerNotice tone="warning" title={copy.modelFaultTitle}>
           {snapshot.faults.modelFault.message}
         </BannerNotice>
       ) : null}
 
-      <section className="vw-panel-card vw-dock-column vw-yt-stream-panel" aria-label="纯净单栏弹幕流">
+      <section className="vw-panel-card vw-dock-column vw-yt-stream-panel" aria-label={copy.streamAria}>
         <div className="vw-row-between">
-          <strong>纯净弹幕流</strong>
+          <strong>{copy.streamTitle}</strong>
           <span className="vw-caption">
-            {unifiedTimeline.length} 条 · {scItems.length} 条置顶 SC
+            {copy.countSummary(unifiedTimeline.length, scItems.length)}
           </span>
         </div>
 
-        <SuperChatOverlayBar items={scItems} />
+        <SuperChatOverlayBar items={scItems} locale={locale} />
 
         <div
           ref={viewportRef}
@@ -161,8 +174,8 @@ export function PureDockSurface({
         >
           {unifiedTimeline.length === 0 ? (
             <EmptyState
-              title="暂无放行弹幕与 Super Chat"
-              description="通过审核的直播对话与 Super Chat 将在同一时间流中实时呈现，点击顶部醒目条可展开卡片。"
+              title={copy.emptyTitle}
+              description={copy.emptyDesc}
             />
           ) : (
             <div className="vw-stream-clip">
@@ -206,5 +219,34 @@ export function PureDockSurface({
 export function DockPage({ api }: { readonly api?: DockApi }) {
   const params = useParams();
   const roomId = params.roomId ?? "ch_demo_1";
-  return <PureDockSurface channelId={roomId} api={api} standalone />;
+  const guestPrefs = useVoxWardGuestPrefs();
+  const [resolvedLocale, setResolvedLocale] = useState<VoxWardLocale>(guestPrefs.locale);
+  const [resolvedTheme, setResolvedTheme] = useState(guestPrefs.theme);
+  const shellClient = useMemo(() => createShellPreferencesClient(), []);
+
+  useEffect(() => {
+    let active = true;
+    void shellClient
+      .getShellPreferences()
+      .then((prefs) => {
+        if (!active || prefs === null) return;
+        if (prefs.locale) setResolvedLocale(prefs.locale);
+        if (prefs.theme) setResolvedTheme(prefs.theme);
+      })
+      .catch(() => {
+        // Standalone dock stays on default halloween + English or guest context if unauthenticated.
+      });
+    return () => {
+      active = false;
+    };
+  }, [shellClient]);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.dataset.tcrnTheme = resolvedTheme;
+      document.documentElement.lang = resolvedLocale;
+    }
+  }, [resolvedTheme, resolvedLocale]);
+
+  return <PureDockSurface channelId={roomId} api={api} standalone locale={resolvedLocale} />;
 }

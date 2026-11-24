@@ -41,15 +41,29 @@ describe("validated JSON panel", () => {
       <JsonPanelView detail={detailWith([{ kind: "VALIDATED_JSON", state: "AVAILABLE", payload: JSON_PAYLOAD }])} />,
     );
 
-    expect(html).toContain("日志详情 · #1 JSON_VALIDATE");
+    expect(html).toContain("Log Detail · #1 JSON_VALIDATE");
     expect(html).toContain("log-1");
-    expect(html).toContain("阶段数据");
+    expect(html).toContain("Stage Metadata");
     expect(html).toContain("task-1");
     expect(html).toContain("model-synthetic");
-    expect(html).toContain("契约版本");
+    expect(html).toContain("Contract Version");
     expect(html).toContain("rules-synthetic-1");
-    expect(html).toMatch(/<details><summary>校验后 JSON<\/summary>/);
+    expect(html).toMatch(/<details><summary>Validated JSON<\/summary>/);
     expect(html).not.toMatch(/<details[^>]*\sopen/);
+  });
+
+  it("also renders localized labels when passed a non-default locale", () => {
+    const html = renderToStaticMarkup(
+      <JsonPanelView
+        detail={detailWith([{ kind: "VALIDATED_JSON", state: "AVAILABLE", payload: JSON_PAYLOAD }])}
+        locale="zh-CN"
+      />,
+    );
+
+    expect(html).toContain("日志详情 · #1 JSON_VALIDATE");
+    expect(html).toContain("阶段数据");
+    expect(html).toContain("契约版本");
+    expect(html).toMatch(/<details><summary>校验后 JSON<\/summary>/);
   });
 
   it("pretty-prints the validated JSON and names a payload that does not parse", () => {
@@ -62,7 +76,7 @@ describe("validated JSON panel", () => {
     const html = renderToStaticMarkup(
       <JsonPanelView detail={detailWith([{ kind: "VALIDATED_JSON", state: "AVAILABLE", payload: "{not json" }])} />,
     );
-    expect(html).toContain("未通过 JSON 解析");
+    expect(html).toContain("Invalid JSON syntax");
   });
 
   it("shows expired content as expired, with no payload", () => {
@@ -70,15 +84,15 @@ describe("validated JSON panel", () => {
       <JsonPanelView detail={detailWith([{ kind: "VALIDATED_JSON", state: "EXPIRED", payload: null }])} />,
     );
 
-    expect(html).toContain("内容已到期");
+    expect(html).toContain("Content expired");
     expect(html).not.toContain("item-1");
   });
 
   it("renders no content section for a kind the reader may not see", () => {
     const html = renderToStaticMarkup(<JsonPanelView detail={detailWith([])} />);
 
-    expect(html).not.toContain("校验后 JSON");
-    expect(html).not.toContain("消息原文");
+    expect(html).not.toContain("Validated JSON");
+    expect(html).not.toContain("Original Message Text");
     expect(html).toContain("task-1");
   });
 
@@ -87,8 +101,8 @@ describe("validated JSON panel", () => {
       <JsonPanelView detail={detailWith([{ kind: "VALIDATED_JSON", state: "AVAILABLE", payload: JSON_PAYLOAD }])} />,
     );
 
-    expect(html).toContain("校验后 JSON");
-    expect(html).not.toContain("消息原文");
-    expect(html).not.toContain("译文");
+    expect(html).toContain("Validated JSON");
+    expect(html).not.toContain("Original Message Text");
+    expect(html).not.toContain("Translation");
   });
 });

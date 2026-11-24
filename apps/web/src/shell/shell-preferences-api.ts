@@ -1,6 +1,7 @@
 import type { ShellThemeMode } from "@tcrn/ui-react/approved";
+import { normalizeVoxWardLocale, type VoxWardLocale } from "../i18n/types";
 
-export type VoxWardLocale = "zh-CN" | "en";
+export type { VoxWardLocale };
 
 export interface ShellPreferencesRecord {
   readonly accountId?: string;
@@ -176,7 +177,10 @@ export function createShellPreferencesClient(
       if (!response.ok || body === undefined || !Array.isArray(body.pins)) {
         return null;
       }
-      return body;
+      return {
+        ...body,
+        locale: body.locale === undefined ? undefined : normalizeVoxWardLocale(body.locale),
+      };
     },
 
     async saveShellPreferences(input, tenant = "default"): Promise<ShellPreferencesRecord> {

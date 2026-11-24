@@ -11,7 +11,7 @@ export function ScScroll({ items }: ScScrollProps) {
   }
 
   return (
-    <section aria-label="Super Chat 展示列表" className="vw-stack-sm">
+    <section aria-label="Super Chat stream" className="vw-stack-sm">
       {items.map((item) => (
         <SuperChatCard
           key={item.deliveryId}

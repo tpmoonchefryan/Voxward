@@ -8,6 +8,12 @@ import {
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
 import {
+  DEFAULT_VOXWARD_LOCALE,
+  LOGS_COPY,
+  pickLocale,
+  type VoxWardLocale,
+} from "../../i18n";
+import {
   describeLogError,
   fetchChain,
   type FetchLike,
@@ -21,6 +27,7 @@ export interface CorrelationChainProps {
   readonly initialLogId: string | null;
   readonly onBack: () => void;
   readonly fetchImpl?: FetchLike;
+  readonly locale?: VoxWardLocale;
 }
 
 /** Position of an entry in the chain, or -1 when it is not there. */
@@ -55,16 +62,18 @@ export function CorrelationChain({
   initialLogId,
   onBack,
   fetchImpl,
+  locale = DEFAULT_VOXWARD_LOCALE,
 }: CorrelationChainProps) {
+  const copy = pickLocale(LOGS_COPY, locale).chain;
   const [items, setItems] = useState<readonly LogViewerTechnicalItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialLogId);
-  const [errorText, setErrorText] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<unknown>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
     setLoaded(false);
-    setErrorText(null);
+    setFetchError(null);
     fetchChain(channelId, correlationId, { fetchImpl })
       .then((chainItems) => {
         if (!active) return;
@@ -76,7 +85,7 @@ export function CorrelationChain({
       })
       .catch((err: unknown) => {
         if (!active) return;
-        setErrorText(describeLogError(err));
+        setFetchError(err);
         setLoaded(true);
       });
     return () => {
@@ -91,10 +100,10 @@ export function CorrelationChain({
   const nextId = selectionAfterStep(items, currentId, "next");
 
   return (
-    <section aria-label="关联链路时间线" className="vw-stack-md">
+    <section aria-label={copy.aria} className="vw-stack-md">
       <div className="vw-row-between">
         <div className="vw-row-wrap">
-          <strong>处理链</strong>
+          <strong>{copy.title}</strong>
           <Badge tone="accent">
             <span className="vw-mono">
               <UntrustedText text={correlationId} />
@@ -109,7 +118,7 @@ export function CorrelationChain({
             disabled={previousId === null}
             onClick={() => setSelectedId(previousId)}
           >
-            上一条
+            {copy.prevBtn}
           </Button>
           <Button
             size="sm"
@@ -117,29 +126,31 @@ export function CorrelationChain({
             disabled={nextId === null}
             onClick={() => setSelectedId(nextId)}
           >
-            下一条
+            {copy.nextBtn}
           </Button>
           <Button size="sm" variant="secondary" onClick={onBack}>
-            返回列表
+            {copy.backBtn}
           </Button>
         </div>
       </div>
 
-      {errorText !== null ? <BannerNotice tone="danger">{errorText}</BannerNotice> : null}
+      {fetchError !== null ? (
+        <BannerNotice tone="danger">{describeLogError(fetchError, locale)}</BannerNotice>
+      ) : null}
 
       {!loaded ? (
-        <EmptyState title="正在重建关联链路…" />
+        <EmptyState title={copy.loadingTitle} />
       ) : items.length === 0 ? (
-        <EmptyState title="该关联编号暂无处理节点" />
+        <EmptyState title={copy.emptyTitle} />
       ) : (
         <div className="vw-split-host">
           <SplitView
-            label="链路步骤与细节视图"
-            locale="zh-CN"
+            label={copy.splitLabel}
+            locale={locale}
             detailPopulated={activeItem !== undefined}
             list={
               <div className="vw-stack-sm">
-                <div className="vw-chain-list-header">{`阶段顺序（共 ${items.length} 步）`}</div>
+                <div className="vw-chain-list-header">{copy.stepsHeader(items.length)}</div>
                 <div className="vw-stack-sm" role="list">
                   {items.map((item) => {
                     const selected = activeItem?.id === item.id;
@@ -176,9 +187,10 @@ export function CorrelationChain({
                   channelId={channelId}
                   logId={activeItem.id}
                   fetchImpl={fetchImpl}
+                  locale={locale}
                 />
               ) : (
-                <EmptyState title="请选择任一处理步骤查看详细日志与取证" />
+                <EmptyState title={copy.pickStepTitle} />
               )
             }
           />

@@ -1,79 +1,69 @@
 import { Badge, Button, Card, EmptyState, KeyValueList } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
+import {
+  DEFAULT_VOXWARD_LOCALE,
+  pickLocale,
+  REQUEST_STATUS_COPY,
+  type RequestStatusCopy,
+  type VoxWardLocale,
+} from "../../i18n";
 import type { RequestView, VerificationInput } from "./api";
 
-export const KIND_LABEL: Readonly<Record<string, string>> = {
-  ACCESS: "访问请求",
-  CORRECTION: "更正请求",
-  DELETE: "删除请求",
-  STOP_SCORING: "停止计分请求",
-};
-
-export const MODE_LABEL: Readonly<Record<string, string>> = {
-  DELETE_DATA_ONLY: "仅删除数据",
-  DELETE_AND_EXCEPT: "删除并加入记分例外名单",
-};
-
-export const METHOD_LABEL: Readonly<Record<string, string>> = {
-  ACCOUNT_OWNERSHIP: "确认账号归属",
-  REQUEST_AUTHORIZATION: "确认请求授权",
-};
-
-/** What each stage means for the page. The server sends the stage code only. */
-export const STAGE_TEXT: Readonly<Record<string, string>> = {
-  AWAITING_VERIFICATION: "待核验，尚未执行。",
-  REJECTED: "核验未通过，不会执行。",
-  AWAITING_EXECUTION: "已核验，等待执行。本页面不执行删除。",
-  NOT_EXECUTED_HERE: "本实例暂不执行此类请求，停留在待处理。",
-  EXECUTING: "执行中。",
-  COMPLETED: "执行完成。",
-  PARTIAL_FAILED: "部分失败，见下列条目。",
-  CANCELLED: "已取消，不会执行。",
-};
-
-/** The notices the server sends with a subject. Each code maps to one fixed sentence. */
-export const NOTICE_TEXT: Readonly<Record<string, string>> = {
-  PROVIDER_COPY_NOT_CONTROLLED: "YouTube 原始内容与平台侧副本不由本实例删除，外部处理状态本实例无法查询。",
-};
+export const KIND_LABEL = REQUEST_STATUS_COPY.en.kinds;
+export const MODE_LABEL = REQUEST_STATUS_COPY.en.modes;
+export const METHOD_LABEL = REQUEST_STATUS_COPY.en.methods;
+export const STAGE_TEXT = REQUEST_STATUS_COPY.en.stages;
 
 export interface RequestStatusProps {
   readonly requests: readonly RequestView[];
   readonly canVerify: boolean;
+  readonly locale?: VoxWardLocale;
   readonly onVerify: (requestId: string, input: VerificationInput) => void;
+  readonly onExecute?: (requestId: string) => void;
 }
 
-function verificationStateLabel(state: string): string {
+function verificationStateLabel(state: string, copy: RequestStatusCopy): string {
   switch (state) {
     case "VERIFIED":
-      return "已核验通过";
+      return copy.verStates.VERIFIED;
     case "REJECTED":
-      return "核验未通过";
+      return copy.verStates.REJECTED;
     default:
-      return "待核验";
+      return copy.verStates.PENDING;
   }
 }
 
-export function RequestStatus({ requests, canVerify, onVerify }: RequestStatusProps) {
+export function RequestStatus({
+  requests,
+  canVerify,
+  locale = DEFAULT_VOXWARD_LOCALE,
+  onVerify,
+  onExecute,
+}: RequestStatusProps) {
+  const copy = pickLocale(REQUEST_STATUS_COPY, locale);
+
   if (requests.length === 0) {
     return (
-      <section aria-label="请求状态">
-        <EmptyState title="这个主体还没有请求。" />
+      <section aria-label={copy.sectionAria}>
+        <EmptyState title={copy.emptyTitle} />
       </section>
     );
   }
 
   return (
-    <section aria-label="请求状态" className="vw-stack-md">
-      <h2>请求状态</h2>
+    <section aria-label={copy.sectionAria} className="vw-stack-md">
+      <h2>{copy.heading}</h2>
       <div className="vw-stack-sm">
         {requests.map((request) => (
           <Card key={request.requestId}>
             <div className="vw-stack-sm">
               <div className="vw-row-between">
                 <strong>
-                  {KIND_LABEL[request.kind] ?? "请求"}
-                  {request.mode !== null ? `：${MODE_LABEL[request.mode] ?? ""}` : null}
+                  {copy.kinds[request.kind] ?? copy.kindFallback}
+                  {request.mode !== null
+                    ? `${locale === "zh-CN" || locale === "ja" ? "：" : ": "}${copy.modes[request.mode] ?? ""}`
+                    : null}
                 </strong>
                 <Badge
                   tone={
@@ -84,7 +74,7 @@ export function RequestStatus({ requests, canVerify, onVerify }: RequestStatusPr
                         : "warning"
                   }
                 >
-                  {verificationStateLabel(request.verification.state)}
+                  {verificationStateLabel(request.verification.state, copy)}
                 </Badge>
               </div>
 
@@ -92,7 +82,7 @@ export function RequestStatus({ requests, canVerify, onVerify }: RequestStatusPr
                 items={[
                   {
                     key: "id",
-                    label: "编号",
+                    label: copy.labelId,
                     value: (
                       <bdi>
                         <UntrustedText text={request.requestId} />
@@ -101,15 +91,15 @@ export function RequestStatus({ requests, canVerify, onVerify }: RequestStatusPr
                   },
                   {
                     key: "stage",
-                    label: "当前阶段",
-                    value: STAGE_TEXT[request.stage] ?? request.stage,
+                    label: copy.labelStage,
+                    value: copy.stages[request.stage] ?? request.stage,
                   },
                   ...(request.verification.method
                     ? [
                         {
                           key: "method",
-                          label: "核验方式",
-                          value: METHOD_LABEL[request.verification.method] ?? request.verification.method,
+                          label: copy.labelMethod,
+                          value: copy.methods[request.verification.method] ?? request.verification.method,
                         },
                       ]
                     : []),
@@ -123,10 +113,10 @@ export function RequestStatus({ requests, canVerify, onVerify }: RequestStatusPr
                       <span>{target.targetKind}</span>
                       <Badge tone={target.state === "FAILED" ? "danger" : "neutral"}>
                         {target.state === "DONE"
-                          ? "处理完毕"
+                          ? copy.targetDone
                           : target.state === "FAILED"
-                            ? "部分失败"
-                            : "队列处理中"}
+                            ? copy.targetFailed
+                            : copy.targetPending}
                       </Badge>
                     </div>
                   ))}
@@ -134,9 +124,7 @@ export function RequestStatus({ requests, canVerify, onVerify }: RequestStatusPr
               ) : null}
 
               {request.counts.pending > 0 ? (
-                <BannerNotice tone="warning">
-                  尚有 {request.counts.pending} 项后台处理任务处于队列中，尚未全部完成清理。
-                </BannerNotice>
+                <BannerNotice tone="warning">{copy.pendingBanner(request.counts.pending)}</BannerNotice>
               ) : null}
 
               {canVerify && request.verification.state === "PENDING" ? (
@@ -151,7 +139,7 @@ export function RequestStatus({ requests, canVerify, onVerify }: RequestStatusPr
                       })
                     }
                   >
-                    核验通过：确认账号归属
+                    {copy.verifyOwnership}
                   </Button>
                   <Button
                     size="sm"
@@ -163,7 +151,7 @@ export function RequestStatus({ requests, canVerify, onVerify }: RequestStatusPr
                       })
                     }
                   >
-                    核验通过：确认请求授权
+                    {copy.verifyAuthorization}
                   </Button>
                   <Button
                     size="sm"
@@ -175,7 +163,21 @@ export function RequestStatus({ requests, canVerify, onVerify }: RequestStatusPr
                       })
                     }
                   >
-                    拒绝核验
+                    {copy.rejectVerify}
+                  </Button>
+                </div>
+              ) : null}
+
+              {canVerify &&
+              onExecute !== undefined &&
+              (request.stage === "AWAITING_EXECUTION" || request.stage === "PARTIAL_FAILED") ? (
+                <div className="vw-row-wrap">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => onExecute(request.requestId)}
+                  >
+                    {copy.executeBtn}
                   </Button>
                 </div>
               ) : null}

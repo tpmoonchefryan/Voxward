@@ -1,4 +1,5 @@
 import type { DataRequestKind, DeleteMode, RequestSource, VerificationMethod } from "@voxward/contracts";
+import { DATA_COPY, DEFAULT_VOXWARD_LOCALE, pickLocale, type VoxWardLocale } from "../../i18n";
 
 /** One request as the server shows it. Text fields are codes or ids, which the page turns into words. */
 export interface RequestView {
@@ -45,20 +46,7 @@ export interface VerificationInput {
   readonly method: VerificationMethod | null;
 }
 
-/** The text for each fixed server code. A code without an entry falls back to the generic line. */
-export const ERROR_TEXT: Readonly<Record<string, string>> = {
-  UNAUTHENTICATED: "请先登录。",
-  FORBIDDEN: "当前账号没有数据管理权限，无法执行此操作。",
-  DOWNSTREAM_READ_ONLY: "输出凭据不能执行此操作。",
-  CSRF_INVALID: "页面已过期，请刷新后重试。",
-  SUBJECT_NOT_FOUND: "本频道中没有这个主体。",
-  REQUEST_NOT_FOUND: "没有找到这个请求。",
-  ALREADY_DECIDED: "这个请求已经有核验结论。",
-  INVALID_REQUEST: "提交的内容不完整或格式不正确。",
-  INTERNAL_ERROR: "服务暂时不可用，请稍后再试。",
-};
-
-const GENERIC_ERROR = "操作没有完成，请稍后再试。";
+export const ERROR_TEXT: Readonly<Record<string, string>> = DATA_COPY.en.errors;
 
 /** A refused request, with the server's fixed code. The message is never the server's text. */
 export class ApiFailure extends Error {
@@ -74,9 +62,13 @@ export class ApiFailure extends Error {
 }
 
 /** The sentence to show for an error. Network failures and unknown codes get a fixed line. */
-export function messageFor(error: unknown): string {
-  if (error instanceof ApiFailure) return ERROR_TEXT[error.code] ?? GENERIC_ERROR;
-  return "无法连接服务，请检查网络后重试。";
+export function messageFor(
+  error: unknown,
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): string {
+  const copy = pickLocale(DATA_COPY, locale);
+  if (error instanceof ApiFailure) return copy.errors[error.code] ?? copy.genericError;
+  return copy.networkError;
 }
 
 export interface DataApi {
@@ -84,6 +76,7 @@ export interface DataApi {
   subject(channelId: string, subjectRef: string): Promise<SubjectPanel>;
   register(channelId: string, input: RegisterInput): Promise<RequestView>;
   decideVerification(channelId: string, requestId: string, input: VerificationInput): Promise<RequestView>;
+  execute(channelId: string, requestId: string): Promise<RequestView>;
 }
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -149,6 +142,11 @@ export function createDataApi(fetcher: FetchLike = (input, init) => fetch(input,
       sendJson(
         `/channels/${encodeURIComponent(channelId)}/data/requests/${encodeURIComponent(requestId)}/verification`,
         input,
+      ),
+    execute: (channelId, requestId) =>
+      sendJson(
+        `/channels/${encodeURIComponent(channelId)}/data/requests/${encodeURIComponent(requestId)}/execute`,
+        {},
       ),
   };
 }

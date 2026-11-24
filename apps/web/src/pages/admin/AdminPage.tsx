@@ -18,6 +18,7 @@ import {
 } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
+import { ADMIN_COPY, pickLocale, type AdminCopy } from "../../i18n";
 import { useVoxWardShell, VoxWardShell } from "../../shell";
 import {
   AdminApiFailure,
@@ -33,27 +34,34 @@ import {
 
 type SettingsSectionId = "blacklist" | "whitelist" | "scoring" | "retention";
 
-function matchKindLabel(kind: string): string {
+type NoticeState = {
+  readonly tone: "positive" | "danger" | "warning";
+  readonly resolve: (copy: AdminCopy) => string;
+} | null;
+
+function matchKindLabel(kind: string, copy: AdminCopy): string {
   switch (kind) {
     case "EXACT":
-      return "精确匹配";
+      return copy.matchKinds.EXACT;
     case "CONTAINS":
-      return "包含子串";
+      return copy.matchKinds.CONTAINS;
     case "REGEX":
-      return "受限正则";
+      return copy.matchKinds.REGEX;
     case "NORMALIZED":
-      return "归一化匹配";
+      return copy.matchKinds.NORMALIZED;
     default:
-      return "精确匹配";
+      return copy.matchKinds.EXACT;
   }
 }
 
 function TermRowActions({
   entry,
+  copy,
   onEdit,
   onDelete,
 }: {
   readonly entry: ExtendedTermEntryView;
+  readonly copy: AdminCopy;
   readonly onEdit: (entry: ExtendedTermEntryView) => void;
   readonly onDelete: (id: string) => void;
 }) {
@@ -64,7 +72,7 @@ function TermRowActions({
     <div className="vw-table-actions">
       <Button
         ref={triggerRef}
-        aria-label="词条操作"
+        aria-label={copy.termActionsAria}
         size="sm"
         variant="quiet"
         onClick={() => setOpen((prev) => !prev)}
@@ -76,10 +84,10 @@ function TermRowActions({
         onOpenChange={setOpen}
         triggerRef={triggerRef}
         placement="bottom-end"
-        label="词条操作菜单"
+        label={copy.termMenuLabel}
         items={[
-          { id: "edit", label: "编辑词条", onSelect: () => onEdit(entry) },
-          { id: "delete", label: "删除词条", danger: true, onSelect: () => onDelete(entry.id) },
+          { id: "edit", label: copy.editTermItem, onSelect: () => onEdit(entry) },
+          { id: "delete", label: copy.deleteTermItem, danger: true, onSelect: () => onDelete(entry.id) },
         ]}
       />
     </div>
@@ -97,8 +105,8 @@ export function buildTermCsvTemplate(
       filename: "voxward-whitelist-template.csv",
       content: [
         "term,category,matchKind",
-        `今晚歌单太神了,${primaryCat},EXACT`,
-        `安可,${primaryCat},CONTAINS`,
+        `Tonight setlist is great,${primaryCat},EXACT`,
+        `encore,${primaryCat},CONTAINS`,
       ].join("\n"),
     };
   }
@@ -109,9 +117,9 @@ export function buildTermCsvTemplate(
     filename: "voxward-blacklist-template.csv",
     content: [
       "term,category,matchKind",
-      `免费领返利,${primaryCat},EXACT`,
-      `加群返利,${primaryCat},CONTAINS`,
-      `加微[vV]信?\\d{6},${secondaryCat},REGEX`,
+      `free-nitro-scam,${primaryCat},EXACT`,
+      `join-rebate-group,${primaryCat},CONTAINS`,
+      `promo[vV]chat?\\d{6},${secondaryCat},REGEX`,
     ].join("\n"),
   };
 }
@@ -120,10 +128,16 @@ export interface AdminPageProps {
   readonly api?: AdminApi;
 }
 
-export function AdminPage({ api }: AdminPageProps) {
-  const params = useParams();
-  const { activeChannelId } = useVoxWardShell();
-  const channelId = params.channelId ?? activeChannelId;
+function AdminSurface({
+  channelIdParam,
+  api,
+}: {
+  readonly channelIdParam?: string;
+  readonly api?: AdminApi;
+}) {
+  const { activeChannelId, locale } = useVoxWardShell();
+  const channelId = channelIdParam ?? activeChannelId;
+  const copy = pickLocale(ADMIN_COPY, locale);
   const adminClient = useMemo(() => api ?? createAdminApi(), [api]);
   const csvFileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -151,7 +165,7 @@ export function AdminPage({ api }: AdminPageProps) {
   const [adminForm, setAdminForm] = useState<AdminSettingsView | null>(null);
 
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<{ tone: "positive" | "danger" | "warning"; text: string } | null>(null);
+  const [notice, setNotice] = useState<NoticeState>(null);
 
   const loadChannelConfig = useCallback(async () => {
     try {
@@ -172,7 +186,10 @@ export function AdminPage({ api }: AdminPageProps) {
       }
       setNotice({
         tone: "danger",
-        text: error instanceof AdminApiFailure ? `加载设置失败 (${error.code})` : "加载频道设置失败。",
+        resolve: (c) =>
+          error instanceof AdminApiFailure
+            ? c.messages.loadFailedCode(error.code)
+            : c.messages.loadFailed,
       });
     }
   }, [adminClient, channelId]);
@@ -218,42 +235,48 @@ export function AdminPage({ api }: AdminPageProps) {
       setCatCode("");
       setCatLabel("");
       setCatDesc("");
-      setNotice({ tone: "positive", text: "新词库分类已追加（分类代码创建后不可删除）。" });
+      setNotice({ tone: "positive", resolve: (c) => c.messages.catAdded });
     } catch (error) {
       setNotice({
         tone: "danger",
-        text:
+        resolve: (c) =>
           error instanceof AdminApiFailure && error.status === 409
-            ? "该分类代码已存在，请使用唯一标识。"
+            ? c.messages.catDuplicate
             : error instanceof AdminApiFailure
-              ? `新增分类失败 (${error.code})`
-              : "新增分类失败。",
+              ? c.messages.catFailedCode(error.code)
+              : c.messages.catFailed,
       });
     } finally {
       setBusy(false);
     }
   };
 
-  const persistEntries = async (next: readonly ExtendedTermEntryView[], successText: string) => {
+  const persistEntries = async (
+    next: readonly ExtendedTermEntryView[],
+    resolveSuccess: (c: AdminCopy) => string,
+  ) => {
     setBusy(true);
     setNotice(null);
     try {
       const saved = await adminClient.saveTermEntries(channelId, next);
       setEntries(saved);
-      setNotice({ tone: "positive", text: successText });
+      setNotice({ tone: "positive", resolve: resolveSuccess });
     } catch (error) {
       if (error instanceof AdminApiFailure && error.issues && error.issues.length > 0) {
         const first = error.issues[0];
         if (first !== undefined) {
           setNotice({
             tone: "danger",
-            text: first.hint ?? `词条规则校验失败 (${first.code})`,
+            resolve: (c) => first.hint ?? c.messages.ruleFailedCode(first.code),
           });
         }
       } else {
         setNotice({
           tone: "danger",
-          text: error instanceof AdminApiFailure ? `保存词条失败 (${error.code})` : "保存词条失败。",
+          resolve: (c) =>
+            error instanceof AdminApiFailure
+              ? c.messages.saveTermFailedCode(error.code)
+              : c.messages.saveTermFailed,
         });
       }
     } finally {
@@ -272,7 +295,7 @@ export function AdminPage({ api }: AdminPageProps) {
       matchKind: newTermMatchKind,
       enabled: true,
     };
-    await persistEntries([item, ...entries], "词条已添加到当前词库。");
+    await persistEntries([item, ...entries], (c) => c.messages.termAdded);
     setNewTermText("");
     setShowAddTermForm(false);
   };
@@ -290,9 +313,10 @@ export function AdminPage({ api }: AdminPageProps) {
       document.body.removeChild(link);
       URL.revokeObjectURL(href);
     }
+    const kindSnapshot = activeListKind;
     setNotice({
       tone: "positive",
-      text: `已下载${activeListKind === "BLACKLIST" ? "黑名单" : "白名单"} CSV 模板（${filename}）。`,
+      resolve: (c) => c.messages.csvDownloaded(kindSnapshot, filename),
     });
   };
 
@@ -302,7 +326,7 @@ export function AdminPage({ api }: AdminPageProps) {
     setCsvText(text);
     setNotice({
       tone: "positive",
-      text: `已载入文件 ${file.name}，可预览后点击「校验并导入 CSV」。`,
+      resolve: (c) => c.messages.csvFileLoaded(file.name),
     });
   };
 
@@ -320,15 +344,22 @@ export function AdminPage({ api }: AdminPageProps) {
       if (firstErr !== undefined) {
         setNotice({
           tone: "warning",
-          text: `已导入 ${res.imported} 条词条，另有 ${res.errors.length} 行格式或正则校验未通过（如第 ${firstErr.line} 行：${firstErr.message}）。`,
+          resolve: (c) =>
+            c.messages.csvPartial(res.imported, res.errors.length, firstErr.line, firstErr.message),
         });
       } else {
-        setNotice({ tone: "positive", text: `成功批量导入 ${res.imported} 条词条。` });
+        setNotice({
+          tone: "positive",
+          resolve: (c) => c.messages.csvDone(res.imported),
+        });
       }
     } catch (error) {
       setNotice({
         tone: "danger",
-        text: error instanceof AdminApiFailure ? `CSV 导入失败 (${error.code})` : "CSV 导入失败。",
+        resolve: (c) =>
+          error instanceof AdminApiFailure
+            ? c.messages.csvFailedCode(error.code)
+            : c.messages.csvFailed,
       });
     } finally {
       setBusy(false);
@@ -343,29 +374,35 @@ export function AdminPage({ api }: AdminPageProps) {
       const saved = await adminClient.saveModelSettings(channelId, modelForm);
       setModelResp(saved);
       setModelForm(saved.settings);
-      setNotice({ tone: "positive", text: "SC 精翻开关与 AI 推理模型策略已保存。" });
+      setNotice({ tone: "positive", resolve: (c) => c.messages.modelsSaved });
     } catch (error) {
       setNotice({
         tone: "danger",
-        text: error instanceof AdminApiFailure ? `保存模型设置失败 (${error.code})` : "保存模型设置失败。",
+        resolve: (c) =>
+          error instanceof AdminApiFailure
+            ? c.messages.modelsFailedCode(error.code)
+            : c.messages.modelsFailed,
       });
     } finally {
       setBusy(false);
     }
   };
 
-  const handleSaveAdminSettings = async (okMessage: string) => {
+  const handleSaveAdminSettings = async (resolveOk: (c: AdminCopy) => string) => {
     if (adminForm === null) return;
     setBusy(true);
     setNotice(null);
     try {
       const saved = await adminClient.saveAdminSettings(channelId, adminForm);
       setAdminForm(saved);
-      setNotice({ tone: "positive", text: okMessage });
+      setNotice({ tone: "positive", resolve: resolveOk });
     } catch (error) {
       setNotice({
         tone: "danger",
-        text: error instanceof AdminApiFailure ? `保存策略失败 (${error.code})` : "保存策略失败。",
+        resolve: (c) =>
+          error instanceof AdminApiFailure
+            ? c.messages.policyFailedCode(error.code)
+            : c.messages.policyFailed,
       });
     } finally {
       setBusy(false);
@@ -404,7 +441,7 @@ export function AdminPage({ api }: AdminPageProps) {
               });
             }}
             options={[
-              { value: "", label: "暂未绑定模型" },
+              { value: "", label: copy.unboundModelOption },
               ...modelChoices.map((m) => ({
                 value: m.modelId,
                 label: "displayName" in m && typeof m.displayName === "string" ? m.displayName : m.modelId,
@@ -415,7 +452,7 @@ export function AdminPage({ api }: AdminPageProps) {
         {levels.length > 0 ? (
           <div className="vw-field-col--compact">
             <label className="vw-field-label" htmlFor={`${idPrefix}-reasoning`}>
-              推理强度
+              {copy.reasoningLabel}
             </label>
             <Select
               id={`${idPrefix}-reasoning`}
@@ -435,8 +472,8 @@ export function AdminPage({ api }: AdminPageProps) {
   };
 
   const localNavigation = (
-    <nav className="vw-settings-nav" aria-label="系统设置导航">
-      <div className="vw-settings-group-title">规则与词库</div>
+    <nav className="vw-settings-nav" aria-label={copy.navAria}>
+      <div className="vw-settings-group-title">{copy.navGroupRules}</div>
       <button
         type="button"
         className={
@@ -451,7 +488,7 @@ export function AdminPage({ api }: AdminPageProps) {
           setShowCsvImport(false);
         }}
       >
-        黑名单词条
+        {copy.navBlacklist}
       </button>
       <button
         type="button"
@@ -467,7 +504,7 @@ export function AdminPage({ api }: AdminPageProps) {
           setShowCsvImport(false);
         }}
       >
-        白名单词条
+        {copy.navWhitelist}
       </button>
 
       <hr className="vw-divider-rule" />
@@ -481,7 +518,7 @@ export function AdminPage({ api }: AdminPageProps) {
         }
         onClick={() => setSection("scoring")}
       >
-        计分与运行策略
+        {copy.navScoring}
       </button>
       <button
         type="button"
@@ -492,638 +529,551 @@ export function AdminPage({ api }: AdminPageProps) {
         }
         onClick={() => setSection("retention")}
       >
-        数据保留策略
+        {copy.navRetention}
       </button>
     </nav>
   );
 
   return (
-    <VoxWardShell
-      activeNavId="settings"
-      channelId={channelId}
-      showChannelSelector
-      requireAuth
-      pageTitle="系统设置"
-      pageDescription="维护当前选中频道的词库分类、规则词条、计分策略、AI 模型池绑定及数据保留周期（个人主题与语言偏好已迁至右上角头像「用户偏好」）。"
-    >
-      <div className="vw-stack-md">
-        {notice ? <BannerNotice tone={notice.tone}>{notice.text}</BannerNotice> : null}
+    <div className="vw-stack-md">
+      {notice ? <BannerNotice tone={notice.tone}>{notice.resolve(copy)}</BannerNotice> : null}
 
-        <SettingsLayout
-          navigation={localNavigation}
-          navigationLabel="系统设置栏目"
-          contentLabel="系统设置配置区"
-        >
-          {section === "blacklist" || section === "whitelist" ? (
-            <div className="vw-stack-md">
-              <section className="vw-panel-card" aria-label="词库分类管理（只增不删）">
-                <div className="vw-row-between">
-                  <strong>
-                    {activeListKind === "BLACKLIST" ? "黑名单分类字典" : "白名单分类字典"}
-                  </strong>
-                  <Badge tone="neutral">只增不删，保障审计引用稳定</Badge>
+      <SettingsLayout
+        navigation={localNavigation}
+        navigationLabel={copy.settingsNavLabel}
+        contentLabel={copy.settingsContentLabel}
+      >
+        {section === "blacklist" || section === "whitelist" ? (
+          <div className="vw-stack-md">
+            <section className="vw-panel-card" aria-label={copy.categoriesAria}>
+              <div className="vw-row-between">
+                <strong>
+                  {activeListKind === "BLACKLIST" ? copy.blacklistCatTitle : copy.whitelistCatTitle}
+                </strong>
+                <Badge tone="neutral">{copy.appendOnlyBadge}</Badge>
+              </div>
+              <TableShell
+                label={copy.catTableLabel}
+                columns={[
+                  { key: "code", label: copy.colCatCode },
+                  { key: "label", label: copy.colCatLabel },
+                  { key: "description", label: copy.colCatDesc },
+                ]}
+                rows={scopedCategories.map((c) => ({
+                  code: <span className="vw-mono">{c.code}</span>,
+                  label: c.label,
+                  description: c.description || <span className="vw-muted">{copy.noDesc}</span>,
+                }))}
+                emptyState={<EmptyState title={copy.emptyCatTitle} />}
+              />
+              <div className="vw-input-action-row">
+                <div className="vw-field-col--compact">
+                  <label className="vw-field-label" htmlFor="cat-code">
+                    {copy.newCatCodeLabel}
+                  </label>
+                  <Input
+                    id="cat-code"
+                    value={catCode}
+                    onChange={(event) => setCatCode(event.target.value)}
+                    placeholder={copy.newCatCodePlaceholder}
+                  />
                 </div>
-                <TableShell
-                  label="词库分类列表"
-                  columns={[
-                    { key: "code", label: "分类代码" },
-                    { key: "label", label: "分类名称" },
-                    { key: "description", label: "说明" },
-                  ]}
-                  rows={scopedCategories.map((c) => ({
-                    code: <span className="vw-mono">{c.code}</span>,
-                    label: c.label,
-                    description: c.description || <span className="vw-muted">无说明</span>,
-                  }))}
-                  emptyState={<EmptyState title="暂无分类" />}
-                />
-                <div className="vw-input-action-row">
-                  <div className="vw-field-col--compact">
-                    <label className="vw-field-label" htmlFor="cat-code">
-                      新分类代码
-                    </label>
-                    <Input
-                      id="cat-code"
-                      value={catCode}
-                      onChange={(event) => setCatCode(event.target.value)}
-                      placeholder="例如：ad_links"
-                    />
-                  </div>
-                  <div className="vw-field-col--compact">
-                    <label className="vw-field-label" htmlFor="cat-label">
-                      分类名称
-                    </label>
-                    <Input
-                      id="cat-label"
-                      value={catLabel}
-                      onChange={(event) => setCatLabel(event.target.value)}
-                      placeholder="例如：导流外链"
-                    />
-                  </div>
-                  <div className="vw-field-col">
-                    <label className="vw-field-label" htmlFor="cat-desc">
-                      备注说明（可选）
-                    </label>
-                    <Input
-                      id="cat-desc"
-                      value={catDesc}
-                      onChange={(event) => setCatDesc(event.target.value)}
-                      placeholder="说明此类词汇适用的拦截或豁免场景"
-                    />
-                  </div>
+                <div className="vw-field-col--compact">
+                  <label className="vw-field-label" htmlFor="cat-label">
+                    {copy.newCatLabelLabel}
+                  </label>
+                  <Input
+                    id="cat-label"
+                    value={catLabel}
+                    onChange={(event) => setCatLabel(event.target.value)}
+                    placeholder={copy.newCatLabelPlaceholder}
+                  />
+                </div>
+                <div className="vw-field-col">
+                  <label className="vw-field-label" htmlFor="cat-desc">
+                    {copy.newCatDescLabel}
+                  </label>
+                  <Input
+                    id="cat-desc"
+                    value={catDesc}
+                    onChange={(event) => setCatDesc(event.target.value)}
+                    placeholder={copy.newCatDescPlaceholder}
+                  />
+                </div>
+                <Button
+                  variant="secondary"
+                  disabled={busy || !catCode.trim() || !catLabel.trim()}
+                  onClick={() => void handleAddCategory()}
+                >
+                  {copy.addCatBtn}
+                </Button>
+              </div>
+            </section>
+
+            <section className="vw-panel-card" aria-label={copy.termsAria}>
+              <div className="vw-row-between">
+                <strong>
+                  {activeListKind === "BLACKLIST"
+                    ? copy.blacklistTermsHeading(filteredEntries.length)
+                    : copy.whitelistTermsHeading(filteredEntries.length)}
+                </strong>
+                <div className="vw-row-wrap">
                   <Button
-                    variant="secondary"
-                    disabled={busy || !catCode.trim() || !catLabel.trim()}
-                    onClick={() => void handleAddCategory()}
+                    size="sm"
+                    variant="quiet"
+                    data-download-csv-template=""
+                    onClick={handleDownloadCsvTemplate}
                   >
-                    + 新增归类
+                    {copy.downloadTemplateBtn}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={showCsvImport ? "primary" : "secondary"}
+                    onClick={() => {
+                      setShowCsvImport((prev) => !prev);
+                      setShowAddTermForm(false);
+                    }}
+                  >
+                    {showCsvImport ? copy.closeCsvBtn : copy.csvImportBtn}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={showAddTermForm ? "secondary" : "primary"}
+                    onClick={() => {
+                      setShowAddTermForm((prev) => !prev);
+                      setShowCsvImport(false);
+                    }}
+                  >
+                    {showAddTermForm ? copy.cancelAddTermBtn : copy.addTermBtn}
                   </Button>
                 </div>
-              </section>
+              </div>
 
-              <section className="vw-panel-card" aria-label="合并词条管理卡片">
-                <div className="vw-row-between">
-                  <strong>
-                    {activeListKind === "BLACKLIST"
-                      ? `黑名单词条库 (${filteredEntries.length})`
-                      : `白名单词条库 (${filteredEntries.length})`}
-                  </strong>
+              <div className="vw-input-action-row">
+                <div className="vw-field-col">
+                  <label className="vw-field-label" htmlFor="term-search">
+                    {copy.searchTermLabel}
+                  </label>
+                  <SearchInput
+                    id="term-search"
+                    fill
+                    value={termSearch}
+                    onChange={(event) => setTermSearch(event.target.value)}
+                    placeholder={copy.searchTermPlaceholder}
+                  />
+                </div>
+                <div className="vw-field-col--compact">
+                  <label className="vw-field-label" htmlFor="term-cat-filter">
+                    {copy.filterCatLabel}
+                  </label>
+                  <Select
+                    id="term-cat-filter"
+                    value={categoryFilter}
+                    onChange={(event) => setCategoryFilter(event.target.value)}
+                    options={[
+                      { value: "ALL", label: copy.allCatsOption },
+                      ...scopedCategories.map((c) => ({ value: c.code, label: c.label })),
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {showAddTermForm ? (
+                <div className="vw-panel-card vw-panel-card--quiet">
+                  <strong>{copy.addTermHeading}</strong>
+                  <div className="vw-input-action-row">
+                    <div className="vw-field-col">
+                      <label className="vw-field-label" htmlFor="new-term-text">
+                        {copy.newTermContentLabel}
+                      </label>
+                      <Input
+                        id="new-term-text"
+                        value={newTermText}
+                        onChange={(event) => setNewTermText(event.target.value)}
+                        placeholder={
+                          newTermMatchKind === "REGEX"
+                            ? copy.newTermRegexPlaceholder
+                            : copy.newTermPlainPlaceholder
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="new-term-cat">
+                        {copy.newTermCatLabel}
+                      </label>
+                      <Select
+                        id="new-term-cat"
+                        value={effectiveNewCategory}
+                        onChange={(event) => setNewTermCategory(event.target.value)}
+                        options={
+                          scopedCategories.length > 0
+                            ? scopedCategories.map((c) => ({ value: c.code, label: c.label }))
+                            : [{ value: defaultCatForList, label: defaultCatForList }]
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="new-term-kind">
+                        {copy.matchKindLabel}
+                      </label>
+                      <Select
+                        id="new-term-kind"
+                        value={newTermMatchKind}
+                        onChange={(event) =>
+                          setNewTermMatchKind(
+                            event.target.value as "EXACT" | "CONTAINS" | "REGEX",
+                          )
+                        }
+                        options={[
+                          { value: "EXACT", label: copy.matchKinds.EXACT },
+                          { value: "CONTAINS", label: copy.matchKinds.CONTAINS },
+                          { value: "REGEX", label: copy.matchKinds.REGEX },
+                        ]}
+                      />
+                    </div>
+                    <Button
+                      variant="primary"
+                      disabled={busy || !newTermText.trim()}
+                      onClick={() => void handleAddTerm()}
+                    >
+                      {copy.confirmAddTermBtn}
+                    </Button>
+                  </div>
+                  {newTermMatchKind === "REGEX" ? (
+                    <span className="vw-caption">{copy.regexNote}</span>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {showCsvImport ? (
+                <div className="vw-panel-card vw-panel-card--quiet">
+                  <div className="vw-row-between">
+                    <strong>{copy.csvHeading}</strong>
+                    <div className="vw-row-wrap">
+                      <Button size="sm" variant="secondary" onClick={handleDownloadCsvTemplate}>
+                        {copy.downloadTemplateBtn}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => csvFileInputRef.current?.click()}
+                      >
+                        {copy.pickCsvFileBtn}
+                      </Button>
+                      <input
+                        ref={csvFileInputRef}
+                        type="file"
+                        accept=".csv,text/csv"
+                        hidden
+                        aria-label={copy.csvFileInputAria}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null;
+                          event.target.value = "";
+                          void handleCsvFileSelected(file);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <span className="vw-caption">{copy.csvColumnsHint(defaultCatForList)}</span>
+                  <div className="vw-field-col--wide">
+                    <label className="vw-field-label" htmlFor="term-csv-box">
+                      {copy.csvRowsLabel}
+                    </label>
+                    <Textarea
+                      id="term-csv-box"
+                      rows={4}
+                      value={csvText}
+                      onChange={(event) => setCsvText(event.target.value)}
+                      placeholder={copy.csvPlaceholder(defaultCatForList)}
+                    />
+                  </div>
                   <div className="vw-row-wrap">
                     <Button
-                      size="sm"
-                      variant="quiet"
-                      data-download-csv-template=""
-                      onClick={handleDownloadCsvTemplate}
+                      variant="primary"
+                      disabled={busy || !csvText.trim()}
+                      onClick={() => void handleCsvImport()}
                     >
-                      下载 CSV 模板
+                      {copy.validateImportCsvBtn}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant={showCsvImport ? "primary" : "secondary"}
-                      onClick={() => {
-                        setShowCsvImport((prev) => !prev);
-                        setShowAddTermForm(false);
-                      }}
-                    >
-                      {showCsvImport ? "收起 CSV 导入" : "CSV 导入"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={showAddTermForm ? "secondary" : "primary"}
-                      onClick={() => {
-                        setShowAddTermForm((prev) => !prev);
-                        setShowCsvImport(false);
-                      }}
-                    >
-                      {showAddTermForm ? "取消增添" : "+ 手动增添词条"}
+                    <Button variant="quiet" onClick={() => setShowCsvImport(false)}>
+                      {copy.cancelBtn}
                     </Button>
                   </div>
                 </div>
+              ) : null}
 
-                <div className="vw-input-action-row">
-                  <div className="vw-field-col">
-                    <label className="vw-field-label" htmlFor="term-search">
-                      搜索词条或分类
-                    </label>
-                    <SearchInput
-                      id="term-search"
-                      fill
-                      value={termSearch}
-                      onChange={(event) => setTermSearch(event.target.value)}
-                      placeholder="按关键字筛选现有词条…"
-                    />
-                  </div>
-                  <div className="vw-field-col--compact">
-                    <label className="vw-field-label" htmlFor="term-cat-filter">
-                      按分类过滤
-                    </label>
-                    <Select
-                      id="term-cat-filter"
-                      value={categoryFilter}
-                      onChange={(event) => setCategoryFilter(event.target.value)}
-                      options={[
-                        { value: "ALL", label: "全部分类" },
-                        ...scopedCategories.map((c) => ({ value: c.code, label: c.label })),
-                      ]}
-                    />
-                  </div>
-                </div>
-
-                {showAddTermForm ? (
-                  <div className="vw-panel-card vw-panel-card--quiet">
-                    <strong>手动增添词条</strong>
-                    <div className="vw-input-action-row">
-                      <div className="vw-field-col">
-                        <label className="vw-field-label" htmlFor="new-term-text">
-                          词条内容 / 正则模式
-                        </label>
-                        <Input
-                          id="new-term-text"
-                          value={newTermText}
-                          onChange={(event) => setNewTermText(event.target.value)}
-                          placeholder={
-                            newTermMatchKind === "REGEX"
-                              ? "例如：加微[vV]信?\\d{4,8}（禁止回溯量词与零宽断言）"
-                              : "输入触发拦截或放行的词条文本"
-                          }
-                        />
-                      </div>
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="new-term-cat">
-                          所属分类
-                        </label>
-                        <Select
-                          id="new-term-cat"
-                          value={effectiveNewCategory}
-                          onChange={(event) => setNewTermCategory(event.target.value)}
-                          options={
-                            scopedCategories.length > 0
-                              ? scopedCategories.map((c) => ({ value: c.code, label: c.label }))
-                              : [{ value: defaultCatForList, label: defaultCatForList }]
-                          }
-                        />
-                      </div>
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="new-term-kind">
-                          匹配模式
-                        </label>
-                        <Select
-                          id="new-term-kind"
-                          value={newTermMatchKind}
-                          onChange={(event) =>
-                            setNewTermMatchKind(
-                              event.target.value as "EXACT" | "CONTAINS" | "REGEX",
-                            )
-                          }
-                          options={[
-                            { value: "EXACT", label: "精确匹配" },
-                            { value: "CONTAINS", label: "包含子串" },
-                            { value: "REGEX", label: "受限正则" },
-                          ]}
-                        />
-                      </div>
-                      <Button
-                        variant="primary"
-                        disabled={busy || !newTermText.trim()}
-                        onClick={() => void handleAddTerm()}
-                      >
-                        确认增添
-                      </Button>
-                    </div>
-                    {newTermMatchKind === "REGEX" ? (
-                      <span className="vw-caption">
-                        安全规范（受限正则）：支持基础字符组、固定次数量词及线性选择；不允许环视断言（如前瞻/后顾）、反向引用或嵌套量词导致回溯爆炸。
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {showCsvImport ? (
-                  <div className="vw-panel-card vw-panel-card--quiet">
-                    <div className="vw-row-between">
-                      <strong>CSV 批量导入（格式：term,category,matchKind）</strong>
-                      <div className="vw-row-wrap">
-                        <Button size="sm" variant="secondary" onClick={handleDownloadCsvTemplate}>
-                          下载 CSV 模板
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => csvFileInputRef.current?.click()}
-                        >
-                          选择 CSV 文件
-                        </Button>
-                        <input
-                          ref={csvFileInputRef}
-                          type="file"
-                          accept=".csv,text/csv"
-                          hidden
-                          aria-label="选择 CSV 模板文件"
-                          onChange={(event) => {
-                            const file = event.target.files?.[0] ?? null;
-                            event.target.value = "";
-                            void handleCsvFileSelected(file);
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <span className="vw-caption">
-                      {`列说明：term（词条文本或受限正则）、category（上方分类代码，如 ${defaultCatForList}）、matchKind（EXACT / CONTAINS / REGEX）。`}
-                    </span>
-                    <div className="vw-field-col--wide">
-                      <label className="vw-field-label" htmlFor="term-csv-box">
-                        每行一条规则
-                      </label>
-                      <Textarea
-                        id="term-csv-box"
-                        rows={4}
-                        value={csvText}
-                        onChange={(event) => setCsvText(event.target.value)}
-                        placeholder={`term,category,matchKind\n引流加群,${defaultCatForList},CONTAINS`}
-                      />
-                    </div>
-                    <div className="vw-row-wrap">
-                      <Button
-                        variant="primary"
-                        disabled={busy || !csvText.trim()}
-                        onClick={() => void handleCsvImport()}
-                      >
-                        校验并导入 CSV
-                      </Button>
-                      <Button variant="quiet" onClick={() => setShowCsvImport(false)}>
-                        取消
-                      </Button>
-                    </div>
-                  </div>
-                ) : null}
-
-                <TableShell
-                  label="词条列表"
-                  columns={[
-                    { key: "term", label: "词条内容" },
-                    { key: "category", label: "分类" },
-                    { key: "matchKind", label: "匹配模式" },
-                    { key: "enabled", label: "启用状态" },
-                    { key: "actions", label: "操作", align: "end" },
-                  ]}
-                  rows={filteredEntries.map((entry) => ({
-                    term: <UntrustedText text={entry.term} />,
-                    category:
-                      categories.find((c) => c.code === entry.categoryCode)?.label ??
-                      entry.categoryCode,
-                    matchKind: <Badge tone="neutral">{matchKindLabel(entry.matchKind)}</Badge>,
-                    enabled: (
-                      <Switch
-                        label={entry.enabled ? "已启用" : "已停用"}
-                        checked={entry.enabled}
-                        onChange={(event) =>
-                          void persistEntries(
-                            entries.map((item) =>
-                              item.id === entry.id
-                                ? { ...item, enabled: event.target.checked }
-                                : item,
-                            ),
-                            "词条启用状态已更新。",
-                          )
-                        }
-                      />
-                    ),
-                    actions: (
-                      <TermRowActions
-                        entry={entry}
-                        onEdit={(item) => setEditingEntry(item)}
-                        onDelete={(id) =>
-                          void persistEntries(
-                            entries.filter((item) => item.id !== id),
-                            "已删除该词条。",
-                          )
-                        }
-                      />
-                    ),
-                  }))}
-                  emptyState={
-                    <EmptyState
-                      title="暂无词条"
-                      description="可通过上方表单添加单条词条，或粘贴 CSV 文本批量导入。"
-                    />
-                  }
-                />
-              </section>
-            </div>
-          ) : section === "scoring" ? (
-            <div className="vw-stack-md">
-              <section className="vw-panel-card" aria-label="SC 精翻开关与模型池策略">
-                <strong>Super Chat 精翻与 AI 模型策略</strong>
-                {modelForm !== null ? (
-                  <>
+              <TableShell
+                label={copy.termsTableLabel}
+                columns={[
+                  { key: "term", label: copy.colTerm },
+                  { key: "category", label: copy.colCategory },
+                  { key: "matchKind", label: copy.colMatchKind },
+                  { key: "enabled", label: copy.colEnabled },
+                  { key: "actions", label: copy.colActions, align: "end" },
+                ]}
+                rows={filteredEntries.map((entry) => ({
+                  term: <UntrustedText text={entry.term} />,
+                  category:
+                    categories.find((c) => c.code === entry.categoryCode)?.label ??
+                    entry.categoryCode,
+                  matchKind: <Badge tone="neutral">{matchKindLabel(entry.matchKind, copy)}</Badge>,
+                  enabled: (
                     <Switch
-                      label="开启 Super Chat 精翻（全局唯一开关）"
-                      description="启用后，付费醒目留言将先由 AI 精翻再呈现至 OBS 投屏与纯净弹幕姬（审核控制台只读展示此状态）。"
-                      checked={modelForm.scTranslationEnabled}
+                      label={entry.enabled ? copy.enabledSwitchLabel : copy.disabledSwitchLabel}
+                      checked={entry.enabled}
                       onChange={(event) =>
-                        setModelForm({
-                          ...modelForm,
-                          scTranslationEnabled: event.target.checked,
-                        })
+                        void persistEntries(
+                          entries.map((item) =>
+                            item.id === entry.id
+                              ? { ...item, enabled: event.target.checked }
+                              : item,
+                          ),
+                          (c) => c.messages.termToggled,
+                        )
                       }
                     />
-                    {modelResp?.modelFault ? (
-                      <BannerNotice tone="warning">{modelResp.modelFault.message}</BannerNotice>
-                    ) : null}
-                    {renderModelPicker(
-                      "mod-realtime",
-                      "实时审核主模型",
-                      modelForm.realtimeModeration,
-                      (next) => setModelForm({ ...modelForm, realtimeModeration: next }),
-                    )}
-                    {renderModelPicker(
-                      "mod-sc",
-                      "Super Chat 精翻模型",
-                      modelForm.scTranslation,
-                      (next) => setModelForm({ ...modelForm, scTranslation: next }),
-                    )}
-                    {renderModelPicker(
-                      "mod-review",
-                      "待审复核辅助模型",
-                      modelForm.review,
-                      (next) => setModelForm({ ...modelForm, review: next }),
-                    )}
-                    <div>
-                      <Button
-                        variant="primary"
-                        loading={busy}
-                        onClick={() => void handleSaveModels()}
-                      >
-                        保存模型与 SC 精翻策略
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <EmptyState title="正在加载模型策略…" />
-                )}
-              </section>
+                  ),
+                  actions: (
+                    <TermRowActions
+                      entry={entry}
+                      copy={copy}
+                      onEdit={(item) => setEditingEntry(item)}
+                      onDelete={(id) =>
+                        void persistEntries(
+                          entries.filter((item) => item.id !== id),
+                          (c) => c.messages.termDeleted,
+                        )
+                      }
+                    />
+                  ),
+                }))}
+                emptyState={
+                  <EmptyState
+                    title={copy.emptyTermsTitle}
+                    description={copy.emptyTermsDesc}
+                  />
+                }
+              />
+            </section>
+          </div>
+        ) : section === "scoring" ? (
+          <div className="vw-stack-md">
+            <section className="vw-panel-card" aria-label={copy.modelsAria}>
+              <strong>{copy.modelsHeading}</strong>
+              {modelForm !== null ? (
+                <>
+                  <Switch
+                    label={copy.scToggleLabel}
+                    description={copy.scToggleDesc}
+                    checked={modelForm.scTranslationEnabled}
+                    onChange={(event) =>
+                      setModelForm({
+                        ...modelForm,
+                        scTranslationEnabled: event.target.checked,
+                      })
+                    }
+                  />
+                  {modelResp?.modelFault ? (
+                    <BannerNotice tone="warning">{modelResp.modelFault.message}</BannerNotice>
+                  ) : null}
+                  {renderModelPicker(
+                    "mod-realtime",
+                    copy.modelRealtimeLabel,
+                    modelForm.realtimeModeration,
+                    (next) => setModelForm({ ...modelForm, realtimeModeration: next }),
+                  )}
+                  {renderModelPicker(
+                    "mod-sc",
+                    copy.modelScLabel,
+                    modelForm.scTranslation,
+                    (next) => setModelForm({ ...modelForm, scTranslation: next }),
+                  )}
+                  {renderModelPicker(
+                    "mod-review",
+                    copy.modelReviewLabel,
+                    modelForm.review,
+                    (next) => setModelForm({ ...modelForm, review: next }),
+                  )}
+                  <div>
+                    <Button
+                      variant="primary"
+                      loading={busy}
+                      onClick={() => void handleSaveModels()}
+                    >
+                      {copy.saveModelsBtn}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <EmptyState title={copy.loadingModelsTitle} />
+              )}
+            </section>
 
-              <section className="vw-panel-card" aria-label="观众信任计分与并发队列参数">
-                <strong>信任分阈值与队列调度参数</strong>
-                {adminForm !== null ? (
-                  <>
-                    <div className="vw-row-wrap">
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="sc-init">
-                          观众初始基础分
-                        </label>
-                        <NumberInput
-                          id="sc-init"
-                          value={adminForm.scoring.initialScore}
-                          onChange={(e) =>
-                            setAdminForm({
-                              ...adminForm,
-                              scoring: {
-                                ...adminForm.scoring,
-                                initialScore: Number(e.target.value) || 0,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="sc-min">
-                          信任分下限
-                        </label>
-                        <NumberInput
-                          id="sc-min"
-                          value={adminForm.scoring.minScore}
-                          onChange={(e) =>
-                            setAdminForm({
-                              ...adminForm,
-                              scoring: {
-                                ...adminForm.scoring,
-                                minScore: Number(e.target.value) || 0,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="sc-max">
-                          信任分上限
-                        </label>
-                        <NumberInput
-                          id="sc-max"
-                          value={adminForm.scoring.maxScore}
-                          onChange={(e) =>
-                            setAdminForm({
-                              ...adminForm,
-                              scoring: {
-                                ...adminForm.scoring,
-                                maxScore: Number(e.target.value) || 0,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="sc-reward">
-                          放行加分步长
-                        </label>
-                        <NumberInput
-                          id="sc-reward"
-                          value={adminForm.scoring.rewardDelta}
-                          onChange={(e) =>
-                            setAdminForm({
-                              ...adminForm,
-                              scoring: {
-                                ...adminForm.scoring,
-                                rewardDelta: Number(e.target.value) || 0,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="sc-penalty">
-                          拦截扣分步长
-                        </label>
-                        <NumberInput
-                          id="sc-penalty"
-                          value={adminForm.scoring.penaltyDelta}
-                          onChange={(e) =>
-                            setAdminForm({
-                              ...adminForm,
-                              scoring: {
-                                ...adminForm.scoring,
-                                penaltyDelta: Number(e.target.value) || 0,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="vw-row-wrap">
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="q-rt">
-                          实时并发窗口
-                        </label>
-                        <NumberInput
-                          id="q-rt"
-                          value={adminForm.queue.realtimeConcurrency}
-                          onChange={(e) =>
-                            setAdminForm({
-                              ...adminForm,
-                              queue: {
-                                ...adminForm.queue,
-                                realtimeConcurrency: Number(e.target.value) || 1,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="q-sc">
-                          SC 并发窗口
-                        </label>
-                        <NumberInput
-                          id="q-sc"
-                          value={adminForm.queue.scConcurrency}
-                          onChange={(e) =>
-                            setAdminForm({
-                              ...adminForm,
-                              queue: {
-                                ...adminForm.queue,
-                                scConcurrency: Number(e.target.value) || 1,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="q-batch">
-                          人工批审上限
-                        </label>
-                        <NumberInput
-                          id="q-batch"
-                          value={adminForm.queue.reviewBatchSize}
-                          onChange={(e) =>
-                            setAdminForm({
-                              ...adminForm,
-                              queue: {
-                                ...adminForm.queue,
-                                reviewBatchSize: Number(e.target.value) || 1,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="vw-field-col--compact">
-                        <label className="vw-field-label" htmlFor="q-deadline">
-                          审阅超时（毫秒）
-                        </label>
-                        <NumberInput
-                          id="q-deadline"
-                          value={adminForm.queue.taskDeadlineMs}
-                          onChange={(e) =>
-                            setAdminForm({
-                              ...adminForm,
-                              queue: {
-                                ...adminForm.queue,
-                                taskDeadlineMs: Number(e.target.value) || 1000,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Button
-                        variant="primary"
-                        loading={busy}
-                        onClick={() => void handleSaveAdminSettings("计分与队列运行策略已更新。")}
-                      >
-                        保存计分与运行策略
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <EmptyState title="正在加载计分策略…" />
-                )}
-              </section>
-            </div>
-          ) : (
-            <section className="vw-panel-card" aria-label="数据保留周期设置">
-              <strong>数据与审计日志保留策略</strong>
+            <section className="vw-panel-card" aria-label={copy.scoringAria}>
+              <strong>{copy.scoringHeading}</strong>
               {adminForm !== null ? (
                 <>
                   <div className="vw-row-wrap">
                     <div className="vw-field-col--compact">
-                      <label className="vw-field-label" htmlFor="ret-change">
-                        变更日志保留天数
+                      <label className="vw-field-label" htmlFor="sc-init">
+                        {copy.scoreInitLabel}
                       </label>
                       <NumberInput
-                        id="ret-change"
-                        value={adminForm.retention.changeLogDays}
+                        id="sc-init"
+                        value={adminForm.scoring.initialScore}
                         onChange={(e) =>
                           setAdminForm({
                             ...adminForm,
-                            retention: {
-                              ...adminForm.retention,
-                              changeLogDays: Number(e.target.value) || 1,
+                            scoring: {
+                              ...adminForm.scoring,
+                              initialScore: Number(e.target.value) || 0,
                             },
                           })
                         }
                       />
                     </div>
                     <div className="vw-field-col--compact">
-                      <label className="vw-field-label" htmlFor="ret-tech">
-                        技术链路日志保留天数
+                      <label className="vw-field-label" htmlFor="sc-min">
+                        {copy.scoreMinLabel}
                       </label>
                       <NumberInput
-                        id="ret-tech"
-                        value={adminForm.retention.technicalLogDays}
+                        id="sc-min"
+                        value={adminForm.scoring.minScore}
                         onChange={(e) =>
                           setAdminForm({
                             ...adminForm,
-                            retention: {
-                              ...adminForm.retention,
-                              technicalLogDays: Number(e.target.value) || 1,
+                            scoring: {
+                              ...adminForm.scoring,
+                              minScore: Number(e.target.value) || 0,
                             },
                           })
                         }
                       />
                     </div>
                     <div className="vw-field-col--compact">
-                      <label className="vw-field-label" htmlFor="ret-evidence">
-                        观众证据归档天数
+                      <label className="vw-field-label" htmlFor="sc-max">
+                        {copy.scoreMaxLabel}
                       </label>
                       <NumberInput
-                        id="ret-evidence"
-                        value={adminForm.retention.evidenceDays}
+                        id="sc-max"
+                        value={adminForm.scoring.maxScore}
                         onChange={(e) =>
                           setAdminForm({
                             ...adminForm,
-                            retention: {
-                              ...adminForm.retention,
-                              evidenceDays: Number(e.target.value) || 1,
+                            scoring: {
+                              ...adminForm.scoring,
+                              maxScore: Number(e.target.value) || 0,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="sc-reward">
+                        {copy.scoreRewardLabel}
+                      </label>
+                      <NumberInput
+                        id="sc-reward"
+                        value={adminForm.scoring.rewardDelta}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            scoring: {
+                              ...adminForm.scoring,
+                              rewardDelta: Number(e.target.value) || 0,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="sc-penalty">
+                        {copy.scorePenaltyLabel}
+                      </label>
+                      <NumberInput
+                        id="sc-penalty"
+                        value={adminForm.scoring.penaltyDelta}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            scoring: {
+                              ...adminForm.scoring,
+                              penaltyDelta: Number(e.target.value) || 0,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="vw-row-wrap">
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="q-rt">
+                        {copy.queueRtLabel}
+                      </label>
+                      <NumberInput
+                        id="q-rt"
+                        value={adminForm.queue.realtimeConcurrency}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            queue: {
+                              ...adminForm.queue,
+                              realtimeConcurrency: Number(e.target.value) || 1,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="q-sc">
+                        {copy.queueScLabel}
+                      </label>
+                      <NumberInput
+                        id="q-sc"
+                        value={adminForm.queue.scConcurrency}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            queue: {
+                              ...adminForm.queue,
+                              scConcurrency: Number(e.target.value) || 1,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="q-batch">
+                        {copy.queueBatchLabel}
+                      </label>
+                      <NumberInput
+                        id="q-batch"
+                        value={adminForm.queue.reviewBatchSize}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            queue: {
+                              ...adminForm.queue,
+                              reviewBatchSize: Number(e.target.value) || 1,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="q-deadline">
+                        {copy.queueDeadlineLabel}
+                      </label>
+                      <NumberInput
+                        id="q-deadline"
+                        value={adminForm.queue.taskDeadlineMs}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            queue: {
+                              ...adminForm.queue,
+                              taskDeadlineMs: Number(e.target.value) || 1000,
                             },
                           })
                         }
@@ -1134,80 +1084,172 @@ export function AdminPage({ api }: AdminPageProps) {
                     <Button
                       variant="primary"
                       loading={busy}
-                      onClick={() => void handleSaveAdminSettings("数据保留周期已保存。")}
+                      onClick={() => void handleSaveAdminSettings((c) => c.messages.scoringSaved)}
                     >
-                      保存保留策略
+                      {copy.saveScoringBtn}
                     </Button>
                   </div>
                 </>
               ) : (
-                <EmptyState title="正在加载保留策略…" />
+                <EmptyState title={copy.loadingScoringTitle} />
               )}
             </section>
-          )}
-        </SettingsLayout>
+          </div>
+        ) : (
+          <section className="vw-panel-card" aria-label={copy.retentionAria}>
+            <strong>{copy.retentionHeading}</strong>
+            {adminForm !== null ? (
+              <>
+                <div className="vw-row-wrap">
+                  <div className="vw-field-col--compact">
+                    <label className="vw-field-label" htmlFor="ret-change">
+                      {copy.retChangeLabel}
+                    </label>
+                    <NumberInput
+                      id="ret-change"
+                      value={adminForm.retention.changeLogDays}
+                      onChange={(e) =>
+                        setAdminForm({
+                          ...adminForm,
+                          retention: {
+                            ...adminForm.retention,
+                            changeLogDays: Number(e.target.value) || 1,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="vw-field-col--compact">
+                    <label className="vw-field-label" htmlFor="ret-tech">
+                      {copy.retTechLabel}
+                    </label>
+                    <NumberInput
+                      id="ret-tech"
+                      value={adminForm.retention.technicalLogDays}
+                      onChange={(e) =>
+                        setAdminForm({
+                          ...adminForm,
+                          retention: {
+                            ...adminForm.retention,
+                            technicalLogDays: Number(e.target.value) || 1,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="vw-field-col--compact">
+                    <label className="vw-field-label" htmlFor="ret-evidence">
+                      {copy.retEvidenceLabel}
+                    </label>
+                    <NumberInput
+                      id="ret-evidence"
+                      value={adminForm.retention.evidenceDays}
+                      onChange={(e) =>
+                        setAdminForm({
+                          ...adminForm,
+                          retention: {
+                            ...adminForm.retention,
+                            evidenceDays: Number(e.target.value) || 1,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Button
+                    variant="primary"
+                    loading={busy}
+                    onClick={() => void handleSaveAdminSettings((c) => c.messages.retentionSaved)}
+                  >
+                    {copy.saveRetentionBtn}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <EmptyState title={copy.loadingRetentionTitle} />
+            )}
+          </section>
+        )}
+      </SettingsLayout>
 
-        <Dialog
-          open={editingEntry !== null}
-          onOpenChange={(open) => {
-            if (!open) setEditingEntry(null);
-          }}
-          title="编辑规则词条"
-        >
-          {editingEntry !== null ? (
-            <div className="vw-stack-md">
-              <div className="vw-field-col">
-                <label className="vw-field-label" htmlFor="edit-term-input">
-                  词条文本
-                </label>
-                <Input
-                  id="edit-term-input"
-                  value={editingEntry.term}
-                  onChange={(e) => setEditingEntry({ ...editingEntry, term: e.target.value })}
-                />
-              </div>
-              <div className="vw-field-col--compact">
-                <label className="vw-field-label" htmlFor="edit-term-kind">
-                  匹配模式
-                </label>
-                <Select
-                  id="edit-term-kind"
-                  value={editingEntry.matchKind}
-                  onChange={(e) =>
-                    setEditingEntry({
-                      ...editingEntry,
-                      matchKind: e.target.value as ExtendedTermEntryView["matchKind"],
-                    })
-                  }
-                  options={[
-                    { value: "EXACT", label: "精确匹配" },
-                    { value: "CONTAINS", label: "包含子串" },
-                    { value: "REGEX", label: "受限正则" },
-                  ]}
-                />
-              </div>
-              <div className="vw-row-wrap">
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    const saved = editingEntry;
-                    setEditingEntry(null);
-                    void persistEntries(
-                      entries.map((item) => (item.id === saved.id ? saved : item)),
-                      "词条修改已保存。",
-                    );
-                  }}
-                >
-                  保存修改
-                </Button>
-                <Button variant="quiet" onClick={() => setEditingEntry(null)}>
-                  取消
-                </Button>
-              </div>
+      <Dialog
+        open={editingEntry !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingEntry(null);
+        }}
+        title={copy.editDialogTitle}
+      >
+        {editingEntry !== null ? (
+          <div className="vw-stack-md">
+            <div className="vw-field-col">
+              <label className="vw-field-label" htmlFor="edit-term-input">
+                {copy.editTermTextLabel}
+              </label>
+              <Input
+                id="edit-term-input"
+                value={editingEntry.term}
+                onChange={(e) => setEditingEntry({ ...editingEntry, term: e.target.value })}
+              />
             </div>
-          ) : null}
-        </Dialog>
-      </div>
+            <div className="vw-field-col--compact">
+              <label className="vw-field-label" htmlFor="edit-term-kind">
+                {copy.matchKindLabel}
+              </label>
+              <Select
+                id="edit-term-kind"
+                value={editingEntry.matchKind}
+                onChange={(e) =>
+                  setEditingEntry({
+                    ...editingEntry,
+                    matchKind: e.target.value as ExtendedTermEntryView["matchKind"],
+                  })
+                }
+                options={[
+                  { value: "EXACT", label: copy.matchKinds.EXACT },
+                  { value: "CONTAINS", label: copy.matchKinds.CONTAINS },
+                  { value: "REGEX", label: copy.matchKinds.REGEX },
+                ]}
+              />
+            </div>
+            <div className="vw-row-wrap">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  const saved = editingEntry;
+                  setEditingEntry(null);
+                  void persistEntries(
+                    entries.map((item) => (item.id === saved.id ? saved : item)),
+                    (c) => c.messages.termUpdated,
+                  );
+                }}
+              >
+                {copy.saveEditBtn}
+              </Button>
+              <Button variant="quiet" onClick={() => setEditingEntry(null)}>
+                {copy.cancelBtn}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Dialog>
+    </div>
+  );
+}
+
+export function AdminPage({ api }: AdminPageProps) {
+  const params = useParams();
+
+  return (
+    <VoxWardShell
+      activeNavId="settings"
+      channelId={params.channelId}
+      showChannelSelector
+      requireAuth
+      pageTitle={(locale) => pickLocale(ADMIN_COPY, locale).pageTitle}
+      pageDescription={(locale) => pickLocale(ADMIN_COPY, locale).pageDescription}
+    >
+      <AdminSurface channelIdParam={params.channelId} api={api} />
     </VoxWardShell>
   );
 }

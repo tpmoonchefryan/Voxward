@@ -20,6 +20,14 @@ import {
 } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../components/banner-notice";
 import {
+  DEFAULT_VOXWARD_LOCALE,
+  DEFAULT_VOXWARD_THEME,
+  normalizeVoxWardLocale,
+  pickLocale,
+  SHELL_CHROME_COPY,
+} from "../i18n";
+import { useVoxWardGuestPrefs } from "./guest-prefs-context";
+import {
   buildVoxWardNavModel,
   DEFAULT_LEFT_PINS,
   DEFAULT_RIGHT_PINS,
@@ -33,6 +41,12 @@ import {
   type ShellPreferencesClient,
   type VoxWardLocale,
 } from "./shell-preferences-api";
+
+export type LocaleAware<T> = T | ((locale: VoxWardLocale) => T);
+
+function resolveLocaleAware<T>(value: LocaleAware<T>, locale: VoxWardLocale): T {
+  return typeof value === "function" ? (value as (loc: VoxWardLocale) => T)(locale) : value;
+}
 
 export interface VoxWardShellContextValue {
   readonly session: SessionInfo | null;
@@ -52,8 +66,8 @@ const VoxWardShellContext = createContext<VoxWardShellContextValue>({
   channels: [],
   activeChannelId: "ch_demo_1",
   activeChannel: null,
-  locale: "zh-CN",
-  theme: "light",
+  locale: DEFAULT_VOXWARD_LOCALE,
+  theme: DEFAULT_VOXWARD_THEME,
   openLoginDialog: () => {},
   reloadSession: async () => {},
 });
@@ -64,17 +78,17 @@ export function useVoxWardShell(): VoxWardShellContextValue {
 
 export interface VoxWardShellProps {
   readonly activeNavId: VoxWardNavId;
-  readonly pageTitle: string;
-  readonly pageDescription?: ReactNode;
-  readonly pageMeta?: ReactNode;
-  readonly pageActions?: ReactNode;
-  readonly breadcrumbs?: readonly PageHeaderBreadcrumb[];
+  readonly pageTitle: LocaleAware<string>;
+  readonly pageDescription?: LocaleAware<ReactNode>;
+  readonly pageMeta?: LocaleAware<ReactNode>;
+  readonly pageActions?: LocaleAware<ReactNode>;
+  readonly breadcrumbs?: LocaleAware<readonly PageHeaderBreadcrumb[]>;
   readonly channelId?: string;
   readonly showChannelSelector?: boolean;
   readonly onSelectChannel?: (channelId: string) => void;
   readonly requireAuth?: boolean;
-  readonly topBanner?: ReactNode;
-  readonly overrideDisabledIds?: Partial<Record<VoxWardNavId, string>>;
+  readonly topBanner?: LocaleAware<ReactNode>;
+  readonly overrideDisabledIds?: LocaleAware<Partial<Record<VoxWardNavId, string>>>;
   readonly notificationsCount?: number;
   readonly client?: ShellPreferencesClient;
   readonly children: ReactNode;
@@ -119,6 +133,10 @@ export function VoxWardShell({
 }: VoxWardShellProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const guestPrefs = useVoxWardGuestPrefs();
+  const guestPrefsRef = useRef(guestPrefs);
+  guestPrefsRef.current = guestPrefs;
+
   const shellClient = useMemo(() => client ?? createShellPreferencesClient(), [client]);
   const loginHref = useMemo(
     () => `/login?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`,
@@ -133,7 +151,10 @@ export function VoxWardShell({
     theme?: ShellThemeMode;
     locale?: VoxWardLocale;
     pins?: readonly string[];
-  }>({});
+  }>(() => ({
+    theme: guestPrefs.theme,
+    locale: guestPrefs.locale,
+  }));
 
   const hydratingRef = useRef(false);
   const mountedRef = useRef(true);
@@ -145,8 +166,8 @@ export function VoxWardShell({
   const rightPinsRef = useRef<readonly string[]>(rightPins);
   rightPinsRef.current = rightPins;
   const pinsRef = useRef<readonly string[]>(DEFAULT_LEFT_PINS);
-  const themeRef = useRef<ShellThemeMode>("light");
-  const localeRef = useRef<VoxWardLocale>("zh-CN");
+  const themeRef = useRef<ShellThemeMode>(guestPrefs.theme);
+  const localeRef = useRef<VoxWardLocale>(guestPrefs.locale);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -180,9 +201,9 @@ export function VoxWardShell({
   );
 
   const controller = useProductShellController<VoxWardLocale>({
-    initialTheme: "light",
+    initialTheme: guestPrefs.theme,
     seasonalThemes: ["halloween"],
-    initialLocale: "zh-CN",
+    initialLocale: guestPrefs.locale,
     initialPins: DEFAULT_LEFT_PINS,
     requestPreferences: {
       theme: prefsSeed.theme,
@@ -205,11 +226,17 @@ export function VoxWardShell({
         pendingHydratedThemeRef.current = null;
         return;
       }
+      if (sessionRef.current === null) {
+        guestPrefsRef.current.setGuestTheme(nextTheme);
+      }
       void persistPreferences({ theme: nextTheme });
     },
     onLocaleChange: (nextLocale) => {
-      const resolved: VoxWardLocale = nextLocale === "en" ? "en" : "zh-CN";
+      const resolved = normalizeVoxWardLocale(nextLocale);
       localeRef.current = resolved;
+      if (sessionRef.current === null) {
+        guestPrefsRef.current.setGuestLocale(resolved);
+      }
       void persistPreferences({ locale: resolved });
     },
   });
@@ -241,16 +268,18 @@ export function VoxWardShell({
         setChannels([]);
         hydratingRef.current = true;
         try {
+          const guestTheme = guestPrefsRef.current.theme;
+          const guestLocale = guestPrefsRef.current.locale;
           setRightPins(DEFAULT_RIGHT_PINS);
           controller.setPins(DEFAULT_LEFT_PINS);
-          controller.setLocale("zh-CN");
+          controller.setLocale(guestLocale);
           if (!requireAuth) {
-            if (themeRef.current !== "light") {
-              pendingHydratedThemeRef.current = "light";
-              controller.setTheme("light");
+            if (themeRef.current !== guestTheme) {
+              pendingHydratedThemeRef.current = guestTheme;
+              controller.setTheme(guestTheme);
             }
             if (canApplyShellTheme(false, null)) {
-              applyThemeAttribute("light");
+              applyThemeAttribute(guestTheme);
             }
           }
         } finally {
@@ -276,8 +305,8 @@ export function VoxWardShell({
           loadedPrefs?.rightPins !== undefined && loadedPrefs.rightPins.length > 0
             ? loadedPrefs.rightPins
             : [...DEFAULT_RIGHT_PINS];
-        const nextTheme = loadedPrefs?.theme ?? "light";
-        const nextLocale = loadedPrefs?.locale ?? "zh-CN";
+        const nextTheme = loadedPrefs?.theme ?? DEFAULT_VOXWARD_THEME;
+        const nextLocale = normalizeVoxWardLocale(loadedPrefs?.locale);
         setPrefsSeed({
           theme: nextTheme,
           locale: nextLocale,
@@ -323,6 +352,8 @@ export function VoxWardShell({
   const activeChannel =
     channels.find((ch) => ch.channelId === resolvedChannelId) ?? null;
 
+  const resolvedOverrideDisabled = resolveLocaleAware(overrideDisabledIds, controller.locale);
+
   const navModel = useMemo(
     () =>
       buildVoxWardNavModel({
@@ -330,9 +361,9 @@ export function VoxWardShell({
         activeId: activeNavId,
         channelId: resolvedChannelId,
         channel: activeChannel,
-        overrideDisabledIds,
+        overrideDisabledIds: resolvedOverrideDisabled,
       }),
-    [controller.locale, activeNavId, resolvedChannelId, activeChannel, overrideDisabledIds],
+    [controller.locale, activeNavId, resolvedChannelId, activeChannel, resolvedOverrideDisabled],
   );
 
   const handleRightPinsReorder = useCallback(
@@ -376,18 +407,19 @@ export function VoxWardShell({
       sessionRef.current = null;
       setSession(null);
       setChannels([]);
+      guestPrefsRef.current.resetGuestPrefs();
       hydratingRef.current = true;
       try {
         setRightPins(DEFAULT_RIGHT_PINS);
         controller.setPins(DEFAULT_LEFT_PINS);
-        controller.setLocale("zh-CN");
+        controller.setLocale(DEFAULT_VOXWARD_LOCALE);
         if (!requireAuth) {
-          if (themeRef.current !== "light") {
-            pendingHydratedThemeRef.current = "light";
-            controller.setTheme("light");
+          if (themeRef.current !== DEFAULT_VOXWARD_THEME) {
+            pendingHydratedThemeRef.current = DEFAULT_VOXWARD_THEME;
+            controller.setTheme(DEFAULT_VOXWARD_THEME);
           }
           if (canApplyShellTheme(false, null)) {
-            applyThemeAttribute("light");
+            applyThemeAttribute(DEFAULT_VOXWARD_THEME);
           }
         }
       } finally {
@@ -423,14 +455,20 @@ export function VoxWardShell({
     void navigate(href);
   };
 
-  const zh = controller.locale === "zh-CN";
+  const chromeCopy = pickLocale(SHELL_CHROME_COPY, controller.locale);
+  const resolvedPageTitle = resolveLocaleAware(pageTitle, controller.locale);
+  const resolvedPageDescription = resolveLocaleAware(pageDescription, controller.locale);
+  const resolvedPageMeta = resolveLocaleAware(pageMeta, controller.locale);
+  const resolvedPageActions = resolveLocaleAware(pageActions, controller.locale);
+  const resolvedBreadcrumbs = resolveLocaleAware(breadcrumbs, controller.locale);
+  const resolvedTopBanner = resolveLocaleAware(topBanner, controller.locale);
 
   const composedPageActions =
     showChannelSelector && channels.length > 0 ? (
       <div className="vw-row-wrap">
         <div className="vw-field-col--compact">
           <Select
-            aria-label={zh ? "当前频道" : "Active channel"}
+            aria-label={chromeCopy.activeChannel}
             value={resolvedChannelId}
             onChange={(event) => handleChannelChange(event.target.value)}
             options={channels.map((ch) => ({
@@ -439,19 +477,19 @@ export function VoxWardShell({
             }))}
           />
         </div>
-        {pageActions}
+        {resolvedPageActions}
       </div>
     ) : (
-      pageActions
+      resolvedPageActions
     );
 
   const headerActions = session ? (
     <Button variant="quiet" size="sm" onClick={() => void handleLogout()}>
-      {zh ? "退出登录" : "Sign out"}
+      {chromeCopy.signOut}
     </Button>
   ) : (
     <Button variant="primary" size="sm" onClick={() => void navigate(loginHref)}>
-      {zh ? "登录账号" : "Sign in"}
+      {chromeCopy.signIn}
     </Button>
   );
 
@@ -479,7 +517,7 @@ export function VoxWardShell({
           rightNavGroups={navModel.rightNavGroups}
           rightPinnedIds={rightPins}
           onRightPinsReorder={handleRightPinsReorder}
-          topBanner={topBanner}
+          topBanner={resolvedTopBanner}
           locales={VOXWARD_LOCALES}
           seasonalThemes={["halloween"]}
           themeControl="menu"
@@ -500,14 +538,14 @@ export function VoxWardShell({
           account={
             session
               ? { name: session.displayName }
-              : { name: zh ? "未登录" : "Guest", initials: "?" }
+              : { name: chromeCopy.guest, initials: "?" }
           }
           notifications={{ unread: notificationsCount }}
           pageHeader={{
-            title: pageTitle,
-            description: pageDescription,
-            meta: pageMeta,
-            breadcrumbs,
+            title: resolvedPageTitle,
+            description: resolvedPageDescription,
+            meta: resolvedPageMeta,
+            breadcrumbs: resolvedBreadcrumbs,
             actions: composedPageActions,
           }}
         >
@@ -516,16 +554,14 @@ export function VoxWardShell({
               <div className="vw-panel-card">
                 <BannerNotice
                   tone="warning"
-                  title={zh ? "需要登录会话" : "Session required"}
+                  title={chromeCopy.sessionRequiredTitle}
                   actions={
                     <Button variant="primary" size="sm" onClick={() => void navigate(loginHref)}>
-                      {zh ? "立即登录" : "Sign in"}
+                      {chromeCopy.signInNow}
                     </Button>
                   }
                 >
-                  {zh
-                    ? "请先登录操作员或频道管理员账号，再访问当前工作台内容。"
-                    : "Sign in with an operator or channel admin account to continue."}
+                  {chromeCopy.sessionRequiredBody}
                 </BannerNotice>
               </div>
             ) : (

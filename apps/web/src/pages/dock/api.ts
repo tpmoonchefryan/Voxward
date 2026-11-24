@@ -1,4 +1,5 @@
 import type { InternalClassification } from "@voxward/contracts";
+import { DEFAULT_VOXWARD_LOCALE, DOCK_COPY, pickLocale, type VoxWardLocale } from "../../i18n";
 
 export interface ScFeedItemView {
   readonly eventId: string;
@@ -77,16 +78,6 @@ export type DecisionActionResult =
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
-export const DOCK_ERROR_TEXT: Readonly<Record<string, string>> = {
-  UNAUTHENTICATED: "请先登录。",
-  FORBIDDEN: "当前账号权限已被撤销或无权访问此频道。",
-  DOWNSTREAM_READ_ONLY: "输出凭据不能执行此操作。",
-  CSRF_INVALID: "页面已过期，请刷新后重试。",
-  CHANNEL_NOT_FOUND: "未找到该频道。",
-  INVALID_REQUEST: "提交的参数无效。",
-  INTERNAL_ERROR: "服务暂时不可用，请稍后再试。",
-};
-
 export class DockApiFailure extends Error {
   readonly status: number;
   readonly code: string;
@@ -99,9 +90,13 @@ export class DockApiFailure extends Error {
   }
 }
 
-export function dockMessageFor(error: unknown): string {
-  if (error instanceof DockApiFailure) return DOCK_ERROR_TEXT[error.code] ?? "操作未完成，请稍后重试。";
-  return "无法连接服务，请检查网络后重试。";
+export function dockMessageFor(
+  error: unknown,
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): string {
+  const copy = pickLocale(DOCK_COPY, locale);
+  if (error instanceof DockApiFailure) return copy.errors[error.code] ?? copy.genericError;
+  return copy.networkError;
 }
 
 function codeOf(body: unknown): string {

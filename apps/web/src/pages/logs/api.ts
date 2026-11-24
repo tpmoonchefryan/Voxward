@@ -17,6 +17,12 @@ import {
   type LogViewerTechnicalItem,
   type TechnicalData,
 } from "@voxward/contracts";
+import {
+  DEFAULT_VOXWARD_LOCALE,
+  LOGS_COPY,
+  pickLocale,
+  type VoxWardLocale,
+} from "../../i18n";
 
 export type {
   LogPage,
@@ -166,49 +172,38 @@ export async function fetchIntegrationPage(
   return parsePage(await requestJson(url, options), parseIntegrationItem);
 }
 
-const CHANGE_KIND_LABELS: Readonly<Record<ChangeKind, string>> = {
-  CONFIG_CHANGED: "系统与策略配置变更",
-  MEMBER_GRANTED: "成员授权变更",
-  MEMBER_REVOKED: "成员权限收回",
-  CREDENTIAL_CHANGED: "输出令牌与凭据变更",
-  OUTPUT_GRANT_CHANGED: "桌面输出授权变更",
-  LIST_CHANGED: "观众名单调整",
-  TERM_CHANGED: "审核词库维护",
-  RULE_VERSION_PUBLISHED: "规则版本发布",
-  MANUAL_VERDICT: "人工审核裁决",
-  SCORE_CHANGED: "观众信任分调整",
-  SCORE_EXCEPTION_CHANGED: "计分例外状态变更",
-  DATA_REQUEST_CHANGED: "数据合规请求变更",
-};
-
-const OUTCOME_LABELS: Readonly<Record<ChangeOutcome, string>> = {
-  SUCCEEDED: "成功",
-  FAILED: "失败",
-  PARTIAL: "部分成功",
-};
-
-export function labelForChangeKind(kind: ChangeKind): string {
-  return CHANGE_KIND_LABELS[kind] ?? kind;
+export function labelForChangeKind(
+  kind: ChangeKind,
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): string {
+  return pickLocale(LOGS_COPY, locale).changeKinds[kind] ?? kind;
 }
 
-export function labelForChangeOutcome(outcome: ChangeOutcome): string {
-  return OUTCOME_LABELS[outcome] ?? outcome;
+export function labelForChangeOutcome(
+  outcome: ChangeOutcome,
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): string {
+  return pickLocale(LOGS_COPY, locale).changeOutcomes[outcome] ?? outcome;
 }
 
-/** A short Chinese message for the reader. The message depends only on the fixed code. */
-export function describeLogError(error: unknown): string {
-  if (!(error instanceof LogApiError)) return "加载失败。";
+/** A short message for the reader in the selected locale. The message depends only on the fixed code. */
+export function describeLogError(
+  error: unknown,
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): string {
+  const errors = pickLocale(LOGS_COPY, locale).errors;
+  if (!(error instanceof LogApiError)) return errors.nonError;
   switch (error.code) {
     case "UNAUTHENTICATED":
-      return "请先登录。";
+      return errors.UNAUTHENTICATED;
     case "FORBIDDEN":
-      return "没有查看该频道日志的权限。";
+      return errors.FORBIDDEN;
     case "NOT_FOUND":
-      return "这条日志不存在，或已经到期。";
+      return errors.NOT_FOUND;
     case "NETWORK":
-      return "无法连接服务器。";
+      return errors.NETWORK;
     default:
-      return "加载失败，请稍后再试。";
+      return errors.fallback;
   }
 }
 
@@ -216,7 +211,7 @@ async function requestJson(url: string, options: ApiOptions): Promise<unknown> {
   const send: FetchLike = options.fetchImpl ?? ((input, init) => fetch(input, init));
   let response: Response;
   try {
-    response = await send(url, { headers: { accept: "application/json" }, cache: "no-store" });
+    response = await send(url, { credentials: "same-origin", headers: { accept: "application/json" }, cache: "no-store" });
   } catch {
     throw new LogApiError("NETWORK", null);
   }

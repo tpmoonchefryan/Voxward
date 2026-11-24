@@ -74,9 +74,9 @@ describe("Blocked Management Page (VW-Draft-03B)", () => {
       </MemoryRouter>,
     );
 
-    expect(html).toContain("拦截管理");
-    expect(html).toContain("已确认拦截记录");
-    expect(html).toContain("黑名单用户管理");
-    expect(html).toContain("评分重判只校准观众信任分与规则统计");
+    expect(html).toContain("Blocked Management");
+    expect(html).toContain("Confirmed Blocked Records");
+    expect(html).toContain("Blocklist Users");
+    expect(html).toContain("without re-sending old blocked messages");
   });
 });

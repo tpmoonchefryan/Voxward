@@ -11,12 +11,18 @@ import {
   ProductLockup,
   Text,
 } from "@tcrn/ui-react/approved";
+import {
+  DEFAULT_VOXWARD_LOCALE,
+  LOGIN_COPY,
+  normalizeVoxWardLocale,
+  pickLocale,
+  type VoxWardLocale,
+} from "../../i18n";
 import { VOXWARD_LOCALES } from "../../shell/navigation-model";
 import {
   createShellPreferencesClient,
   ShellApiError,
   type ShellPreferencesClient,
-  type VoxWardLocale,
 } from "../../shell/shell-preferences-api";
 import { HalloweenBottomDecor, HalloweenTopGarland } from "./HalloweenDecor";
 
@@ -31,73 +37,6 @@ export function sanitizeLoginNext(rawNext: string | null): string {
   }
   return rawNext;
 }
-
-interface LoginCopy {
-  readonly pageAria: string;
-  readonly cardAria: string;
-  readonly heading: string;
-  readonly subtitle: string;
-  readonly accountLabel: string;
-  readonly accountPlaceholder: string;
-  readonly passwordLabel: string;
-  readonly passwordPlaceholder: string;
-  readonly showPassword: string;
-  readonly hidePassword: string;
-  readonly submitLabel: string;
-  readonly backHome: string;
-  readonly publicNavAria: string;
-  readonly sandboxLink: string;
-  readonly guidesLink: string;
-  readonly languageButtonAria: string;
-  readonly languageMenuLabel: string;
-  readonly invalidCredentialsError: string;
-  readonly networkError: string;
-}
-
-const LOGIN_COPY: Readonly<Record<VoxWardLocale, LoginCopy>> = {
-  "zh-CN": {
-    pageAria: "VoxWard 登录页",
-    cardAria: "登录 VoxWard",
-    heading: "登录",
-    subtitle: "输入操作员账号与密码以继续",
-    accountLabel: "登录账号",
-    accountPlaceholder: "输入登录账号",
-    passwordLabel: "密码",
-    passwordPlaceholder: "输入密码",
-    showPassword: "显示",
-    hidePassword: "隐藏",
-    submitLabel: "确认登录",
-    backHome: "返回概览",
-    publicNavAria: "公开入口",
-    sandboxLink: "演练沙盒",
-    guidesLink: "接入指南",
-    languageButtonAria: "切换登录页语言",
-    languageMenuLabel: "登录页显示语言",
-    invalidCredentialsError: "账号或密码不正确，请重试。",
-    networkError: "登录请求失败，请检查网络连接。",
-  },
-  en: {
-    pageAria: "VoxWard Sign In",
-    cardAria: "Sign in to VoxWard",
-    heading: "Sign in",
-    subtitle: "Enter your operator account and password to continue",
-    accountLabel: "Account",
-    accountPlaceholder: "Enter account",
-    passwordLabel: "Password",
-    passwordPlaceholder: "Enter password",
-    showPassword: "Show",
-    hidePassword: "Hide",
-    submitLabel: "Sign in",
-    backHome: "Back to overview",
-    publicNavAria: "Public destinations",
-    sandboxLink: "Sandbox",
-    guidesLink: "Guides",
-    languageButtonAria: "Switch sign-in page language",
-    languageMenuLabel: "Sign-in page language",
-    invalidCredentialsError: "Invalid account or password. Please try again.",
-    networkError: "Sign-in request failed. Check your network connection.",
-  },
-};
 
 export interface LoginPageProps {
   readonly client?: ShellPreferencesClient;
@@ -114,7 +53,7 @@ export function LoginPage({ client }: LoginPageProps) {
   const nextTarget = useMemo(() => sanitizeLoginNext(searchParams.get("next")), [searchParams]);
 
   // Ephemeral React state scoped to /login; never persisted or synced to account preferences.
-  const [loginLocale, setLoginLocale] = useState<VoxWardLocale>("zh-CN");
+  const [loginLocale, setLoginLocale] = useState<VoxWardLocale>(DEFAULT_VOXWARD_LOCALE);
   const [localeMenuOpen, setLocaleMenuOpen] = useState(false);
 
   const [loginName, setLoginName] = useState("");
@@ -123,7 +62,7 @@ export function LoginPage({ client }: LoginPageProps) {
   const [busy, setBusy] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
 
-  const copy = LOGIN_COPY[loginLocale] ?? LOGIN_COPY["zh-CN"];
+  const copy = pickLocale(LOGIN_COPY, loginLocale);
   const currentLocaleOption =
     VOXWARD_LOCALES.find((opt) => opt.locale === loginLocale) ?? VOXWARD_LOCALES[0];
 
@@ -220,7 +159,7 @@ export function LoginPage({ client }: LoginPageProps) {
           onClick={() => setLocaleMenuOpen((prev) => !prev)}
         >
           <Icon name="globe-2" size="sm" decorative />
-          <span>{currentLocaleOption?.nativeName ?? "简体中文"}</span>
+          <span>{currentLocaleOption?.nativeName ?? "English"}</span>
           <Icon name="chevron-down" size="sm" decorative />
         </Button>
         <Menu
@@ -242,7 +181,7 @@ export function LoginPage({ client }: LoginPageProps) {
               </span>
             ),
             onSelect: () => {
-              setLoginLocale(opt.locale === "en" ? "en" : "zh-CN");
+              setLoginLocale(normalizeVoxWardLocale(opt.locale));
               setLocaleMenuOpen(false);
             },
           }))}

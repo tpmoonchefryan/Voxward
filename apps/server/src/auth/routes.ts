@@ -91,7 +91,7 @@ const SHELL_PREF_BODY = z
     pins: z.array(z.string().min(1).max(64)).max(24),
     rightPins: z.array(z.string().min(1).max(64)).max(24).optional(),
     theme: z.enum(["light", "dark", "halloween"]).optional(),
-    locale: z.string().min(2).max(16).optional(),
+    locale: z.enum(["en", "zh-CN", "ja", "ko", "fr"]).optional(),
     density: z.enum(["compact", "comfortable"]).optional(),
   })
   .strict()

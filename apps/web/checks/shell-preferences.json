@@ -78,5 +78,5 @@
     "data"
   ],
   "failureReported": true,
-  "command": "pnpm -C /home/ryanlan/Code/Voxward exec vitest run apps/server/test/auth/shell-preferences.test.ts"
+  "command": "pnpm exec vitest run apps/server/test/auth/shell-preferences.test.ts"
 }

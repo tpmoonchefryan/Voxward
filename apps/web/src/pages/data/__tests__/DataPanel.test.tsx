@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { REQUEST_STATUS_COPY, VOXWARD_SUPPORTED_LOCALES } from "../../../i18n";
 import type { RequestView, SubjectPanel } from "../api";
 import { DataPanelView, type DataPanelViewProps } from "../DataPanel";
 import { DeleteActions, MODE_COPY } from "../DeleteActions";
@@ -56,36 +57,35 @@ function panel(overrides: Partial<DataPanelViewProps> = {}): string {
 describe("data panel without data.handle (VW-SUB034-AC001: no operations for a user without the permission)", () => {
   it("shows the refusal and no lookup, subject, deletion or verification action", () => {
     const html = panel({ dataHandle: false, subject: SUBJECT, flow: IDLE_FLOW });
-    expect(html).toContain("当前账号没有数据管理权限");
+    expect(html).toContain("Current account lacks data compliance permission");
     expect(html).not.toContain("<form");
     expect(html).not.toContain("<input");
-    expect(html).not.toContain("主体概况");
-    expect(html).not.toContain("仅删除数据");
-    expect(html).not.toContain("删除并加入记分例外名单");
-    expect(html).not.toContain("核验通过");
+    expect(html).not.toContain("Subject Profile");
+    expect(html).not.toContain("Erase stored data only");
+    expect(html).not.toContain("Verify: Account Ownership");
   });
 
   it("shows nothing about a subject while the capability is still being read", () => {
     const html = panel({ dataHandle: null, subject: SUBJECT });
-    expect(html).toContain("正在检查权限");
-    expect(html).not.toContain("仅删除数据");
+    expect(html).toContain("Checking permission");
+    expect(html).not.toContain("Erase stored data only");
   });
 });
 
 describe("data panel with data.handle", () => {
   it("shows both deletion entries, what each does, and the minimal preference note", () => {
     const html = panel();
-    expect(html).toContain("仅删除数据");
-    expect(html).toContain("删除并加入记分例外名单");
+    expect(html).toContain("Erase stored data only");
+    expect(html).toContain("Erase data &amp; add score exception");
     expect(html).toContain(MODE_COPY.DELETE_DATA_ONLY.effect);
     expect(html).toContain(MODE_COPY.DELETE_AND_EXCEPT.effect);
-    expect(html).toContain("最小偏好记录");
-    expect(html).toContain("登记本身不删除任何数据");
+    expect(html).toContain("minimal preference record");
+    expect(html).toContain("Registration itself removes no data");
   });
 
   it("states that registration does not delete data, and that the external copy is not controlled", () => {
     const html = panel();
-    expect(html).toContain("YouTube 原始内容与平台侧副本不由本实例删除");
+    expect(html).toContain("YouTube original messages and platform copies are outside this instance");
     expect(html).not.toContain("已删除");
   });
 
@@ -103,7 +103,7 @@ describe("data panel with data.handle", () => {
         ],
       },
     });
-    expect(html.match(/<button[^>]*>[\s\S]*?核验通过：确认账号归属/g)?.length).toBe(1);
+    expect(html.match(/<button[^>]*>[\s\S]*?Verify: Account Ownership/g)?.length).toBe(1);
     expect(html).toContain(STAGE_TEXT.AWAITING_EXECUTION);
     expect(html).not.toMatch(/nickname/i);
   });
@@ -121,8 +121,8 @@ describe("data panel with data.handle", () => {
   it("shows the chosen option and a refusal reason in fixed text", () => {
     const flow: DeleteFlow = { phase: "confirming", mode: "DELETE_AND_EXCEPT", errorCode: "FORBIDDEN" };
     const html = panel({ flow });
-    expect(html).toContain("将登记：删除并加入记分例外名单");
-    expect(html).toContain("当前账号没有数据管理权限，无法执行此操作。");
+    expect(html).toContain("Register request: Erase data &amp; add score exception");
+    expect(html).toContain("Current account has no data compliance permission for this operation.");
   });
 
   it("shows the registered state as pending verification, not as deleted", () => {
@@ -134,13 +134,15 @@ describe("data panel with data.handle", () => {
         onCancel={() => undefined}
       />,
     );
-    expect(html).toContain("已登记请求，状态：待核验。尚未删除任何数据。");
-    expect(html).not.toContain("仅删除数据");
+    expect(html).toContain("Request registered; status: Pending Verification. No data has been removed yet.");
+    expect(html).not.toContain("Erase stored data only");
   });
 
-  it("no stage text claims that a deletion has finished", () => {
-    for (const text of Object.values(STAGE_TEXT)) {
-      expect(text).not.toMatch(/已删除|删除完成/);
+  it("no stage text across any locale claims that a deletion has finished", () => {
+    for (const loc of VOXWARD_SUPPORTED_LOCALES) {
+      for (const text of Object.values(REQUEST_STATUS_COPY[loc].stages)) {
+        expect(text).not.toMatch(/已删除|删除完成|All data deleted/i);
+      }
     }
   });
 });

@@ -17,6 +17,7 @@ import {
   useLiveStreamAutoScroll,
   type SuperChatItemDisplay,
 } from "../../components/youtube-sc";
+import { MODERATION_COPY, pickLocale, type ModerationCopy, type VoxWardLocale } from "../../i18n";
 import { VoxWardShell, useVoxWardShell } from "../../shell";
 import {
   createModerationApi,
@@ -31,16 +32,16 @@ function nextOpId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function classificationLabel(code: string): string {
+function classificationLabel(code: string, copy: ModerationCopy): string {
   switch (code) {
     case "ALLOW_MEANINGFUL":
-      return "恢复积分放行";
+      return copy.classAllowScore;
     case "ALLOW_NOISE":
-      return "不加分放行";
+      return copy.classAllowNoScore;
     case "BLOCK":
-      return "已确认拦截";
+      return copy.classBlock;
     default:
-      return "处理完成";
+      return copy.classDone;
   }
 }
 
@@ -50,6 +51,7 @@ export interface ModerationWorkbenchProps {
   readonly initialSnapshot?: ModerationSnapshot | null;
   readonly onScStatusChange?: (enabled: boolean) => void;
   readonly pollIntervalMs?: number;
+  readonly locale?: VoxWardLocale;
 }
 
 export function ModerationWorkbench({
@@ -58,7 +60,12 @@ export function ModerationWorkbench({
   initialSnapshot = null,
   onScStatusChange,
   pollIntervalMs = 3000,
+  locale,
 }: ModerationWorkbenchProps) {
+  const { locale: shellLocale } = useVoxWardShell();
+  const resolvedLocale = locale ?? shellLocale;
+  const copy = pickLocale(MODERATION_COPY, resolvedLocale);
+
   const client = useMemo(() => api ?? createModerationApi(), [api]);
   const [snapshot, setSnapshot] = useState<ModerationSnapshot | null>(initialSnapshot);
   const [candidates, setCandidates] = useState<readonly CandidateCardView[]>([]);
@@ -86,9 +93,9 @@ export function ModerationWorkbench({
         prev.filter((id) => snap.feed.reviewQueue.some((task) => task.taskId === id)),
       );
     } catch (error) {
-      setFeedback({ tone: "danger", text: moderationMessageFor(error) });
+      setFeedback({ tone: "danger", text: moderationMessageFor(error, resolvedLocale) });
     }
-  }, [channelId, client, onScStatusChange]);
+  }, [channelId, client, onScStatusChange, resolvedLocale]);
 
   useEffect(() => {
     if (initialSnapshot !== null) {
@@ -202,16 +209,16 @@ export function ModerationWorkbench({
         classification,
       });
       if (result.conflict) {
-        setConflictText(result.reason || "该条审核任务已被其他管理员处理，请刷新队列获取最新状态。");
+        setConflictText(result.reason || copy.conflictDefault);
         return;
       }
       setFeedback({
         tone: "positive",
-        text: `已提交裁决：${classificationLabel(classification)}。`,
+        text: copy.decidedFeedback(classificationLabel(classification, copy)),
       });
       await loadAll();
     } catch (error) {
-      setFeedback({ tone: "danger", text: moderationMessageFor(error) });
+      setFeedback({ tone: "danger", text: moderationMessageFor(error, resolvedLocale) });
     } finally {
       setBusyKey(null);
     }
@@ -232,17 +239,20 @@ export function ModerationWorkbench({
         if (res.conflict) conflicts += 1;
       }
       if (conflicts > 0) {
-        setConflictText(`批量处理中有 ${conflicts} 条任务已被其他成员抢先处理，已保留冲突保护。`);
+        setConflictText(copy.batchConflictFeedback(conflicts));
       } else {
         setFeedback({
           tone: "positive",
-          text: `已批量完成 ${selectedTaskIds.length} 条审核任务（${classificationLabel(classification)}）。`,
+          text: copy.batchDoneFeedback(
+            selectedTaskIds.length,
+            classificationLabel(classification, copy),
+          ),
         });
       }
       setSelectedTaskIds([]);
       await loadAll();
     } catch (error) {
-      setFeedback({ tone: "danger", text: moderationMessageFor(error) });
+      setFeedback({ tone: "danger", text: moderationMessageFor(error, resolvedLocale) });
     } finally {
       setBusyKey(null);
     }
@@ -259,10 +269,10 @@ export function ModerationWorkbench({
         categoryCode: chosenCategory,
         matchKind: "CONTAINS",
       });
-      setFeedback({ tone: "positive", text: "候选词已确认并写入对应黑名单分类词库。" });
+      setFeedback({ tone: "positive", text: copy.candidateConfirmed });
       await loadAll();
     } catch (error) {
-      setFeedback({ tone: "danger", text: moderationMessageFor(error) });
+      setFeedback({ tone: "danger", text: moderationMessageFor(error, resolvedLocale) });
     } finally {
       setBusyKey(null);
     }
@@ -273,10 +283,10 @@ export function ModerationWorkbench({
     setFeedback(null);
     try {
       await client.rejectCandidate(channelId, card.id);
-      setFeedback({ tone: "positive", text: "已忽略该候选词建议。" });
+      setFeedback({ tone: "positive", text: copy.candidateRejected });
       await loadAll();
     } catch (error) {
-      setFeedback({ tone: "danger", text: moderationMessageFor(error) });
+      setFeedback({ tone: "danger", text: moderationMessageFor(error, resolvedLocale) });
     } finally {
       setBusyKey(null);
     }
@@ -286,10 +296,10 @@ export function ModerationWorkbench({
     setBusyKey(deliveryId);
     try {
       await client.resendDelivery(channelId, deliveryId, nextOpId("resend"));
-      setFeedback({ tone: "positive", text: "已重新发起下游投屏投递。" });
+      setFeedback({ tone: "positive", text: copy.resentSuccess });
       await loadAll();
     } catch (error) {
-      setFeedback({ tone: "danger", text: moderationMessageFor(error) });
+      setFeedback({ tone: "danger", text: moderationMessageFor(error, resolvedLocale) });
     } finally {
       setBusyKey(null);
     }
@@ -304,13 +314,13 @@ export function ModerationWorkbench({
   return (
     <div className="vw-stack-md">
       {snapshot?.faults.platformFault ? (
-        <BannerNotice tone="warning" title="直播平台连接提示">
+        <BannerNotice tone="warning" title={copy.conflictTitle}>
           {snapshot.faults.platformFault.message}
         </BannerNotice>
       ) : null}
 
       {snapshot?.faults.modelFault ? (
-        <BannerNotice tone="warning" title="AI 服务降级提示">
+        <BannerNotice tone="warning" title={copy.conflictTitle}>
           {snapshot.faults.modelFault.message}
         </BannerNotice>
       ) : null}
@@ -318,10 +328,10 @@ export function ModerationWorkbench({
       {conflictText ? (
         <BannerNotice
           tone="warning"
-          title="审核状态并发冲突"
+          title={copy.conflictTitle}
           actions={
             <Button size="sm" variant="secondary" onClick={() => void loadAll()}>
-              立即刷新
+              {copy.refreshNow}
             </Button>
           }
         >
@@ -332,40 +342,40 @@ export function ModerationWorkbench({
       {feedback ? <BannerNotice tone={feedback.tone}>{feedback.text}</BannerNotice> : null}
 
       <SectionTabs
-        label="审核工作区视图"
+        label={copy.tabAria}
         selectedId={activeTab}
         onSelect={setActiveTab}
         items={[
-          { id: "queue", label: `实时审核工作台 (${queue.length})` },
-          { id: "candidates", label: `AI 候选词待确认 (${pendingCandidates.length})` },
+          { id: "queue", label: copy.queueTab(queue.length) },
+          { id: "candidates", label: copy.candidatesTab(pendingCandidates.length) },
         ]}
       >
         {activeTab === "queue" ? (
           <div className="vw-grid-2">
-            <section className="vw-panel-card" aria-label="实时待审队列">
+            <section className="vw-panel-card" aria-label={copy.queueAria}>
               <div className="vw-row-between">
-                <strong>实时待审队列 ({queue.length})</strong>
+                <strong>{copy.queueHeading(queue.length)}</strong>
                 <div className="vw-row-wrap">
                   <label className="vw-row-wrap">
                     <Checkbox
                       checked={allQueueSelected}
                       onChange={(event) => toggleAllTasks(event.target.checked)}
                     />
-                    <span>全选</span>
+                    <span>{copy.selectAll}</span>
                   </label>
                 </div>
               </div>
 
               {selectedTaskIds.length > 0 ? (
-                <div className="vw-row-wrap" role="region" aria-label="批量操作栏">
-                  <span className="vw-muted">已选 {selectedTaskIds.length} 项：</span>
+                <div className="vw-row-wrap" role="region" aria-label={copy.queueAria}>
+                  <span className="vw-muted">{copy.selectedPrefix(selectedTaskIds.length)}</span>
                   <Button
                     size="sm"
                     variant="primary"
                     disabled={busyKey !== null}
                     onClick={() => void handleBatchDecide("ALLOW_MEANINGFUL")}
                   >
-                    重判放行 (恢复积分)
+                    {copy.approveWithScore}
                   </Button>
                   <Button
                     size="sm"
@@ -373,7 +383,7 @@ export function ModerationWorkbench({
                     disabled={busyKey !== null}
                     onClick={() => void handleBatchDecide("ALLOW_NOISE")}
                   >
-                    放行 (不加分)
+                    {copy.approveNoScore}
                   </Button>
                   <Button
                     size="sm"
@@ -381,15 +391,15 @@ export function ModerationWorkbench({
                     disabled={busyKey !== null}
                     onClick={() => void handleBatchDecide("BLOCK")}
                   >
-                    确认拦截
+                    {copy.confirmBlock}
                   </Button>
                 </div>
               ) : null}
 
               {queue.length === 0 ? (
                 <EmptyState
-                  title="当前无待审核发言"
-                  description="触发边界审查或模型待定的弹幕与 Super Chat 将自动进入此队列。"
+                  title={copy.queueEmptyTitle}
+                  description={copy.queueEmptyDesc}
                 />
               ) : (
                 <div className="vw-stack-sm">
@@ -418,9 +428,10 @@ export function ModerationWorkbench({
                             </strong>
                           </label>
                           <div className="vw-row-wrap">
-                            <Badge tone="warning">待裁决</Badge>
+                            <Badge tone="warning">{copy.pendingBadge}</Badge>
                             <span className="vw-caption">
-                              截止 {new Date(item.deadlineAt).toLocaleTimeString()}
+                              {copy.deadlinePrefix}
+                              {new Date(item.deadlineAt).toLocaleTimeString()}
                             </span>
                           </div>
                         </div>
@@ -437,13 +448,13 @@ export function ModerationWorkbench({
                                   variant="quiet"
                                   onClick={() => toggleExpandBody(item.taskId)}
                                 >
-                                  {expanded ? "收起原文" : "展开全文"}
+                                  {expanded ? copy.collapseOriginal : copy.expandFull}
                                 </Button>
                               </div>
                             ) : null}
                           </div>
                         ) : (
-                          <span className="vw-caption">当前角色已折叠显示敏感原文片段</span>
+                          <span className="vw-caption">{copy.foldedSnippetNotice}</span>
                         )}
 
                         <div className="vw-ward-line__actions">
@@ -454,7 +465,7 @@ export function ModerationWorkbench({
                             disabled={busyKey !== null}
                             onClick={() => void handleDecideSingle(item.taskId, "ALLOW_MEANINGFUL")}
                           >
-                            重判放行 (恢复积分)
+                            {copy.approveWithScore}
                           </Button>
                           <Button
                             variant="secondary"
@@ -462,7 +473,7 @@ export function ModerationWorkbench({
                             disabled={busyKey !== null}
                             onClick={() => void handleDecideSingle(item.taskId, "ALLOW_NOISE")}
                           >
-                            放行 (不加分)
+                            {copy.approveNoScore}
                           </Button>
                           <Button
                             variant="danger"
@@ -470,7 +481,7 @@ export function ModerationWorkbench({
                             disabled={busyKey !== null}
                             onClick={() => void handleDecideSingle(item.taskId, "BLOCK")}
                           >
-                            确认拦截
+                            {copy.confirmBlock}
                           </Button>
                         </div>
                       </article>
@@ -480,18 +491,18 @@ export function ModerationWorkbench({
               )}
             </section>
 
-            <section className="vw-panel-card vw-yt-stream-panel" aria-label="审核旁路实时流与醒目留言条">
+            <section className="vw-panel-card vw-yt-stream-panel" aria-label={copy.streamAria}>
               <div className="vw-row-between">
-                <strong>实时审核旁路流与 SC 置顶条</strong>
-                <span className="vw-caption">{unifiedStream.length} 条近期记录</span>
+                <strong>{copy.streamHeading}</strong>
+                <span className="vw-caption">{copy.streamRecentCount(unifiedStream.length)}</span>
               </div>
 
-              <SuperChatOverlayBar items={scTickerItems} />
+              <SuperChatOverlayBar items={scTickerItems} locale={resolvedLocale} />
 
               {unifiedStream.length === 0 ? (
                 <EmptyState
-                  title="暂无近期旁路消息"
-                  description="频道进入直播状态后，系统判定的所有消息与投递回执会同步列于此处。"
+                  title={copy.streamEmptyTitle}
+                  description={copy.streamEmptyDesc}
                 />
               ) : (
                 <div
@@ -539,7 +550,7 @@ export function ModerationWorkbench({
                                 </strong>
                                 <div className="vw-row-wrap">
                                   <Badge tone={entry.localStatus === "BLOCK" ? "danger" : "positive"}>
-                                    {classificationLabel(entry.classification)}
+                                    {classificationLabel(entry.classification, copy)}
                                   </Badge>
                                 </div>
                               </div>
@@ -558,20 +569,20 @@ export function ModerationWorkbench({
                                       variant="quiet"
                                       onClick={() => toggleExpandBody(entry.eventId)}
                                     >
-                                      {expanded ? "收起内容" : "查看原文"}
+                                      {expanded ? copy.collapseContent : copy.viewOriginal}
                                     </Button>
                                   ) : null}
                                 </div>
                               ) : null}
                               {entry.deliveryId && entry.deliveryStatus === "FAILED" ? (
                                 <div className="vw-row-between">
-                                  <span className="vw-caption">下游投屏投递失败</span>
+                                  <span className="vw-caption">{copy.deliveryFailed}</span>
                                   <Button
                                     size="sm"
                                     variant="secondary"
                                     onClick={() => void handleResend(entry.deliveryId!)}
                                   >
-                                    重新投递
+                                    {copy.resendBtn}
                                   </Button>
                                 </div>
                               ) : null}
@@ -586,15 +597,15 @@ export function ModerationWorkbench({
             </section>
           </div>
         ) : (
-          <section className="vw-panel-card" aria-label="AI 候选词待确认">
+          <section className="vw-panel-card" aria-label={copy.candidatesAria}>
             <div className="vw-row-between">
-              <strong>AI 提取候选敏感词 ({pendingCandidates.length})</strong>
-              <span className="vw-muted">确认后将归入所选黑名单分类</span>
+              <strong>{copy.candidatesHeading(pendingCandidates.length)}</strong>
+              <span className="vw-muted">{copy.candidatesHint}</span>
             </div>
             {pendingCandidates.length === 0 ? (
               <EmptyState
-                title="暂无待确认候选词"
-                description="当模型发现疑似新兴黑话或绕过变形词时，会在此提交人工确认。"
+                title={copy.candidatesEmptyTitle}
+                description={copy.candidatesEmptyDesc}
               />
             ) : (
               <div className="vw-stack-sm">
@@ -607,7 +618,7 @@ export function ModerationWorkbench({
                         <strong>
                           <UntrustedText text={card.term} />
                         </strong>
-                        <Badge tone="warning">待人工确认</Badge>
+                        <Badge tone="warning">{copy.pendingConfirmBadge}</Badge>
                       </div>
                       {card.note ? (
                         <div className="vw-muted">
@@ -617,7 +628,7 @@ export function ModerationWorkbench({
                       <div className="vw-input-action-row">
                         <div className="vw-field-col--compact">
                           <label className="vw-field-label" htmlFor={`cand-cat-${card.id}`}>
-                            归入黑名单分类
+                            {copy.assignCategoryLabel}
                           </label>
                           <Select
                             id={`cand-cat-${card.id}`}
@@ -634,7 +645,7 @@ export function ModerationWorkbench({
                                     value: c.code,
                                     label: c.label,
                                   }))
-                                : [{ value: "spam", label: "垃圾刷屏" }]
+                                : [{ value: "spam", label: copy.defaultSpamCategory }]
                             }
                           />
                         </div>
@@ -646,7 +657,7 @@ export function ModerationWorkbench({
                             disabled={busyKey !== null}
                             onClick={() => void handleConfirmCandidate(card)}
                           >
-                            确认加入黑名单
+                            {copy.confirmAddBlacklist}
                           </Button>
                           <Button
                             size="sm"
@@ -654,7 +665,7 @@ export function ModerationWorkbench({
                             disabled={busyKey !== null}
                             onClick={() => void handleRejectCandidate(card)}
                           >
-                            忽略
+                            {copy.ignoreBtn}
                           </Button>
                         </div>
                       </div>
@@ -682,13 +693,16 @@ export function ModerationPage({ api }: { readonly api?: ModerationApi }) {
       channelId={resolvedChannelId}
       showChannelSelector
       requireAuth
-      pageTitle="实时审核"
-      pageDescription="两栏协同处理待审队列与直播旁路流，并审核 AI 自动提取的新增敏感候选词。"
-      pageMeta={
-        <Badge tone={scEnabled ? "positive" : "neutral"}>
-          {scEnabled ? "SC 精翻已开启" : "SC 精翻未开启"}
-        </Badge>
-      }
+      pageTitle={(locale) => pickLocale(MODERATION_COPY, locale).pageTitle}
+      pageDescription={(locale) => pickLocale(MODERATION_COPY, locale).pageDescription}
+      pageMeta={(locale) => {
+        const c = pickLocale(MODERATION_COPY, locale);
+        return (
+          <Badge tone={scEnabled ? "positive" : "neutral"}>
+            {scEnabled ? c.scOn : c.scOff}
+          </Badge>
+        );
+      }}
     >
       <ModerationWorkbench
         channelId={resolvedChannelId}

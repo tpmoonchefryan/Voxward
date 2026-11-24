@@ -9,7 +9,7 @@ describe("Admin & Settings Page (VW-Draft-04)", () => {
     expect(routes.map((r) => r.path)).toEqual(["/admin/:channelId?", "/settings/:channelId?"]);
   });
 
-  it("renders SettingsLayout defaulting to 黑名单词条 with CSV template download and no 常规与外观 section", () => {
+  it("renders SettingsLayout defaulting to Blacklist Terms with CSV template download and no General & Appearance section", () => {
     const html = renderToStaticMarkup(
       <MemoryRouter initialEntries={["/settings/ch_demo_1"]}>
         <Routes>
@@ -18,22 +18,22 @@ describe("Admin & Settings Page (VW-Draft-04)", () => {
       </MemoryRouter>,
     );
 
-    expect(html).toContain("系统设置");
-    expect(html).not.toContain("常规与外观");
-    expect(html).toContain("规则与词库");
-    expect(html).toContain("黑名单词条");
-    expect(html).toContain("白名单词条");
-    expect(html).toContain("下载 CSV 模板");
+    expect(html).toContain("Settings");
+    expect(html).not.toContain("General &amp; Appearance");
+    expect(html).toContain("Rules &amp; Wordlists");
+    expect(html).toContain("Blacklist Terms");
+    expect(html).toContain("Whitelist Terms");
+    expect(html).toContain("Download CSV Template");
     expect(html).toContain("data-download-csv-template");
-    expect(html).toContain("计分与运行策略");
-    expect(html).toContain("数据保留策略");
+    expect(html).toContain("Scoring &amp; Runtime");
+    expect(html).toContain("Data Retention");
   });
 
   it("builds valid CSV templates for both blacklist and whitelist term libraries", () => {
     const categories = [
-      { code: "spam", label: "垃圾刷屏", listKind: "BLACKLIST" as const, description: "", createdAt: "2026-11-18T00:00:00Z" },
-      { code: "sensitive", label: "高敏禁词", listKind: "BLACKLIST" as const, description: "", createdAt: "2026-11-18T00:00:00Z" },
-      { code: "friendly", label: "常用热梗", listKind: "WHITELIST" as const, description: "", createdAt: "2026-11-18T00:00:00Z" },
+      { code: "spam", label: "Spam", listKind: "BLACKLIST" as const, description: "", createdAt: "2026-11-18T00:00:00Z" },
+      { code: "sensitive", label: "Sensitive", listKind: "BLACKLIST" as const, description: "", createdAt: "2026-11-18T00:00:00Z" },
+      { code: "friendly", label: "Friendly", listKind: "WHITELIST" as const, description: "", createdAt: "2026-11-18T00:00:00Z" },
     ];
 
     const blk = buildTermCsvTemplate("BLACKLIST", categories);

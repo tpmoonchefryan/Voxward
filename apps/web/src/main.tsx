@@ -8,6 +8,7 @@ import { tcrnComponentCss } from "@tcrn/ui-react/approved";
 import "./styles/voxward.css";
 import "./platform-protocols/youtube-sc.css";
 import { router } from "./routes";
+import { VoxWardGuestPrefsProvider } from "./shell/guest-prefs-context";
 
 function ensureTcrnComponentStyles(): void {
   if (typeof document === "undefined") {
@@ -32,6 +33,8 @@ if (rootElement === null) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <VoxWardGuestPrefsProvider>
+      <RouterProvider router={router} />
+    </VoxWardGuestPrefsProvider>
   </StrictMode>,
 );

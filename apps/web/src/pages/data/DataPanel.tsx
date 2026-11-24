@@ -4,11 +4,12 @@ import type { DeleteMode } from "@voxward/contracts";
 import { Badge, Button, Card, EmptyState, Input, KeyValueList, TableShell } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
+import { DATA_COPY, DEFAULT_VOXWARD_LOCALE, pickLocale, type DataCopy, type VoxWardLocale } from "../../i18n";
 import { VoxWardShell, useVoxWardShell } from "../../shell";
 import { createDataApi, messageFor, type DataApi, type SubjectPanel, type VerificationInput } from "./api";
 import { DeleteActions } from "./DeleteActions";
 import { deleteRequestInput, IDLE_FLOW, reduceDeleteFlow, type DeleteFlow } from "./flow";
-import { NOTICE_TEXT, RequestStatus } from "./RequestStatus";
+import { RequestStatus } from "./RequestStatus";
 
 export interface DataPanelViewProps {
   readonly channelId: string;
@@ -18,30 +19,38 @@ export interface DataPanelViewProps {
   readonly subject: SubjectPanel | null;
   readonly flow: DeleteFlow;
   readonly message: string | null;
+  readonly locale?: VoxWardLocale;
   readonly onQueryChange: (value: string) => void;
   readonly onLookup: () => void;
   readonly onChoose: (mode: DeleteMode) => void;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
   readonly onVerify: (requestId: string, input: VerificationInput) => void;
+  readonly onExecute?: (requestId: string) => void;
 }
 
-function listLabel(list: SubjectPanel["list"]): string {
-  if (list === "BLACKLIST") return "频道黑名单";
-  if (list === "WHITELIST") return "频道白名单";
-  return "常规观众";
+function listLabel(list: SubjectPanel["list"], copy: DataCopy): string {
+  if (list === "BLACKLIST") return copy.listBlacklist;
+  if (list === "WHITELIST") return copy.listWhitelist;
+  return copy.listNormal;
 }
 
-function SubjectSummary({ subject }: { readonly subject: SubjectPanel }) {
+function SubjectSummary({
+  subject,
+  copy,
+}: {
+  readonly subject: SubjectPanel;
+  readonly copy: DataCopy;
+}) {
   const uniqueNotices = [...new Set(subject.notices)];
   return (
-    <section aria-label="主体概况" className="vw-panel-card">
-      <h2>主体概况</h2>
+    <section aria-label={copy.summaryAria} className="vw-panel-card">
+      <h2>{copy.summaryHeading}</h2>
       <KeyValueList
         items={[
           {
             key: "ref",
-            label: "主体编号",
+            label: copy.labelSubjectRef,
             value: (
               <bdi>
                 <UntrustedText text={subject.subjectRef} />
@@ -50,12 +59,12 @@ function SubjectSummary({ subject }: { readonly subject: SubjectPanel }) {
           },
           {
             key: "score",
-            label: "当前信任积分",
-            value: subject.currentScore === null ? "未建分" : String(subject.currentScore),
+            label: copy.labelScore,
+            value: subject.currentScore === null ? copy.scoreUnset : String(subject.currentScore),
           },
           {
             key: "list",
-            label: "名单标记",
+            label: copy.labelList,
             value: (
               <Badge
                 tone={
@@ -66,42 +75,42 @@ function SubjectSummary({ subject }: { readonly subject: SubjectPanel }) {
                       : "neutral"
                 }
               >
-                {listLabel(subject.list)}
+                {listLabel(subject.list, copy)}
               </Badge>
             ),
           },
           {
             key: "exception",
-            label: "计分例外状态",
-            value: subject.exception?.active ? "已启用例外（新发言入人工队列）" : "按正常规则计分",
+            label: copy.labelException,
+            value: subject.exception?.active ? copy.exceptionActive : copy.exceptionNormal,
           },
           {
             key: "ledger",
-            label: "积分流水记录数",
-            value: `${subject.ledgerEntryCount} 条`,
+            label: copy.labelLedger,
+            value: copy.ledgerCount(subject.ledgerEntryCount),
           },
         ]}
       />
 
       {subject.retention.length > 0 ? (
         <TableShell
-          label="类别与数据保留周期"
+          label={copy.retentionTableLabel}
           columns={[
-            { key: "category", label: "数据类别" },
-            { key: "count", label: "保留记录条数" },
-            { key: "days", label: "保留上限（天）" },
+            { key: "category", label: copy.colCategory },
+            { key: "count", label: copy.colCount },
+            { key: "days", label: copy.colDays },
           ]}
           rows={subject.retention.map((row) => ({
             category: row.category,
             count: row.count,
-            days: `${row.retentionDays} 天`,
+            days: copy.daysUnit(row.retentionDays),
           }))}
         />
       ) : null}
 
       {uniqueNotices.map((code) => (
         <BannerNotice key={code} tone="warning">
-          {NOTICE_TEXT[code] ?? "外部平台数据副本不由本实例统一清理。"}
+          {copy.notices[code] ?? copy.noticeFallback}
         </BannerNotice>
       ))}
     </section>
@@ -115,18 +124,22 @@ export function DataPanelView({
   subject,
   flow,
   message,
+  locale = DEFAULT_VOXWARD_LOCALE,
   onQueryChange,
   onLookup,
   onChoose,
   onConfirm,
   onCancel,
   onVerify,
+  onExecute,
 }: DataPanelViewProps) {
+  const copy = pickLocale(DATA_COPY, locale);
+
   if (dataHandle === null) {
     return (
-      <section aria-label="数据权限检测">
+      <section aria-label={copy.checkingAria}>
         <Card>
-          <EmptyState title="正在检查权限…" description={`当前正在核实频道 ${channelId} 的数据合规授权。`} />
+          <EmptyState title={copy.checkingTitle} description={copy.checkingDesc(channelId)} />
         </Card>
       </section>
     );
@@ -134,10 +147,8 @@ export function DataPanelView({
 
   if (!dataHandle) {
     return (
-      <section aria-label="无数据管理权限">
-        <BannerNotice tone="warning">
-          当前账号没有数据管理权限，请联系频道所有者在「成员与权限」授予数据合规处置角色。
-        </BannerNotice>
+      <section aria-label={copy.noPermAria}>
+        <BannerNotice tone="warning">{copy.noPermMsg}</BannerNotice>
       </section>
     );
   }
@@ -146,7 +157,7 @@ export function DataPanelView({
     <div className="vw-stack-lg">
       {message ? <BannerNotice tone="warning">{message}</BannerNotice> : null}
 
-      <section className="vw-panel-card" aria-label="按观众标识查询">
+      <section className="vw-panel-card" aria-label={copy.lookupAria}>
         <form
           className="vw-input-action-row"
           onSubmit={(event) => {
@@ -156,33 +167,42 @@ export function DataPanelView({
         >
           <div className="vw-field-col">
             <label className="vw-field-label" htmlFor="data-subject-lookup">
-              观众唯一标识（Subject Ref）
+              {copy.subjectRefLabel}
             </label>
             <Input
               id="data-subject-lookup"
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="输入稳定主体编号，例如：sub_1024"
+              placeholder={copy.subjectRefPlaceholder}
             />
           </div>
           <Button type="submit" variant="primary" disabled={query.trim() === ""}>
-            检索主体档案
+            {copy.lookupBtn}
           </Button>
         </form>
       </section>
 
       {subject !== null ? (
         <div className="vw-stack-lg">
-          <SubjectSummary subject={subject} />
-          <DeleteActions flow={flow} onChoose={onChoose} onConfirm={onConfirm} onCancel={onCancel} />
-          <RequestStatus requests={subject.requests} canVerify={true} onVerify={onVerify} />
+          <SubjectSummary subject={subject} copy={copy} />
+          <DeleteActions
+            flow={flow}
+            locale={locale}
+            onChoose={onChoose}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+          />
+          <RequestStatus
+            requests={subject.requests}
+            canVerify={true}
+            locale={locale}
+            onVerify={onVerify}
+            onExecute={onExecute}
+          />
         </div>
       ) : (
         <Card tone="quiet">
-          <EmptyState
-            title="请先查询观众档案"
-            description="输入稳定观众编号以查看积分数、留存策略摘要，以及发起导出/删除清理流程。"
-          />
+          <EmptyState title={copy.emptyTitle} description={copy.emptyDesc} />
         </Card>
       )}
     </div>
@@ -193,19 +213,23 @@ export interface DataComplianceSurfaceProps {
   readonly channelId: string;
   readonly api?: DataApi;
   readonly forceDataHandle?: boolean;
+  readonly locale?: VoxWardLocale;
 }
 
 export function DataComplianceSurface({
   channelId,
   api,
   forceDataHandle,
+  locale,
 }: DataComplianceSurfaceProps) {
+  const { locale: shellLocale } = useVoxWardShell();
+  const resolvedLocale = locale ?? shellLocale;
   const client = useMemo(() => api ?? createDataApi(), [api]);
   const [dataHandle, setDataHandle] = useState<boolean | null>(forceDataHandle ?? null);
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState<SubjectPanel | null>(null);
   const [flow, setFlow] = useState<DeleteFlow>(IDLE_FLOW);
-  const [message, setMessage] = useState<string | null>(null);
+  const [errorObj, setErrorObj] = useState<unknown>(null);
 
   useEffect(() => {
     if (forceDataHandle !== undefined) {
@@ -222,7 +246,7 @@ export function DataComplianceSurface({
       .catch((error) => {
         if (!active) return;
         setDataHandle(false);
-        setMessage(messageFor(error));
+        setErrorObj(error);
       });
     return () => {
       active = false;
@@ -232,14 +256,14 @@ export function DataComplianceSurface({
   const handleLookup = useCallback(async () => {
     const trimmed = query.trim();
     if (!trimmed) return;
-    setMessage(null);
+    setErrorObj(null);
     setFlow(IDLE_FLOW);
     try {
       const panel = await client.subject(channelId, trimmed);
       setSubject(panel);
     } catch (error) {
       setSubject(null);
-      setMessage(messageFor(error));
+      setErrorObj(error);
     }
   }, [channelId, client, query]);
 
@@ -260,15 +284,29 @@ export function DataComplianceSurface({
 
   const handleVerify = async (requestId: string, input: VerificationInput) => {
     if (subject === null) return;
-    setMessage(null);
+    setErrorObj(null);
     try {
       await client.decideVerification(channelId, requestId, input);
       const refreshed = await client.subject(channelId, subject.subjectRef);
       setSubject(refreshed);
     } catch (error) {
-      setMessage(messageFor(error));
+      setErrorObj(error);
     }
   };
+
+  const handleExecute = async (requestId: string) => {
+    if (subject === null) return;
+    setErrorObj(null);
+    try {
+      await client.execute(channelId, requestId);
+      const refreshed = await client.subject(channelId, subject.subjectRef);
+      setSubject(refreshed);
+    } catch (error) {
+      setErrorObj(error);
+    }
+  };
+
+  const message = errorObj === null ? null : messageFor(errorObj, resolvedLocale);
 
   return (
     <DataPanelView
@@ -278,12 +316,14 @@ export function DataComplianceSurface({
       subject={subject}
       flow={flow}
       message={message}
+      locale={resolvedLocale}
       onQueryChange={setQuery}
       onLookup={() => void handleLookup()}
       onChoose={(mode) => setFlow((prev) => reduceDeleteFlow(prev, { type: "choose", mode }))}
       onConfirm={() => void handleConfirmDelete()}
       onCancel={() => setFlow((prev) => reduceDeleteFlow(prev, { type: "cancel" }))}
       onVerify={(reqId, inp) => void handleVerify(reqId, inp)}
+      onExecute={(reqId) => void handleExecute(reqId)}
     />
   );
 }
@@ -299,8 +339,8 @@ export function DataPanelPage({ api }: { readonly api?: DataApi }) {
       channelId={channelId}
       showChannelSelector
       requireAuth
-      pageTitle="数据合规"
-      pageDescription="仅限获授数据合规处理权限的操作员查询观众档案、登记异步清理并完成身份核验。"
+      pageTitle={(locale) => pickLocale(DATA_COPY, locale).pageTitle}
+      pageDescription={(locale) => pickLocale(DATA_COPY, locale).pageDescription}
     >
       <DataComplianceSurface channelId={channelId} api={api} />
     </VoxWardShell>

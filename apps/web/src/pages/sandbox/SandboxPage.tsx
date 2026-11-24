@@ -11,7 +11,13 @@ import {
 import { BannerNotice } from "../../components/banner-notice";
 import { SectionTabs } from "../../components/section-tabs";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
-import { VoxWardShell, type VoxWardNavId } from "../../shell";
+import {
+  pickLocale,
+  SANDBOX_COPY,
+  SHELL_CHROME_COPY,
+  type VoxWardLocale,
+} from "../../i18n";
+import { useVoxWardShell, VoxWardShell } from "../../shell";
 import type { DataApi, SubjectPanel } from "../data/api";
 import { DataComplianceSurface } from "../data/DataPanel";
 import type { DockApi, DockSnapshot } from "../dock/api";
@@ -42,22 +48,22 @@ import {
   type SimulatedScEntry,
 } from "./stream-simulator";
 
-export const SANDBOX_BANNER_TEXT = "SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）";
+export const SANDBOX_BANNER_TEXT = SANDBOX_COPY.en.bannerLabel;
 
-const DEMO_ROLES: readonly { readonly id: DemoRole; readonly label: string }[] = [
-  { id: "DEMO_STREAMER", label: "主播视图" },
-  { id: "DEMO_MODERATOR", label: "房管视图" },
-  { id: "DEMO_PRIVACY_AUDITOR", label: "数据合规员" },
-  { id: "DEMO_STAGE_VIEWER", label: "无后台访客" },
+const DEMO_ROLE_IDS: readonly DemoRole[] = [
+  "DEMO_STREAMER",
+  "DEMO_MODERATOR",
+  "DEMO_PRIVACY_AUDITOR",
+  "DEMO_STAGE_VIEWER",
 ];
 
-const SANDBOX_SCENARIOS: readonly { readonly id: ScenarioId; readonly label: string }[] = [
-  { id: "normal-scoring", label: "1. 正常弹幕计分" },
-  { id: "spam-toxicity-block", label: "2. 恶意与垃圾拦截" },
-  { id: "superchat-translation", label: "3. SC 精翻与等级展示" },
-  { id: "manual-review", label: "4. 触发人工审核队列" },
-  { id: "privacy-delete", label: "5. 登记仅删数据请求" },
-  { id: "privacy-delete-and-except", label: "6. 删除并加入记分例外" },
+const SANDBOX_SCENARIO_IDS: readonly ScenarioId[] = [
+  "normal-scoring",
+  "spam-toxicity-block",
+  "superchat-translation",
+  "manual-review",
+  "privacy-delete",
+  "privacy-delete-and-except",
 ];
 
 export interface SandboxViewProps {
@@ -66,6 +72,7 @@ export interface SandboxViewProps {
   readonly snapshot: SandboxSnapshot | null;
   readonly loading: boolean;
   readonly error: string | null;
+  readonly locale?: VoxWardLocale;
   readonly showInlineBanner?: boolean;
   readonly simulatedChats?: readonly SimulatedChatEntry[];
   readonly simulatedScs?: readonly SimulatedScEntry[];
@@ -89,6 +96,7 @@ function toDockSnapshot(
   simulatedChats: readonly SimulatedChatEntry[],
   simulatedScs: readonly SimulatedScEntry[],
   blockedFallbackIso: string,
+  channelName: string,
 ): DockSnapshot {
   const chId = snap?.channelId ?? "ch_sandbox_1";
   const scMap = new Map<string, DockSnapshot["feed"]["approvedSc"][number]>();
@@ -201,7 +209,7 @@ function toDockSnapshot(
     .slice(0, 60);
 
   return {
-    channel: { channelId: chId, displayName: "演练虚拟频道", platform: "youtube" },
+    channel: { channelId: chId, displayName: channelName, platform: "youtube" },
     capabilities: ["queue.read", "review.decide", "message.original"],
     scTranslationEnabled: true,
     modelIssues: [],
@@ -284,6 +292,7 @@ export function SandboxView({
   snapshot,
   loading,
   error,
+  locale,
   showInlineBanner = true,
   simulatedChats = [],
   simulatedScs = [],
@@ -301,6 +310,10 @@ export function SandboxView({
   onScIntervalChange,
   onPushScNow,
 }: SandboxViewProps) {
+  const { locale: shellLocale } = useVoxWardShell();
+  const resolvedLocale = locale ?? shellLocale;
+  const copy = pickLocale(SANDBOX_COPY, resolvedLocale);
+
   const [tab, setTab] = useState<string>("moderation");
   const caps = useMemo(() => new Set(capabilities), [capabilities]);
   const canModerate = caps.has("review.decide") || caps.has("queue.read");
@@ -313,8 +326,15 @@ export function SandboxView({
   }, [snapshot]);
 
   const dockSnap = useMemo(
-    () => toDockSnapshot(snapshot, simulatedChats, simulatedScs, blockedFallbackIso),
-    [snapshot, simulatedChats, simulatedScs, blockedFallbackIso],
+    () =>
+      toDockSnapshot(
+        snapshot,
+        simulatedChats,
+        simulatedScs,
+        blockedFallbackIso,
+        copy.dockChannelName,
+      ),
+    [snapshot, simulatedChats, simulatedScs, blockedFallbackIso, copy.dockChannelName],
   );
   const sandboxStageState = useMemo(() => toSandboxStageState(dockSnap), [dockSnap]);
 
@@ -347,9 +367,7 @@ export function SandboxView({
       rejectCandidate: async () => {
         throw new Error("SANDBOX_READONLY_CANDIDATE");
       },
-      listTermCategories: async () => [
-        { code: "spam", label: "垃圾刷屏", listKind: "BLACKLIST", description: "", createdAt: "" },
-      ],
+      listTermCategories: async () => [],
       appendBlacklistTerm: async () => {},
     }),
     [sandboxDockApi],
@@ -371,7 +389,7 @@ export function SandboxView({
             ? { active: true, createdAt: new Date().toISOString() }
             : null,
           ledgerEntryCount: 1,
-          retention: [{ category: "沙盒合成积分流水", count: 1, retentionDays: 30 }],
+          retention: [{ category: copy.retentionCategory, count: 1, retentionDays: 30 }],
           requests: (snapshot?.dataRequests ?? []).map((r) => {
             const nowStr = new Date().toISOString();
             return {
@@ -440,69 +458,90 @@ export function SandboxView({
           updatedAt: nowStr,
         };
       },
+      execute: async (_cid, requestId) => {
+        const nowStr = new Date().toISOString();
+        return {
+          requestId,
+          subjectRef: snapshot?.subjects[0]?.subjectKey ?? "sb_user_1",
+          kind: "DELETE",
+          mode: "DELETE_DATA_ONLY",
+          requestSource: "OPERATOR_INITIATED",
+          verification: {
+            state: "VERIFIED",
+            method: "ACCOUNT_OWNERSHIP",
+            decidedAt: nowStr,
+          },
+          execution: "COMPLETED",
+          stage: "COMPLETED",
+          targets: [],
+          counts: { done: 1, failed: 0, pending: 0 },
+          createdAt: nowStr,
+          updatedAt: nowStr,
+        };
+      },
     }),
-    [canPrivacy, onTriggerScenario, snapshot],
+    [canPrivacy, onTriggerScenario, snapshot, copy.retentionCategory],
   );
 
   return (
-    <main className="vw-stack-lg" aria-label="演示沙盒工作区">
+    <main className="vw-stack-lg" aria-label={copy.workbenchAria}>
       {showInlineBanner ? (
         <EnvironmentBanner
-          label={SANDBOX_BANNER_TEXT}
-          state={{ state: "local_only", label: "合成环境" }}
+          label={copy.bannerLabel}
+          state={{ state: "local_only", label: copy.bannerStateLabel }}
           tone="warning"
-          locale="zh-CN"
+          locale={resolvedLocale}
         />
       ) : null}
       {error ? <BannerNotice tone="danger">{error}</BannerNotice> : null}
 
-      <section className="vw-panel-card" aria-label="沙盒演示控制台">
+      <section className="vw-panel-card" aria-label={copy.consoleAria}>
         <div className="vw-row-between">
-          <strong>当前角色与合成情景控制台</strong>
+          <strong>{copy.consoleHeading}</strong>
           <div className="vw-row-wrap">
-            <Badge tone="accent">{DEMO_ROLES.find((r) => r.id === role)?.label ?? role}</Badge>
+            <Badge tone="accent">{copy.roles[role] ?? role}</Badge>
             <Button size="sm" variant="secondary" disabled={loading} onClick={onReset}>
-              一键重置沙盒状态
+              {copy.resetButton}
             </Button>
           </div>
         </div>
 
-        <div className="vw-row-wrap" role="group" aria-label="演示角色切换">
-          {DEMO_ROLES.map((item) => (
+        <div className="vw-row-wrap" role="group" aria-label={copy.roleSwitcherAria}>
+          {DEMO_ROLE_IDS.map((roleId) => (
             <Button
-              key={item.id}
+              key={roleId}
               size="sm"
-              variant={role === item.id ? "primary" : "secondary"}
+              variant={role === roleId ? "primary" : "secondary"}
               disabled={loading}
-              onClick={() => onSelectRole(item.id)}
+              onClick={() => onSelectRole(roleId)}
             >
-              {item.label}
+              {copy.roles[roleId]}
             </Button>
           ))}
         </div>
 
-        <div className="vw-row-wrap" role="group" aria-label="预设业务演示场景">
-          {SANDBOX_SCENARIOS.map((sc) => {
+        <div className="vw-row-wrap" role="group" aria-label={copy.scenariosAria}>
+          {SANDBOX_SCENARIO_IDS.map((scId) => {
             const isPrivacyScenario =
-              sc.id === "privacy-delete" || sc.id === "privacy-delete-and-except";
+              scId === "privacy-delete" || scId === "privacy-delete-and-except";
             const scenarioDisabled =
               loading || role === "DEMO_STAGE_VIEWER" || (isPrivacyScenario && !canPrivacy);
             return (
               <Button
-                key={sc.id}
+                key={scId}
                 size="sm"
                 variant="quiet"
                 disabled={scenarioDisabled}
                 disabledReason={
                   role === "DEMO_STAGE_VIEWER"
-                    ? "仅舞台访客角色无权触发后台剧情"
+                    ? copy.disabledStageViewer
                     : isPrivacyScenario && !canPrivacy
-                      ? "当前演练角色缺少数据合规处理权限"
+                      ? copy.disabledNoPrivacy
                       : undefined
                 }
-                onClick={() => onTriggerScenario(sc.id)}
+                onClick={() => onTriggerScenario(scId)}
               >
-                {sc.label}
+                {copy.scenarios[scId]}
               </Button>
             );
           })}
@@ -513,15 +552,15 @@ export function SandboxView({
         <div className="vw-stack-sm" data-sandbox-stream-controls="">
           <div className="vw-row-between">
             <div className="vw-row-wrap">
-              <strong>实时弹幕流模拟器</strong>
+              <strong>{copy.streamTitle}</strong>
               <Badge
                 tone={streamRunning ? "positive" : "neutral"}
                 data-stream-status={streamRunning ? "running" : "paused"}
               >
-                {`${streamRunning ? "弹幕流运行中" : "弹幕流已暂停"} · 弹幕 ${streamStats.chatCount} / SC ${streamStats.scCount}`}
+                {`${streamRunning ? copy.streamRunning : copy.streamPaused} · ${copy.streamCounts(streamStats.chatCount, streamStats.scCount)}`}
               </Badge>
               {streamRunning ? (
-                <span className="vw-caption">{`约 ${nextScInSec} 秒后进下一条 SC`}</span>
+                <span className="vw-caption">{copy.nextScCountdown(nextScInSec)}</span>
               ) : null}
             </div>
             <div className="vw-row-wrap">
@@ -531,7 +570,7 @@ export function SandboxView({
                 data-stream-toggle=""
                 onClick={() => onToggleStream?.()}
               >
-                {streamRunning ? "暂停弹幕流" : "继续弹幕流"}
+                {streamRunning ? copy.pauseStreamBtn : copy.resumeStreamBtn}
               </Button>
               <Button
                 size="sm"
@@ -539,7 +578,7 @@ export function SandboxView({
                 data-stream-push-sc=""
                 onClick={() => onPushScNow?.()}
               >
-                + 立即进一条 SC
+                {copy.pushScNowBtn}
               </Button>
             </div>
           </div>
@@ -547,7 +586,7 @@ export function SandboxView({
           <div className="vw-input-action-row">
             <div className="vw-field-col--compact">
               <label className="vw-field-label" htmlFor="sbx-chat-cadence">
-                弹幕频率
+                {copy.chatCadenceLabel}
               </label>
               <Select
                 id="sbx-chat-cadence"
@@ -558,14 +597,14 @@ export function SandboxView({
                 }}
                 options={CHAT_CADENCE_OPTIONS.map((opt) => ({
                   value: String(opt.value),
-                  label: opt.label,
+                  label: copy.chatCadences[opt.value] ?? opt.label,
                 }))}
               />
             </div>
 
             <div className="vw-field-col--compact">
               <label className="vw-field-label" htmlFor="sbx-sc-interval">
-                SC 进场间隔
+                {copy.scIntervalLabel}
               </label>
               <Select
                 id="sbx-sc-interval"
@@ -576,7 +615,7 @@ export function SandboxView({
                 }}
                 options={SC_INTERVAL_OPTIONS.map((opt) => ({
                   value: String(opt.value),
-                  label: opt.label,
+                  label: copy.scIntervals[opt.value] ?? opt.label,
                 }))}
               />
             </div>
@@ -589,8 +628,8 @@ export function SandboxView({
           <section className="vw-panel-card">
             <EmptyState
               tone="warning"
-              title="后台功能已按当前角色策略拒止"
-              description="「无后台访客」仅拥有公开舞台只读视角；审阅裁决、数据导出及情景触发能力均已禁用。如需体验正式管理员或房管界面，请在顶部横幅切换示范角色。"
+              title={copy.viewerDeniedTitle}
+              description={copy.viewerDeniedDesc}
             />
           </section>
           {canStage ? (
@@ -599,20 +638,21 @@ export function SandboxView({
               api={sandboxDockApi}
               initialSnapshot={dockSnap}
               pollIntervalMs={30000}
+              locale={resolvedLocale}
             />
           ) : null}
         </div>
       ) : (
         <SectionTabs
-          label="沙盒复用的正式业务工作台"
+          label={copy.tabsAria}
           selectedId={tab}
           onSelect={setTab}
           items={[
-            { id: "moderation", label: "正式审核工作台视图" },
-            { id: "dock", label: "纯净弹幕姬预览" },
-            { id: "overlay", label: "OBS 投屏实时预览" },
-            { id: "data", label: "数据合规工作台视图" },
-            { id: "subjects", label: "沙盒积分与日志快照" },
+            { id: "moderation", label: copy.tabs.moderation },
+            { id: "dock", label: copy.tabs.dock },
+            { id: "overlay", label: copy.tabs.overlay },
+            { id: "data", label: copy.tabs.data },
+            { id: "subjects", label: copy.tabs.subjects },
           ]}
         >
           {tab === "moderation" ? (
@@ -622,13 +662,14 @@ export function SandboxView({
                 api={sandboxModerationApi}
                 initialSnapshot={dockSnap}
                 pollIntervalMs={30000}
+                locale={resolvedLocale}
               />
             ) : (
               <div className="vw-panel-card">
                 <EmptyState
                   tone="warning"
-                  title="当前演练角色不具备审核裁决权限"
-                  description="当前选择的是数据合规员角色；请切回「主播视图」或「房管视图」体验审核工作台。"
+                  title={copy.noModRoleTitle}
+                  description={copy.noModRoleDesc}
                 />
               </div>
             )
@@ -638,36 +679,38 @@ export function SandboxView({
               api={sandboxDockApi}
               initialSnapshot={dockSnap}
               pollIntervalMs={30000}
+              locale={resolvedLocale}
             />
           ) : tab === "overlay" ? (
             <div className="vw-obs-preview-frame" data-sandbox-obs-preview="">
-              <StageView state={sandboxStageState} previewMode />
+              <StageView state={sandboxStageState} previewMode locale={resolvedLocale} />
             </div>
           ) : tab === "data" ? (
             <DataComplianceSurface
               channelId={dockSnap.channel.channelId}
               api={sandboxDataApi}
               forceDataHandle={canPrivacy}
+              locale={resolvedLocale}
             />
           ) : (
             <div className="vw-stack-md">
               <section className="vw-panel-card">
-                <strong>演练观众当前信任分（合成内存态）</strong>
+                <strong>{copy.subjectsHeading}</strong>
                 <TableShell
-                  label="演练观众积分表"
+                  label={copy.subjectsTableLabel}
                   columns={[
-                    { key: "subject", label: "观众标识" },
-                    { key: "score", label: "信任分" },
-                    { key: "gen", label: "状态代数" },
-                    { key: "exception", label: "例外状态" },
+                    { key: "subject", label: copy.colSubject },
+                    { key: "score", label: copy.colScore },
+                    { key: "gen", label: copy.colGen },
+                    { key: "exception", label: copy.colException },
                   ]}
                   rows={(snapshot?.subjects ?? []).map((s) => ({
                     subject: <UntrustedText text={s.subjectKey} />,
                     score: s.currentScore,
                     gen: s.processingGeneration,
-                    exception: s.hasException ? "加入记分例外" : "正常计分",
+                    exception: s.hasException ? copy.exceptionActive : copy.exceptionNormal,
                   }))}
-                  emptyState={<EmptyState title="暂无演示观众数据" />}
+                  emptyState={<EmptyState title={copy.emptySubjects} />}
                 />
               </section>
             </div>
@@ -677,6 +720,8 @@ export function SandboxView({
     </main>
   );
 }
+
+type SandboxErrorKey = keyof (typeof SANDBOX_COPY)["en"]["errors"];
 
 export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
   const client = useMemo(() => api ?? createSandboxApi(), [api]);
@@ -688,7 +733,7 @@ export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
   ]);
   const [snapshot, setSnapshot] = useState<SandboxSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<SandboxErrorKey | null>(null);
 
   const initialFeed = useMemo(() => createInitialSimulatedFeed(), []);
   const [simulatedChats, setSimulatedChats] = useState<readonly SimulatedChatEntry[]>(
@@ -764,9 +809,9 @@ export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
         setRole(next.role);
         setCapabilities(next.capabilities);
         setSnapshot(next.snapshot);
-        setError(null);
+        setErrorKey(null);
       } catch {
-        setError("无法连接本地演示沙盒引擎，请确认沙盒服务已运行。");
+        setErrorKey("connect");
       } finally {
         setLoading(false);
       }
@@ -787,9 +832,9 @@ export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
     try {
       const nextSnap = await client.runScenario(role, scenario);
       setSnapshot(nextSnap);
-      setError(null);
+      setErrorKey(null);
     } catch {
-      setError("触发演示场景失败。");
+      setErrorKey("scenario");
     } finally {
       setLoading(false);
     }
@@ -800,9 +845,9 @@ export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
     try {
       const nextSnap = await client.decideReview(role, taskId, classification);
       setSnapshot(nextSnap);
-      setError(null);
+      setErrorKey(null);
     } catch {
-      setError("演示审阅提交失败。");
+      setErrorKey("decide");
     } finally {
       setLoading(false);
     }
@@ -824,50 +869,43 @@ export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
         scCount: resetFeed.scs.length,
       });
       setNextScInSec(Math.max(1, Math.ceil(scIntervalMs / 1000)));
-      setError(null);
+      setErrorKey(null);
     } catch {
-      setError("重置沙盒失败。");
+      setErrorKey("reset");
     } finally {
       setLoading(false);
     }
   };
 
-  const overrideDisabledIds: Partial<Record<VoxWardNavId, string>> =
-    role === "DEMO_STAGE_VIEWER"
-      ? {
-          moderation: "仅舞台访客角色无后台审核权限",
-          blocked: "仅舞台访客角色无拦截管理权限",
-          data: "仅舞台访客角色无数据合规权限",
-          logs: "仅舞台访客角色无审计日志权限",
-          integrations: "仅舞台访客角色无集成管理权限",
-          users: "仅舞台访客角色无成员管理权限",
-          settings: "仅舞台访客角色无系统设置权限",
-        }
-      : {};
-
   return (
     <VoxWardShell
       activeNavId="sandbox"
       showChannelSelector={false}
-      overrideDisabledIds={overrideDisabledIds}
-      topBanner={
-        <EnvironmentBanner
-          label={SANDBOX_BANNER_TEXT}
-          state={{ state: "local_only", label: "合成环境" }}
-          tone="warning"
-          locale="zh-CN"
-        />
+      overrideDisabledIds={(locale) =>
+        role === "DEMO_STAGE_VIEWER"
+          ? pickLocale(SHELL_CHROME_COPY, locale).stageVisitorRestricted
+          : {}
       }
-      pageTitle="交互演练沙盒"
-      pageDescription="直接复用 VoxWard 正式工作台页面演练审核、SC 精翻、评分重判、数据清理及四角色权限收敛。"
+      topBanner={(locale) => {
+        const c = pickLocale(SANDBOX_COPY, locale);
+        return (
+          <EnvironmentBanner
+            label={c.bannerLabel}
+            state={{ state: "local_only", label: c.bannerStateLabel }}
+            tone="warning"
+            locale={locale}
+          />
+        );
+      }}
+      pageTitle={(locale) => pickLocale(SANDBOX_COPY, locale).pageTitle}
+      pageDescription={(locale) => pickLocale(SANDBOX_COPY, locale).pageDescription}
     >
-      <SandboxView
+      <SandboxShellBody
         role={role}
         capabilities={capabilities}
         snapshot={snapshot}
         loading={loading}
-        error={error}
-        showInlineBanner={false}
+        errorKey={errorKey}
         simulatedChats={simulatedChats}
         simulatedScs={simulatedScs}
         streamRunning={streamRunning}
@@ -890,4 +928,13 @@ export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
       />
     </VoxWardShell>
   );
+}
+
+function SandboxShellBody({
+  errorKey,
+  ...rest
+}: Omit<SandboxViewProps, "error" | "locale"> & { readonly errorKey: SandboxErrorKey | null }) {
+  const { locale } = useVoxWardShell();
+  const error = errorKey === null ? null : pickLocale(SANDBOX_COPY, locale).errors[errorKey];
+  return <SandboxView {...rest} error={error} showInlineBanner={false} locale={locale} />;
 }

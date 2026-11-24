@@ -72,12 +72,12 @@ describe("SandboxView & SandboxPage (VW-Draft-07)", () => {
     );
 
     expect(html).toContain(SANDBOX_BANNER_TEXT);
-    expect(html).toContain("实时弹幕流模拟器");
-    expect(html).toContain("弹幕频率");
-    expect(html).toContain("SC 进场间隔");
-    expect(html).toContain("+ 立即进一条 SC");
-    expect(html).toContain("OBS 投屏实时预览");
-    expect(html).toContain("正式审核工作台视图");
+    expect(html).toContain("Live Stream Simulator");
+    expect(html).toContain("Chat Cadence");
+    expect(html).toContain("SC Interval");
+    expect(html).toContain("+ Push SC Now");
+    expect(html).toContain("OBS Overlay Stage Preview");
+    expect(html).toContain("Moderation Workbench");
     expect(html).toContain("Can this &lt;script&gt; pass?");
   });
 
@@ -98,8 +98,8 @@ describe("SandboxView & SandboxPage (VW-Draft-07)", () => {
       </MemoryRouter>,
     );
 
-    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[\s\S]*?5\. 登记仅删数据请求/);
-    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[\s\S]*?6\. 删除并加入记分例外/);
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[\s\S]*?5\. Delete Data Request/);
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[\s\S]*?6\. Delete &amp; Score Exception/);
   });
 
   it("refuses backend views for DEMO_STAGE_VIEWER and renders embedded pure dock", () => {
@@ -119,12 +119,12 @@ describe("SandboxView & SandboxPage (VW-Draft-07)", () => {
       </MemoryRouter>,
     );
 
-    expect(html).toContain("后台功能已按当前角色策略拒止");
-    expect(html).toContain("纯净弹幕姬");
-    expect(html).not.toContain("实时待审队列");
+    expect(html).toContain("Backend modules hidden by Stage Visitor policy");
+    expect(html).toContain("Pure Danmaku Dock");
+    expect(html).not.toContain("Review Queue (");
   });
 
-  it("wraps SandboxPage in VoxWardShell with EnvironmentBanner in topBanner", () => {
+  it("wraps SandboxPage in VoxWardShell with EnvironmentBanner in topBanner defaulting to English", () => {
     const html = renderToStaticMarkup(
       <MemoryRouter>
         <SandboxPage />
@@ -133,5 +133,6 @@ describe("SandboxView & SandboxPage (VW-Draft-07)", () => {
 
     expect(html).toContain("tcrn-product-shell");
     expect(html).toContain(SANDBOX_BANNER_TEXT);
+    expect(html).toContain("Interactive Sandbox");
   });
 });

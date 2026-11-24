@@ -225,8 +225,8 @@ export interface ShellPreferencesState {
 const DEFAULT_SHELL_PREFERENCES: ShellPreferencesState = {
   pins: ["moderation", "blocked", "data"],
   rightPins: ["logs", "integrations", "users", "settings"],
-  theme: "light",
-  locale: "zh-CN",
+  theme: "halloween",
+  locale: "en",
   density: "comfortable",
 };
 
@@ -249,8 +249,8 @@ export function readShellPreferences(
     return {
       pins: Array.isArray(parsed.pins) ? parsed.pins : DEFAULT_SHELL_PREFERENCES.pins,
       rightPins: Array.isArray(parsed.rightPins) ? parsed.rightPins : DEFAULT_SHELL_PREFERENCES.rightPins,
-      theme: parsed.theme === "dark" || parsed.theme === "halloween" || parsed.theme === "light" ? parsed.theme : "light",
-      locale: typeof parsed.locale === "string" && parsed.locale ? parsed.locale : "zh-CN",
+      theme: parsed.theme === "dark" || parsed.theme === "halloween" || parsed.theme === "light" ? parsed.theme : "halloween",
+      locale: typeof parsed.locale === "string" && parsed.locale ? parsed.locale : "en",
       density: parsed.density === "compact" ? "compact" : "comfortable",
     };
   } catch {

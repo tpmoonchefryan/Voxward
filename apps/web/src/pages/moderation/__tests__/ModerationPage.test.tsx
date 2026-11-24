@@ -18,11 +18,11 @@ describe("Moderation Console (VW-Draft-03)", () => {
     );
 
     expect(html).toContain("tcrn-product-shell");
-    expect(html).toContain("实时审核");
-    expect(html).toContain("SC 精翻");
+    expect(html).toContain("Live Moderation");
+    expect(html).toContain("SC Translation");
   });
 
-  it("renders equal-height 2-col workbench, half-width parentheses action labels, and AI candidate tab", () => {
+  it("renders equal-height 2-col workbench, parenthesized action labels, and AI candidate tab in English by default", () => {
     const mockApi: ModerationApi = {
       getModeration: async () => ({
         channel: { channelId: "ch_1", displayName: "Demo", platform: "youtube" },
@@ -54,10 +54,10 @@ describe("Moderation Console (VW-Draft-03)", () => {
       </MemoryRouter>,
     );
 
-    expect(html).toContain("实时审核工作台");
-    expect(html).toContain("AI 候选词待确认");
-    expect(html).toContain("实时待审队列");
-    expect(html).toContain("实时审核旁路流与 SC 置顶条");
+    expect(html).toContain("Live Queue");
+    expect(html).toContain("AI Term Candidates");
+    expect(html).toContain("Review Queue (0)");
+    expect(html).toContain("Live Bypass Feed &amp; Pinned SC");
     expect(html).toContain("vw-yt-stream-panel");
     expect(html).not.toContain("拦截时同步删除平台消息");
     expect(html).not.toContain("切换 SC 精翻");

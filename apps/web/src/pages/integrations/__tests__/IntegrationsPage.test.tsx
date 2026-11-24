@@ -38,12 +38,11 @@ describe("Integrations Page (VW-Draft-04B)", () => {
       </MemoryRouter>,
     );
 
-    expect(html).toContain("系统集成");
-    expect(html).toContain("+ 接入新适配器 ▾");
-    expect(html).toContain("已接入适配器实例");
-    expect(html).toContain("下游输出适配器");
-    expect(html).not.toContain("下游输出与单向只读连接凭据");
-    expect(html).not.toContain("签发 OBS 投屏令牌");
-    expect(html).not.toContain("当前频道");
+    expect(html).toContain("Integrations");
+    expect(html).toContain("+ Add Adapter ▾");
+    expect(html).toContain("Configured Adapter Instances (0)");
+    expect(html).toContain("Output Target");
+    expect(html).not.toContain("Issue OBS Token");
+    expect(html).not.toContain("Active Channel");
   });
 });

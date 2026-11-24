@@ -13,14 +13,14 @@ describe("Users & RBAC Page (VW-Draft-04C)", () => {
   it("enforces Deny > Grant > Not Set precedence across multiple assigned roles", () => {
     const grantLogs: RbacRoleView = {
       id: "r_grant",
-      name: "审计助手",
+      name: "Audit Helper",
       description: "",
       systemPreset: false,
       permissions: { "logs.view": "GRANT", "queue.read": "GRANT" },
     };
     const denyLogs: RbacRoleView = {
       id: "r_deny",
-      name: "脱敏受限组",
+      name: "Restricted Group",
       description: "",
       systemPreset: false,
       permissions: { "logs.view": "DENY" },
@@ -42,7 +42,7 @@ describe("Users & RBAC Page (VW-Draft-04C)", () => {
     expect(dataEntry?.decidedBy).toBe("DEFAULT_DENY");
   });
 
-  it("renders non-flattened 用户列表 view with + 创建用户 trigger and zero platform.message.delete capability", () => {
+  it("renders non-flattened Users list view with + Create User trigger and zero platform.message.delete capability", () => {
     const stubApi = {
       listRoles: vi.fn(async () => []),
       createRole: vi.fn(async () => []),
@@ -63,13 +63,13 @@ describe("Users & RBAC Page (VW-Draft-04C)", () => {
       </MemoryRouter>,
     );
 
-    expect(html).toContain("用户管理");
-    expect(html).toContain("用户列表");
-    expect(html).toContain("角色管理");
-    expect(html).toContain("+ 创建用户");
-    expect(html).not.toContain("创建新用户");
-    expect(html).not.toContain("实时生效权限合成结果");
+    expect(html).toContain("Users &amp; RBAC");
+    expect(html).toContain("Users (0)");
+    expect(html).toContain("Roles (0)");
+    expect(html).toContain("+ Create User");
+    expect(html).not.toContain("Create Operator Account");
+    expect(html).not.toContain("Effective Combined Permissions");
     expect(html).not.toContain("platform.message.delete");
-    expect(html).not.toContain("当前频道");
+    expect(html).not.toContain("Active Channel");
   });
 });

@@ -18,8 +18,8 @@ import { runShortTransaction } from "../../src/db/transaction.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
 
-const NOW = new Date("2026-11-14T08:00:00.000Z");
-const LATER = new Date("2026-11-14T08:01:00.000Z");
+const NOW = new Date();
+const LATER = new Date(NOW.getTime() + 60_000);
 const PASSWORD = "test-password-1234";
 const CH1 = "channel-dock-1";
 const CH2 = "channel-dock-2";

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type WheelEvent } from "react";
+import { DEFAULT_VOXWARD_LOCALE, pickLocale, YOUTUBE_SC_COPY, type VoxWardLocale } from "../../i18n";
 import { UntrustedText } from "../untrusted-text/UntrustedText";
 
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -114,13 +115,16 @@ export function SuperChatTicker({
   selectedId = null,
   onSelect,
   nowMs: externalNowMs,
+  locale = DEFAULT_VOXWARD_LOCALE,
 }: {
   readonly items: readonly SuperChatItemDisplay[];
   readonly selectedId?: string | null;
   readonly onSelect?: (id: string) => void;
   readonly nowMs?: number;
+  readonly locale?: VoxWardLocale;
 }) {
   const [internalNowMs, setInternalNowMs] = useState(() => Date.now());
+  const copy = pickLocale(YOUTUBE_SC_COPY, locale);
 
   useEffect(() => {
     if (externalNowMs !== undefined) {
@@ -139,7 +143,7 @@ export function SuperChatTicker({
   }
 
   return (
-    <div className="vw-sc-ticker" aria-label="Super Chat 倒计时置顶条">
+    <div className="vw-sc-ticker" aria-label={copy.tickerAria}>
       {activeTickers.map(({ item, tier, remainingSec, pct }) => {
         const isExpanded = selectedId === item.id;
         return (
@@ -162,7 +166,7 @@ export function SuperChatTicker({
               className="vw-sc-ticker__progress"
               max={100}
               value={pct}
-              aria-label="Super Chat 置顶剩余时长进度"
+              aria-label={copy.progressAria}
             />
           </button>
         );
@@ -176,10 +180,17 @@ export function SuperChatTicker({
  * opens a frameless Super Chat detail card when any ticker pill is clicked.
  * Clicking anywhere outside the expanded card (or pressing Escape) closes it.
  */
-export function SuperChatOverlayBar({ items }: { readonly items: readonly SuperChatItemDisplay[] }) {
+export function SuperChatOverlayBar({
+  items,
+  locale = DEFAULT_VOXWARD_LOCALE,
+}: {
+  readonly items: readonly SuperChatItemDisplay[];
+  readonly locale?: VoxWardLocale;
+}) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const copy = pickLocale(YOUTUBE_SC_COPY, locale);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -235,13 +246,19 @@ export function SuperChatOverlayBar({ items }: { readonly items: readonly SuperC
 
   return (
     <div className="vw-sc-overlay-bar" data-sc-overlay-bar="">
-      <SuperChatTicker items={items} selectedId={expandedItem?.id ?? null} onSelect={handleSelect} nowMs={nowMs} />
+      <SuperChatTicker
+        items={items}
+        selectedId={expandedItem?.id ?? null}
+        onSelect={handleSelect}
+        nowMs={nowMs}
+        locale={locale}
+      />
       {expandedItem !== null ? (
         <div
           ref={popoverRef}
           className="vw-sc-overlay-popover"
           role="region"
-          aria-label="Super Chat 置顶详情浮层"
+          aria-label={copy.overlayAria}
         >
           <SuperChatCard item={expandedItem} />
         </div>

@@ -1,11 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
-import { buildVoxWardNavModel, VoxWardShell } from "../index";
+import { VOXWARD_SUPPORTED_LOCALES } from "../../i18n";
+import { buildVoxWardNavModel, VOXWARD_LOCALES, VoxWardShell } from "../index";
 import type { ShellPreferencesClient } from "../shell-preferences-api";
 
 describe("VoxWardShell & navigation model", () => {
-  it("keeps left workspace and right backoffice pin groups aligned without capability gating leakage", () => {
+  it("supports all 5 locales and keeps left/right pin groups capability-gated across locales", () => {
+    expect(VOXWARD_LOCALES.map((item) => item.locale)).toEqual(VOXWARD_SUPPORTED_LOCALES);
+
     const restricted = buildVoxWardNavModel({
       locale: "zh-CN",
       activeId: "moderation",
@@ -30,9 +33,16 @@ describe("VoxWardShell & navigation model", () => {
     expect(leftItems.find((i) => i.id === "data")?.disabled).toBe(true);
     expect(rightItems.find((i) => i.id === "logs")?.disabled).toBe(true);
     expect(rightItems.find((i) => i.id === "users")?.disabled).toBe(true);
+
+    const jaModel = buildVoxWardNavModel({ locale: "ja", activeId: "overview", channelId: "ch_1" });
+    expect(jaModel.currentLabel).toBe("概要");
+    const koModel = buildVoxWardNavModel({ locale: "ko", activeId: "overview", channelId: "ch_1" });
+    expect(koModel.currentLabel).toBe("개요");
+    const frModel = buildVoxWardNavModel({ locale: "fr", activeId: "overview", channelId: "ch_1" });
+    expect(frModel.currentLabel).toBe("Vue d'ensemble");
   });
 
-  it("renders ProductShell with 用户偏好 theme dropdown and links sign-in to standalone /login page", () => {
+  it("defaults ProductShell to halloween + English with 5-language & theme preferences dropdown", () => {
     const stubClient: ShellPreferencesClient = {
       getSession: async () => null,
       login: async () => {
@@ -48,8 +58,8 @@ describe("VoxWardShell & navigation model", () => {
       <MemoryRouter initialEntries={["/"]}>
         <VoxWardShell
           activeNavId="overview"
-          pageTitle="工作台总览"
-          pageDescription="实时运行态"
+          pageTitle="Workspace Overview"
+          pageDescription="Live status"
           client={stubClient}
         >
           <div>Shell body</div>
@@ -59,14 +69,14 @@ describe("VoxWardShell & navigation model", () => {
 
     expect(html).toContain("tcrn-product-shell");
     expect(html).toContain('data-product-shell-semantic-api="menu-pins-theme-locale"');
+    expect(html).toContain('data-tcrn-theme="halloween"');
+    expect(html).toContain('data-current-locale="en"');
     expect(html).toContain("data-shell-avatar");
-    expect(html).toContain("主题与语言");
-    expect(html).toContain("登录账号");
-    expect(html).toContain("纯净弹幕姬");
-    expect(html).toContain("工作台总览");
+    expect(html).toContain("theme and language");
+    expect(html).toContain("Sign in");
+    expect(html).toContain("Pure Danmaku Dock");
+    expect(html).toContain("Workspace Overview");
     expect(html).toContain("Shell body");
     expect(html).not.toContain("tcrn-shell-theme-toggle");
-    expect(html).not.toContain("OBS 投屏");
-    expect(html).not.toContain("登录 VoxWard 工作台");
   });
 });
