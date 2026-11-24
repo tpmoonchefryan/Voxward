@@ -1,0 +1,39 @@
+name: Bug report
+description: Report a reproducible VoxWard defect.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Never include OAuth secrets, API keys, viewer personal data, or security exploits in public issues.
+        For security vulnerabilities, use GitHub Private Vulnerability Reporting under the Security tab.
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observed behavior
+      description: What happened vs. what was expected?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction steps
+      description: Commands, route, or synthetic scenario steps to reproduce.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: VoxWard tag / commit
+      placeholder: rc0.1.0
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Node.js & pnpm versions
+      placeholder: Node 24.x / pnpm 12.x
+    validations:
+      required: true

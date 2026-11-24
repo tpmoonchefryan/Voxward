@@ -1,0 +1,20 @@
+name: Feature request
+description: Propose an improvement to VoxWard.
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: Describe the livestream moderation, translation, or self-hosting need.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior & boundaries
+      description: Expected behavior, permission impact, and any privacy/safety considerations.
+    validations:
+      required: true

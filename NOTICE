@@ -1,0 +1,55 @@
+VoxWard
+Copyright 2026 tpmoonchefryan
+
+This product includes software developed by tpmoonchefryan and VoxWard contributors.
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+================================================================================
+THIRD-PARTY NOTICES AND ATTRIBUTION
+================================================================================
+
+1. Local Kiro Harness (.kiro/harness/)
+--------------------------------------------------------------------------------
+Portions of the local Kiro workflow harness under `.kiro/harness/` originate
+from Einzbern:
+
+  Einzbern
+  Copyright 2026 Einzbern contributors
+  License: Apache-2.0
+
+See `.kiro/harness/LICENSE` and `.kiro/harness/NOTICE` for the retained
+license text and provenance notices.
+
+2. Vendored Design System Packages and Font Software (vendor/tcrn-ds/4.2.0/)
+--------------------------------------------------------------------------------
+This repository bundles local archive packages in `vendor/tcrn-ds/4.2.0/`:
+  - `@tcrn/ui-tokens` (4.2.0)
+  - `@tcrn/ui-copy-state` (4.2.0)
+  - `@tcrn/ui-react` (4.2.0)
+  - `@tcrn/ds-consumer-tools` (4.2.0)
+
+`@tcrn/ui-tokens` redistributes five font software families under the
+SIL Open Font License 1.1:
+  - Hanken Grotesk
+  - Source Serif 4
+  - IBM Plex Mono
+  - Noto Sans SC
+  - Noto Serif SC
+
+Repository code licensing under Apache-2.0 does NOT replace the SIL Open Font
+License 1.1 terms for these fonts. Any redistribution of the bundled font
+archives must preserve the included OFL 1.1 license texts and copyright
+notices, and font software must not be sold by itself.
+
+3. Synthetic Benchmark Fixtures (bench/samples/)
+--------------------------------------------------------------------------------
+Benchmark fixtures and placeholder rule sets under `bench/samples/` are
+synthetic-authored (`contains_real_viewer_data: false`) and contain no real
+viewer profiles, scraped YouTube chat, or third-party datasets. See
+`bench/samples/SOURCES.md` for fixture provenance and licensing scope.
+
+4. Package Ecosystem Dependencies
+--------------------------------------------------------------------------------
+Runtime and build dependencies declared in `package.json`,
+`packages/*/package.json`, `apps/*/package.json`, and `pnpm-lock.yaml` remain
+governed by their respective upstream open-source licenses.
