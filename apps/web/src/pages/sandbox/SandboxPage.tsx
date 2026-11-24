@@ -225,38 +225,56 @@ function toDockSnapshot(
 }
 
 function toSandboxStageState(dockSnap: DockSnapshot): StageState {
-  const scIdSet = new Set(dockSnap.feed.approvedSc.map((sc) => sc.eventId));
   const futureValidUntil = "2099-01-01T00:00:00.000Z";
+  const merged = new Map<
+    string,
+    {
+      readonly deliveryId: string;
+      readonly decidedAtMs: number;
+      readonly label: string;
+      readonly text: string;
+      readonly translation: string | null;
+    }
+  >();
 
-  const scDeliveries = dockSnap.feed.approvedSc.slice(0, 4).map((sc, idx) => ({
-    deliveryId: `stage-sc-${sc.eventId}`,
-    deliverySequence: idx + 1,
-    platformOrder: idx + 1,
-    validUntil: futureValidUntil,
-    validUntilMs: Number.MAX_SAFE_INTEGER,
-    label: `${sc.safeAlias ?? sc.subjectRef} · ${sc.notes ?? "$20"}`,
-    text: sc.originalText ?? "",
-    translation: sc.translation,
-  }));
-
-  const chatDeliveries = dockSnap.feed.liveStream
-    .filter((m) => m.localStatus === "ALLOW" && !scIdSet.has(m.eventId) && m.originalText !== null)
-    .slice(0, 8)
-    .reverse()
-    .map((m, idx) => ({
+  for (const m of dockSnap.feed.liveStream) {
+    if (m.localStatus !== "ALLOW" || m.originalText === null) continue;
+    merged.set(m.eventId, {
       deliveryId: `stage-chat-${m.eventId}`,
-      deliverySequence: 100 + idx,
-      platformOrder: 100 + idx,
+      decidedAtMs: Date.parse(m.decidedAt) || 0,
+      label: m.subjectRef,
+      text: m.originalText,
+      translation: null,
+    });
+  }
+
+  for (const sc of dockSnap.feed.approvedSc) {
+    merged.set(sc.eventId, {
+      deliveryId: `stage-sc-${sc.eventId}`,
+      decidedAtMs: Date.parse(sc.decidedAt) || 0,
+      label: `${sc.safeAlias ?? sc.subjectRef} · ${sc.notes ?? "$20"}`,
+      text: sc.originalText ?? "",
+      translation: sc.translation,
+    });
+  }
+
+  const ordered = [...merged.values()]
+    .sort((a, b) => a.decidedAtMs - b.decidedAtMs)
+    .slice(-14)
+    .map((item, idx) => ({
+      deliveryId: item.deliveryId,
+      deliverySequence: idx + 1,
+      platformOrder: idx + 1,
       validUntil: futureValidUntil,
       validUntilMs: Number.MAX_SAFE_INTEGER,
-      label: m.subjectRef,
-      text: m.originalText ?? "",
-      translation: null,
+      label: item.label,
+      text: item.text,
+      translation: item.translation,
     }));
 
   return {
     ...createInitialStageState("connected"),
-    activeDeliveries: [...scDeliveries, ...chatDeliveries],
+    activeDeliveries: ordered,
   };
 }
 

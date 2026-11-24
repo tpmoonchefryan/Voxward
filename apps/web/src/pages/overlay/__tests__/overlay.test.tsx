@@ -105,13 +105,38 @@ describe("overlay pure protocol and StageView rendering (VW-Draft-01)", () => {
       1_000,
     );
 
+    state = reduceStageFrame(
+      state,
+      {
+        type: "DELIVER",
+        version: NATIVE_OUTPUT_VERSION,
+        deliveryId: "del-sc-author-100",
+        deliverySequence: 4,
+        platformOrder: 13,
+        validUntil: new Date(Date.now() + 60_000).toISOString(),
+        display: {
+          label: "Kaito_Tokyo · $100",
+          text: "Amazing acoustic set!",
+          translation: "超赞的不插电专场！",
+        },
+      },
+      1_000,
+    );
+
     const html = renderToStaticMarkup(<StageView state={state} />);
     expect(html).toContain(SAFE_ANONYMOUS_ALIAS);
     expect(html).toContain("<bdi>");
     expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;Happy Halloween!");
     expect(html).toContain("万圣节快乐！");
+    expect(html).toContain("vw-obs-stream-item");
     expect(html).toContain("vw-sc-tier--t5");
+    expect(html).toContain("vw-sc-tier--t7");
     expect(html).toContain("vw-sc-tier--t1");
+    expect(html).toContain("<bdi>Kaito_Tokyo</bdi>");
+    expect(html).toContain('<span class="vw-sc-card__amount">$100</span>');
+    expect(html).not.toContain("<bdi>Kaito_Tokyo · $100</bdi>");
+    expect(html.indexOf("Happy Halloween!")).toBeLessThan(html.indexOf("Keep up the stream!"));
+    expect(html).not.toContain("Super Chat 展示列表");
     expect(html).not.toContain("Should be hidden in t1 tier");
     expect(html).not.toContain("WardBarrier");
     expect(html).not.toContain("静音");

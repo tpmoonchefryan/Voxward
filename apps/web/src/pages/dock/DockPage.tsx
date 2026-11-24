@@ -6,6 +6,7 @@ import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
 import {
   SuperChatCard,
   SuperChatOverlayBar,
+  useLiveStreamAutoScroll,
   type SuperChatItemDisplay,
 } from "../../components/youtube-sc";
 import {
@@ -61,6 +62,12 @@ export function PureDockSurface({
   }, [channelId, client]);
 
   useEffect(() => {
+    if (initialSnapshot !== null) {
+      setSnapshot(initialSnapshot);
+    }
+  }, [initialSnapshot]);
+
+  useEffect(() => {
     void loadSnapshot();
     const timer = window.setInterval(() => {
       void loadSnapshot();
@@ -106,8 +113,12 @@ export function PureDockSurface({
         item: sc,
       })),
     ];
-    return merged.sort((a, b) => b.decidedAtMs - a.decidedAtMs);
+    return merged.sort((a, b) => a.decidedAtMs - b.decidedAtMs);
   }, [chatMessages, scItems]);
+
+  const latestEntryId = unifiedTimeline[unifiedTimeline.length - 1]?.id ?? "";
+  const streamKey = unifiedTimeline.length > 0 ? `${unifiedTimeline.length}:${latestEntryId}` : "";
+  const { viewportRef, handleScroll, handleWheel } = useLiveStreamAutoScroll(streamKey);
 
   return (
     <main
@@ -138,34 +149,49 @@ export function PureDockSurface({
 
         <SuperChatOverlayBar items={scItems} />
 
-        <div className="vw-dock-scroll">
+        <div
+          ref={viewportRef}
+          className={
+            unifiedTimeline.length === 0 ? "vw-dock-scroll" : "vw-dock-scroll vw-stream-viewport"
+          }
+          onScroll={handleScroll}
+          onWheel={handleWheel}
+        >
           {unifiedTimeline.length === 0 ? (
             <EmptyState
               title="暂无放行弹幕与 Super Chat"
               description="通过审核的直播对话与 Super Chat 将在同一时间流中实时呈现，点击顶部醒目条可展开卡片。"
             />
           ) : (
-            unifiedTimeline.map((entry) =>
-              entry.kind === "sc" ? (
-                <SuperChatCard key={`sc-${entry.id}`} item={entry.item} />
-              ) : (
-                <article key={`chat-${entry.id}`} className="vw-chat-row">
-                  <div className="vw-row-between">
-                    <strong>
-                      <UntrustedText text={entry.author} />
-                    </strong>
-                    <span className="vw-caption">
-                      {new Date(entry.decidedAt).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  {entry.originalText !== null ? (
-                    <div>
-                      <UntrustedText text={entry.originalText} />
-                    </div>
-                  ) : null}
-                </article>
-              ),
-            )
+            <div className="vw-stream-track">
+              {unifiedTimeline.map((entry) => (
+                <div
+                  key={entry.kind === "sc" ? `sc-${entry.id}` : `chat-${entry.id}`}
+                  className="vw-stream-item"
+                  data-stream-kind={entry.kind}
+                >
+                  {entry.kind === "sc" ? (
+                    <SuperChatCard item={entry.item} />
+                  ) : (
+                    <article className="vw-chat-row">
+                      <div className="vw-row-between">
+                        <strong>
+                          <UntrustedText text={entry.author} />
+                        </strong>
+                        <span className="vw-caption">
+                          {new Date(entry.decidedAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      {entry.originalText !== null ? (
+                        <div>
+                          <UntrustedText text={entry.originalText} />
+                        </div>
+                      ) : null}
+                    </article>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </section>

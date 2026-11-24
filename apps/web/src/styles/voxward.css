@@ -618,15 +618,13 @@ body.vw-stage-body {
 }
 
 .vw-sc-overlay-bar {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  position: relative;
+  z-index: var(--tcrn-z-popover);
   display: flex;
   flex-direction: column;
-  gap: var(--tcrn-space-2);
-  padding: var(--tcrn-space-2);
+  padding: var(--tcrn-space-1h) var(--tcrn-space-2);
   border-radius: var(--tcrn-radius-control);
-  background: var(--tcrn-color-panel);
+  background: var(--tcrn-color-panel-2);
   border: 1px solid var(--tcrn-color-line);
 }
 
@@ -634,18 +632,50 @@ body.vw-stage-body {
   position: absolute;
   inset-inline: 0;
   top: calc(100% + var(--tcrn-space-1h));
-  z-index: 2;
-  padding: var(--tcrn-space-2);
-  border-radius: var(--tcrn-radius-control);
-  background: var(--tcrn-color-panel);
-  border: 1px solid var(--tcrn-color-line);
-  box-shadow: var(--tcrn-elevation-s3);
+  z-index: var(--tcrn-z-popover);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.vw-sc-overlay-popover__close {
+.vw-stream-viewport {
+  height: 34rem;
+  max-height: 34rem;
+  overflow-y: auto;
   display: flex;
-  justify-content: flex-end;
-  padding-top: var(--tcrn-space-1);
+  flex-direction: column;
+  padding-top: 44px;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    var(--tcrn-color-ink) 48px,
+    var(--tcrn-color-ink) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    var(--tcrn-color-ink) 48px,
+    var(--tcrn-color-ink) 100%
+  );
+}
+
+.vw-dock-shell:not(.vw-dock-shell--embedded) .vw-stream-viewport {
+  flex: 1 1 auto;
+  height: auto;
+  max-height: calc(100vh - 9rem);
+}
+
+.vw-stream-track {
+  margin-top: auto;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-2);
+}
+
+.vw-stream-item {
+  flex: 0 0 auto;
 }
 
 .vw-chain-list-header {
@@ -697,14 +727,14 @@ body.vw-stage-body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .vw-chat-row {
-    animation: vw-stream-in var(--tcrn-motion-duration-move) var(--tcrn-motion-ease);
+  .vw-stream-item {
+    animation: vw-stream-in var(--tcrn-motion-duration-move) var(--tcrn-motion-ease) both;
   }
 
   @keyframes vw-stream-in {
     from {
       opacity: 0;
-      transform: translateY(-4px);
+      transform: translateY(16px);
     }
     to {
       opacity: 1;

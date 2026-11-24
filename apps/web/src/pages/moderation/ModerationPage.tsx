@@ -11,7 +11,12 @@ import {
 import { BannerNotice } from "../../components/banner-notice";
 import { SectionTabs } from "../../components/section-tabs";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
-import { SuperChatCard, SuperChatOverlayBar } from "../../components/youtube-sc";
+import {
+  SuperChatCard,
+  SuperChatOverlayBar,
+  useLiveStreamAutoScroll,
+  type SuperChatItemDisplay,
+} from "../../components/youtube-sc";
 import { VoxWardShell, useVoxWardShell } from "../../shell";
 import {
   createModerationApi,
@@ -86,6 +91,12 @@ export function ModerationWorkbench({
   }, [channelId, client, onScStatusChange]);
 
   useEffect(() => {
+    if (initialSnapshot !== null) {
+      setSnapshot(initialSnapshot);
+    }
+  }, [initialSnapshot]);
+
+  useEffect(() => {
     void loadAll();
     const timer = window.setInterval(() => {
       void loadAll();
@@ -95,7 +106,7 @@ export function ModerationWorkbench({
 
   const queue = snapshot?.feed.reviewQueue ?? [];
   const liveStream = snapshot?.feed.liveStream ?? [];
-  const scTickerItems = useMemo(
+  const scTickerItems = useMemo<readonly SuperChatItemDisplay[]>(
     () =>
       (snapshot?.feed.approvedSc ?? []).map((sc) => ({
         id: sc.eventId,
@@ -107,6 +118,53 @@ export function ModerationWorkbench({
       })),
     [snapshot],
   );
+
+  type UnifiedModerationEntry =
+    | {
+        readonly kind: "sc";
+        readonly id: string;
+        readonly decidedAtMs: number;
+        readonly item: SuperChatItemDisplay;
+      }
+    | {
+        readonly kind: "chat";
+        readonly id: string;
+        readonly decidedAtMs: number;
+        readonly entry: (typeof liveStream)[number];
+      };
+
+  const unifiedStream = useMemo<readonly UnifiedModerationEntry[]>(() => {
+    const scById = new Map(scTickerItems.map((sc) => [sc.id, sc]));
+    const seenIds = new Set<string>();
+    const combined: UnifiedModerationEntry[] = [];
+
+    for (const entry of liveStream) {
+      seenIds.add(entry.eventId);
+      const scMatch = scById.get(entry.eventId);
+      const decidedAtMs = Date.parse(entry.decidedAt) || scMatch?.decidedAtMs || 0;
+      if (scMatch && entry.localStatus === "ALLOW") {
+        combined.push({ kind: "sc", id: entry.eventId, decidedAtMs, item: scMatch });
+      } else {
+        combined.push({ kind: "chat", id: entry.eventId, decidedAtMs, entry });
+      }
+    }
+
+    for (const sc of scTickerItems) {
+      if (seenIds.has(sc.id)) continue;
+      combined.push({
+        kind: "sc",
+        id: sc.id,
+        decidedAtMs: sc.decidedAtMs ?? 0,
+        item: sc,
+      });
+    }
+
+    return combined.sort((a, b) => a.decidedAtMs - b.decidedAtMs);
+  }, [liveStream, scTickerItems]);
+
+  const latestStreamId = unifiedStream[unifiedStream.length - 1]?.id ?? "";
+  const streamKey = unifiedStream.length > 0 ? `${unifiedStream.length}:${latestStreamId}` : "";
+  const { viewportRef, handleScroll, handleWheel } = useLiveStreamAutoScroll(streamKey);
 
   const blacklistCategories = useMemo(
     () => categories.filter((c) => c.listKind === "BLACKLIST"),
@@ -423,82 +481,102 @@ export function ModerationWorkbench({
             <section className="vw-panel-card vw-yt-stream-panel" aria-label="审核旁路实时流与醒目留言条">
               <div className="vw-row-between">
                 <strong>实时审核旁路流与 SC 置顶条</strong>
-                <span className="vw-caption">{liveStream.length} 条近期记录</span>
+                <span className="vw-caption">{unifiedStream.length} 条近期记录</span>
               </div>
 
               <SuperChatOverlayBar items={scTickerItems} />
 
-              {liveStream.length === 0 ? (
+              {unifiedStream.length === 0 ? (
                 <EmptyState
                   title="暂无近期旁路消息"
                   description="频道进入直播状态后，系统判定的所有消息与投递回执会同步列于此处。"
                 />
               ) : (
-                <div className="vw-dock-scroll">
-                  {liveStream.map((entry) => {
-                    const expanded = expandedEventIds.includes(entry.eventId);
-                    const scMatch = scTickerItems.find((sc) => sc.id === entry.eventId);
-                    const rowText = entry.originalText ?? "";
-                    const isLong = rowText.length > 100;
-
-                    if (scMatch && entry.localStatus === "ALLOW") {
-                      return <SuperChatCard key={entry.eventId} item={scMatch} />;
-                    }
-
-                    return (
-                      <article
-                        key={entry.eventId}
-                        className={
-                          entry.localStatus === "BLOCK"
-                            ? "vw-chat-row vw-chat-row--flagged"
-                            : "vw-chat-row"
-                        }
-                      >
-                        <div className="vw-row-between">
-                          <strong>
-                            <UntrustedText text={entry.subjectRef} />
-                          </strong>
-                          <div className="vw-row-wrap">
-                            <Badge tone={entry.localStatus === "BLOCK" ? "danger" : "positive"}>
-                              {classificationLabel(entry.classification)}
-                            </Badge>
+                <div
+                  ref={viewportRef}
+                  className="vw-dock-scroll vw-stream-viewport"
+                  onScroll={handleScroll}
+                  onWheel={handleWheel}
+                >
+                  <div className="vw-stream-track">
+                    {unifiedStream.map((streamEntry) => {
+                      if (streamEntry.kind === "sc") {
+                        return (
+                          <div
+                            key={`sc-${streamEntry.id}`}
+                            className="vw-stream-item"
+                            data-stream-kind="sc"
+                          >
+                            <SuperChatCard item={streamEntry.item} />
                           </div>
-                        </div>
-                        {rowText ? (
-                          <div>
-                            <UntrustedText
-                              text={
-                                entry.bodyFolded && !expanded && isLong
-                                  ? `${rowText.slice(0, 100)}…`
-                                  : rowText
-                              }
-                            />
-                            {entry.bodyFolded || isLong ? (
-                              <Button
-                                size="sm"
-                                variant="quiet"
-                                onClick={() => toggleExpandBody(entry.eventId)}
-                              >
-                                {expanded ? "收起内容" : "查看原文"}
-                              </Button>
+                        );
+                      }
+
+                      const entry = streamEntry.entry;
+                      const expanded = expandedEventIds.includes(entry.eventId);
+                      const rowText = entry.originalText ?? "";
+                      const isLong = rowText.length > 100;
+
+                      return (
+                        <div
+                          key={`chat-${entry.eventId}`}
+                          className="vw-stream-item"
+                          data-stream-kind="chat"
+                        >
+                          <article
+                            className={
+                              entry.localStatus === "BLOCK"
+                                ? "vw-chat-row vw-chat-row--flagged"
+                                : "vw-chat-row"
+                            }
+                          >
+                            <div className="vw-row-between">
+                              <strong>
+                                <UntrustedText text={entry.subjectRef} />
+                              </strong>
+                              <div className="vw-row-wrap">
+                                <Badge tone={entry.localStatus === "BLOCK" ? "danger" : "positive"}>
+                                  {classificationLabel(entry.classification)}
+                                </Badge>
+                              </div>
+                            </div>
+                            {rowText ? (
+                              <div>
+                                <UntrustedText
+                                  text={
+                                    entry.bodyFolded && !expanded && isLong
+                                      ? `${rowText.slice(0, 100)}…`
+                                      : rowText
+                                  }
+                                />
+                                {entry.bodyFolded || isLong ? (
+                                  <Button
+                                    size="sm"
+                                    variant="quiet"
+                                    onClick={() => toggleExpandBody(entry.eventId)}
+                                  >
+                                    {expanded ? "收起内容" : "查看原文"}
+                                  </Button>
+                                ) : null}
+                              </div>
                             ) : null}
-                          </div>
-                        ) : null}
-                        {entry.deliveryId && entry.deliveryStatus === "FAILED" ? (
-                          <div className="vw-row-between">
-                            <span className="vw-caption">下游投屏投递失败</span>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => void handleResend(entry.deliveryId!)}
-                            >
-                              重新投递
-                            </Button>
-                          </div>
-                        ) : null}
-                      </article>
-                    );
-                  })}
+                            {entry.deliveryId && entry.deliveryStatus === "FAILED" ? (
+                              <div className="vw-row-between">
+                                <span className="vw-caption">下游投屏投递失败</span>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => void handleResend(entry.deliveryId!)}
+                                >
+                                  重新投递
+                                </Button>
+                              </div>
+                            ) : null}
+                          </article>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </section>

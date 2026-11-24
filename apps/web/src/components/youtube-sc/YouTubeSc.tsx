@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { Button } from "@tcrn/ui-react/approved";
+import { useCallback, useEffect, useRef, useState, type WheelEvent } from "react";
 import { UntrustedText } from "../untrusted-text/UntrustedText";
 
 export interface ScTierDescriptor {
@@ -156,11 +155,13 @@ export function SuperChatTicker({
 
 /**
  * Sticky YouTube-style Super Chat ticker bar that overlays the live stream and
- * opens an expandable Super Chat detail card when any ticker pill is clicked.
+ * opens a frameless Super Chat detail card when any ticker pill is clicked.
+ * Clicking anywhere outside the expanded card (or pressing Escape) closes it.
  */
 export function SuperChatOverlayBar({ items }: { readonly items: readonly SuperChatItemDisplay[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const popoverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -174,6 +175,38 @@ export function SuperChatOverlayBar({ items }: { readonly items: readonly SuperC
 
   const activeTickers = computeActiveScTickers(items, nowMs);
   const expandedItem = expandedId === null ? null : (items.find((item) => item.id === expandedId) ?? null);
+  const isExpanded = expandedItem !== null;
+
+  useEffect(() => {
+    if (!isExpanded) {
+      return;
+    }
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+      if (popoverRef.current?.contains(target)) {
+        return;
+      }
+      if (target instanceof Element && target.closest("[data-sc-ticker-id]") !== null) {
+        return;
+      }
+      setExpandedId(null);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setExpandedId(null);
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isExpanded]);
+
   const handleSelect = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
@@ -186,17 +219,70 @@ export function SuperChatOverlayBar({ items }: { readonly items: readonly SuperC
     <div className="vw-sc-overlay-bar" data-sc-overlay-bar="">
       <SuperChatTicker items={items} selectedId={expandedItem?.id ?? null} onSelect={handleSelect} nowMs={nowMs} />
       {expandedItem !== null ? (
-        <div className="vw-sc-overlay-popover" role="region" aria-label="Super Chat 置顶详情浮层">
+        <div
+          ref={popoverRef}
+          className="vw-sc-overlay-popover"
+          role="region"
+          aria-label="Super Chat 置顶详情浮层"
+        >
           <SuperChatCard item={expandedItem} />
-          <div className="vw-sc-overlay-popover__close">
-            <Button size="sm" variant="quiet" onClick={() => setExpandedId(null)}>
-              收起置顶卡片
-            </Button>
-          </div>
         </div>
       ) : null}
     </div>
   );
+}
+
+/**
+ * Keeps a chronological bottom-up live chat viewport pinned to the latest message
+ * at the bottom unless the viewer manually scrolls upward to inspect history.
+ */
+export function useLiveStreamAutoScroll(streamKey: string) {
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const stickToBottomRef = useRef(true);
+  const initializedRef = useRef(false);
+  const autoScrollUntilRef = useRef(0);
+
+  const handleScroll = useCallback(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distance <= 48) {
+      stickToBottomRef.current = true;
+    } else if (performance.now() >= autoScrollUntilRef.current) {
+      stickToBottomRef.current = false;
+    }
+  }, []);
+
+  const handleWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
+    if (event.deltaY < 0) {
+      autoScrollUntilRef.current = 0;
+      stickToBottomRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!streamKey || !el || !stickToBottomRef.current) {
+      return;
+    }
+    if (!initializedRef.current) {
+      el.scrollTop = el.scrollHeight;
+      initializedRef.current = true;
+      return;
+    }
+    const reduced =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduced && typeof el.scrollTo === "function") {
+      autoScrollUntilRef.current = performance.now() + 450;
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    } else {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [streamKey]);
+
+  return { viewportRef, handleScroll, handleWheel };
 }
 
 export function SuperChatCard({ item }: { readonly item: SuperChatItemDisplay }) {

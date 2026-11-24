@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SuperChatCard } from "../../components/youtube-sc";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
 import {
   buildOverlaySubprotocols,
@@ -15,7 +16,6 @@ import {
   type ActiveDeliverItem,
   type StageState,
 } from "./api";
-import { ScScroll } from "./ScScroll";
 
 export interface StageViewProps {
   readonly state: StageState;
@@ -27,10 +27,28 @@ function isSuperChatItem(item: ActiveDeliverItem): boolean {
   return item.label.includes("$") || item.label.includes("SC") || item.label.includes("¥");
 }
 
+function parseObsScDisplay(item: ActiveDeliverItem): {
+  readonly author: string;
+  readonly amountText: string | null;
+} {
+  const raw = item.label ?? SAFE_ANONYMOUS_ALIAS;
+  if (raw.includes(" · ")) {
+    const [firstPart, ...rest] = raw.split(" · ");
+    const author = firstPart?.trim() || SAFE_ANONYMOUS_ALIAS;
+    const amountText = rest.join(" · ").trim() || raw;
+    return { author, amountText };
+  }
+  const scPrefixMatch = /^SC\s+(.+)$/i.exec(raw.trim());
+  if (scPrefixMatch?.[1]) {
+    return { author: "Super Chat", amountText: scPrefixMatch[1].trim() };
+  }
+  return { author: raw, amountText: item.label };
+}
+
 /**
  * 纯无头透明 OBS 投屏呈现视图（VW-Draft-01）：
  * - 移除 WardBarrier、静音开关与音效；
- * - 实时呈现放行弹幕与 Super Chat；
+ * - 实时呈现放行弹幕与作为特殊弹幕参与统一流的 Super Chat；
  * - WARD_BLOCKED 仅无声撤回同 platformOrder 项，屏幕不展示拦截反馈。
  */
 export function StageView({ state, previewMode = false }: StageViewProps) {
@@ -38,30 +56,31 @@ export function StageView({ state, previewMode = false }: StageViewProps) {
   const effectiveDeliveries: readonly ActiveDeliverItem[] = showSamplePreview
     ? [
         {
-          deliveryId: "preview-sc-1",
+          deliveryId: "preview-chat-1",
           deliverySequence: 1,
           platformOrder: 1,
-          label: "SC $100",
-          text: "Happy Halloween from Tokyo!",
-          translation: "来自东京的万圣节问候！",
-          validUntil: "2099-01-01T00:00:00.000Z",
-          validUntilMs: Number.MAX_SAFE_INTEGER,
-        },
-        {
-          deliveryId: "preview-chat-1",
-          deliverySequence: 2,
-          platformOrder: 2,
           label: "Kaito_Fan",
           text: "今晚直播氛围太棒了，继续加油！",
           translation: null,
           validUntil: "2099-01-01T00:00:00.000Z",
           validUntilMs: Number.MAX_SAFE_INTEGER,
         },
+        {
+          deliveryId: "preview-sc-1",
+          deliverySequence: 2,
+          platformOrder: 2,
+          label: "Kaito_Tokyo · $100",
+          text: "Happy Halloween from Tokyo!",
+          translation: "来自东京的万圣节问候！",
+          validUntil: "2099-01-01T00:00:00.000Z",
+          validUntilMs: Number.MAX_SAFE_INTEGER,
+        },
       ]
     : state.activeDeliveries;
 
-  const scItems = effectiveDeliveries.filter(isSuperChatItem);
-  const chatItems = effectiveDeliveries.filter((item) => !isSuperChatItem(item));
+  const orderedDeliveries = [...effectiveDeliveries].sort(
+    (a, b) => a.platformOrder - b.platformOrder || a.deliverySequence - b.deliverySequence,
+  );
 
   return (
     <main
@@ -72,24 +91,45 @@ export function StageView({ state, previewMode = false }: StageViewProps) {
       {showSamplePreview ? (
         <div className="vw-obs-preview-badge">OBS 透明投屏预览示例 · 请于「集成管理 › OBS 透明投屏源」签发只读令牌接入正式推流</div>
       ) : null}
-      <ScScroll items={scItems} />
 
       <section aria-label="OBS Chat Feed" className="vw-obs-chat-list">
-        {chatItems.map((item) => (
-          <article key={item.deliveryId} className="vw-obs-chat-item">
-            <span className="vw-obs-chat-item__author">
-              <UntrustedText text={item.label ?? SAFE_ANONYMOUS_ALIAS} />
-            </span>
-            <span>
-              <UntrustedText text={item.text} />
-            </span>
-            {item.translation ? (
-              <div className="vw-obs-chat-item__tr">
-                <UntrustedText text={item.translation} />
+        {orderedDeliveries.map((item) => {
+          const isSc = isSuperChatItem(item);
+          if (isSc) {
+            const scDisplay = parseObsScDisplay(item);
+            return (
+              <div key={item.deliveryId} className="vw-obs-stream-item" data-stream-kind="sc">
+                <SuperChatCard
+                  item={{
+                    id: item.deliveryId,
+                    author: scDisplay.author,
+                    amountText: scDisplay.amountText,
+                    text: item.text,
+                    translation: item.translation,
+                  }}
+                />
               </div>
-            ) : null}
-          </article>
-        ))}
+            );
+          }
+
+          return (
+            <div key={item.deliveryId} className="vw-obs-stream-item" data-stream-kind="chat">
+              <article className="vw-obs-chat-item">
+                <span className="vw-obs-chat-item__author">
+                  <UntrustedText text={item.label ?? SAFE_ANONYMOUS_ALIAS} />
+                </span>
+                <span>
+                  <UntrustedText text={item.text} />
+                </span>
+                {item.translation ? (
+                  <div className="vw-obs-chat-item__tr">
+                    <UntrustedText text={item.translation} />
+                  </div>
+                ) : null}
+              </article>
+            </div>
+          );
+        })}
       </section>
     </main>
   );
