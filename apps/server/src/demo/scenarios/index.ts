@@ -22,6 +22,7 @@ import {
   subjectScores,
   subjects,
   tasks,
+  technicalLogs,
   verdicts,
 } from "../../db/schema/index.js";
 import { createScoringLedgerPort } from "../../db/scoring-ledger.js";
@@ -62,6 +63,7 @@ export interface SandboxApprovedStageItem {
   readonly correlationId: string;
   readonly subjectKey: string;
   readonly text: string;
+  readonly amountDisplay: string | null;
   readonly translation: string | null;
   readonly decidedAt: string;
 }
@@ -94,6 +96,7 @@ export interface SandboxRuntime {
     readonly subjectKey: string;
     readonly text: string;
     readonly isPaid?: boolean;
+    readonly amountDisplay?: string | null;
     readonly translationText?: string | null;
   }): Promise<{ readonly correlationId: string; readonly classification: InternalClassification | "PENDING_REVIEW" }>;
   decideReview(taskId: string, classification: InternalClassification): Promise<{ readonly status: number; readonly body: unknown }>;
@@ -291,7 +294,12 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
         taskId: null,
         attempt: 1,
         level: mod.route === "BLOCK" ? "WARN" : "INFO",
-        data: { scenarioTag: ev.scenarioTag, route: mod.route, isPaid: ev.isPaid },
+        data: {
+          scenarioTag: ev.scenarioTag,
+          route: mod.route,
+          isPaid: ev.isPaid,
+          ...(ev.amountDisplay !== null ? { amountDisplay: ev.amountDisplay } : {}),
+        },
         stage: "BASE_RULE",
         status: "OK",
         errorCode: null,
@@ -560,6 +568,24 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
         .limit(20)
         .all();
 
+      const amountByCorrelation = new Map<string, string>();
+      const techRows = database.orm
+        .select({ correlationId: technicalLogs.correlationId, dataJson: technicalLogs.dataJson })
+        .from(technicalLogs)
+        .where(eq(technicalLogs.channelId, SANDBOX_CHANNEL_ID))
+        .all();
+      for (const row of techRows) {
+        if (row.dataJson === null) continue;
+        try {
+          const parsed = JSON.parse(row.dataJson) as Record<string, unknown>;
+          if (typeof parsed.amountDisplay === "string" && parsed.amountDisplay.trim() !== "") {
+            amountByCorrelation.set(row.correlationId, parsed.amountDisplay);
+          }
+        } catch {
+          // Ignore non-JSON data rows.
+        }
+      }
+
       const approvedStage: SandboxApprovedStageItem[] = [];
       for (const row of approvedRows) {
         const content = approvedContent.readApproved({
@@ -573,6 +599,7 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
             correlationId: row.correlationId,
             subjectKey: row.subjectKey,
             text: content.text,
+            amountDisplay: amountByCorrelation.get(row.correlationId) ?? null,
             translation: content.translation,
             decidedAt: row.decidedAt,
           });

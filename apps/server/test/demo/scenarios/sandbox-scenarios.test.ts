@@ -51,6 +51,7 @@ describe("VOXWARD-SUB-046: sandbox synthetic scenarios and deterministic reset",
     expect(snap.blockedItems.length).toBe(1);
     expect(snap.reviewQueue.length).toBe(1);
     expect(snap.candidateCards.length).toBe(1);
+    expect(snap.approvedStage.some((item) => item.amountDisplay === "$10.00")).toBe(true);
 
     // SuperChat TRANSLATION evidence is plain text, compatible with both output-store and channel-panel-read
     const approvedPort = createApprovedContentPort(db);

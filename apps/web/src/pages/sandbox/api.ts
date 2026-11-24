@@ -43,6 +43,7 @@ export interface SandboxApprovedStageItem {
   readonly correlationId: string;
   readonly subjectKey: string;
   readonly text: string;
+  readonly amountDisplay?: string | null;
   readonly translation: string | null;
   readonly decidedAt: string;
 }

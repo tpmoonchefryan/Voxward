@@ -404,16 +404,14 @@ export function ModerationWorkbench({
                           >
                             放行 (不加分)
                           </Button>
-                          <div className="vw-ward-line__action-full">
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              disabled={busyKey !== null}
-                              onClick={() => void handleDecideSingle(item.taskId, "BLOCK")}
-                            >
-                              确认拦截
-                            </Button>
-                          </div>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            disabled={busyKey !== null}
+                            onClick={() => void handleDecideSingle(item.taskId, "BLOCK")}
+                          >
+                            确认拦截
+                          </Button>
                         </div>
                       </article>
                     );
@@ -436,7 +434,7 @@ export function ModerationWorkbench({
                   description="频道进入直播状态后，系统判定的所有消息与投递回执会同步列于此处。"
                 />
               ) : (
-                <div className="vw-stack-sm">
+                <div className="vw-dock-scroll">
                   {liveStream.map((entry) => {
                     const expanded = expandedEventIds.includes(entry.eventId);
                     const scMatch = scTickerItems.find((sc) => sc.id === entry.eventId);
@@ -534,7 +532,7 @@ export function ModerationWorkbench({
                           <UntrustedText text={card.note} />
                         </div>
                       ) : null}
-                      <div className="vw-row-between">
+                      <div className="vw-input-action-row">
                         <div className="vw-field-col--compact">
                           <label className="vw-field-label" htmlFor={`cand-cat-${card.id}`}>
                             归入黑名单分类

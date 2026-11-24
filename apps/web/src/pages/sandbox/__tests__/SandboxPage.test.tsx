@@ -54,7 +54,7 @@ const SNAPSHOT: SandboxSnapshot = {
 };
 
 describe("SandboxView & SandboxPage (VW-Draft-07)", () => {
-  it("renders synthetic EnvironmentBanner, role switchers, 6 scenarios, and reuses formal workbenches", () => {
+  it("renders synthetic EnvironmentBanner, role switchers, 6 scenarios, stream simulator controls, and reuses formal workbenches", () => {
     const html = renderToStaticMarkup(
       <MemoryRouter>
         <SandboxView
@@ -72,6 +72,11 @@ describe("SandboxView & SandboxPage (VW-Draft-07)", () => {
     );
 
     expect(html).toContain(SANDBOX_BANNER_TEXT);
+    expect(html).toContain("实时弹幕流模拟器");
+    expect(html).toContain("弹幕频率");
+    expect(html).toContain("SC 进场间隔");
+    expect(html).toContain("+ 立即进一条 SC");
+    expect(html).toContain("OBS 投屏实时预览");
     expect(html).toContain("正式审核工作台视图");
     expect(html).toContain("Can this &lt;script&gt; pass?");
   });

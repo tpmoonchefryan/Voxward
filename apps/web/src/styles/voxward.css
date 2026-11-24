@@ -138,13 +138,10 @@ body.vw-stage-body {
 }
 
 .vw-ward-line__actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--tcrn-space-2);
-}
-
-.vw-ward-line__action-full {
-  grid-column: 1 / -1;
 }
 
 .vw-dock-shell {
@@ -313,12 +310,6 @@ body.vw-stage-body {
   .vw-grid-3,
   .vw-grid-4,
   .vw-dock-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .vw-ward-line__actions {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -698,4 +689,26 @@ body.vw-stage-body {
 .vw-chain-step__title {
   font-weight: var(--tcrn-type-weight-medium);
   color: var(--tcrn-color-ink);
+}
+
+.vw-obs-preview-frame {
+  border-radius: var(--tcrn-radius-panel);
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .vw-chat-row {
+    animation: vw-stream-in var(--tcrn-motion-duration-move) var(--tcrn-motion-ease);
+  }
+
+  @keyframes vw-stream-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }

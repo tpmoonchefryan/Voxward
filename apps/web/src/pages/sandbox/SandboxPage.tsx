@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Badge,
   Button,
+  Divider,
   EmptyState,
   EnvironmentBanner,
+  Select,
   TableShell,
 } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
@@ -16,6 +18,8 @@ import type { DockApi, DockSnapshot } from "../dock/api";
 import { PureDockSurface } from "../dock/DockPage";
 import type { ModerationApi } from "../moderation/api";
 import { ModerationWorkbench } from "../moderation/ModerationPage";
+import { createInitialStageState, type StageState } from "../overlay/api";
+import { StageView } from "../overlay/Stage";
 import {
   createSandboxApi,
   type DemoRole,
@@ -23,6 +27,20 @@ import {
   type SandboxSnapshot,
   type ScenarioId,
 } from "./api";
+import {
+  appendBounded,
+  CHAT_CADENCE_OPTIONS,
+  createInitialSimulatedFeed,
+  DEFAULT_CHAT_INTERVAL_MS,
+  DEFAULT_SC_INTERVAL_MS,
+  MAX_SIMULATED_CHATS,
+  MAX_SIMULATED_SCS,
+  nextSimulatedChat,
+  nextSimulatedSuperChat,
+  SC_INTERVAL_OPTIONS,
+  type SimulatedChatEntry,
+  type SimulatedScEntry,
+} from "./stream-simulator";
 
 export const SANDBOX_BANNER_TEXT = "SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）";
 
@@ -49,58 +67,138 @@ export interface SandboxViewProps {
   readonly loading: boolean;
   readonly error: string | null;
   readonly showInlineBanner?: boolean;
+  readonly simulatedChats?: readonly SimulatedChatEntry[];
+  readonly simulatedScs?: readonly SimulatedScEntry[];
+  readonly streamRunning?: boolean;
+  readonly chatIntervalMs?: number;
+  readonly scIntervalMs?: number;
+  readonly nextScInSec?: number;
+  readonly streamStats?: { readonly chatCount: number; readonly scCount: number };
   readonly onSelectRole: (role: DemoRole) => void;
   readonly onTriggerScenario: (scenario: ScenarioId) => void;
   readonly onDecideReview: (taskId: string, classification: "ALLOW" | "BLOCK") => void;
   readonly onReset: () => void;
+  readonly onToggleStream?: () => void;
+  readonly onChatIntervalChange?: (ms: number) => void;
+  readonly onScIntervalChange?: (ms: number) => void;
+  readonly onPushScNow?: () => void;
 }
 
-function toDockSnapshot(snap: SandboxSnapshot | null): DockSnapshot {
+function toDockSnapshot(
+  snap: SandboxSnapshot | null,
+  simulatedChats: readonly SimulatedChatEntry[],
+  simulatedScs: readonly SimulatedScEntry[],
+): DockSnapshot {
   const chId = snap?.channelId ?? "ch_sandbox_1";
-  const scItems = (snap?.approvedStage ?? [])
-    .filter((item) => item.translation !== null)
-    .map((item) => ({
+  const scMap = new Map<string, DockSnapshot["feed"]["approvedSc"][number]>();
+
+  for (const item of snap?.approvedStage ?? []) {
+    const hasAmount = item.amountDisplay !== undefined && item.amountDisplay !== null;
+    if (!hasAmount && item.translation === null) {
+      continue;
+    }
+    const notes = item.amountDisplay ?? "$10";
+    scMap.set(item.eventId, {
       eventId: item.eventId,
       correlationId: item.correlationId,
       subjectRef: item.subjectKey,
       originalText: item.text,
       translation: item.translation,
-      notes: "$20",
-      acknowledgement: "$20",
+      notes,
+      acknowledgement: notes,
       safeAlias: item.subjectKey,
       decidedAt: item.decidedAt,
       deliveryId: item.eventId,
       deliveryStatus: "DELIVERED",
-    }));
+    });
+  }
 
-  const liveStream = [
-    ...(snap?.approvedStage ?? []).map((item) => ({
+  for (const sc of simulatedScs) {
+    scMap.set(sc.id, {
+      eventId: sc.id,
+      correlationId: sc.id,
+      subjectRef: sc.author,
+      originalText: sc.text,
+      translation: sc.translation,
+      notes: sc.amountText,
+      acknowledgement: sc.amountText,
+      safeAlias: sc.author,
+      decidedAt: sc.decidedAt,
+      deliveryId: sc.id,
+      deliveryStatus: "DELIVERED",
+    });
+  }
+
+  const scItems = [...scMap.values()].sort(
+    (a, b) => (Date.parse(b.decidedAt) || 0) - (Date.parse(a.decidedAt) || 0),
+  );
+
+  const streamMap = new Map<string, DockSnapshot["feed"]["liveStream"][number]>();
+  for (const item of snap?.approvedStage ?? []) {
+    streamMap.set(item.eventId, {
       eventId: item.eventId,
       correlationId: item.correlationId,
       subjectRef: item.subjectKey,
-      localStatus: "ALLOW" as const,
+      localStatus: "ALLOW",
       classification: "ALLOW_MEANINGFUL",
-      platformDeleteStatus: "NOT_APPLICABLE" as const,
+      platformDeleteStatus: "NOT_APPLICABLE",
       bodyFolded: false,
       originalText: item.text,
       decidedAt: item.decidedAt,
       deliveryId: item.eventId,
       deliveryStatus: "DELIVERED",
-    })),
-    ...(snap?.blockedItems ?? []).map((item) => ({
+    });
+  }
+  const nowIso = new Date().toISOString();
+  for (const item of snap?.blockedItems ?? []) {
+    streamMap.set(item.eventId, {
       eventId: item.eventId,
       correlationId: item.correlationId,
       subjectRef: item.subjectRef,
-      localStatus: "BLOCK" as const,
+      localStatus: "BLOCK",
       classification: item.classification,
-      platformDeleteStatus: "NOT_APPLICABLE" as const,
+      platformDeleteStatus: "NOT_APPLICABLE",
       bodyFolded: false,
       originalText: item.originalText,
-      decidedAt: new Date().toISOString(),
+      decidedAt: nowIso,
       deliveryId: null,
       deliveryStatus: null,
-    })),
-  ];
+    });
+  }
+  for (const chat of simulatedChats) {
+    streamMap.set(chat.id, {
+      eventId: chat.id,
+      correlationId: chat.id,
+      subjectRef: chat.author,
+      localStatus: "ALLOW",
+      classification: "ALLOW_MEANINGFUL",
+      platformDeleteStatus: "NOT_APPLICABLE",
+      bodyFolded: false,
+      originalText: chat.text,
+      decidedAt: chat.decidedAt,
+      deliveryId: chat.id,
+      deliveryStatus: "DELIVERED",
+    });
+  }
+  for (const sc of simulatedScs) {
+    streamMap.set(sc.id, {
+      eventId: sc.id,
+      correlationId: sc.id,
+      subjectRef: sc.author,
+      localStatus: "ALLOW",
+      classification: "ALLOW_MEANINGFUL",
+      platformDeleteStatus: "NOT_APPLICABLE",
+      bodyFolded: false,
+      originalText: sc.text,
+      decidedAt: sc.decidedAt,
+      deliveryId: sc.id,
+      deliveryStatus: "DELIVERED",
+    });
+  }
+
+  const liveStream = [...streamMap.values()]
+    .sort((a, b) => (Date.parse(b.decidedAt) || 0) - (Date.parse(a.decidedAt) || 0))
+    .slice(0, 60);
 
   return {
     channel: { channelId: chId, displayName: "演练虚拟频道", platform: "youtube" },
@@ -126,6 +224,42 @@ function toDockSnapshot(snap: SandboxSnapshot | null): DockSnapshot {
   };
 }
 
+function toSandboxStageState(dockSnap: DockSnapshot): StageState {
+  const scIdSet = new Set(dockSnap.feed.approvedSc.map((sc) => sc.eventId));
+  const futureValidUntil = "2099-01-01T00:00:00.000Z";
+
+  const scDeliveries = dockSnap.feed.approvedSc.slice(0, 4).map((sc, idx) => ({
+    deliveryId: `stage-sc-${sc.eventId}`,
+    deliverySequence: idx + 1,
+    platformOrder: idx + 1,
+    validUntil: futureValidUntil,
+    validUntilMs: Number.MAX_SAFE_INTEGER,
+    label: `${sc.safeAlias ?? sc.subjectRef} · ${sc.notes ?? "$20"}`,
+    text: sc.originalText ?? "",
+    translation: sc.translation,
+  }));
+
+  const chatDeliveries = dockSnap.feed.liveStream
+    .filter((m) => m.localStatus === "ALLOW" && !scIdSet.has(m.eventId) && m.originalText !== null)
+    .slice(0, 8)
+    .reverse()
+    .map((m, idx) => ({
+      deliveryId: `stage-chat-${m.eventId}`,
+      deliverySequence: 100 + idx,
+      platformOrder: 100 + idx,
+      validUntil: futureValidUntil,
+      validUntilMs: Number.MAX_SAFE_INTEGER,
+      label: m.subjectRef,
+      text: m.originalText ?? "",
+      translation: null,
+    }));
+
+  return {
+    ...createInitialStageState("connected"),
+    activeDeliveries: [...scDeliveries, ...chatDeliveries],
+  };
+}
+
 export function SandboxView({
   role,
   capabilities,
@@ -133,10 +267,21 @@ export function SandboxView({
   loading,
   error,
   showInlineBanner = true,
+  simulatedChats = [],
+  simulatedScs = [],
+  streamRunning = true,
+  chatIntervalMs = DEFAULT_CHAT_INTERVAL_MS,
+  scIntervalMs = DEFAULT_SC_INTERVAL_MS,
+  nextScInSec = 8,
+  streamStats = { chatCount: simulatedChats.length, scCount: simulatedScs.length },
   onSelectRole,
   onTriggerScenario,
   onDecideReview,
   onReset,
+  onToggleStream,
+  onChatIntervalChange,
+  onScIntervalChange,
+  onPushScNow,
 }: SandboxViewProps) {
   const [tab, setTab] = useState<string>("moderation");
   const caps = useMemo(() => new Set(capabilities), [capabilities]);
@@ -144,7 +289,11 @@ export function SandboxView({
   const canPrivacy = caps.has("privacy.delete");
   const canStage = caps.has("stage.read") || role === "DEMO_STAGE_VIEWER";
 
-  const dockSnap = useMemo(() => toDockSnapshot(snapshot), [snapshot]);
+  const dockSnap = useMemo(
+    () => toDockSnapshot(snapshot, simulatedChats, simulatedScs),
+    [snapshot, simulatedChats, simulatedScs],
+  );
+  const sandboxStageState = useMemo(() => toSandboxStageState(dockSnap), [dockSnap]);
 
   const sandboxDockApi: DockApi = useMemo(
     () => ({
@@ -335,6 +484,81 @@ export function SandboxView({
             );
           })}
         </div>
+
+        <Divider />
+
+        <div className="vw-stack-sm" data-sandbox-stream-controls="">
+          <div className="vw-row-between">
+            <div className="vw-row-wrap">
+              <strong>实时弹幕流模拟器</strong>
+              <Badge
+                tone={streamRunning ? "positive" : "neutral"}
+                data-stream-status={streamRunning ? "running" : "paused"}
+              >
+                {`${streamRunning ? "弹幕流运行中" : "弹幕流已暂停"} · 弹幕 ${streamStats.chatCount} / SC ${streamStats.scCount}`}
+              </Badge>
+              {streamRunning ? (
+                <span className="vw-caption">{`约 ${nextScInSec} 秒后进下一条 SC`}</span>
+              ) : null}
+            </div>
+            <div className="vw-row-wrap">
+              <Button
+                size="sm"
+                variant={streamRunning ? "secondary" : "primary"}
+                data-stream-toggle=""
+                onClick={() => onToggleStream?.()}
+              >
+                {streamRunning ? "暂停弹幕流" : "继续弹幕流"}
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                data-stream-push-sc=""
+                onClick={() => onPushScNow?.()}
+              >
+                + 立即进一条 SC
+              </Button>
+            </div>
+          </div>
+
+          <div className="vw-input-action-row">
+            <div className="vw-field-col--compact">
+              <label className="vw-field-label" htmlFor="sbx-chat-cadence">
+                弹幕频率
+              </label>
+              <Select
+                id="sbx-chat-cadence"
+                value={String(chatIntervalMs)}
+                onChange={(event) => {
+                  const next = Number.parseInt(event.target.value, 10);
+                  if (Number.isFinite(next)) onChatIntervalChange?.(next);
+                }}
+                options={CHAT_CADENCE_OPTIONS.map((opt) => ({
+                  value: String(opt.value),
+                  label: opt.label,
+                }))}
+              />
+            </div>
+
+            <div className="vw-field-col--compact">
+              <label className="vw-field-label" htmlFor="sbx-sc-interval">
+                SC 进场间隔
+              </label>
+              <Select
+                id="sbx-sc-interval"
+                value={String(scIntervalMs)}
+                onChange={(event) => {
+                  const next = Number.parseInt(event.target.value, 10);
+                  if (Number.isFinite(next)) onScIntervalChange?.(next);
+                }}
+                options={SC_INTERVAL_OPTIONS.map((opt) => ({
+                  value: String(opt.value),
+                  label: opt.label,
+                }))}
+              />
+            </div>
+          </div>
+        </div>
       </section>
 
       {role === "DEMO_STAGE_VIEWER" ? (
@@ -363,6 +587,7 @@ export function SandboxView({
           items={[
             { id: "moderation", label: "正式审核工作台视图" },
             { id: "dock", label: "纯净弹幕姬预览" },
+            { id: "overlay", label: "OBS 投屏实时预览" },
             { id: "data", label: "数据合规工作台视图" },
             { id: "subjects", label: "沙盒积分与日志快照" },
           ]}
@@ -391,6 +616,10 @@ export function SandboxView({
               initialSnapshot={dockSnap}
               pollIntervalMs={30000}
             />
+          ) : tab === "overlay" ? (
+            <div className="vw-obs-preview-frame" data-sandbox-obs-preview="">
+              <StageView state={sandboxStageState} previewMode />
+            </div>
           ) : tab === "data" ? (
             <DataComplianceSurface
               channelId={dockSnap.channel.channelId}
@@ -437,6 +666,72 @@ export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
   const [snapshot, setSnapshot] = useState<SandboxSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const initialFeed = useMemo(() => createInitialSimulatedFeed(), []);
+  const [simulatedChats, setSimulatedChats] = useState<readonly SimulatedChatEntry[]>(
+    () => initialFeed.chats,
+  );
+  const [simulatedScs, setSimulatedScs] = useState<readonly SimulatedScEntry[]>(
+    () => initialFeed.scs,
+  );
+  const [streamRunning, setStreamRunning] = useState(true);
+  const [chatIntervalMs, setChatIntervalMs] = useState(DEFAULT_CHAT_INTERVAL_MS);
+  const [scIntervalMs, setScIntervalMs] = useState(DEFAULT_SC_INTERVAL_MS);
+  const [nextScInSec, setNextScInSec] = useState(() => Math.ceil(DEFAULT_SC_INTERVAL_MS / 1000));
+  const [streamStats, setStreamStats] = useState(() => ({
+    chatCount: initialFeed.chats.length,
+    scCount: initialFeed.scs.length,
+  }));
+
+  const chatSeqRef = useRef(initialFeed.nextChatSeq);
+  const scSeqRef = useRef(initialFeed.nextScSeq);
+  const nextScAtRef = useRef(0);
+
+  const pushNextSc = useCallback((nowMs: number, intervalMs: number) => {
+    const seq = scSeqRef.current;
+    scSeqRef.current += 1;
+    const entry = nextSimulatedSuperChat(seq, nowMs);
+    setSimulatedScs((prev) => appendBounded(prev, entry, MAX_SIMULATED_SCS));
+    setStreamStats((prev) => ({ ...prev, scCount: prev.scCount + 1 }));
+    nextScAtRef.current = nowMs + intervalMs;
+    setNextScInSec(Math.max(1, Math.ceil(intervalMs / 1000)));
+  }, []);
+
+  useEffect(() => {
+    if (!streamRunning) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      const nowMs = Date.now();
+      const seq = chatSeqRef.current;
+      chatSeqRef.current += 1;
+      const entry = nextSimulatedChat(seq, nowMs);
+      setSimulatedChats((prev) => appendBounded(prev, entry, MAX_SIMULATED_CHATS));
+      setStreamStats((prev) => ({ ...prev, chatCount: prev.chatCount + 1 }));
+    }, chatIntervalMs);
+    return () => window.clearInterval(timer);
+  }, [streamRunning, chatIntervalMs]);
+
+  useEffect(() => {
+    if (!streamRunning) {
+      return;
+    }
+    if (nextScAtRef.current <= Date.now()) {
+      const nowMs = Date.now();
+      nextScAtRef.current = nowMs + scIntervalMs;
+      setNextScInSec(Math.max(1, Math.ceil(scIntervalMs / 1000)));
+    }
+    const timer = window.setInterval(() => {
+      const nowMs = Date.now();
+      const remainingMs = nextScAtRef.current - nowMs;
+      if (remainingMs <= 80) {
+        pushNextSc(nowMs, scIntervalMs);
+        return;
+      }
+      setNextScInSec(Math.max(1, Math.ceil(remainingMs / 1000)));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [streamRunning, scIntervalMs, pushNextSc]);
 
   const loadState = useCallback(
     async (targetRole: DemoRole) => {
@@ -495,6 +790,17 @@ export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
     try {
       const nextSnap = await client.reset(role);
       setSnapshot(nextSnap);
+      const resetFeed = createInitialSimulatedFeed();
+      chatSeqRef.current = resetFeed.nextChatSeq;
+      scSeqRef.current = resetFeed.nextScSeq;
+      nextScAtRef.current = Date.now() + scIntervalMs;
+      setSimulatedChats(resetFeed.chats);
+      setSimulatedScs(resetFeed.scs);
+      setStreamStats({
+        chatCount: resetFeed.chats.length,
+        scCount: resetFeed.scs.length,
+      });
+      setNextScInSec(Math.max(1, Math.ceil(scIntervalMs / 1000)));
       setError(null);
     } catch {
       setError("重置沙盒失败。");
@@ -539,10 +845,25 @@ export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
         loading={loading}
         error={error}
         showInlineBanner={false}
+        simulatedChats={simulatedChats}
+        simulatedScs={simulatedScs}
+        streamRunning={streamRunning}
+        chatIntervalMs={chatIntervalMs}
+        scIntervalMs={scIntervalMs}
+        nextScInSec={nextScInSec}
+        streamStats={streamStats}
         onSelectRole={(r) => void handleSelectRole(r)}
         onTriggerScenario={(s) => void handleTriggerScenario(s)}
         onDecideReview={(id, cls) => void handleDecideReview(id, cls)}
         onReset={() => void handleReset()}
+        onToggleStream={() => setStreamRunning((prev) => !prev)}
+        onChatIntervalChange={(ms) => setChatIntervalMs(ms)}
+        onScIntervalChange={(ms) => {
+          setScIntervalMs(ms);
+          nextScAtRef.current = Date.now() + ms;
+          setNextScInSec(Math.max(1, Math.ceil(ms / 1000)));
+        }}
+        onPushScNow={() => pushNextSc(Date.now(), scIntervalMs)}
       />
     </VoxWardShell>
   );
