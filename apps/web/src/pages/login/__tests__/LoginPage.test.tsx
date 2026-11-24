@@ -15,7 +15,7 @@ describe("Standalone LoginPage (/login)", () => {
     expect(sanitizeLoginNext("/integrations/ch_demo_1")).toBe("/integrations/ch_demo_1");
   });
 
-  it("renders focused single-card DS sign-in form with registered VoxWard lockup and clean copy", () => {
+  it("renders Halloween-themed login card with garlands, pumpkins, and login-only locale switcher", () => {
     const stubClient: ShellPreferencesClient = {
       getSession: async () => null,
       login: async () => {
@@ -35,6 +35,12 @@ describe("Standalone LoginPage (/login)", () => {
       </MemoryRouter>,
     );
 
+    expect(html).toContain('data-tcrn-theme="halloween"');
+    expect(html).toContain("data-login-locale-toggle");
+    expect(html).toContain("vw-login-garland-top");
+    expect(html).toContain("vw-login-garland-bottom");
+    expect(html).toContain("vw-login-pumpkin-left");
+    expect(html).toContain("vw-login-pumpkin-right");
     expect(html).toContain('data-product-id="voxward"');
     expect(html).toContain("直播互动审核系统");
     expect(html).toContain("登录账号");

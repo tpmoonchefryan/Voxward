@@ -368,11 +368,13 @@ body.vw-stage-body {
   position: relative;
   min-height: 100dvh;
   display: grid;
-  place-items: center;
-  padding: var(--tcrn-space-4);
+  grid-template-rows: auto minmax(0, 1fr);
+  padding-top: 44px;
+  padding-bottom: 92px;
   background: var(--tcrn-color-bg);
   color: var(--tcrn-color-ink);
   overflow-x: clip;
+  color-scheme: dark;
 }
 
 .vw-login-grain {
@@ -386,9 +388,35 @@ body.vw-stage-body {
   z-index: 0;
 }
 
-.vw-login-shell {
-  position: relative;
+.vw-login-garland-top {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  width: 100%;
+  height: 76px;
+  pointer-events: none;
   z-index: 1;
+}
+
+.vw-login-topbar {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  padding: var(--tcrn-space-2) var(--tcrn-space-4) 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.vw-login-stage {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: var(--tcrn-space-3) var(--tcrn-space-4);
+}
+
+.vw-login-shell {
   width: min(420px, 100%);
   display: flex;
   flex-direction: column;
@@ -436,7 +464,154 @@ body.vw-stage-body {
   font-size: var(--tcrn-type-size-caption);
 }
 
+.vw-login-bottom-decor {
+  position: fixed;
+  inset-block-end: 0;
+  inset-inline: 0;
+  height: 120px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.vw-login-garland-bottom {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0;
+  width: 100%;
+  height: 72px;
+}
+
+.vw-login-pumpkin-left,
+.vw-login-pumpkin-right {
+  position: absolute;
+  inset-block-end: 0;
+  width: 190px;
+  height: 112px;
+}
+
+.vw-login-pumpkin-left {
+  inset-inline-start: var(--tcrn-space-3);
+}
+
+.vw-login-pumpkin-right {
+  inset-inline-end: var(--tcrn-space-3);
+}
+
+.vw-hlw-cord {
+  fill: none;
+  stroke: var(--tcrn-color-line-3);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.vw-hlw-streamer-dim {
+  fill: none;
+  stroke: var(--tcrn-color-line-2);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.vw-hlw-streamer-acc {
+  fill: none;
+  stroke: var(--tcrn-color-acc);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.vw-hlw-streamer-warn {
+  fill: none;
+  stroke: var(--tcrn-color-warn);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.vw-hlw-streamer-violet {
+  fill: none;
+  stroke: var(--tcrn-brand-suffix-design-system);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.vw-hlw-streamer-ok {
+  fill: none;
+  stroke: var(--tcrn-color-ok);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.vw-hlw-edge {
+  stroke: var(--tcrn-color-on-acc);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+}
+
+.vw-hlw-acc {
+  fill: var(--tcrn-color-acc);
+}
+
+.vw-hlw-acc-2 {
+  fill: var(--tcrn-color-acc-2);
+}
+
+.vw-hlw-acc-3 {
+  fill: var(--tcrn-color-acc-3);
+}
+
+.vw-hlw-warn {
+  fill: var(--tcrn-color-warn);
+}
+
+.vw-hlw-ok {
+  fill: var(--tcrn-color-ok);
+}
+
+.vw-hlw-violet {
+  fill: var(--tcrn-brand-suffix-design-system);
+}
+
+.vw-hlw-plum {
+  fill: var(--tcrn-color-panel-2);
+}
+
+.vw-hlw-on-acc {
+  fill: var(--tcrn-color-on-acc);
+}
+
+.vw-login-locale-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tcrn-space-3);
+  inline-size: 100%;
+}
+
+.vw-login-locale-check {
+  display: inline-flex;
+  align-items: center;
+  color: var(--tcrn-color-acc);
+  flex: none;
+}
+
 @media (max-width: 600px) {
+  .vw-login-page {
+    padding-top: 38px;
+    padding-bottom: 76px;
+  }
+
+  .vw-login-garland-top {
+    height: 52px;
+  }
+
+  .vw-login-garland-bottom {
+    height: 52px;
+  }
+
+  .vw-login-pumpkin-left,
+  .vw-login-pumpkin-right {
+    width: 96px;
+    height: 58px;
+  }
+
   .vw-login-card {
     padding: var(--tcrn-space-4);
   }

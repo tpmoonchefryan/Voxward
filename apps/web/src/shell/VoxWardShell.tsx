@@ -86,6 +86,20 @@ function applyThemeAttribute(theme: ShellThemeMode): void {
   }
 }
 
+function isLoginPath(): boolean {
+  return typeof window !== "undefined" && window.location.pathname.startsWith("/login");
+}
+
+function canApplyShellTheme(requireAuth: boolean, session: SessionInfo | null): boolean {
+  if (isLoginPath()) {
+    return false;
+  }
+  if (requireAuth && session === null) {
+    return false;
+  }
+  return true;
+}
+
 export function VoxWardShell({
   activeNavId,
   pageTitle,
@@ -122,6 +136,10 @@ export function VoxWardShell({
   }>({});
 
   const hydratingRef = useRef(false);
+  const mountedRef = useRef(true);
+  const requireAuthRef = useRef(requireAuth);
+  requireAuthRef.current = requireAuth;
+  const pendingHydratedThemeRef = useRef<ShellThemeMode | null>(null);
   const sessionRef = useRef<SessionInfo | null>(null);
   sessionRef.current = session;
   const rightPinsRef = useRef<readonly string[]>(rightPins);
@@ -129,6 +147,13 @@ export function VoxWardShell({
   const pinsRef = useRef<readonly string[]>(DEFAULT_LEFT_PINS);
   const themeRef = useRef<ShellThemeMode>("light");
   const localeRef = useRef<VoxWardLocale>("zh-CN");
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const persistPreferences = useCallback(
     async (partial: {
@@ -169,8 +194,17 @@ export function VoxWardShell({
       void persistPreferences({ pins: nextPins });
     },
     onThemeChange: (nextTheme) => {
+      if (!mountedRef.current) {
+        return;
+      }
       themeRef.current = nextTheme;
-      applyThemeAttribute(nextTheme);
+      if (canApplyShellTheme(requireAuthRef.current, sessionRef.current)) {
+        applyThemeAttribute(nextTheme);
+      }
+      if (pendingHydratedThemeRef.current === nextTheme) {
+        pendingHydratedThemeRef.current = null;
+        return;
+      }
       void persistPreferences({ theme: nextTheme });
     },
     onLocaleChange: (nextLocale) => {
@@ -185,16 +219,23 @@ export function VoxWardShell({
   localeRef.current = controller.locale;
 
   useEffect(() => {
+    if (location.pathname.startsWith("/login") || !canApplyShellTheme(requireAuth, session)) {
+      return;
+    }
     applyThemeAttribute(controller.theme);
     if (typeof document !== "undefined") {
       document.documentElement.lang = controller.locale;
     }
-  }, [controller.theme, controller.locale]);
+  }, [controller.theme, controller.locale, location.pathname, requireAuth, session]);
 
   const reloadSession = useCallback(async () => {
     setSessionLoading(true);
     try {
       const currentSession = await shellClient.getSession();
+      if (!mountedRef.current) {
+        return;
+      }
+      sessionRef.current = currentSession;
       setSession(currentSession);
       if (currentSession === null) {
         setChannels([]);
@@ -202,9 +243,16 @@ export function VoxWardShell({
         try {
           setRightPins(DEFAULT_RIGHT_PINS);
           controller.setPins(DEFAULT_LEFT_PINS);
-          controller.setTheme("light");
           controller.setLocale("zh-CN");
-          applyThemeAttribute("light");
+          if (!requireAuth) {
+            if (themeRef.current !== "light") {
+              pendingHydratedThemeRef.current = "light";
+              controller.setTheme("light");
+            }
+            if (canApplyShellTheme(false, null)) {
+              applyThemeAttribute("light");
+            }
+          }
         } finally {
           hydratingRef.current = false;
         }
@@ -214,6 +262,9 @@ export function VoxWardShell({
         shellClient.listChannels(),
         shellClient.getShellPreferences(),
       ]);
+      if (!mountedRef.current) {
+        return;
+      }
       setChannels(loadedChannels);
       hydratingRef.current = true;
       try {
@@ -234,16 +285,23 @@ export function VoxWardShell({
         });
         setRightPins(nextRight);
         controller.setPins(nextLeft);
-        controller.setTheme(nextTheme);
         controller.setLocale(nextLocale);
-        applyThemeAttribute(nextTheme);
+        if (nextTheme !== themeRef.current) {
+          pendingHydratedThemeRef.current = nextTheme;
+          controller.setTheme(nextTheme);
+        }
+        if (canApplyShellTheme(requireAuth, currentSession)) {
+          applyThemeAttribute(nextTheme);
+        }
       } finally {
         hydratingRef.current = false;
       }
     } finally {
-      setSessionLoading(false);
+      if (mountedRef.current) {
+        setSessionLoading(false);
+      }
     }
-  }, [shellClient]);
+  }, [shellClient, requireAuth]);
 
   useEffect(() => {
     void reloadSession();
@@ -315,15 +373,23 @@ export function VoxWardShell({
     try {
       await shellClient.logout();
     } finally {
+      sessionRef.current = null;
       setSession(null);
       setChannels([]);
       hydratingRef.current = true;
       try {
         setRightPins(DEFAULT_RIGHT_PINS);
         controller.setPins(DEFAULT_LEFT_PINS);
-        controller.setTheme("light");
         controller.setLocale("zh-CN");
-        applyThemeAttribute("light");
+        if (!requireAuth) {
+          if (themeRef.current !== "light") {
+            pendingHydratedThemeRef.current = "light";
+            controller.setTheme("light");
+          }
+          if (canApplyShellTheme(false, null)) {
+            applyThemeAttribute("light");
+          }
+        }
       } finally {
         hydratingRef.current = false;
       }
