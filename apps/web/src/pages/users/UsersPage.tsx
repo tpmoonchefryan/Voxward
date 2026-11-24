@@ -7,12 +7,13 @@ import {
   EmptyState,
   Input,
   MultiSelect,
+  SearchInput,
   Select,
+  SettingsLayout,
   Switch,
   TableShell,
 } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
-import { SectionTabs } from "../../components/section-tabs";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
 import { VoxWardShell, useVoxWardShell } from "../../shell";
 import {
@@ -27,20 +28,24 @@ import {
   type UsersRbacApi,
 } from "./api";
 
-const CAPABILITY_LABELS: Readonly<Record<RbacCapabilityKey, { readonly name: string; readonly scope: string }>> = {
+const CAPABILITY_LABELS: Readonly<
+  Record<RbacCapabilityKey, { readonly name: string; readonly scope: string }>
+> = {
   "queue.read": { name: "查看待审队列与旁路流", scope: "审核工作台" },
   "review.decide": { name: "人工审核裁决与评分重判", scope: "审核工作台" },
   "list.edit": { name: "增删词库与黑名单用户", scope: "规则与拦截" },
-  "score.config": { name: "配置计分策略与适配器", scope: "设置与集成" },
-  "output.manage": { name: "管理下游投屏适配器", scope: "集成管理" },
-  "output.feed": { name: "只读订阅输出投屏流", scope: "投屏通道" },
-  "members.manage": { name: "管理频道成员与角色矩阵", scope: "成员权限" },
-  "tokens.manage": { name: "签发与吊销投屏凭据", scope: "集成管理" },
-  "message.original": { name: "查看观众未脱敏发言原文", scope: "隐私分级" },
+  "score.config": { name: "配置计分规则与 AI 模型策略", scope: "系统设置" },
+  "output.manage": { name: "管理直播平台、AI 与下游输出适配器", scope: "系统集成" },
+  "output.feed": { name: "读取只读下游推送流", scope: "输出通道" },
+  "members.manage": { name: "成员授权与三态角色权限管理", scope: "用户与权限" },
+  "tokens.manage": { name: "签发或吊销 OBS / 桌面端输出凭据", scope: "系统集成" },
+  "message.original": { name: "在工作台查看完整未折叠弹幕原文", scope: "隐私分级" },
   "subject.evidence": { name: "查看观众取证档案与记录", scope: "隐私分级" },
   "data.handle": { name: "执行数据导出与匿名化删除", scope: "数据合规" },
   "logs.view": { name: "查阅技术、变更与集成日志", scope: "日志审计" },
 };
+
+type UsersViewMode = "users-list" | "edit-user" | "roles-list" | "edit-role";
 
 function decidedByLabel(decidedBy: string): string {
   switch (decidedBy) {
@@ -59,11 +64,15 @@ export function UsersPage({ api }: { readonly api?: UsersRbacApi }) {
   const channelId = params.channelId ?? activeChannelId;
   const client = useMemo(() => api ?? createUsersRbacApi(), [api]);
 
-  const [tab, setTab] = useState<string>("users");
+  const [viewMode, setViewMode] = useState<UsersViewMode>("users-list");
   const [users, setUsers] = useState<readonly RbacUserView[]>([]);
   const [roles, setRoles] = useState<readonly RbacRoleView[]>([]);
 
-  // User editor state
+  const [userSearch, setUserSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
+
+  // Create / Edit User state (inline create hidden until "+ 创建用户" click)
+  const [showCreateUser, setShowCreateUser] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [userAccountId, setUserAccountId] = useState("");
   const [userLoginName, setUserLoginName] = useState("");
@@ -71,8 +80,10 @@ export function UsersPage({ api }: { readonly api?: UsersRbacApi }) {
   const [userEnabled, setUserEnabled] = useState(true);
   const [userRoleIds, setUserRoleIds] = useState<string[]>([]);
 
-  // Role editor state
+  // Create / Edit Role state (inline create hidden until "+ 创建角色" click)
+  const [showCreateRole, setShowCreateRole] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [editingRolePreset, setEditingRolePreset] = useState(false);
   const [roleName, setRoleName] = useState("");
   const [roleDescription, setRoleDescription] = useState("");
   const [rolePermissions, setRolePermissions] = useState<Record<string, RbacTriState>>({});
@@ -101,6 +112,19 @@ export function UsersPage({ api }: { readonly api?: UsersRbacApi }) {
     void loadData();
   }, [loadData]);
 
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    return users.filter((u) => {
+      if (roleFilter !== "ALL" && !u.roleIds.includes(roleFilter)) return false;
+      if (!q) return true;
+      return (
+        u.displayName.toLowerCase().includes(q) ||
+        u.loginName.toLowerCase().includes(q) ||
+        u.accountId.toLowerCase().includes(q)
+      );
+    });
+  }, [users, userSearch, roleFilter]);
+
   const liveAssignedRoles = useMemo(
     () => roles.filter((r) => userRoleIds.includes(r.id)),
     [roles, userRoleIds],
@@ -111,7 +135,7 @@ export function UsersPage({ api }: { readonly api?: UsersRbacApi }) {
     [liveAssignedRoles],
   );
 
-  const startNewUser = () => {
+  const resetUserDraft = () => {
     setEditingAccountId(null);
     setUserAccountId("");
     setUserLoginName("");
@@ -120,35 +144,40 @@ export function UsersPage({ api }: { readonly api?: UsersRbacApi }) {
     setUserRoleIds([]);
   };
 
-  const selectUserForEdit = (user: RbacUserView) => {
+  const openEditUser = (user: RbacUserView) => {
     setEditingAccountId(user.accountId);
     setUserAccountId(user.accountId);
     setUserLoginName(user.loginName);
     setUserDisplayName(user.displayName);
     setUserEnabled(user.enabled);
     setUserRoleIds([...user.roleIds]);
+    setShowCreateUser(false);
+    setViewMode("edit-user");
   };
 
   const handleSaveUser = async () => {
-    const accountId = (editingAccountId ?? userAccountId).trim();
-    if (!accountId || !userLoginName.trim() || !userDisplayName.trim()) return;
+    const rawLogin = userLoginName.trim();
+    const accountId = (editingAccountId ?? (userAccountId.trim() || `acc-${rawLogin}`)).trim();
+    if (!accountId || !rawLogin || !userDisplayName.trim()) return;
     setBusy(true);
     setNotice(null);
     try {
       await client.upsertUser(channelId, {
         accountId,
-        loginName: userLoginName.trim(),
+        loginName: rawLogin,
         displayName: userDisplayName.trim(),
         enabled: userEnabled,
         roleIds: userRoleIds,
       });
       await loadData();
-      startNewUser();
-      setNotice({ tone: "positive", text: "成员账号与多角色授权关系已保存。" });
+      resetUserDraft();
+      setShowCreateUser(false);
+      setViewMode("users-list");
+      setNotice({ tone: "positive", text: "用户账号与多角色授权关系已保存。" });
     } catch (error) {
       setNotice({
         tone: "danger",
-        text: error instanceof UsersRbacApiError ? `保存成员失败 (${error.code})` : "保存成员失败。",
+        text: error instanceof UsersRbacApiError ? `保存用户失败 (${error.code})` : "保存用户失败。",
       });
     } finally {
       setBusy(false);
@@ -160,54 +189,82 @@ export function UsersPage({ api }: { readonly api?: UsersRbacApi }) {
     setNotice(null);
     try {
       await client.deleteUser(channelId, accountId);
-      if (editingAccountId === accountId) startNewUser();
+      if (editingAccountId === accountId) {
+        resetUserDraft();
+        setViewMode("users-list");
+      }
       await loadData();
-      setNotice({ tone: "positive", text: "成员授权已移除。" });
+      setNotice({ tone: "positive", text: "用户授权已移除。" });
     } catch (error) {
       setNotice({
         tone: "danger",
-        text: error instanceof UsersRbacApiError ? `删除成员失败 (${error.code})` : "删除成员失败。",
+        text: error instanceof UsersRbacApiError ? `删除用户失败 (${error.code})` : "删除用户失败。",
       });
     } finally {
       setBusy(false);
     }
   };
 
-  const startNewRole = () => {
+  const resetRoleDraft = () => {
     setEditingRoleId(null);
+    setEditingRolePreset(false);
     setRoleName("");
     setRoleDescription("");
     setRolePermissions({});
   };
 
-  const selectRoleForEdit = (role: RbacRoleView) => {
+  const openEditRole = (role: RbacRoleView) => {
     setEditingRoleId(role.id);
+    setEditingRolePreset(role.systemPreset);
     setRoleName(role.name);
     setRoleDescription(role.description);
     setRolePermissions({ ...role.permissions });
+    setShowCreateRole(false);
+    setViewMode("edit-role");
   };
 
-  const handleSaveRole = async () => {
+  const handleCreateRoleInline = async () => {
     if (!roleName.trim()) return;
     setBusy(true);
     setNotice(null);
     try {
-      if (editingRoleId !== null) {
-        await client.updateRole(channelId, editingRoleId, {
-          name: roleName.trim(),
-          description: roleDescription.trim(),
-          permissions: rolePermissions,
-        });
-      } else {
-        await client.createRole(channelId, {
-          name: roleName.trim(),
-          description: roleDescription.trim(),
-          permissions: rolePermissions,
-        });
+      const updatedRoles = await client.createRole(channelId, {
+        name: roleName.trim(),
+        description: roleDescription.trim(),
+        permissions: {},
+      });
+      setRoles(updatedRoles);
+      const created = updatedRoles.find((r) => r.name === roleName.trim()) ?? null;
+      resetRoleDraft();
+      setShowCreateRole(false);
+      if (created !== null) {
+        openEditRole(created);
       }
+      setNotice({ tone: "positive", text: "角色已创建；可在此继续配置三态权限矩阵。" });
+    } catch (error) {
+      setNotice({
+        tone: "danger",
+        text: error instanceof UsersRbacApiError ? `创建角色失败 (${error.code})` : "创建角色失败。",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSaveRolePermissions = async () => {
+    if (editingRoleId === null || !roleName.trim()) return;
+    setBusy(true);
+    setNotice(null);
+    try {
+      await client.updateRole(channelId, editingRoleId, {
+        name: roleName.trim(),
+        description: roleDescription.trim(),
+        permissions: rolePermissions,
+      });
       await loadData();
-      startNewRole();
-      setNotice({ tone: "positive", text: "角色权限矩阵已更新。" });
+      resetRoleDraft();
+      setViewMode("roles-list");
+      setNotice({ tone: "positive", text: "角色权限矩阵已保存。" });
     } catch (error) {
       setNotice({
         tone: "danger",
@@ -224,7 +281,10 @@ export function UsersPage({ api }: { readonly api?: UsersRbacApi }) {
     setNotice(null);
     try {
       await client.deleteRole(channelId, pendingDeleteRole.id);
-      if (editingRoleId === pendingDeleteRole.id) startNewRole();
+      if (editingRoleId === pendingDeleteRole.id) {
+        resetRoleDraft();
+        setViewMode("roles-list");
+      }
       await loadData();
       setNotice({ tone: "positive", text: "自定义角色已删除。" });
     } catch (error) {
@@ -238,331 +298,587 @@ export function UsersPage({ api }: { readonly api?: UsersRbacApi }) {
     }
   };
 
+  const isListView = viewMode === "users-list" || viewMode === "roles-list";
+  const pageTitle =
+    viewMode === "edit-user"
+      ? `编辑用户 · ${userDisplayName} (${userLoginName})`
+      : viewMode === "edit-role"
+        ? `编辑角色 · ${roleName}`
+        : "用户管理";
+  const pageDescription =
+    viewMode === "edit-user"
+      ? "维护用户资料、账号启停状态及多角色叠加后的最终生效权限。"
+      : viewMode === "edit-role"
+        ? "配置三态权限矩阵，多角色合并严格遵循 Deny > Grant > Not Set。"
+        : "管理工作台用户多角色授权，并配置三态权限角色矩阵（Deny > Grant > Not Set）。";
+
+  const pageActions =
+    viewMode === "users-list" ? (
+      <Button
+        size="sm"
+        variant={showCreateUser ? "secondary" : "primary"}
+        onClick={() => {
+          resetUserDraft();
+          setShowCreateUser((prev) => !prev);
+        }}
+      >
+        {showCreateUser ? "收起创建" : "+ 创建用户"}
+      </Button>
+    ) : viewMode === "roles-list" ? (
+      <Button
+        size="sm"
+        variant={showCreateRole ? "secondary" : "primary"}
+        onClick={() => {
+          resetRoleDraft();
+          setShowCreateRole((prev) => !prev);
+        }}
+      >
+        {showCreateRole ? "收起创建" : "+ 创建角色"}
+      </Button>
+    ) : viewMode === "edit-user" ? (
+      <Button
+        size="sm"
+        variant="quiet"
+        onClick={() => {
+          resetUserDraft();
+          setViewMode("users-list");
+        }}
+      >
+        返回用户列表
+      </Button>
+    ) : (
+      <Button
+        size="sm"
+        variant="quiet"
+        onClick={() => {
+          resetRoleDraft();
+          setViewMode("roles-list");
+        }}
+      >
+        返回角色列表
+      </Button>
+    );
+
+  const localNavigation = (
+    <nav className="vw-settings-nav" aria-label="用户与权限">
+      <div className="vw-settings-group-title">用户与权限 (2)</div>
+      <button
+        type="button"
+        className={
+          viewMode === "users-list"
+            ? "vw-settings-nav-item vw-settings-nav-item--active"
+            : "vw-settings-nav-item"
+        }
+        onClick={() => {
+          setViewMode("users-list");
+          setShowCreateRole(false);
+        }}
+      >
+        用户列表 ({users.length})
+      </button>
+      <button
+        type="button"
+        className={
+          viewMode === "roles-list"
+            ? "vw-settings-nav-item vw-settings-nav-item--active"
+            : "vw-settings-nav-item"
+        }
+        onClick={() => {
+          setViewMode("roles-list");
+          setShowCreateUser(false);
+        }}
+      >
+        角色管理 ({roles.length})
+      </button>
+    </nav>
+  );
+
   return (
     <VoxWardShell
       activeNavId="users"
       channelId={channelId}
-      showChannelSelector
+      showChannelSelector={false}
       requireAuth
-      pageTitle="成员权限"
-      pageDescription="管理多角色成员分配并按三态矩阵（显式拒绝 > 显式授予 > 未设置）实时预览最终生效权限。"
+      pageTitle={pageTitle}
+      pageDescription={pageDescription}
+      pageActions={pageActions}
     >
       <div className="vw-stack-md">
         {notice ? <BannerNotice tone={notice.tone}>{notice.text}</BannerNotice> : null}
 
-        <SectionTabs
-          label="用户与角色权限切换"
-          selectedId={tab}
-          onSelect={setTab}
-          items={[
-            { id: "users", label: `用户管理 (${users.length})` },
-            { id: "roles", label: `角色与权限 (${roles.length})` },
-          ]}
-        >
-          {tab === "users" ? (
-            <div className="vw-stack-md">
-              <section className="vw-panel-card" aria-label="成员账号列表">
-                <div className="vw-row-between">
-                  <strong>频道授权用户 ({users.length})</strong>
-                  <Button size="sm" variant="secondary" onClick={startNewUser}>
-                    新增成员授权
-                  </Button>
-                </div>
-                <TableShell
-                  label="成员列表"
-                  columns={[
-                    { key: "loginName", label: "登录名" },
-                    { key: "displayName", label: "显示名称" },
-                    { key: "roles", label: "绑定角色" },
-                    { key: "status", label: "状态" },
-                    { key: "allowCount", label: "允许项数" },
-                    { key: "actions", label: "操作", align: "end" },
-                  ]}
-                  rows={users.map((u) => {
-                    const allowedCount = u.effectivePermissions.filter((p) => p.effect === "ALLOW").length;
-                    const assignedNames = u.roleIds
-                      .map((id) => roles.find((r) => r.id === id)?.name ?? id)
-                      .join("、");
-                    return {
-                      loginName: <span className="vw-mono">{u.loginName}</span>,
-                      displayName: <UntrustedText text={u.displayName} />,
-                      roles: assignedNames || <span className="vw-muted">无绑定角色</span>,
-                      status: (
-                        <Badge tone={u.enabled ? "positive" : "neutral"}>
-                          {u.enabled ? "已启用" : "已禁用"}
-                        </Badge>
-                      ),
-                      allowCount: `${allowedCount} / ${RBAC_CAPABILITY_KEYS.length}`,
-                      actions: (
-                        <div className="vw-table-actions">
-                          <Button size="sm" variant="quiet" onClick={() => selectUserForEdit(u)}>
-                            编辑角色
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            disabled={busy}
-                            onClick={() => void handleDeleteUser(u.accountId)}
-                          >
-                            移除
-                          </Button>
-                        </div>
-                      ),
-                    };
-                  })}
-                  emptyState={<EmptyState title="暂无授权用户" />}
-                />
-              </section>
+        {isListView ? (
+          <SettingsLayout
+            navigation={localNavigation}
+            navigationLabel="用户与权限栏目"
+            contentLabel="用户与权限工作区"
+          >
+            {viewMode === "users-list" ? (
+              <div className="vw-stack-md">
+                {showCreateUser ? (
+                  <section className="vw-panel-card" aria-label="创建新用户">
+                    <div className="vw-row-between">
+                      <strong>创建新用户</strong>
+                      <span className="vw-caption">支持直接多角色分配，无需邀请链接</span>
+                    </div>
+                    <div className="vw-input-action-row">
+                      <div className="vw-field-col--compact">
+                        <label className="vw-field-label" htmlFor="rbac-disp">
+                          显示名称
+                        </label>
+                        <Input
+                          id="rbac-disp"
+                          value={userDisplayName}
+                          onChange={(e) => setUserDisplayName(e.target.value)}
+                          placeholder="如：aya"
+                        />
+                      </div>
+                      <div className="vw-field-col--compact">
+                        <label className="vw-field-label" htmlFor="rbac-login">
+                          登录账号
+                        </label>
+                        <Input
+                          id="rbac-login"
+                          value={userLoginName}
+                          onChange={(e) => setUserLoginName(e.target.value)}
+                          placeholder="如：mod_aya"
+                        />
+                      </div>
+                      <div className="vw-field-col--compact">
+                        <label className="vw-field-label" htmlFor="rbac-acc-id">
+                          账号 ID（可选）
+                        </label>
+                        <Input
+                          id="rbac-acc-id"
+                          value={userAccountId}
+                          onChange={(e) => setUserAccountId(e.target.value)}
+                          placeholder="留空自动生成"
+                        />
+                      </div>
+                    </div>
+                    <div className="vw-field-col">
+                      <label className="vw-field-label" htmlFor="rbac-create-roles">
+                        初始角色（多选）
+                      </label>
+                      <MultiSelect
+                        id="rbac-create-roles"
+                        presentation="checkboxes"
+                        emptySelectionLabel="选择初始角色"
+                        clearSelectionLabel="清空已选角色"
+                        value={userRoleIds}
+                        onChange={setUserRoleIds}
+                        options={roles.map((r) => ({ value: r.id, label: r.name }))}
+                      />
+                    </div>
+                    <div className="vw-row-wrap">
+                      <Button
+                        variant="primary"
+                        loading={busy}
+                        disabled={!userLoginName.trim() || !userDisplayName.trim()}
+                        onClick={() => void handleSaveUser()}
+                      >
+                        确认创建
+                      </Button>
+                      <Button
+                        variant="quiet"
+                        onClick={() => {
+                          resetUserDraft();
+                          setShowCreateUser(false);
+                        }}
+                      >
+                        取消
+                      </Button>
+                    </div>
+                  </section>
+                ) : null}
 
-              <section className="vw-panel-card" aria-label="用户编辑与实时生效权限预览">
-                <strong>
-                  {editingAccountId !== null ? `编辑成员权限：${editingAccountId}` : "新增成员并配置多角色"}
-                </strong>
-                <div className="vw-row-wrap">
-                  <div className="vw-field-col--compact">
-                    <label className="vw-field-label" htmlFor="rbac-acc-id">
-                      账号唯一标识
-                    </label>
-                    <Input
-                      id="rbac-acc-id"
-                      value={userAccountId}
-                      disabled={editingAccountId !== null}
-                      onChange={(e) => setUserAccountId(e.target.value)}
-                      placeholder="例如：acc_mod_02"
-                    />
+                <section className="vw-panel-card" aria-label="成员账号列表">
+                  <div className="vw-input-action-row">
+                    <div className="vw-field-col">
+                      <label className="vw-field-label" htmlFor="rbac-user-search">
+                        搜索用户名 / 登录账号
+                      </label>
+                      <SearchInput
+                        id="rbac-user-search"
+                        fill
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        placeholder="搜索用户名或登录账号…"
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="rbac-user-role-filter">
+                        按角色筛选
+                      </label>
+                      <Select
+                        id="rbac-user-role-filter"
+                        value={roleFilter}
+                        onChange={(e) => setRoleFilter(e.target.value)}
+                        options={[
+                          { value: "ALL", label: `全部 (${roles.length})` },
+                          ...roles.map((r) => ({ value: r.id, label: r.name })),
+                        ]}
+                      />
+                    </div>
                   </div>
-                  <div className="vw-field-col--compact">
-                    <label className="vw-field-label" htmlFor="rbac-login">
-                      登录名
-                    </label>
-                    <Input
-                      id="rbac-login"
-                      value={userLoginName}
-                      onChange={(e) => setUserLoginName(e.target.value)}
-                      placeholder="例如：lin_mod"
-                    />
-                  </div>
-                  <div className="vw-field-col--compact">
-                    <label className="vw-field-label" htmlFor="rbac-disp">
-                      显示名称
-                    </label>
-                    <Input
-                      id="rbac-disp"
-                      value={userDisplayName}
-                      onChange={(e) => setUserDisplayName(e.target.value)}
-                      placeholder="值班审核员"
-                    />
-                  </div>
-                </div>
 
-                <Switch
-                  label="启用该成员访问"
-                  checked={userEnabled}
-                  onChange={(e) => setUserEnabled(e.target.checked)}
-                />
-
-                <div className="vw-field-col">
-                  <label className="vw-field-label" htmlFor="rbac-role-multi">
-                    分配角色（多选叠加：显式拒绝优先于授予）
-                  </label>
-                  <MultiSelect
-                    id="rbac-role-multi"
-                    presentation="checkboxes"
-                    emptySelectionLabel="未勾选角色"
-                    clearSelectionLabel="清空已选角色"
-                    value={userRoleIds}
-                    onChange={setUserRoleIds}
-                    options={roles.map((r) => ({ value: r.id, label: r.name }))}
-                  />
-                </div>
-
-                <div className="vw-stack-sm">
-                  <strong>实时生效权限预览（显式拒绝 &gt; 显式授予 &gt; 未设置默认拒绝）</strong>
                   <TableShell
-                    label="生效权限预览"
+                    label="用户列表"
                     columns={[
-                      { key: "scope", label: "功能域" },
-                      { key: "capability", label: "能力项" },
-                      { key: "effect", label: "生效结果" },
-                      { key: "decidedBy", label: "判定依据" },
-                      { key: "sources", label: "命中角色" },
+                      { key: "loginName", label: "用户 / 登录账号" },
+                      { key: "roles", label: "已分配角色 (多角色)" },
+                      { key: "status", label: "状态" },
+                      { key: "actions", label: "操作", align: "end" },
                     ]}
-                    rows={livePreview.map((entry) => {
-                      const info = CAPABILITY_LABELS[entry.capability];
+                    rows={filteredUsers.map((u) => {
+                      const assignedNames = u.roleIds
+                        .map((id) => roles.find((r) => r.id === id)?.name ?? id)
+                        .join(" · ");
                       return {
-                        scope: info.scope,
-                        capability: info.name,
-                        effect: (
-                          <Badge tone={entry.effect === "ALLOW" ? "positive" : "danger"}>
-                            {entry.effect === "ALLOW" ? "允许" : "拒绝"}
+                        loginName: (
+                          <span>
+                            <strong>
+                              <UntrustedText text={u.displayName} />
+                            </strong>{" "}
+                            <span className="vw-mono">({u.loginName})</span>
+                          </span>
+                        ),
+                        roles: assignedNames || <span className="vw-muted">未分配角色</span>,
+                        status: (
+                          <Badge tone={u.enabled ? "positive" : "neutral"}>
+                            {u.enabled ? "启用" : "停用"}
                           </Badge>
                         ),
-                        decidedBy: decidedByLabel(entry.decidedBy),
-                        sources:
-                          entry.sourceRoleIds.length > 0
-                            ? entry.sourceRoleIds
-                                .map((id) => roles.find((r) => r.id === id)?.name ?? id)
-                                .join("、")
-                            : "—",
-                      };
-                    })}
-                  />
-                </div>
-
-                <div className="vw-row-wrap">
-                  <Button
-                    variant="primary"
-                    loading={busy}
-                    disabled={!userAccountId.trim() || !userLoginName.trim() || !userDisplayName.trim()}
-                    onClick={() => void handleSaveUser()}
-                  >
-                    保存成员与角色
-                  </Button>
-                  {editingAccountId !== null ? (
-                    <Button variant="quiet" onClick={startNewUser}>
-                      重置为新建模式
-                    </Button>
-                  ) : null}
-                </div>
-              </section>
-            </div>
-          ) : (
-            <div className="vw-stack-md">
-              <section className="vw-panel-card" aria-label="角色列表">
-                <div className="vw-row-between">
-                  <strong>频道角色定义 ({roles.length})</strong>
-                  <Button size="sm" variant="secondary" onClick={startNewRole}>
-                    新建自定义角色
-                  </Button>
-                </div>
-                <TableShell
-                  label="角色列表"
-                  columns={[
-                    { key: "name", label: "角色名称" },
-                    { key: "description", label: "说明" },
-                    { key: "kind", label: "类型" },
-                    { key: "grants", label: "授予数" },
-                    { key: "denies", label: "显式拒绝数" },
-                    { key: "actions", label: "操作", align: "end" },
-                  ]}
-                  rows={roles.map((r) => {
-                    const vals = Object.values(r.permissions);
-                    const grants = vals.filter((v) => v === "GRANT").length;
-                    const denies = vals.filter((v) => v === "DENY").length;
-                    return {
-                      name: r.name,
-                      description: r.description || <span className="vw-muted">无说明</span>,
-                      kind: (
-                        <Badge tone={r.systemPreset ? "accent" : "neutral"}>
-                          {r.systemPreset ? "系统预设" : "自定义"}
-                        </Badge>
-                      ),
-                      grants,
-                      denies,
-                      actions: (
-                        <div className="vw-table-actions">
-                          <Button size="sm" variant="quiet" onClick={() => selectRoleForEdit(r)}>
-                            编辑权限矩阵
-                          </Button>
-                          {!r.systemPreset ? (
+                        actions: (
+                          <div className="vw-table-actions">
+                            <Button size="sm" variant="secondary" onClick={() => openEditUser(u)}>
+                              编辑
+                            </Button>
                             <Button
                               size="sm"
                               variant="danger"
                               disabled={busy}
-                              onClick={() => setPendingDeleteRole(r)}
+                              onClick={() => void handleDeleteUser(u.accountId)}
                             >
                               删除
                             </Button>
-                          ) : null}
-                        </div>
-                      ),
-                    };
-                  })}
-                />
-              </section>
+                          </div>
+                        ),
+                      };
+                    })}
+                    emptyState={<EmptyState title="暂无授权用户" description="点击右上角「+ 创建用户」添加工作台操作员。" />}
+                  />
+                </section>
+              </div>
+            ) : (
+              <div className="vw-stack-md">
+                {showCreateRole ? (
+                  <section className="vw-panel-card" aria-label="创建新角色">
+                    <strong>创建自定义角色</strong>
+                    <div className="vw-input-action-row">
+                      <div className="vw-field-col--compact">
+                        <label className="vw-field-label" htmlFor="role-name-input">
+                          角色名称
+                        </label>
+                        <Input
+                          id="role-name-input"
+                          value={roleName}
+                          onChange={(e) => setRoleName(e.target.value)}
+                          placeholder="例如：夜班实习房管"
+                        />
+                      </div>
+                      <div className="vw-field-col">
+                        <label className="vw-field-label" htmlFor="role-desc-input">
+                          角色说明（可选）
+                        </label>
+                        <Input
+                          id="role-desc-input"
+                          value={roleDescription}
+                          onChange={(e) => setRoleDescription(e.target.value)}
+                          placeholder="描述角色适用场景，创建后进入权限矩阵细化配置"
+                        />
+                      </div>
+                      <Button
+                        variant="primary"
+                        loading={busy}
+                        disabled={!roleName.trim()}
+                        onClick={() => void handleCreateRoleInline()}
+                      >
+                        确认创建角色
+                      </Button>
+                      <Button
+                        variant="quiet"
+                        onClick={() => {
+                          resetRoleDraft();
+                          setShowCreateRole(false);
+                        }}
+                      >
+                        取消
+                      </Button>
+                    </div>
+                  </section>
+                ) : null}
 
-              <section className="vw-panel-card" aria-label="角色三态权限矩阵编辑">
-                <strong>{editingRoleId !== null ? `编辑角色：${roleName}` : "创建自定义角色"}</strong>
-                <div className="vw-row-wrap">
-                  <div className="vw-field-col--compact">
-                    <label className="vw-field-label" htmlFor="role-name-input">
-                      角色名称
-                    </label>
-                    <Input
-                      id="role-name-input"
-                      value={roleName}
-                      onChange={(e) => setRoleName(e.target.value)}
-                      placeholder="例如：夜班值守审核"
-                    />
+                <section className="vw-panel-card" aria-label="角色列表">
+                  <div className="vw-row-between">
+                    <strong>角色列表</strong>
+                    <span className="vw-caption">合并规则：Deny &gt; Grant &gt; Not Set</span>
                   </div>
-                  <div className="vw-field-col">
-                    <label className="vw-field-label" htmlFor="role-desc-input">
-                      职责说明
-                    </label>
-                    <Input
-                      id="role-desc-input"
-                      value={roleDescription}
-                      onChange={(e) => setRoleDescription(e.target.value)}
-                      placeholder="允许审核与拉黑，显式拒绝修改系统集成配置"
-                    />
-                  </div>
+                  <TableShell
+                    label="角色定义列表"
+                    columns={[
+                      { key: "name", label: "角色名称" },
+                      { key: "boundUsers", label: "绑定用户" },
+                      { key: "summary", label: "权限摘要 (Grant / Deny)" },
+                      { key: "actions", label: "操作", align: "end" },
+                    ]}
+                    rows={roles.map((r) => {
+                      const vals = Object.values(r.permissions);
+                      const grants = vals.filter((v) => v === "GRANT").length;
+                      const denies = vals.filter((v) => v === "DENY").length;
+                      const boundCount = users.filter((u) => u.roleIds.includes(r.id)).length;
+                      return {
+                        name: (
+                          <span>
+                            <strong>
+                              <UntrustedText text={r.name} />
+                            </strong>
+                            {r.systemPreset ? " (内置)" : ""}
+                          </span>
+                        ),
+                        boundUsers: `${boundCount} 人`,
+                        summary: `Grant ${grants} · Deny ${denies}`,
+                        actions: (
+                          <div className="vw-table-actions">
+                            <Button size="sm" variant="secondary" onClick={() => openEditRole(r)}>
+                              编辑权限
+                            </Button>
+                            {!r.systemPreset ? (
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                disabled={busy}
+                                onClick={() => setPendingDeleteRole(r)}
+                              >
+                                删除
+                              </Button>
+                            ) : null}
+                          </div>
+                        ),
+                      };
+                    })}
+                  />
+                </section>
+              </div>
+            )}
+          </SettingsLayout>
+        ) : viewMode === "edit-user" ? (
+          <div className="vw-stack-lg">
+            <section className="vw-panel-card" aria-label="基础资料与账号状态">
+              <div className="vw-row-between">
+                <strong>基础资料与账号状态</strong>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  disabled={busy || editingAccountId === null}
+                  onClick={() => editingAccountId && void handleDeleteUser(editingAccountId)}
+                >
+                  删除用户
+                </Button>
+              </div>
+              <div className="vw-row-wrap">
+                <div className="vw-field-col--compact">
+                  <label className="vw-field-label" htmlFor="edit-user-disp">
+                    显示名称
+                  </label>
+                  <Input
+                    id="edit-user-disp"
+                    value={userDisplayName}
+                    onChange={(e) => setUserDisplayName(e.target.value)}
+                  />
                 </div>
+                <div className="vw-field-col--compact">
+                  <label className="vw-field-label" htmlFor="edit-user-login">
+                    登录账号
+                  </label>
+                  <Input
+                    id="edit-user-login"
+                    value={userLoginName}
+                    onChange={(e) => setUserLoginName(e.target.value)}
+                  />
+                </div>
+              </div>
+              <Switch
+                label="账号启用状态"
+                description="停用后该用户所有会话立即失效且无法登录。"
+                checked={userEnabled}
+                onChange={(e) => setUserEnabled(e.target.checked)}
+              />
+            </section>
 
+            <section className="vw-panel-card" aria-label="所属角色分配与最终权限预览">
+              <strong>所属角色分配与最终权限预览</strong>
+              <div className="vw-field-col">
+                <label className="vw-field-label" htmlFor="rbac-role-multi">
+                  分配角色（多选叠加：显式拒绝优先于授予）
+                </label>
+                <MultiSelect
+                  id="rbac-role-multi"
+                  presentation="checkboxes"
+                  emptySelectionLabel="未勾选角色"
+                  clearSelectionLabel="清空已选角色"
+                  value={userRoleIds}
+                  onChange={setUserRoleIds}
+                  options={roles.map((r) => ({ value: r.id, label: r.name }))}
+                />
+              </div>
+
+              <div className="vw-stack-sm">
+                <strong>实时生效权限合成结果（Deny &gt; Grant &gt; Not Set）</strong>
                 <TableShell
-                  label="三态权限矩阵"
+                  label="生效权限预览"
                   columns={[
                     { key: "scope", label: "功能域" },
-                    { key: "capability", label: "能力说明" },
-                    { key: "state", label: "权限策略（未设置 / 允许 / 拒绝）" },
+                    { key: "capability", label: "能力项" },
+                    { key: "effect", label: "生效结果" },
+                    { key: "decidedBy", label: "判定依据" },
+                    { key: "sources", label: "命中角色" },
                   ]}
-                  rows={RBAC_CAPABILITY_KEYS.map((cap) => {
-                    const info = CAPABILITY_LABELS[cap];
-                    const state = rolePermissions[cap] ?? "NOT_SET";
+                  rows={livePreview.map((entry) => {
+                    const info = CAPABILITY_LABELS[entry.capability];
                     return {
                       scope: info.scope,
                       capability: info.name,
-                      state: (
-                        <div className="vw-field-col--compact">
-                          <Select
-                            aria-label={`${info.name} 权限配置`}
-                            value={state}
-                            onChange={(event) =>
-                              setRolePermissions((prev) => ({
-                                ...prev,
-                                [cap]: event.target.value as RbacTriState,
-                              }))
-                            }
-                            options={[
-                              { value: "NOT_SET", label: "未设置（默认拒绝 / 由其他角色决定）" },
-                              { value: "GRANT", label: "允许（Grant）" },
-                              { value: "DENY", label: "显式拒绝（Deny · 最高优先级）" },
-                            ]}
-                          />
-                        </div>
+                      effect: (
+                        <Badge tone={entry.effect === "ALLOW" ? "positive" : "danger"}>
+                          {entry.effect === "ALLOW" ? "允许" : "拒绝"}
+                        </Badge>
                       ),
+                      decidedBy: decidedByLabel(entry.decidedBy),
+                      sources:
+                        entry.sourceRoleIds.length > 0
+                          ? entry.sourceRoleIds
+                              .map((id) => roles.find((r) => r.id === id)?.name ?? id)
+                              .join("、")
+                          : "—",
                     };
                   })}
                 />
+              </div>
 
-                <div className="vw-row-wrap">
-                  <Button
-                    variant="primary"
-                    loading={busy}
-                    disabled={!roleName.trim()}
-                    onClick={() => void handleSaveRole()}
-                  >
-                    {editingRoleId !== null ? "保存角色修改" : "创建角色"}
-                  </Button>
-                  {editingRoleId !== null ? (
-                    <Button variant="quiet" onClick={startNewRole}>
-                      取消编辑
-                    </Button>
-                  ) : null}
+              <div className="vw-row-wrap">
+                <Button
+                  variant="primary"
+                  loading={busy}
+                  disabled={!userLoginName.trim() || !userDisplayName.trim()}
+                  onClick={() => void handleSaveUser()}
+                >
+                  保存用户
+                </Button>
+                <Button
+                  variant="quiet"
+                  onClick={() => {
+                    resetUserDraft();
+                    setViewMode("users-list");
+                  }}
+                >
+                  返回用户列表
+                </Button>
+              </div>
+            </section>
+          </div>
+        ) : (
+          <div className="vw-stack-lg">
+            <section className="vw-panel-card" aria-label="角色权限管理矩阵">
+              <div className="vw-row-between">
+                <strong>角色权限管理矩阵（Deny &gt; Grant &gt; Not Set）</strong>
+                <Badge tone="neutral">Deny 显式拒绝覆盖其他角色的 Grant；全为 Not Set 默认无权</Badge>
+              </div>
+              <div className="vw-row-wrap">
+                <div className="vw-field-col--compact">
+                  <label className="vw-field-label" htmlFor="edit-role-name">
+                    角色名称
+                  </label>
+                  <Input
+                    id="edit-role-name"
+                    value={roleName}
+                    disabled={editingRolePreset}
+                    onChange={(e) => setRoleName(e.target.value)}
+                  />
                 </div>
-              </section>
-            </div>
-          )}
-        </SectionTabs>
+                <div className="vw-field-col">
+                  <label className="vw-field-label" htmlFor="edit-role-desc">
+                    职责说明
+                  </label>
+                  <Input
+                    id="edit-role-desc"
+                    value={roleDescription}
+                    onChange={(e) => setRoleDescription(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <TableShell
+                label="三态权限矩阵"
+                columns={[
+                  { key: "scope", label: "功能域" },
+                  { key: "capability", label: "权限键 / 说明" },
+                  { key: "state", label: "授权决策（Not Set / Grant / Deny）" },
+                ]}
+                rows={RBAC_CAPABILITY_KEYS.map((cap) => {
+                  const info = CAPABILITY_LABELS[cap];
+                  const state = rolePermissions[cap] ?? "NOT_SET";
+                  return {
+                    scope: info.scope,
+                    capability: (
+                      <span>
+                        <span className="vw-mono">{cap}</span> · {info.name}
+                      </span>
+                    ),
+                    state: (
+                      <div className="vw-field-col--compact">
+                        <Select
+                          aria-label={`${info.name} 权限配置`}
+                          value={state}
+                          onChange={(event) =>
+                            setRolePermissions((prev) => ({
+                              ...prev,
+                              [cap]: event.target.value as RbacTriState,
+                            }))
+                          }
+                          options={[
+                            { value: "NOT_SET", label: "未设置 (Not Set)" },
+                            { value: "GRANT", label: "允许 (Grant)" },
+                            { value: "DENY", label: "显式拒绝 (Deny)" },
+                          ]}
+                        />
+                      </div>
+                    ),
+                  };
+                })}
+              />
+
+              <div className="vw-row-wrap">
+                <Button
+                  variant="primary"
+                  loading={busy}
+                  disabled={!roleName.trim()}
+                  onClick={() => void handleSaveRolePermissions()}
+                >
+                  保存角色权限
+                </Button>
+                <Button
+                  variant="quiet"
+                  onClick={() => {
+                    resetRoleDraft();
+                    setViewMode("roles-list");
+                  }}
+                >
+                  返回角色列表
+                </Button>
+              </div>
+            </section>
+          </div>
+        )}
 
         <ConfirmActionDialog
           open={pendingDeleteRole !== null}

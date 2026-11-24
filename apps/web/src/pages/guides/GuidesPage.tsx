@@ -82,8 +82,8 @@ export function GuidesPage() {
               <strong>开播前 3 步快速自检</strong>
               <ol>
                 <li>在「集成管理」配置 YouTube 拉流凭据及 AI 推理服务，并确认测试连接通过。</li>
-                <li>在「集成管理 › 下游输出凭据」签发一次性 OBS 令牌或桌面插件连接凭据。</li>
-                <li>进入「演练沙盒」验证无头 OBS 投屏与主播纯享侧边栏效果符合预期。</li>
+                <li>在「集成管理 › 下游输出适配器」配置 OBS 透明投屏源或桌面协议并签发只读凭据。</li>
+                <li>进入「演练沙盒」验证无头 OBS 投屏与纯净弹幕姬效果符合预期。</li>
               </ol>
               <div className="vw-row-wrap">
                 <Link to={`/integrations/${encodeURIComponent(activeChannelId)}`}>

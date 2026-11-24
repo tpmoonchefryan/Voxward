@@ -40,8 +40,10 @@ describe("Integrations Page (VW-Draft-04B)", () => {
 
     expect(html).toContain("系统集成");
     expect(html).toContain("+ 接入新适配器 ▾");
-    expect(html).toContain("下游输出与单向只读连接凭据");
-    expect(html).toContain("签发 OBS 投屏令牌");
-    expect(html).toContain("签发桌面插件凭据");
+    expect(html).toContain("已接入适配器实例");
+    expect(html).toContain("下游输出适配器");
+    expect(html).not.toContain("下游输出与单向只读连接凭据");
+    expect(html).not.toContain("签发 OBS 投屏令牌");
+    expect(html).not.toContain("当前频道");
   });
 });

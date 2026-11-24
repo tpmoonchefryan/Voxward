@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Button } from "@tcrn/ui-react/approved";
 import { UntrustedText } from "../untrusted-text/UntrustedText";
 
 export interface ScTierDescriptor {
@@ -75,17 +76,8 @@ export interface SuperChatItemDisplay {
   readonly decidedAtMs?: number;
 }
 
-export function SuperChatTicker({ items }: { readonly items: readonly SuperChatItemDisplay[] }) {
-  const [nowMs, setNowMs] = useState(() => Date.now());
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNowMs(Date.now());
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const activeTickers = items
+function computeActiveScTickers(items: readonly SuperChatItemDisplay[], nowMs: number) {
+  return items
     .map((item) => {
       const tier = resolveScTier(item.amountText);
       if (tier.durationSeconds <= 0) {
@@ -98,6 +90,32 @@ export function SuperChatTicker({ items }: { readonly items: readonly SuperChatI
       return { item, tier, remainingSec, pct };
     })
     .filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.remainingSec > 0);
+}
+
+export function SuperChatTicker({
+  items,
+  selectedId = null,
+  onSelect,
+  nowMs: externalNowMs,
+}: {
+  readonly items: readonly SuperChatItemDisplay[];
+  readonly selectedId?: string | null;
+  readonly onSelect?: (id: string) => void;
+  readonly nowMs?: number;
+}) {
+  const [internalNowMs, setInternalNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (externalNowMs !== undefined) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setInternalNowMs(Date.now());
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [externalNowMs]);
+
+  const activeTickers = computeActiveScTickers(items, externalNowMs ?? internalNowMs);
 
   if (activeTickers.length === 0) {
     return null;
@@ -105,25 +123,78 @@ export function SuperChatTicker({ items }: { readonly items: readonly SuperChatI
 
   return (
     <div className="vw-sc-ticker" aria-label="Super Chat 倒计时置顶条">
-      {activeTickers.map(({ item, tier, remainingSec, pct }) => (
-        <div
-          key={item.id}
-          className={`vw-sc-ticker__pill vw-sc-sc-pill vw-sc-tier--${tier.id}`}
-          data-sc-tier={tier.id}
-        >
-          <span>
-            <UntrustedText text={item.author} />
-          </span>
-          <span>{item.amountText ?? tier.label}</span>
-          <span>{formatTickerCountdown(remainingSec)}</span>
-          <progress
-            className="vw-sc-ticker__progress"
-            max={100}
-            value={pct}
-            aria-label="Super Chat 置顶剩余时长进度"
-          />
+      {activeTickers.map(({ item, tier, remainingSec, pct }) => {
+        const isExpanded = selectedId === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            className={`vw-sc-ticker__pill vw-sc-sc-pill vw-sc-tier--${tier.id}`}
+            data-sc-tier={tier.id}
+            data-sc-ticker-id={item.id}
+            aria-expanded={isExpanded}
+            aria-pressed={isExpanded}
+            onClick={() => onSelect?.(item.id)}
+          >
+            <span>
+              <UntrustedText text={item.author} />
+            </span>
+            <span>{item.amountText ?? tier.label}</span>
+            <span>{formatTickerCountdown(remainingSec)}</span>
+            <progress
+              className="vw-sc-ticker__progress"
+              max={100}
+              value={pct}
+              aria-label="Super Chat 置顶剩余时长进度"
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Sticky YouTube-style Super Chat ticker bar that overlays the live stream and
+ * opens an expandable Super Chat detail card when any ticker pill is clicked.
+ */
+export function SuperChatOverlayBar({ items }: { readonly items: readonly SuperChatItemDisplay[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (items.length === 0) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [items.length]);
+
+  const activeTickers = computeActiveScTickers(items, nowMs);
+  const expandedItem = expandedId === null ? null : (items.find((item) => item.id === expandedId) ?? null);
+  const handleSelect = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
+
+  if (activeTickers.length === 0 && expandedItem === null) {
+    return null;
+  }
+
+  return (
+    <div className="vw-sc-overlay-bar" data-sc-overlay-bar="">
+      <SuperChatTicker items={items} selectedId={expandedItem?.id ?? null} onSelect={handleSelect} nowMs={nowMs} />
+      {expandedItem !== null ? (
+        <div className="vw-sc-overlay-popover" role="region" aria-label="Super Chat 置顶详情浮层">
+          <SuperChatCard item={expandedItem} />
+          <div className="vw-sc-overlay-popover__close">
+            <Button size="sm" variant="quiet" onClick={() => setExpandedId(null)}>
+              收起置顶卡片
+            </Button>
+          </div>
         </div>
-      ))}
+      ) : null}
     </div>
   );
 }

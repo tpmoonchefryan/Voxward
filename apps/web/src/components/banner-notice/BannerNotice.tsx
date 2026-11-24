@@ -30,12 +30,12 @@ export function BannerNotice({ tone = "info", title, children, actions }: Banner
   return (
     <div className="vw-banner-notice" role="status">
       <InlineAlert tone={mapTone(tone)}>
-        <div className="vw-row-between">
-          <div className="vw-stack-sm">
+        <div className="vw-banner-notice__row">
+          <div className="vw-stack-sm vw-banner-notice__text">
             {title ? <strong>{title}</strong> : null}
             <div>{children}</div>
           </div>
-          {actions ?? null}
+          {actions ? <div className="vw-banner-notice__actions">{actions}</div> : null}
         </div>
       </InlineAlert>
     </div>

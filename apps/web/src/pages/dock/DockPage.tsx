@@ -3,7 +3,11 @@ import { useParams } from "react-router";
 import { EmptyState } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
-import { SuperChatCard, SuperChatTicker } from "../../components/youtube-sc";
+import {
+  SuperChatCard,
+  SuperChatOverlayBar,
+  type SuperChatItemDisplay,
+} from "../../components/youtube-sc";
 import {
   createDockApi,
   dockMessageFor,
@@ -18,6 +22,22 @@ export interface PureDockSurfaceProps {
   readonly standalone?: boolean;
   readonly pollIntervalMs?: number;
 }
+
+type UnifiedStreamEntry =
+  | {
+      readonly kind: "chat";
+      readonly id: string;
+      readonly decidedAtMs: number;
+      readonly author: string;
+      readonly originalText: string | null;
+      readonly decidedAt: string;
+    }
+  | {
+      readonly kind: "sc";
+      readonly id: string;
+      readonly decidedAtMs: number;
+      readonly item: SuperChatItemDisplay;
+    };
 
 export function PureDockSurface({
   channelId,
@@ -53,7 +73,7 @@ export function PureDockSurface({
     [snapshot],
   );
 
-  const scItems = useMemo(
+  const scItems = useMemo<readonly SuperChatItemDisplay[]>(
     () =>
       (snapshot?.feed.approvedSc ?? []).map((sc) => ({
         id: sc.eventId,
@@ -66,10 +86,33 @@ export function PureDockSurface({
     [snapshot],
   );
 
+  const unifiedTimeline = useMemo<readonly UnifiedStreamEntry[]>(() => {
+    const scIds = new Set(scItems.map((sc) => sc.id));
+    const merged: UnifiedStreamEntry[] = [
+      ...chatMessages
+        .filter((msg) => !scIds.has(msg.eventId))
+        .map((msg) => ({
+          kind: "chat" as const,
+          id: msg.eventId,
+          decidedAtMs: Date.parse(msg.decidedAt) || 0,
+          author: msg.subjectRef,
+          originalText: msg.originalText,
+          decidedAt: msg.decidedAt,
+        })),
+      ...scItems.map((sc) => ({
+        kind: "sc" as const,
+        id: sc.id,
+        decidedAtMs: sc.decidedAtMs ?? 0,
+        item: sc,
+      })),
+    ];
+    return merged.sort((a, b) => b.decidedAtMs - a.decidedAtMs);
+  }, [chatMessages, scItems]);
+
   return (
     <main
       className={standalone ? "vw-dock-shell" : "vw-dock-shell vw-dock-shell--embedded"}
-      aria-label="主播纯享侧边栏"
+      aria-label="纯净弹幕姬"
     >
       {errorText ? <BannerNotice tone="danger">{errorText}</BannerNotice> : null}
 
@@ -85,58 +128,47 @@ export function PureDockSurface({
         </BannerNotice>
       ) : null}
 
-      <div className="vw-dock-grid">
-        <section className="vw-panel-card vw-dock-column" aria-label="实时放行弹幕">
-          <div className="vw-row-between">
-            <strong>实时弹幕流</strong>
-            <span className="vw-caption">{chatMessages.length} 条</span>
-          </div>
-          <div className="vw-dock-scroll">
-            {chatMessages.length === 0 ? (
-              <EmptyState
-                title="暂无放行弹幕"
-                description="通过审核或无需人工介入的直播对话将实时显示在此栏。"
-              />
-            ) : (
-              chatMessages.map((msg) => (
-                <article key={msg.eventId} className="vw-chat-row">
+      <section className="vw-panel-card vw-dock-column vw-yt-stream-panel" aria-label="纯净单栏弹幕流">
+        <div className="vw-row-between">
+          <strong>纯净弹幕流</strong>
+          <span className="vw-caption">
+            {unifiedTimeline.length} 条 · {scItems.length} 条置顶 SC
+          </span>
+        </div>
+
+        <SuperChatOverlayBar items={scItems} />
+
+        <div className="vw-dock-scroll">
+          {unifiedTimeline.length === 0 ? (
+            <EmptyState
+              title="暂无放行弹幕与 Super Chat"
+              description="通过审核的直播对话与 Super Chat 将在同一时间流中实时呈现，点击顶部醒目条可展开卡片。"
+            />
+          ) : (
+            unifiedTimeline.map((entry) =>
+              entry.kind === "sc" ? (
+                <SuperChatCard key={`sc-${entry.id}`} item={entry.item} />
+              ) : (
+                <article key={`chat-${entry.id}`} className="vw-chat-row">
                   <div className="vw-row-between">
                     <strong>
-                      <UntrustedText text={msg.subjectRef} />
+                      <UntrustedText text={entry.author} />
                     </strong>
-                    <span className="vw-caption">{new Date(msg.decidedAt).toLocaleTimeString()}</span>
+                    <span className="vw-caption">
+                      {new Date(entry.decidedAt).toLocaleTimeString()}
+                    </span>
                   </div>
-                  {msg.originalText !== null ? (
+                  {entry.originalText !== null ? (
                     <div>
-                      <UntrustedText text={msg.originalText} />
+                      <UntrustedText text={entry.originalText} />
                     </div>
                   ) : null}
                 </article>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section className="vw-panel-card vw-dock-column" aria-label="Super Chat 专属展示">
-          <div className="vw-row-between">
-            <strong>Super Chat 与置顶计时</strong>
-            <span className="vw-caption">{scItems.length} 条</span>
-          </div>
-
-          <SuperChatTicker items={scItems} />
-
-          <div className="vw-dock-scroll">
-            {scItems.length === 0 ? (
-              <EmptyState
-                title="暂无 Super Chat"
-                description="观众发送的付费醒目留言将按官方分级颜色与置顶倒计时在此呈现。"
-              />
-            ) : (
-              scItems.map((sc) => <SuperChatCard key={sc.id} item={sc} />)
-            )}
-          </div>
-        </section>
-      </div>
+              ),
+            )
+          )}
+        </div>
+      </section>
     </main>
   );
 }

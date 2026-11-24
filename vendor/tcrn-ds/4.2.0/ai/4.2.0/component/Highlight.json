@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+  },
+  "id": "component/Highlight",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/02-typography"
+  ],
+  "optional": [],
+  "content": {
+    "name": "Highlight",
+    "board": "02-typography",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/02-typography/index.dc.html",
+      "sha256": "6d3b02974d1442634739fba8ae28a27fb16e766f2cc3186cc451875ccf47515d",
+      "line": 222
+    },
+    "normativeText": "Highlight text · query · caseSensitive · markClassName 一句话：把 query 在 text 里的命中包成 mark，只加 8% 青洗底；字重、字距、字号、内距全部不变，命中前后的排版与未命中时逐像素相同。 须提供 ： text 字符串与 query ；query 为空时原样输出。 容器 ：行内；在选中行与表格单元里同一规则，不另配色。 用 ：搜索结果、过滤命中、命令面板。 不用 ：强调语气（用 strong）；状态（用点加字）。",
+    "readerSummary": {
+      "en": "Supply text and query. Empty query preserves text; matches change only the wash, never typography. Use search matches, not emphasis or status.",
+      "zh-CN": "提供 text 与 query；空 query 原样输出。只改命中洗底，不改排版。用于搜索，不代替强调或状态。",
+      "ja": "text と query を指定します。空の検索は原文を保持し、一致箇所の背景だけ変えます。強調や状態表示には使いません。",
+      "ko": "text와 query를 제공합니다. 빈 검색은 원문을 유지하고 일치 배경만 바꿉니다. 강조·상태 표시에는 쓰지 않습니다.",
+      "fr": "Fournir text et query. Une requête vide conserve le texte ; seul le fond change, jamais la typographie. Pour la recherche, pas l’emphase ou le statut."
+    },
+    "types": {
+      "name": "Highlight",
+      "kind": "function",
+      "props": [
+        {
+          "name": "caseSensitive",
+          "type": "boolean",
+          "required": false,
+          "default": "false"
+        },
+        {
+          "name": "markClassName",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "variants": {},
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Typography/Typography.tsx",
+        "line": 100
+      },
+      "propsType": "HighlightProps",
+      "typeDefinitions": [
+        {
+          "name": "HighlightProps",
+          "path": "packages/ui-react/src/components/Typography/Typography.tsx",
+          "line": 85,
+          "declaration": "export interface HighlightProps extends Omit<HTMLAttributes<HTMLSpanElement>, \"children\"> {\n  text: string;\n  query?: string;\n  caseSensitive?: boolean;\n  markClassName?: string;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "content",
+      "constraint": "Inline text follows its enclosing line and may wrap; highlighting changes no container width.",
+      "implementation": "formal-layout.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Typography/Typography.tsx",
+      "sha256": "167f76aa6d63eddfdc6c2d7e6aeae17677d671a217621d9c918c8afce0b9a207"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 131,
+      "snippet": "case \"Highlight\": return <Highlight text={`${c.project} · PRJ-2026`} query={state === \"empty\" ? \"\" : state === \"case-sensitive\" ? \"prj\" : \"2026\"} caseSensitive={state === \"case-sensitive\"} />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { Highlight, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example() {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", gap: \"var(--tcrn-space-2)\" }}>\n      <Highlight text=\"PRJ-2026\" query=\"2026\"/>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/formal-layout.css.ts",
+          "sha256": "e41c15025b19442b30091c7bb99a49fca6331fbf8bd1d1762cd7294ac1ad6918"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-highlight--default"
+      },
+      {
+        "state": "empty",
+        "id": "components-highlight--empty"
+      },
+      {
+        "state": "case-sensitive",
+        "id": "components-highlight--case-sensitive"
+      }
+    ]
+  }
+}

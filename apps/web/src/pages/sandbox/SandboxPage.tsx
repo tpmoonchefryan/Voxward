@@ -362,7 +362,7 @@ export function SandboxView({
           onSelect={setTab}
           items={[
             { id: "moderation", label: "正式审核工作台视图" },
-            { id: "dock", label: "主播纯享侧边栏预览" },
+            { id: "dock", label: "纯净弹幕姬预览" },
             { id: "data", label: "数据合规工作台视图" },
             { id: "subjects", label: "沙盒积分与日志快照" },
           ]}

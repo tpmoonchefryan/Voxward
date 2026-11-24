@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+  },
+  "id": "component/TableToolbar",
+  "kind": "adopted-component",
+  "required": [
+    "global",
+    "pattern/batch3-components-and-shell"
+  ],
+  "optional": [
+    "pattern/seasonal-halloween-theme"
+  ],
+  "content": {
+    "name": "TableToolbar",
+    "status": "adopted-batch3-candidate",
+    "types": {
+      "name": "TableToolbar",
+      "kind": "function",
+      "props": [
+        {
+          "name": "allFilterLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "bulkActions",
+          "type": "ReactNode",
+          "required": false,
+          "slot": true
+        },
+        {
+          "name": "clearSelectionLabel",
+          "type": "string",
+          "required": false,
+          "default": "\"Clear\""
+        },
+        {
+          "name": "collapseLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "controlsId",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "expandLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "filterLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "filterOptions",
+          "type": "TableToolbarFilterOption[]",
+          "required": false
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "locale",
+          "type": "TcrnLocale | string",
+          "required": false
+        },
+        {
+          "name": "matchCountFormat",
+          "type": "string",
+          "required": false,
+          "default": "\"{shown} / {total}\""
+        },
+        {
+          "name": "onClearSelection",
+          "type": "() => void",
+          "required": false
+        },
+        {
+          "name": "searchLabel",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "searchPlaceholder",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "selectedCount",
+          "type": "number",
+          "required": false
+        }
+      ],
+      "variants": {},
+      "slots": [
+        "bulkActions"
+      ],
+      "source": {
+        "path": "packages/ui-react/src/components/DataDisplay/DataDisplay.tsx",
+        "line": 1018
+      },
+      "propsType": "TableToolbarProps",
+      "typeDefinitions": [
+        {
+          "name": "TableToolbarFilterOption",
+          "path": "packages/ui-react/src/components/DataDisplay/DataDisplay.tsx",
+          "line": 987,
+          "declaration": "export interface TableToolbarFilterOption {\n  id: string;\n  label: string;\n}"
+        },
+        {
+          "name": "TableToolbarProps",
+          "path": "packages/ui-react/src/components/DataDisplay/DataDisplay.tsx",
+          "line": 992,
+          "declaration": "export interface TableToolbarProps {\n  label: string;\n  controlsId: string;\n  searchLabel: string;\n  searchPlaceholder?: string;\n  filterLabel?: string;\n  filterOptions?: TableToolbarFilterOption[];\n  allFilterLabel?: string;\n  matchCountFormat?: string;\n  collapseLabel?: string;\n  expandLabel?: string;\n  selectedCount?: number;\n  bulkActions?: ReactNode;\n  onClearSelection?: () => void;\n  clearSelectionLabel?: string;\n  /** Which language the built-in \"all\" chip is said in; defaults to the page's own. */\n  locale?: TcrnLocale | string;\n}"
+        }
+      ]
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/DataDisplay/DataDisplay.tsx",
+      "sha256": "2460f4ef5a4fdc8cbfccd727ee485b761bcc4e9ad5b4eedb638255d4f20caac5"
+    },
+    "specimenSource": {
+      "path": "apps/storybook/src/voxward-batch3.stories.tsx",
+      "sha256": "bc3c3a6235c8d64b71f9b5117abfb6f90b8c5b97036cc74c98f6023525b1cdb2"
+    }
+  }
+}

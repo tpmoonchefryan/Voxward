@@ -42,7 +42,7 @@ describe("Users & RBAC Page (VW-Draft-04C)", () => {
     expect(dataEntry?.decidedBy).toBe("DEFAULT_DENY");
   });
 
-  it("renders MultiSelect multi-role editor and live effective permissions preview table", () => {
+  it("renders non-flattened 用户列表 view with + 创建用户 trigger and zero platform.message.delete capability", () => {
     const stubApi = {
       listRoles: vi.fn(async () => []),
       createRole: vi.fn(async () => []),
@@ -63,9 +63,13 @@ describe("Users & RBAC Page (VW-Draft-04C)", () => {
       </MemoryRouter>,
     );
 
-    expect(html).toContain("成员权限");
     expect(html).toContain("用户管理");
-    expect(html).toContain("角色与权限");
-    expect(html).toContain("实时生效权限预览（显式拒绝 &gt; 显式授予 &gt; 未设置默认拒绝）");
+    expect(html).toContain("用户列表");
+    expect(html).toContain("角色管理");
+    expect(html).toContain("+ 创建用户");
+    expect(html).not.toContain("创建新用户");
+    expect(html).not.toContain("实时生效权限合成结果");
+    expect(html).not.toContain("platform.message.delete");
+    expect(html).not.toContain("当前频道");
   });
 });

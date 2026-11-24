@@ -381,8 +381,14 @@ export function removeBlockedUser(
   return { removed, users: next };
 }
 
-export type AdapterCategory = "LIVE_PLATFORM" | "AI_PROVIDER";
-export type AdapterDriverId = "youtube-live-v3" | "kiro-cli" | "openai-compat" | "anthropic-compat";
+export type AdapterCategory = "LIVE_PLATFORM" | "AI_PROVIDER" | "OUTPUT_TARGET";
+export type AdapterDriverId =
+  | "youtube-live-v3"
+  | "kiro-cli"
+  | "openai-compat"
+  | "anthropic-compat"
+  | "obs-overlay-source"
+  | "native-readonly-protocol";
 
 export interface AdapterSystemDescriptor {
   readonly driverId: AdapterDriverId;
@@ -398,7 +404,7 @@ export const ADAPTER_SYSTEM_CATALOG: readonly AdapterSystemDescriptor[] = [
     driverId: "youtube-live-v3",
     category: "LIVE_PLATFORM",
     displayName: "YouTube Live Data API v3",
-    summary: "官方直播聊天 streamList 拉流、Super Chat / 会员身份映射与可选平台删消息/封禁联动。",
+    summary: "官方直播聊天 streamList 拉流与 Super Chat / 会员身份映射。",
     secretFields: ["clientSecret", "refreshToken"],
     controlActions: [
       { action: "test-connection", label: "检测连接与配额" },
@@ -438,6 +444,28 @@ export const ADAPTER_SYSTEM_CATALOG: readonly AdapterSystemDescriptor[] = [
     controlActions: [
       { action: "test-connection", label: "检测端点连通性" },
       { action: "fetch-models", label: "获取远端可用模型列表" },
+    ],
+  },
+  {
+    driverId: "obs-overlay-source",
+    category: "OUTPUT_TARGET",
+    displayName: "OBS 透明投屏源",
+    summary: "通过单向只读通道向 OBS 浏览器源推送已放行弹幕与 7 级 Super Chat，提供 preview=1 预览地址与一次性令牌。",
+    secretFields: [],
+    controlActions: [
+      { action: "test-connection", label: "检测投屏通道状态" },
+      { action: "issue-output-token", label: "签发 OBS 投屏令牌" },
+    ],
+  },
+  {
+    driverId: "native-readonly-protocol",
+    category: "OUTPUT_TARGET",
+    displayName: "blivechat / 原生只读输出协议",
+    summary: "面向本机回环连接器与 blivechat 等原生桌面客户端的单向只读 WebSocket 推送与一次性授权凭据。",
+    secretFields: [],
+    controlActions: [
+      { action: "test-connection", label: "检测回环协议状态" },
+      { action: "issue-output-grant", label: "签发桌面插件凭据" },
     ],
   },
 ];
@@ -497,7 +525,7 @@ export interface IntegrationLogRecord {
   readonly correlationId: string;
   readonly adapterId: string;
   readonly adapterName: string;
-  readonly providerKind: "LIVE_PLATFORM" | "AI_PROVIDER";
+  readonly providerKind: "LIVE_PLATFORM" | "AI_PROVIDER" | "OUTPUT_TARGET";
   readonly method: string;
   readonly url: string;
   readonly statusCode: number;

@@ -1,0 +1,183 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+  },
+  "id": "component/ShellBrandButton",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/07a-shell-upper",
+    "pattern/shell-preferences",
+    "assets/icons"
+  ],
+  "optional": [
+    "pattern/customer-list-boundary"
+  ],
+  "content": {
+    "name": "ShellBrandButton",
+    "board": "07a-shell-upper",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/07a-shell-upper/index.dc.html",
+      "sha256": "21b803aa4bf938bc66e956bd487b39fbe76f0e8c8d9c210bfaf6b92483948a6e",
+      "line": 22
+    },
+    "normativeText": "壳只有一种：顶带态。顶带左上是一个标按钮（通过稿锁定块的首行与标垂直居中，侧栏尺度标 22 + 12.5/600，右侧 20 格展开收起示意，无轮廓；整行中线 26），右侧一排用户固定项，无分割线，标按钮隐形边界到固定项、固定项之间的间距完全相等；点标按钮一段即开完整菜单（接在标按钮下 6px，搜索、三列、当前位置、右下角侧栏尺度锁定块只装饰，没有收起钮，点外部即收）。图钉可固定分组、项或子菜单；固定的二级菜单从顶带纵向下拉，接续 6px、顶部带搜索，三、四级向右级联，同宽，高度随左列。没有常驻侧栏：文档站同样用这套壳，目录与书签进页内；文档与设置页的内容居中 1040。固定项上限 6，窄于 1024 整组收进菜单；切换产品在头像菜单；级联按点击展开，不按悬停。",
+    "readerSummary": {
+      "en": "Pass a registered product key. v1 is symbol/toggle, v2 is first-line lockup/toggle; expose dialog and expanded semantics. One press opens the full menu.",
+      "zh-CN": "传注册产品键。v1 为纯标加示意，v2 为首行加示意；暴露 dialog 与 expanded 语义。一段即开完整菜单。",
+      "ja": "登録製品キーを指定します。v1 は記号と矢印、v2 は先頭行と矢印です。dialog・expanded を公開し、1回で全メニューを開きます。",
+      "ko": "등록 제품 키를 제공합니다. v1은 기호·화살표, v2는 첫 줄·화살표입니다. dialog·expanded를 노출하며 한 번에 전체 메뉴를 엽니다.",
+      "fr": "Passer une clé enregistrée. v1 : symbole et chevron ; v2 : première ligne et chevron. Exposer dialog et expanded ; un clic ouvre le menu complet."
+    },
+    "types": {
+      "name": "ShellBrandButton",
+      "kind": "forwardRef",
+      "props": [
+        {
+          "name": "expanded",
+          "type": "boolean",
+          "required": false,
+          "default": "false"
+        },
+        {
+          "name": "locale",
+          "type": "TcrnLocale | string",
+          "required": false
+        },
+        {
+          "name": "productId",
+          "type": "TcrnProductMarkId",
+          "required": true,
+          "enumValues": [
+            "design-system",
+            "tms",
+            "einzbern",
+            "mana-orchestrate",
+            "voxward"
+          ]
+        },
+        {
+          "name": "version",
+          "type": "ShellBrandButtonVersion",
+          "required": false,
+          "default": "\"auto\"",
+          "enumValues": [
+            "auto",
+            "v1",
+            "v2"
+          ]
+        }
+      ],
+      "variants": {
+        "productId": [
+          "design-system",
+          "tms",
+          "einzbern",
+          "mana-orchestrate",
+          "voxward"
+        ],
+        "version": [
+          "auto",
+          "v1",
+          "v2"
+        ]
+      },
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Navigation/ShellBrandButton.tsx",
+        "line": 63
+      },
+      "typeDefinitions": [
+        {
+          "name": "TcrnProductMarkId",
+          "path": "packages/ui-react/src/components/Navigation/product-mark-id.ts",
+          "line": 18,
+          "declaration": "export type TcrnProductMarkId = (typeof tcrnProductMarkIds)[number];"
+        },
+        {
+          "name": "ShellBrandButtonVersion",
+          "path": "packages/ui-react/src/components/Navigation/ShellBrandButton.tsx",
+          "line": 32,
+          "declaration": "export type ShellBrandButtonVersion = \"auto\" | \"v1\" | \"v2\";"
+        },
+        {
+          "name": "ShellBrandButtonProps",
+          "path": "packages/ui-react/src/components/Navigation/ShellBrandButton.tsx",
+          "line": 52,
+          "declaration": "export interface ShellBrandButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, \"children\" | \"type\"> {\n  /** The product whose mark and wordmark the button shows. */\n  productId: TcrnProductMarkId;\n  /** Whether the full menu the button opens is open: aria-expanded, the chevron and the open fill. */\n  expanded?: boolean;\n  /** Which version to show; \"auto\" (the default) follows the shell container. */\n  version?: ShellBrandButtonVersion;\n  /** Language of the button's accessible name; the page's own when omitted. */\n  locale?: TcrnLocale | string;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "mixed",
+      "constraint": "Registered mark/toggle geometry and content determine the button, with the existing shell minimum. A standalone grid aligns its root to start; the shell owns the narrow touch geometry.",
+      "implementation": "shell.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Navigation/ShellBrandButton.tsx",
+      "sha256": "21927f4b632622d799a82ce2ae253e70d0893651e6e114178e62a899e2432b9e"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 177,
+      "snippet": "case \"ShellBrandButton\": return <ShellBrandButton productId=\"tms\" locale={locale} expanded={state === \"expanded\"} version={state === \"v1\" || state === \"v2\" ? state : \"auto\"} onClick={() => setFeedback(\"activated\")} />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import type { ComponentProps } from \"react\";\nimport { ShellBrandButton, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example(props: ComponentProps<typeof ShellBrandButton>) {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", justifyItems: \"start\", gap: \"var(--tcrn-space-2)\" }}>\n      <ShellBrandButton {...props} />\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/shell.css.ts",
+          "sha256": "20eec486a1b9b350ef5c858965fe83bafb47dd361db5154a2bc49ab0b6b1e75b"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": "Supply the typed component props and read pattern/shell-preferences; the snippet does not invent product data or a backend adapter."
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-shellbrandbutton--default"
+      },
+      {
+        "state": "expanded",
+        "id": "components-shellbrandbutton--expanded"
+      },
+      {
+        "state": "v1",
+        "id": "components-shellbrandbutton--v-1"
+      },
+      {
+        "state": "v2",
+        "id": "components-shellbrandbutton--v-2"
+      }
+    ]
+  }
+}

@@ -1,0 +1,255 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+  },
+  "id": "component/ClipboardCopyButton",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/05-actions"
+  ],
+  "optional": [],
+  "content": {
+    "name": "ClipboardCopyButton",
+    "board": "05-actions",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/05-actions/index.dc.html",
+      "sha256": "c7498b7bf317ce36cca13b2508ff1016874b3984f3374b14dcd42df24933f6ff",
+      "line": 115
+    },
+    "normativeText": "ClipboardCopyButton text · ariaLabel · locale · *Label 覆盖 · resetDelayMs · onCopyStateChange 一句话：复制一段文本，五种状态在按钮文字里直接说出来，2 秒后回到 idle。 须提供 ： text 与 ariaLabel ；敏感值走 React 版本（不写进 DOM）；静态页用 mountStaticClipboardCopyButton 。 外形 ：默认 secondary sm；行内可用 quiet sm；idle 带 copy 图标，copied 用 check，failed 用 alert-triangle。 不用 ：作为主按钮；复制整段多行内容时不给反馈文字。",
+    "readerSummary": {
+      "en": "Provide text and ariaLabel; React keeps sensitive payloads out of DOM. Five visible feedback states reset after two seconds. Avoid a primary action or silent copying.",
+      "zh-CN": "提供 text、ariaLabel；React 敏感载荷不进 DOM。五态可见反馈，2 秒复位。不作主动作或静默复制。",
+      "ja": "text と ariaLabel を指定し、機密値は React で DOM に出しません。5状態を表示し2秒で戻します。無言のコピーにはしません。",
+      "ko": "text·ariaLabel을 제공하고 민감 값은 React로 DOM 밖에 둡니다. 다섯 상태를 표시하고 2초 후 복귀합니다. 조용한 복사로 쓰지 않습니다.",
+      "fr": "Fournir text et ariaLabel ; React garde les données sensibles hors DOM. Cinq états visibles, retour après deux secondes. Éviter copie silencieuse et action principale."
+    },
+    "types": {
+      "name": "ClipboardCopyButton",
+      "kind": "forwardRef",
+      "props": [
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "children",
+          "type": "never",
+          "required": false
+        },
+        {
+          "name": "copiedLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "copyingLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "disabledReason",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "failedLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "idleLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "locale",
+          "type": "TcrnLocale | string",
+          "required": false
+        },
+        {
+          "name": "onClick",
+          "type": "never",
+          "required": false
+        },
+        {
+          "name": "onCopyStateChange",
+          "type": "(state: ClipboardCopyState) => void",
+          "required": false
+        },
+        {
+          "name": "resetDelayMs",
+          "type": "number",
+          "required": false,
+          "default": "DEFAULT_RESET_DELAY_MS"
+        },
+        {
+          "name": "size",
+          "type": "Size",
+          "required": false,
+          "enumValues": [
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "type",
+          "type": "never",
+          "required": false
+        },
+        {
+          "name": "unsupportedLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "value",
+          "type": "never",
+          "required": false
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\" | \"quiet\" | \"danger\"",
+          "required": false,
+          "enumValues": [
+            "primary",
+            "secondary",
+            "quiet",
+            "danger"
+          ]
+        }
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "variant": [
+          "primary",
+          "secondary",
+          "quiet",
+          "danger"
+        ]
+      },
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Clipboard/Clipboard.tsx",
+        "line": 47
+      },
+      "typeDefinitions": [
+        {
+          "name": "Size",
+          "path": "packages/ui-react/src/components/Button/Button.tsx",
+          "line": 6,
+          "declaration": "type Size = \"sm\" | \"md\" | \"lg\";"
+        },
+        {
+          "name": "ButtonProps",
+          "path": "packages/ui-react/src/components/Button/Button.tsx",
+          "line": 8,
+          "declaration": "export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {\n  variant?: \"primary\" | \"secondary\" | \"quiet\" | \"danger\";\n  size?: Size;\n  /**\n   * Why the action is unavailable, used while the button is disabled. It is the button's\n   * accessible description (aria-describedby) and follows the label text in title as\n   * \"label — reason\", so a label cut by the ellipsis stays readable next to the reason.\n   */\n  disabledReason?: string;\n  /**\n   * The action is running: the button says so with aria-busy and the loader icon, and a\n   * further press does nothing. The busy wording is the caller's children, in the page's\n   * language; the package adds no text of its own.\n   */\n  loading?: boolean;\n}"
+        },
+        {
+          "name": "ClipboardCopyState",
+          "path": "packages/ui-react/src/components/Clipboard/clipboard-copy.ts",
+          "line": 4,
+          "declaration": "export type ClipboardCopyState = \"idle\" | \"copying\" | \"copied\" | \"failed\" | \"unsupported\";"
+        },
+        {
+          "name": "ClipboardCopyButtonProps",
+          "path": "packages/ui-react/src/components/Clipboard/Clipboard.tsx",
+          "line": 27,
+          "declaration": "export interface ClipboardCopyButtonProps\n  extends Omit<ButtonProps, \"aria-label\" | \"children\" | \"disabledReason\" | \"loading\" | \"onClick\" | \"type\" | \"value\"> {\n  text: string;\n  ariaLabel: string;\n  children?: never;\n  onClick?: never;\n  type?: never;\n  value?: never;\n  idleLabel?: string;\n  copyingLabel?: string;\n  copiedLabel?: string;\n  failedLabel?: string;\n  unsupportedLabel?: string;\n  /** Which language the five built-in state labels are said in; defaults to the page's own. */\n  locale?: TcrnLocale | string;\n  disabledReason?: string;\n  resetDelayMs?: number;\n  onCopyStateChange?: (state: ClipboardCopyState) => void;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "content",
+      "constraint": "Uses the real Button geometry. Copy feedback changes state/label, never a parent-imposed full width; test the browser clipboard separately.",
+      "implementation": "actions.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Clipboard/Clipboard.tsx",
+      "sha256": "bd5c9f7ee7ad36828031545f44f555adea612c3493ce82284a07701a0ff89967"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 151,
+      "snippet": "case \"ClipboardCopyButton\": return <ClipboardScenario locale={locale} state={state} />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { ClipboardCopyButton, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example() {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", justifyItems: \"start\", gap: \"var(--tcrn-space-2)\" }}>\n      <ClipboardCopyButton text=\"PRJ-2026-0412\" ariaLabel=\"Copy\" locale=\"en\"/>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/actions.css.ts",
+          "sha256": "867422711e7934ae0a06d531808867a32216620e62130e77770e172887cde54a"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-clipboardcopybutton--default"
+      },
+      {
+        "state": "interaction",
+        "id": "components-clipboardcopybutton--interaction"
+      },
+      {
+        "state": "copying",
+        "id": "components-clipboardcopybutton--copying"
+      },
+      {
+        "state": "copied",
+        "id": "components-clipboardcopybutton--copied"
+      },
+      {
+        "state": "failed",
+        "id": "components-clipboardcopybutton--failed"
+      },
+      {
+        "state": "unsupported",
+        "id": "components-clipboardcopybutton--unsupported"
+      }
+    ]
+  }
+}

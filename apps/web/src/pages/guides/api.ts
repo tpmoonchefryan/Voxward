@@ -20,14 +20,14 @@ export const INTEGRATION_SUPPORT_MATRIX: readonly SupportMatrixEntry[] = [
     status: "SUPPORTED",
     statusLabel: "官方协议支持",
     endpointOrDocs: "平台适配适配器 › YouTube Live Data v3",
-    summary: "支持直播弹幕与 Super Chat 拉流、成员身份映射及拦截时平台同步删禁。",
+    summary: "支持直播弹幕与 Super Chat 拉流与会员身份基础分映射。",
   },
   {
     id: "obs-overlay",
     target: "OBS 浏览器投屏源（透明无头）",
     status: "SUPPORTED",
     statusLabel: "官方投屏输出",
-    endpointOrDocs: "直播工作台 › OBS 投屏地址（携带只读输出令牌）",
+    endpointOrDocs: "系统集成 › 下游输出适配器 › OBS 透明投屏源",
     summary: "通过单向加密通道接收放行消息与 7 级 Super Chat；后置拦截自动无声撤回。",
   },
   {
@@ -35,7 +35,7 @@ export const INTEGRATION_SUPPORT_MATRIX: readonly SupportMatrixEntry[] = [
     target: "blivechat 桌面插件 / 原生回环客户端",
     status: "VERIFIED_LOOPBACK",
     statusLabel: "本机回环已验证",
-    endpointOrDocs: "系统集成 › 签发桌面插件一次性凭据",
+    endpointOrDocs: "系统集成 › 下游输出适配器 › blivechat / 原生只读输出协议",
     summary: "云端 VoxWard 经本机 127.0.0.1 回环隧道将过审弹幕桥接至桌面呈现端。",
   },
   {

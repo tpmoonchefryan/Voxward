@@ -9,7 +9,7 @@ describe("Admin & Settings Page (VW-Draft-04)", () => {
     expect(routes.map((r) => r.path)).toEqual(["/admin/:channelId?", "/settings/:channelId?"]);
   });
 
-  it("renders single-category SettingsLayout with 常规与外观, 规则与词库 sub-items, 计分与运行策略, and 数据保留策略", () => {
+  it("renders SettingsLayout defaulting to 黑名单词条 with trigger-gated add/CSV panels and no 常规与外观 section", () => {
     const html = renderToStaticMarkup(
       <MemoryRouter initialEntries={["/settings/ch_demo_1"]}>
         <Routes>
@@ -19,12 +19,11 @@ describe("Admin & Settings Page (VW-Draft-04)", () => {
     );
 
     expect(html).toContain("系统设置");
-    expect(html).toContain("常规与外观");
+    expect(html).not.toContain("常规与外观");
     expect(html).toContain("规则与词库");
     expect(html).toContain("黑名单词条");
     expect(html).toContain("白名单词条");
     expect(html).toContain("计分与运行策略");
     expect(html).toContain("数据保留策略");
-    expect(html).not.toContain("当前频道");
   });
 });

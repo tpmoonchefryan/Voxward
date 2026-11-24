@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+  },
+  "id": "component/Dialog",
+  "kind": "adopted-component",
+  "required": [
+    "global",
+    "pattern/batch3-components-and-shell"
+  ],
+  "optional": [
+    "pattern/seasonal-halloween-theme"
+  ],
+  "content": {
+    "name": "Dialog",
+    "status": "adopted-batch3-candidate",
+    "types": {
+      "name": "Dialog",
+      "kind": "function",
+      "props": [
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "required": true,
+          "slot": true
+        },
+        {
+          "name": "className",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "initialFocusRef",
+          "type": "RefObject<HTMLElement | null>",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "required": false
+        },
+        {
+          "name": "open",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "triggerRef",
+          "type": "RefObject<HTMLElement | null>",
+          "required": false
+        }
+      ],
+      "variants": {},
+      "slots": [
+        "children"
+      ],
+      "source": {
+        "path": "packages/ui-react/src/components/Overlay/Overlay.tsx",
+        "line": 562
+      },
+      "propsType": "DialogProps",
+      "typeDefinitions": [
+        {
+          "name": "DialogProps",
+          "path": "packages/ui-react/src/components/Overlay/Overlay.tsx",
+          "line": 552,
+          "declaration": "export interface DialogProps {\n  title: string;\n  open: boolean;\n  children: ReactNode;\n  className?: string;\n  triggerRef?: RefObject<HTMLElement | null>;\n  initialFocusRef?: RefObject<HTMLElement | null>;\n  onOpenChange?: (open: boolean) => void;\n}"
+        }
+      ]
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Overlay/Overlay.tsx",
+      "sha256": "95a423ff05247788da63b1b8cd341d24cdf584e503671ee9e5fd4689aa3448d1"
+    },
+    "specimenSource": {
+      "path": "apps/storybook/src/voxward-batch3.stories.tsx",
+      "sha256": "bc3c3a6235c8d64b71f9b5117abfb6f90b8c5b97036cc74c98f6023525b1cdb2"
+    }
+  }
+}

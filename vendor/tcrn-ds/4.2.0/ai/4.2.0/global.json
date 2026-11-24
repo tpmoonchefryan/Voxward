@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+  },
+  "id": "global",
+  "kind": "global",
+  "required": [
+    "tokens/core",
+    "assets/fonts",
+    "standard/01-tokens",
+    "pattern/component-layout"
+  ],
+  "optional": [
+    "pattern/customer-list-boundary",
+    "pattern/seasonal-halloween-theme",
+    "pattern/batch3-components-and-shell"
+  ],
+  "content": {
+    "path": "docs/consumption/rules/global.md",
+    "sha256": "a5bfff9e098d31496ac1f45e9b74c9070d63c2db2c4ba5d17139dc6c6f5e2f74",
+    "content": "# Required consumer rules\n\nResolve the versioned AI index before implementation. Pin the exact package\nversions, standard identity and index source digest in the consumer declaration.\nRead `global` and the transitive `required` dependencies of the components and\npatterns used by this task. `optional` links are further reading. A complete JSON\nis a compatibility entry, not a requirement to read the entire library per task.\n\nImport visual components from `@tcrn/ui-react/approved`. The 28 formal entries are\nan explicit catalogue. Engineering exports at the package root do not grant a\npublished design contract. Use the action family for actions, links for navigation,\nSelect for a closed single value, MultiSelect for a collection, SuggestInput for\nan open value, and the shell family for menus, pins and dropdowns. Native semantic\nHTML remains appropriate for business text, labels, headings and table cells.\n\nUse registered `--tcrn-*` tokens and published component variants. Do not redefine\nthese tokens, add bare colors, override a component's paint or typography, or\ninvent a parallel family. Product-owned CSS variables may carry business geometry;\nthey do not replace design tokens. Icons and product marks come from the published\nrosters. Load package CSS and vendored fonts and retain their licenses. A CSS\nvariable or class scanner cannot establish contrast, clipping, keyboard or focus\nbehavior: run the applicable browser checks as well.\n\nRead the required `pattern/component-layout` rule and each component shard’s layout responsibility. Actions follow content width with token insets; fields fill their containers, while icons and unlabelled icon actions remain fixed squares. Parent grid/flex layout must preserve those differences. Before generating a fill field, inspect and reuse the target project’s existing form-column token, layout rule or container component. Read `pattern/component-layout` for the source binding and missing-host-decision contract. Do not invent a DS width token or a numeric product default. Run the normal browser layout check for the rendered action and fill-field geometry; a source/identity check is not that measurement.\n\nSupply visible labels, accessible names and disabled reasons where the API requires\nthem. Preserve native form values, controlled state and required/error feedback.\nSupply the selected complete product locale definition for a product with different\nlocale identifiers; no partial fallback represents a sixth built-in DS language.\n\nFor an authenticated shell, use ProductShell with the actual ShellMenu, ShellPins\nand ShellDropdown. Connect pin/unpin and reorder callbacks. Load ordered preferences\nbefore mounting; remount on user, tenant or product changes. The product backend\nmust derive the authenticated user and tenant, scope the product, serialize writes,\nreport failures and read back the stored order. A void callback acknowledges no\nnetwork operation. Anonymous localStorage is not account synchronization. Follow\nthe required shell preference pattern when any shell component is used.\n\nThe pinned published Site v2 is the normative visual source. Its K1/K5/C01\namendments are public at exact author commit\n`e76b7272d98c0359a57c42d49bf70d64e5b4c2ad`, under\n`minutes:024a8b72088fac0970916091#D2` and publication readback\n`minutes:59b6c4ee489ab487482ca51b#D1`. Form and shell shortcut text use ink-2;\nplaceholder ink-2 and icon ink-3 remain separate roles. Suffix text colors are\nbound to each published theme rather than to the SVG palette. The 240px dropdown\nkeeps natural trigger widths; the 3–4 ratio describes only the Chinese example.\nKeep text ≥4.5, icon/edge ≥3, the 28 formal entries and five built-in locales.\n\nThe customer table/cards, pagination, five business states, confirmation and\nexplicit product Traditional Chinese shell copy are adopted under\n`minutes:6f3e0a9a1e07e3980867d82e#D2`. Their support contracts are\n`pattern/customer-list-boundary` and `pattern/product-locales`. DS package and\ndocumentation artifacts remain unpublished candidates. Author source publication\ndoes not establish producer delivery, actual TMS use or final independent acceptance.\n\nInvalidate the local rule cache when any package version, standard identity,\nsource digest, shard digest or required dependency differs. Missing, malformed or\nunreadable data fails closed. Refresh index and its required closure atomically\nfrom the same build, then rerun the normal consumer check. A digest checks\nconsistency, not publisher authentication; pin a trusted producer artifact.\n"
+  }
+}

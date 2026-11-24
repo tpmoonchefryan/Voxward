@@ -8,8 +8,6 @@ import {
   EmptyState,
   Input,
   SearchInput,
-  Select,
-  Switch,
   TableShell,
 } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
@@ -28,19 +26,6 @@ function nextOpId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function deleteStatusLabel(status: string): string {
-  switch (status) {
-    case "DELETED":
-      return "已同步删平台消息";
-    case "PENDING":
-      return "平台删消息队列中";
-    case "FAILED":
-      return "平台删消息失败";
-    default:
-      return "本地拦截记录";
-  }
-}
-
 export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
   const params = useParams();
   const { activeChannelId } = useVoxWardShell();
@@ -51,13 +36,12 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
   const [records, setRecords] = useState<readonly ModerationItemView[]>([]);
   const [blockedUsers, setBlockedUsers] = useState<readonly ManualBlockedUserView[]>([]);
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
   const [expandedIds, setExpandedIds] = useState<readonly string[]>([]);
 
+  const [showAddForm, setShowAddForm] = useState(false);
   const [newSubjectRef, setNewSubjectRef] = useState("");
   const [newNickname, setNewNickname] = useState("");
   const [newReason, setNewReason] = useState("");
-  const [newSyncYouTube, setNewSyncYouTube] = useState(false);
 
   const [pendingUnblockTarget, setPendingUnblockTarget] = useState<ManualBlockedUserView | null>(null);
   const [restoreBaseScore, setRestoreBaseScore] = useState(true);
@@ -87,16 +71,13 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
   const filteredRecords = useMemo(() => {
     const q = searchText.trim().toLowerCase();
     return records.filter((rec) => {
-      if (statusFilter !== "ALL" && rec.platformDeleteStatus !== statusFilter) {
-        return false;
-      }
       if (!q) return true;
       return (
         rec.subjectRef.toLowerCase().includes(q) ||
         (rec.originalText ?? "").toLowerCase().includes(q)
       );
     });
-  }, [records, searchText, statusFilter]);
+  }, [records, searchText]);
 
   const handleRejudge = async (
     eventId: string,
@@ -113,7 +94,7 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
         tone: "positive",
         text: res.downstreamReissued
           ? "已完成重判并同步更新状态。"
-          : `已完成评分重判（${classification === "ALLOW_MEANINGFUL" ? "恢复用户积分" : "仅改判不加分"}），绝不会重新发送历史发言到 OBS 投屏或主播侧边栏。`,
+          : `已完成评分重判（${classification === "ALLOW_MEANINGFUL" ? "恢复用户积分" : "仅改判不加分"}），绝不会重新发送历史发言到 OBS 投屏或纯净弹幕姬。`,
       });
       await loadData();
     } catch (error) {
@@ -136,13 +117,12 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
         subjectRef: ref,
         ...(newNickname.trim() ? { nickname: newNickname.trim() } : {}),
         ...(newReason.trim() ? { reason: newReason.trim() } : {}),
-        syncYouTube: newSyncYouTube,
       });
       setBlockedUsers(users);
       setNewSubjectRef("");
       setNewNickname("");
       setNewReason("");
-      setNewSyncYouTube(false);
+      setShowAddForm(false);
       setNotice({ tone: "positive", text: "已将该观众加入本地黑名单管理列表。" });
     } catch (error) {
       setNotice({
@@ -167,7 +147,7 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
       setBlockedUsers(result.users);
       setNotice({
         tone: "positive",
-        text: `已移出黑名单${result.youtubeUnbanned ? "，已解除关联的 YouTube 平台封禁记录" : ""}${result.restoreBaseScoreApplied ? "，并已恢复基础信任分" : ""}。`,
+        text: `已移出黑名单${result.restoreBaseScoreApplied ? "，并已恢复基础信任分" : ""}。`,
       });
     } catch (error) {
       setNotice({
@@ -184,11 +164,6 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
     subjectRef: <UntrustedText text={user.subjectRef} />,
     nickname: user.nickname ? <UntrustedText text={user.nickname} /> : <span className="vw-muted">未填备注</span>,
     reason: user.reason ? <UntrustedText text={user.reason} /> : <span className="vw-muted">无说明</span>,
-    youtube: user.banId ? (
-      <Badge tone="warning">已联动平台封禁</Badge>
-    ) : (
-      <Badge tone="neutral">仅本地生效</Badge>
-    ),
     createdAt: new Date(user.createdAt).toLocaleString(),
     actions: (
       <div className="vw-table-actions">
@@ -231,7 +206,7 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
           {activeTab === "records" ? (
             <div className="vw-stack-md">
               <section className="vw-panel-card" aria-label="拦截记录筛选">
-                <div className="vw-row-wrap">
+                <div className="vw-input-action-row">
                   <div className="vw-field-col">
                     <label className="vw-field-label" htmlFor="blocked-search">
                       搜索观众或拦截文本
@@ -244,25 +219,9 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
                       placeholder="按观众标识或发言片段过滤…"
                     />
                   </div>
-                  <div className="vw-field-col--compact">
-                    <label className="vw-field-label" htmlFor="blocked-status-filter">
-                      平台同步状态
-                    </label>
-                    <Select
-                      id="blocked-status-filter"
-                      value={statusFilter}
-                      onChange={(event) => setStatusFilter(event.target.value)}
-                      options={[
-                        { value: "ALL", label: "全部状态" },
-                        { value: "DELETED", label: "已同步删平台消息" },
-                        { value: "PENDING", label: "平台删消息队列中" },
-                        { value: "FAILED", label: "平台删消息失败" },
-                      ]}
-                    />
-                  </div>
                 </div>
                 <span className="vw-caption">
-                  说明：评分重判只校准观众信任分与规则统计，不会把历史已拦截发言重新发送到 OBS 投屏或主播侧边栏。
+                  说明：评分重判只校准观众信任分与规则统计，不会把历史已拦截发言重新发送到 OBS 投屏或纯净弹幕姬。
                 </span>
               </section>
 
@@ -289,7 +248,6 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
                           </strong>
                           <div className="vw-row-wrap">
                             <Badge tone="danger">已拦截</Badge>
-                            <Badge tone="neutral">{deleteStatusLabel(rec.platformDeleteStatus)}</Badge>
                             <span className="vw-caption">
                               {new Date(rec.decidedAt).toLocaleString()}
                             </span>
@@ -344,70 +302,73 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
             </div>
           ) : (
             <div className="vw-stack-md">
-              <section className="vw-panel-card" aria-label="添加黑名单用户">
-                <strong>手动加入频道黑名单</strong>
-                <div className="vw-row-wrap">
-                  <div className="vw-field-col--compact">
-                    <label className="vw-field-label" htmlFor="bl-user-ref">
-                      观众标识
-                    </label>
-                    <Input
-                      id="bl-user-ref"
-                      value={newSubjectRef}
-                      onChange={(event) => setNewSubjectRef(event.target.value)}
-                      placeholder="例如：viewer-1024"
-                    />
-                  </div>
-                  <div className="vw-field-col--compact">
-                    <label className="vw-field-label" htmlFor="bl-user-nick">
-                      备注昵称（可选）
-                    </label>
-                    <Input
-                      id="bl-user-nick"
-                      value={newNickname}
-                      onChange={(event) => setNewNickname(event.target.value)}
-                      placeholder="方便人工识别的备注"
-                    />
-                  </div>
-                  <div className="vw-field-col">
-                    <label className="vw-field-label" htmlFor="bl-user-reason">
-                      拉黑原因
-                    </label>
-                    <Input
-                      id="bl-user-reason"
-                      value={newReason}
-                      onChange={(event) => setNewReason(event.target.value)}
-                      placeholder="连续恶意刷屏 / 外链骚扰"
-                    />
-                  </div>
-                </div>
+              <section className="vw-panel-card" aria-label="黑名单用户列表">
                 <div className="vw-row-between">
-                  <Switch
-                    label="同步至 YouTube 直播间"
-                    description="开启后将在本地记录外登记平台封禁凭据以便协同移出。"
-                    checked={newSyncYouTube}
-                    onChange={(event) => setNewSyncYouTube(event.target.checked)}
-                  />
+                  <strong>已封禁用户 ({blockedUsers.length})</strong>
                   <Button
-                    variant="primary"
-                    loading={busyKey === "add-user"}
-                    disabled={newSubjectRef.trim() === "" || busyKey !== null}
-                    onClick={() => void handleAddBlockedUser()}
+                    size="sm"
+                    variant={showAddForm ? "secondary" : "primary"}
+                    onClick={() => setShowAddForm((prev) => !prev)}
                   >
-                    加入黑名单
+                    {showAddForm ? "取消新增" : "+ 手动加入黑名单"}
                   </Button>
                 </div>
-              </section>
 
-              <section className="vw-panel-card" aria-label="黑名单用户列表">
-                <strong>已封禁用户 ({blockedUsers.length})</strong>
+                {showAddForm ? (
+                  <div className="vw-panel-card vw-panel-card--quiet" aria-label="添加黑名单用户">
+                    <strong>手动加入频道黑名单</strong>
+                    <div className="vw-input-action-row">
+                      <div className="vw-field-col--compact">
+                        <label className="vw-field-label" htmlFor="bl-user-ref">
+                          观众标识
+                        </label>
+                        <Input
+                          id="bl-user-ref"
+                          value={newSubjectRef}
+                          onChange={(event) => setNewSubjectRef(event.target.value)}
+                          placeholder="例如：viewer-1024"
+                        />
+                      </div>
+                      <div className="vw-field-col--compact">
+                        <label className="vw-field-label" htmlFor="bl-user-nick">
+                          备注昵称（可选）
+                        </label>
+                        <Input
+                          id="bl-user-nick"
+                          value={newNickname}
+                          onChange={(event) => setNewNickname(event.target.value)}
+                          placeholder="方便人工识别的备注"
+                        />
+                      </div>
+                      <div className="vw-field-col">
+                        <label className="vw-field-label" htmlFor="bl-user-reason">
+                          拉黑原因
+                        </label>
+                        <Input
+                          id="bl-user-reason"
+                          value={newReason}
+                          onChange={(event) => setNewReason(event.target.value)}
+                          placeholder="连续恶意刷屏 / 外链骚扰"
+                        />
+                      </div>
+                      <Button
+                        variant="primary"
+                        loading={busyKey === "add-user"}
+                        disabled={newSubjectRef.trim() === "" || busyKey !== null}
+                        onClick={() => void handleAddBlockedUser()}
+                      >
+                        确认加入
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
                 <TableShell
                   label="黑名单用户管理表"
                   columns={[
                     { key: "subjectRef", label: "观众标识" },
                     { key: "nickname", label: "备注昵称" },
                     { key: "reason", label: "拉黑原因" },
-                    { key: "youtube", label: "平台同步" },
                     { key: "createdAt", label: "加入时间" },
                     { key: "actions", label: "操作", align: "end" },
                   ]}
@@ -415,7 +376,7 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
                   emptyState={
                     <EmptyState
                       title="黑名单用户列表为空"
-                      description="被人工封禁或联动拉黑的观众将显示在此，支持随时移出并恢复信任积分。"
+                      description="手动加入频道黑名单的观众将显示在此，支持随时移出并恢复信任积分。"
                     />
                   }
                 />
@@ -438,7 +399,6 @@ export function BlockedPage({ api }: { readonly api?: BlockedApi }) {
                   <UntrustedText text={pendingUnblockTarget?.subjectRef ?? ""} />
                 </strong>{" "}
                 移出黑名单吗？
-                {pendingUnblockTarget?.banId ? "（同时将撤销关联的 YouTube 封禁凭据。）" : ""}
               </span>
               <label className="vw-row-wrap">
                 <Checkbox

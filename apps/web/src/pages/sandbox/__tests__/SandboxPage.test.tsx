@@ -115,7 +115,7 @@ describe("SandboxView & SandboxPage (VW-Draft-07)", () => {
     );
 
     expect(html).toContain("后台功能已按当前角色策略拒止");
-    expect(html).toContain("主播纯享侧边栏");
+    expect(html).toContain("纯净弹幕姬");
     expect(html).not.toContain("实时待审队列");
   });
 

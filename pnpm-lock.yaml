@@ -163,18 +163,18 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@tcrn/ui-tokens@4.1.0': file:./vendor/tcrn-ds/4.1.0/tcrn-ui-tokens-4.1.0.tgz
-  '@tcrn/ui-copy-state@4.1.0': file:./vendor/tcrn-ds/4.1.0/tcrn-ui-copy-state-4.1.0.tgz
-  '@tcrn/ui-react@4.1.0': file:./vendor/tcrn-ds/4.1.0/tcrn-ui-react-4.1.0.tgz
-  '@tcrn/ds-consumer-tools@4.1.0': file:./vendor/tcrn-ds/4.1.0/tcrn-ds-consumer-tools-4.1.0.tgz
+  '@tcrn/ui-tokens@4.2.0': file:./vendor/tcrn-ds/4.2.0/tcrn-ui-tokens-4.2.0.tgz
+  '@tcrn/ui-copy-state@4.2.0': file:./vendor/tcrn-ds/4.2.0/tcrn-ui-copy-state-4.2.0.tgz
+  '@tcrn/ui-react@4.2.0': file:./vendor/tcrn-ds/4.2.0/tcrn-ui-react-4.2.0.tgz
+  '@tcrn/ds-consumer-tools@4.2.0': file:./vendor/tcrn-ds/4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz
 
 importers:
 
   .:
     devDependencies:
       '@tcrn/ds-consumer-tools':
-        specifier: file:vendor/tcrn-ds/4.1.0/tcrn-ds-consumer-tools-4.1.0.tgz
-        version: file:vendor/tcrn-ds/4.1.0/tcrn-ds-consumer-tools-4.1.0.tgz
+        specifier: file:vendor/tcrn-ds/4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz
+        version: file:vendor/tcrn-ds/4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz
       vitest:
         specifier: ~3.2.7
         version: 3.2.7(@types/node@24.19.2)(tsx@4.23.15)
@@ -228,14 +228,14 @@ importers:
   apps/web:
     dependencies:
       '@tcrn/ui-copy-state':
-        specifier: file:../../vendor/tcrn-ds/4.1.0/tcrn-ui-copy-state-4.1.0.tgz
-        version: file:vendor/tcrn-ds/4.1.0/tcrn-ui-copy-state-4.1.0.tgz
+        specifier: file:../../vendor/tcrn-ds/4.2.0/tcrn-ui-copy-state-4.2.0.tgz
+        version: file:vendor/tcrn-ds/4.2.0/tcrn-ui-copy-state-4.2.0.tgz
       '@tcrn/ui-react':
-        specifier: file:../../vendor/tcrn-ds/4.1.0/tcrn-ui-react-4.1.0.tgz
-        version: file:vendor/tcrn-ds/4.1.0/tcrn-ui-react-4.1.0.tgz(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: file:../../vendor/tcrn-ds/4.2.0/tcrn-ui-react-4.2.0.tgz
+        version: file:vendor/tcrn-ds/4.2.0/tcrn-ui-react-4.2.0.tgz(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@tcrn/ui-tokens':
-        specifier: file:../../vendor/tcrn-ds/4.1.0/tcrn-ui-tokens-4.1.0.tgz
-        version: file:vendor/tcrn-ds/4.1.0/tcrn-ui-tokens-4.1.0.tgz
+        specifier: file:../../vendor/tcrn-ds/4.2.0/tcrn-ui-tokens-4.2.0.tgz
+        version: file:vendor/tcrn-ds/4.2.0/tcrn-ui-tokens-4.2.0.tgz
       '@voxward/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -1254,26 +1254,26 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@tcrn/ds-consumer-tools@file:vendor/tcrn-ds/4.1.0/tcrn-ds-consumer-tools-4.1.0.tgz':
-    resolution: {integrity: sha512-L6kbOPu8C+8YNxW5zVwOdbSuWLtWkxNlBTSB9jyJTptJyTbGJXEYFMq9xfA7lqaHSpytLAeMEkdsQQXya+hZuQ==, tarball: file:vendor/tcrn-ds/4.1.0/tcrn-ds-consumer-tools-4.1.0.tgz}
-    version: 4.1.0
+  '@tcrn/ds-consumer-tools@file:vendor/tcrn-ds/4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz':
+    resolution: {integrity: sha512-uRT0TJz+SB3LEYWDGzHprTNgZVulExNMJcvaqbnAtbdkzbiBZiIaTSLzeOF6L1Z4huSI++hp+z1c0SKKXkwSfQ==, tarball: file:vendor/tcrn-ds/4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz}
+    version: 4.2.0
     engines: {node: '>=22'}
     hasBin: true
 
-  '@tcrn/ui-copy-state@file:vendor/tcrn-ds/4.1.0/tcrn-ui-copy-state-4.1.0.tgz':
-    resolution: {integrity: sha512-nyro8w1fyrEDXMGK0bRhC3NMowkgAA9iT/vXbtp1S9gOSIYG5fNU1LU63vhnkNCEk/B3/rHVAW2LH2ATOcCEXg==, tarball: file:vendor/tcrn-ds/4.1.0/tcrn-ui-copy-state-4.1.0.tgz}
-    version: 4.1.0
+  '@tcrn/ui-copy-state@file:vendor/tcrn-ds/4.2.0/tcrn-ui-copy-state-4.2.0.tgz':
+    resolution: {integrity: sha512-epwg96L4IwLUApHLd40OnXncrdFaKJNtSY8rWE6GfK8zY5TyfBwQlnu6M916czdeX/J8+WfgbS3lFZd4zc2XIw==, tarball: file:vendor/tcrn-ds/4.2.0/tcrn-ui-copy-state-4.2.0.tgz}
+    version: 4.2.0
 
-  '@tcrn/ui-react@file:vendor/tcrn-ds/4.1.0/tcrn-ui-react-4.1.0.tgz':
-    resolution: {integrity: sha512-actf7Ht0LLXlrRIs4I4+AgmkHEZJZk1xYFeAS8sTC4yfftNki/gFm+YsNhs8Y1+u8Q1Sliupnsb+XIQ/kQtmTQ==, tarball: file:vendor/tcrn-ds/4.1.0/tcrn-ui-react-4.1.0.tgz}
-    version: 4.1.0
+  '@tcrn/ui-react@file:vendor/tcrn-ds/4.2.0/tcrn-ui-react-4.2.0.tgz':
+    resolution: {integrity: sha512-3atFsgkM5FdwMWc8kkVD2qATzumHocOyB72oniPK0hO6VRCer8kQuT31WSK3NUtJ74kskznqbJC3RX1Z3aMDiQ==, tarball: file:vendor/tcrn-ds/4.2.0/tcrn-ui-react-4.2.0.tgz}
+    version: 4.2.0
     peerDependencies:
       react: ^18.3.0 || ^19.0.0
       react-dom: ^18.3.0 || ^19.0.0
 
-  '@tcrn/ui-tokens@file:vendor/tcrn-ds/4.1.0/tcrn-ui-tokens-4.1.0.tgz':
-    resolution: {integrity: sha512-69xzBydj9eUUNk906geGmOV6p2ZhAESRBN/wIHlqRqSKTsPYPbgLjAdBjM9yDn2kqzufSj7Q63L2/O1lNpyjFA==, tarball: file:vendor/tcrn-ds/4.1.0/tcrn-ui-tokens-4.1.0.tgz}
-    version: 4.1.0
+  '@tcrn/ui-tokens@file:vendor/tcrn-ds/4.2.0/tcrn-ui-tokens-4.2.0.tgz':
+    resolution: {integrity: sha512-nV9D1smF7esDqDgkRkpZ1s7JpYaWVlE0KvrquiwVjVVEaErHaXvtp66badPQdFBCb1luCjndB+KOY10KuXCAVQ==, tarball: file:vendor/tcrn-ds/4.2.0/tcrn-ui-tokens-4.2.0.tgz}
+    version: 4.2.0
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -2748,26 +2748,26 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.68.2':
     optional: true
 
-  '@tcrn/ds-consumer-tools@file:vendor/tcrn-ds/4.1.0/tcrn-ds-consumer-tools-4.1.0.tgz':
+  '@tcrn/ds-consumer-tools@file:vendor/tcrn-ds/4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz':
     dependencies:
       '@playwright/test': 1.61.0
       typescript: 5.8.3
 
-  '@tcrn/ui-copy-state@file:vendor/tcrn-ds/4.1.0/tcrn-ui-copy-state-4.1.0.tgz': {}
+  '@tcrn/ui-copy-state@file:vendor/tcrn-ds/4.2.0/tcrn-ui-copy-state-4.2.0.tgz': {}
 
-  '@tcrn/ui-react@file:vendor/tcrn-ds/4.1.0/tcrn-ui-react-4.1.0.tgz(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@tcrn/ui-react@file:vendor/tcrn-ds/4.2.0/tcrn-ui-react-4.2.0.tgz(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@radix-ui/react-dialog': 1.1.17(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@radix-ui/react-popover': 1.1.17(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@tcrn/ui-copy-state': file:vendor/tcrn-ds/4.1.0/tcrn-ui-copy-state-4.1.0.tgz
-      '@tcrn/ui-tokens': file:vendor/tcrn-ds/4.1.0/tcrn-ui-tokens-4.1.0.tgz
+      '@tcrn/ui-copy-state': file:vendor/tcrn-ds/4.2.0/tcrn-ui-copy-state-4.2.0.tgz
+      '@tcrn/ui-tokens': file:vendor/tcrn-ds/4.2.0/tcrn-ui-tokens-4.2.0.tgz
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
 
-  '@tcrn/ui-tokens@file:vendor/tcrn-ds/4.1.0/tcrn-ui-tokens-4.1.0.tgz': {}
+  '@tcrn/ui-tokens@file:vendor/tcrn-ds/4.2.0/tcrn-ui-tokens-4.2.0.tgz': {}
 
   '@types/babel__core@7.20.5':
     dependencies:

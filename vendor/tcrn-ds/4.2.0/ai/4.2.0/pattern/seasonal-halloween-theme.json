@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+  },
+  "id": "pattern/seasonal-halloween-theme",
+  "kind": "pattern",
+  "required": [
+    "tokens/core",
+    "tokens/shell",
+    "standard/01-tokens"
+  ],
+  "optional": [],
+  "content": {
+    "path": "docs/consumption/patterns/seasonal-halloween-theme.md",
+    "sha256": "81cdbb2d15c4ba35dc4e598c37f4bcd427a541c67dfcafa9382e0936906018e3",
+    "content": "# Seasonal Halloween Theme Pattern (`halloween`)\n\nStatus: local candidate · awaiting Owner visual review and formal release.\n\nThis pattern defines an opt-in seasonal Halloween surface palette (`data-tcrn-theme=\"halloween\"`) layered over the pinned Site v2 token system without modifying the default `light` or `dark` themes, formal component geometry, typography, spacing, border radii, icon strokes, or motion timings.\n\n## Boundaries\n\n- **Core shell contract unchanged**: `ShellThemeMode` (`\"light\" | \"dark\"`), pinned `light` and `dark` token values, the 28 formal component APIs, and the five built-in documentation locales remain unchanged.\n- **Opt-in stylesheet import**: consumers load the seasonal layer explicitly after the core token stylesheet and component stylesheet:\n  - `@tcrn/ui-tokens/tokens.css`\n  - `@tcrn/ui-tokens/halloween.css`\n  - `@tcrn/ui-react/styles.css`\n- **Scoped activation**: apply `data-tcrn-theme=\"halloween\"` on an application root, container, or `ProductShell` wrapper alongside `color-scheme: dark` where native form popups inherit color scheme. Portal popups such as `MultiSelect` dropdowns synchronize `data-tcrn-theme=\"halloween\"` automatically from the closest themed ancestor.\n\n## Color Roles and Accessibility Thresholds\n\nThe seasonal palette uses deep plum-obsidian canvases paired with warm parchment ink, harvest-amber accent fills/focus rings, sage status green, soft coral danger ink, and twilight-violet / cool-indigo brand suffix tints:\n\n- **Surfaces**: `--tcrn-color-bg` (`#131017`), `--tcrn-color-bg-2` (`#0d0b10`), `--tcrn-color-panel` (`#1b1622`), `--tcrn-color-panel-2` (`#231d2c`).\n- **Ink**: `--tcrn-color-ink` (`#f3ece0`), `--tcrn-color-ink-2` (`#beb3a4`), `--tcrn-color-ink-3` (`#968b7e`), preserving nominal text contrast `>= 4.5:1` across `bg`, `panel`, and `panel-2` (including shortcuts on `--tcrn-color-wash`).\n- **Accent & Primary Controls**: `--tcrn-color-acc` (`#f58a33`), `--tcrn-color-acc-2` (`#ffa04d`), `--tcrn-color-acc-3` (`#e0761f`), paired with `--tcrn-color-on-acc` (`#1b0d02`) so filled accent buttons retain `>= 4.5:1` contrast (`6.14:1` to `9.40:1`).\n- **Control Boundaries & Focus**: `--tcrn-color-line-ctl` (`rgba(245,236,224,.40)`, `>= 3.0:1` on all surface tiers) and `--tcrn-focus-ring` recomposed over `#131017` and `#f58a33`.\n- **Elevation**: tight dark-mode shadow blurs (`<= 3px`) with crisp parchment hairline rings (`rgba(245,236,224,.07)` to `.10`).\n\n## Verification Scope\n\nToken completeness (`compareSeasonalThemeBlock`), nominal WCAG AA contrast (`checkSeasonalHalloweenContrast`), body-mounted popup inheritance (`MultiSelect`), and static closure proofs run automatically. Visual acceptance and formal publication require a separate Owner review decision.\n"
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+  },
+  "id": "component/ButtonGroup",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/05-actions"
+  ],
+  "optional": [],
+  "content": {
+    "name": "ButtonGroup",
+    "board": "05-actions",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/05-actions/index.dc.html",
+      "sha256": "c7498b7bf317ce36cca13b2508ff1016874b3984f3374b14dcd42df24933f6ff",
+      "line": 116
+    },
+    "normativeText": "ButtonGroup 新增 · ariaLabel · size · variant secondary|quiet · children Button / IconButton 一句话：把两到五个同类动作连成一条，共用轮廓与分隔；单选用子项 aria-pressed，组只管几何与可及性。 须提供 ： ariaLabel （role=group 的名字）；子项各自的 label 或 ariaLabel。 容器 ：工具栏、页头；组内焦点环抬到最上层。 不用 ：视图页签与导航（用 Tabs / SegmentedNav）；超过五项（用 Select 或 Menu）；混放主按钮。",
+    "readerSummary": {
+      "en": "Name the group and each of two to five Button/IconButton children. Use secondary or quiet; children own aria-pressed. Avoid navigation and mixed primary actions.",
+      "zh-CN": "命名组与 2–5 个 Button/IconButton 子项。仅 secondary/quiet，单选由子项 aria-pressed 表达。不作导航或混放主按钮。",
+      "ja": "グループと2〜5個の Button/IconButton に名前を付けます。secondary/quiet を使い、選択は子の aria-pressed で示します。ナビには使いません。",
+      "ko": "그룹과 2~5개 Button/IconButton 자식에 이름을 제공합니다. secondary/quiet만 쓰며 선택은 자식 aria-pressed가 담당합니다. 탐색에는 쓰지 않습니다.",
+      "fr": "Nommer le groupe et ses deux à cinq Button/IconButton. secondary ou quiet ; chaque enfant porte aria-pressed. Éviter navigation et mélange de boutons principaux."
+    },
+    "types": {
+      "name": "ButtonGroup",
+      "kind": "forwardRef",
+      "props": [
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "required": false,
+          "slot": true
+        },
+        {
+          "name": "size",
+          "type": "ButtonProps[\"size\"]",
+          "required": false,
+          "default": "\"md\"",
+          "enumValues": [
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        {
+          "name": "variant",
+          "type": "\"secondary\" | \"quiet\"",
+          "required": false,
+          "default": "\"secondary\"",
+          "enumValues": [
+            "secondary",
+            "quiet"
+          ]
+        }
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "variant": [
+          "secondary",
+          "quiet"
+        ]
+      },
+      "slots": [
+        "children"
+      ],
+      "source": {
+        "path": "packages/ui-react/src/components/ButtonGroup/ButtonGroup.tsx",
+        "line": 22
+      },
+      "typeDefinitions": [
+        {
+          "name": "Size",
+          "path": "packages/ui-react/src/components/Button/Button.tsx",
+          "line": 6,
+          "declaration": "type Size = \"sm\" | \"md\" | \"lg\";"
+        },
+        {
+          "name": "ButtonProps",
+          "path": "packages/ui-react/src/components/Button/Button.tsx",
+          "line": 8,
+          "declaration": "export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {\n  variant?: \"primary\" | \"secondary\" | \"quiet\" | \"danger\";\n  size?: Size;\n  /**\n   * Why the action is unavailable, used while the button is disabled. It is the button's\n   * accessible description (aria-describedby) and follows the label text in title as\n   * \"label — reason\", so a label cut by the ellipsis stays readable next to the reason.\n   */\n  disabledReason?: string;\n  /**\n   * The action is running: the button says so with aria-busy and the loader icon, and a\n   * further press does nothing. The busy wording is the caller's children, in the page's\n   * language; the package adds no text of its own.\n   */\n  loading?: boolean;\n}"
+        },
+        {
+          "name": "ButtonGroupProps",
+          "path": "packages/ui-react/src/components/ButtonGroup/ButtonGroup.tsx",
+          "line": 6,
+          "declaration": "export interface ButtonGroupProps extends Omit<HTMLAttributes<HTMLDivElement>, \"aria-label\" | \"role\"> {\n  /** Names the group: role=\"group\" without a name tells a screen reader nothing about what the buttons share. */\n  ariaLabel: string;\n  /** \"quiet\" drops the shared outline and uses the lighter separator, for a group of quiet buttons. */\n  variant?: \"secondary\" | \"quiet\";\n  /** The group owns uniform geometry; this size overrides individual member sizes. */\n  size?: ButtonProps[\"size\"];\n  children?: ReactNode;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "content",
+      "constraint": "The frame encloses members plus their 1px joins, in secondary and quiet variants. On a narrow parent, members may shrink and ellipsize; keep the joined row and token insets.",
+      "implementation": "actions.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/ButtonGroup/ButtonGroup.tsx",
+      "sha256": "889234badc5680efe86ed198d802d482f2fbd737e26ef57daa599a8c1e7ff55c"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 153,
+      "snippet": "case \"ButtonGroup\": return state === \"sizes\" ? ([\"sm\", \"md\", \"lg\"] as const).map(size => <GroupExample key={size} size={size} locale={locale} state={state} />) : <GroupExample locale={locale} state={state} />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { ButtonGroup, Button, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example() {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", justifyItems: \"start\", gap: \"var(--tcrn-space-2)\" }}>\n      <ButtonGroup ariaLabel=\"Filter\" size=\"md\"><Button aria-pressed=\"true\">All</Button><Button>Open</Button></ButtonGroup>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/actions.css.ts",
+          "sha256": "867422711e7934ae0a06d531808867a32216620e62130e77770e172887cde54a"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-buttongroup--default"
+      },
+      {
+        "state": "quiet",
+        "id": "components-buttongroup--quiet"
+      },
+      {
+        "state": "sizes",
+        "id": "components-buttongroup--sizes"
+      },
+      {
+        "state": "five-actions",
+        "id": "components-buttongroup--five-actions"
+      }
+    ]
+  }
+}

@@ -129,6 +129,17 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     const eff = (userRes.json() as { user: { effectivePermissions: Array<{ capability: string; effect: string }> } }).user.effectivePermissions;
     expect(eff.find((p) => p.capability === "review.decide")?.effect).toBe("DENY");
     expect(eff.find((p) => p.capability === "queue.read")?.effect).toBe("ALLOW");
+
+    // Hydrates existing channel_members on GET /rbac/users when rbac-users setting was never initialized
+    const rbacList = await app.inject({
+      method: "GET",
+      url: `/channels/${CH1}/rbac/users`,
+      headers: { cookie: owner.cookie },
+    });
+    expect(rbacList.statusCode).toBe(200);
+    const listedUsers = (rbacList.json() as { users: Array<{ accountId: string; roleIds: string[] }> }).users;
+    expect(listedUsers.some((u) => u.accountId === owner.accountId && u.roleIds.includes("role-owner"))).toBe(true);
+    expect(listedUsers.some((u) => u.accountId === "acc-multi")).toBe(true);
   });
 
   it("handles term categories/REGEX/CSV, manual blocked users, score-only rejudge, adapters + Integration Log", async () => {
@@ -244,5 +255,30 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     expect(intItems).toHaveLength(1);
     expect(intItems[0]?.requestHeaders.authorization).toBe("[REDACTED]");
     expect(intItems[0]?.rawResponseBody).toContain("modelCount");
+
+    // Catalog includes OUTPUT_TARGET adapters (OBS & native readonly protocol) and creation succeeds
+    const catalogRes = await app.inject({
+      method: "GET",
+      url: `/channels/${CH1}/adapters/catalog`,
+      headers: { cookie: owner.cookie },
+    });
+    expect(catalogRes.statusCode).toBe(200);
+    const catalog = (catalogRes.json() as { catalog: Array<{ driverId: string; category: string }> }).catalog;
+    expect(catalog.some((c) => c.category === "OUTPUT_TARGET" && c.driverId === "obs-overlay-source")).toBe(true);
+    expect(catalog.some((c) => c.category === "OUTPUT_TARGET" && c.driverId === "native-readonly-protocol")).toBe(true);
+
+    const obsCreate = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/adapters`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: {
+        category: "OUTPUT_TARGET",
+        driverId: "obs-overlay-source",
+        displayName: "OBS Main Overlay",
+        enabled: true,
+        config: { roomId: CH1, showOriginalText: true, showTranslation: true },
+      },
+    });
+    expect(obsCreate.statusCode).toBe(201);
   });
 });

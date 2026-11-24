@@ -58,6 +58,8 @@ describe("Moderation Console (VW-Draft-03)", () => {
     expect(html).toContain("AI 候选词待确认");
     expect(html).toContain("实时待审队列");
     expect(html).toContain("实时审核旁路流与 SC 置顶条");
+    expect(html).toContain("vw-yt-stream-panel");
+    expect(html).not.toContain("拦截时同步删除平台消息");
     expect(html).not.toContain("切换 SC 精翻");
   });
 });

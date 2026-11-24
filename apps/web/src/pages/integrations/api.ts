@@ -1,7 +1,13 @@
 import type { OutputsSummaryView } from "../admin/api";
 
-export type AdapterCategory = "LIVE_PLATFORM" | "AI_PROVIDER";
-export type AdapterDriverId = "youtube-live-v3" | "kiro-cli" | "openai-compat" | "anthropic-compat";
+export type AdapterCategory = "LIVE_PLATFORM" | "AI_PROVIDER" | "OUTPUT_TARGET";
+export type AdapterDriverId =
+  | "youtube-live-v3"
+  | "kiro-cli"
+  | "openai-compat"
+  | "anthropic-compat"
+  | "obs-overlay-source"
+  | "native-readonly-protocol";
 
 export interface AdapterCatalogEntry {
   readonly driverId: AdapterDriverId;

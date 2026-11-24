@@ -142,7 +142,7 @@ export function LogViewerPage({ fetchImpl }: { readonly fetchImpl?: FetchLike })
         ) : (
           <div className="vw-stack-md">
             <section className="vw-panel-card" aria-label="日志关联筛选栏">
-              <div className="vw-row-wrap">
+              <div className="vw-input-action-row">
                 <div className="vw-field-col">
                   <label className="vw-field-label" htmlFor="log-corr-filter">
                     按关联追踪号检索（支持跨技术/变更/集成日志联合排查）

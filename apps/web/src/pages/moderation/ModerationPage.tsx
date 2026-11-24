@@ -11,7 +11,7 @@ import {
 import { BannerNotice } from "../../components/banner-notice";
 import { SectionTabs } from "../../components/section-tabs";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
-import { SuperChatTicker } from "../../components/youtube-sc";
+import { SuperChatCard, SuperChatOverlayBar } from "../../components/youtube-sc";
 import { VoxWardShell, useVoxWardShell } from "../../shell";
 import {
   createModerationApi,
@@ -39,19 +39,6 @@ function classificationLabel(code: string): string {
   }
 }
 
-function platformDeleteLabel(status: string): string | null {
-  switch (status) {
-    case "DELETED":
-      return "已同步删平台消息";
-    case "PENDING":
-      return "待平台删消息";
-    case "FAILED":
-      return "平台删消息失败";
-    default:
-      return null;
-  }
-}
-
 export interface ModerationWorkbenchProps {
   readonly channelId: string;
   readonly api?: ModerationApi;
@@ -73,7 +60,6 @@ export function ModerationWorkbench({
   const [categories, setCategories] = useState<readonly TermCategoryView[]>([]);
   const [activeTab, setActiveTab] = useState<string>("queue");
   const [selectedTaskIds, setSelectedTaskIds] = useState<readonly string[]>([]);
-  const [deleteOnBlockIds, setDeleteOnBlockIds] = useState<readonly string[]>([]);
   const [expandedEventIds, setExpandedEventIds] = useState<readonly string[]>([]);
   const [candidateCategoryMap, setCandidateCategoryMap] = useState<Record<string, string>>({});
   const [conflictText, setConflictText] = useState<string | null>(null);
@@ -161,10 +147,7 @@ export function ModerationWorkbench({
       }
       setFeedback({
         tone: "positive",
-        text:
-          classification === "BLOCK" && deleteOnBlockIds.includes(taskId)
-            ? "已确认拦截，并同步提交平台删消息联动请求。"
-            : `已提交裁决：${classificationLabel(classification)}。`,
+        text: `已提交裁决：${classificationLabel(classification)}。`,
       });
       await loadAll();
     } catch (error) {
@@ -353,7 +336,6 @@ export function ModerationWorkbench({
                   {queue.map((item) => {
                     const checked = selectedTaskIds.includes(item.taskId);
                     const expanded = expandedEventIds.includes(item.taskId);
-                    const deleteChecked = deleteOnBlockIds.includes(item.taskId);
                     const original = item.originalText ?? "";
                     const displayBody =
                       original.length > 90 && !expanded ? `${original.slice(0, 90)}…` : original;
@@ -404,20 +386,6 @@ export function ModerationWorkbench({
                           <span className="vw-caption">当前角色已折叠显示敏感原文片段</span>
                         )}
 
-                        <label className="vw-row-wrap">
-                          <Checkbox
-                            checked={deleteChecked}
-                            onChange={(event) =>
-                              setDeleteOnBlockIds((prev) =>
-                                event.target.checked
-                                  ? [...new Set([...prev, item.taskId])]
-                                  : prev.filter((id) => id !== item.taskId),
-                              )
-                            }
-                          />
-                          <span className="vw-caption">拦截时同步删除平台消息 (不退还打赏)</span>
-                        </label>
-
                         <div className="vw-ward-line__actions">
                           <Button
                             variant="primary"
@@ -454,13 +422,13 @@ export function ModerationWorkbench({
               )}
             </section>
 
-            <section className="vw-panel-card" aria-label="审核旁路实时流与醒目留言条">
+            <section className="vw-panel-card vw-yt-stream-panel" aria-label="审核旁路实时流与醒目留言条">
               <div className="vw-row-between">
                 <strong>实时审核旁路流与 SC 置顶条</strong>
                 <span className="vw-caption">{liveStream.length} 条近期记录</span>
               </div>
 
-              <SuperChatTicker items={scTickerItems} />
+              <SuperChatOverlayBar items={scTickerItems} />
 
               {liveStream.length === 0 ? (
                 <EmptyState
@@ -471,9 +439,13 @@ export function ModerationWorkbench({
                 <div className="vw-stack-sm">
                   {liveStream.map((entry) => {
                     const expanded = expandedEventIds.includes(entry.eventId);
-                    const delText = platformDeleteLabel(entry.platformDeleteStatus);
+                    const scMatch = scTickerItems.find((sc) => sc.id === entry.eventId);
                     const rowText = entry.originalText ?? "";
                     const isLong = rowText.length > 100;
+
+                    if (scMatch && entry.localStatus === "ALLOW") {
+                      return <SuperChatCard key={entry.eventId} item={scMatch} />;
+                    }
 
                     return (
                       <article
@@ -492,7 +464,6 @@ export function ModerationWorkbench({
                             <Badge tone={entry.localStatus === "BLOCK" ? "danger" : "positive"}>
                               {classificationLabel(entry.classification)}
                             </Badge>
-                            {delText ? <Badge tone="neutral">{delText}</Badge> : null}
                           </div>
                         </div>
                         {rowText ? (

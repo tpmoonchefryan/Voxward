@@ -34,8 +34,34 @@ function isSuperChatItem(item: ActiveDeliverItem): boolean {
  * - WARD_BLOCKED 仅无声撤回同 platformOrder 项，屏幕不展示拦截反馈。
  */
 export function StageView({ state, previewMode = false }: StageViewProps) {
-  const scItems = state.activeDeliveries.filter(isSuperChatItem);
-  const chatItems = state.activeDeliveries.filter((item) => !isSuperChatItem(item));
+  const showSamplePreview = previewMode && state.activeDeliveries.length === 0;
+  const effectiveDeliveries: readonly ActiveDeliverItem[] = showSamplePreview
+    ? [
+        {
+          deliveryId: "preview-sc-1",
+          deliverySequence: 1,
+          platformOrder: 1,
+          label: "SC $100",
+          text: "Happy Halloween from Tokyo!",
+          translation: "来自东京的万圣节问候！",
+          validUntil: "2099-01-01T00:00:00.000Z",
+          validUntilMs: Number.MAX_SAFE_INTEGER,
+        },
+        {
+          deliveryId: "preview-chat-1",
+          deliverySequence: 2,
+          platformOrder: 2,
+          label: "Kaito_Fan",
+          text: "今晚直播氛围太棒了，继续加油！",
+          translation: null,
+          validUntil: "2099-01-01T00:00:00.000Z",
+          validUntilMs: Number.MAX_SAFE_INTEGER,
+        },
+      ]
+    : state.activeDeliveries;
+
+  const scItems = effectiveDeliveries.filter(isSuperChatItem);
+  const chatItems = effectiveDeliveries.filter((item) => !isSuperChatItem(item));
 
   return (
     <main
@@ -43,6 +69,9 @@ export function StageView({ state, previewMode = false }: StageViewProps) {
       data-stage-status={state.connectionStatus}
       aria-label="OBS Live Overlay Stage"
     >
+      {showSamplePreview ? (
+        <div className="vw-obs-preview-badge">OBS 透明投屏预览示例 · 请于「集成管理 › OBS 透明投屏源」签发只读令牌接入正式推流</div>
+      ) : null}
       <ScScroll items={scItems} />
 
       <section aria-label="OBS Chat Feed" className="vw-obs-chat-list">

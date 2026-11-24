@@ -1,0 +1,247 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+  },
+  "id": "component/ShellDropdown",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/07b-shell-lower",
+    "pattern/shell-preferences",
+    "assets/icons"
+  ],
+  "optional": [
+    "pattern/customer-list-boundary"
+  ],
+  "content": {
+    "name": "ShellDropdown",
+    "board": "07b-shell-lower",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/07b-shell-lower/index.dc.html",
+      "sha256": "cad83aab5c53df23e6477e3bc9c4e49f0ec465061e2cc161b3b58cbb282ec26f",
+      "line": 61
+    },
+    "normativeText": "搜索提供者 ：完整菜单搜全站目标；下拉里的搜索只搜该子树；复用 ProductShellSearch。\n完整菜单与下拉都是临时浮层：选中、Esc、点外部即收；没有收起钮；与键之间留 6px。\n固定的二级菜单从顶带纵向下拉；三、四级按 点击 向右级联，不按悬停。\n⌘K / Ctrl+K 打开完整菜单并聚焦搜索； Esc 关闭，焦点回标按钮；菜单内 ↑↓ 走项，→ 进入子项列，← 回左列。\n标按钮 aria-expanded 、 aria-haspopup=\"dialog\" ；固定的二级菜单同样；浮层 role=\"dialog\" 非模态。",
+    "readerSummary": {
+      "en": "Supply the pinned subtree. Search only that subtree; click opens equal-width/equal-height level 3/4 columns with a 4px gap. Selection, Esc or outside closes it.",
+      "zh-CN": "提供固定子树；仅搜索该子树。点击展开同宽等高的三四级列，间距 4px。选中、Esc、点外部关闭。",
+      "ja": "固定された部分木を指定し、その内部だけ検索します。クリックで同幅同高の3・4階層を4px間隔で開き、選択・Esc・外側で閉じます。",
+      "ko": "고정된 하위 트리를 제공하고 그 안에서만 검색합니다. 클릭으로 같은 너비·높이의 3·4단계를 4px 간격으로 열고 선택·Esc·외부 클릭으로 닫습니다.",
+      "fr": "Fournir le sous-arbre épinglé et le chercher seul. Un clic ouvre les niveaux 3/4 de même largeur et hauteur, écart4px. Sélection, Esc ou extérieur ferment."
+    },
+    "types": {
+      "name": "ShellDropdown",
+      "kind": "function",
+      "props": [
+        {
+          "name": "cascadeBoundaryRef",
+          "type": "RefObject<HTMLElement | null>",
+          "required": false
+        },
+        {
+          "name": "focusOnOpen",
+          "type": "boolean",
+          "required": false,
+          "default": "true"
+        },
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "landmarkLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "level",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "locale",
+          "type": "TcrnLocale | string",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean, reason: ShellLayerCloseReason) => void",
+          "required": false
+        },
+        {
+          "name": "onPinnedChange",
+          "type": "(id: string, pinned: boolean) => void",
+          "required": false
+        },
+        {
+          "name": "open",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "name": "pinnedIds",
+          "type": "readonly string[]",
+          "required": false,
+          "default": "[]"
+        },
+        {
+          "name": "previewStates",
+          "type": "Readonly<Record<string, string>>",
+          "required": false
+        },
+        {
+          "name": "searchPlaceholder",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "searchProvider",
+          "type": "ShellMenuSearchProvider",
+          "required": false,
+          "default": "searchTheSubtree"
+        },
+        {
+          "name": "selectedId",
+          "type": "string | null",
+          "required": false,
+          "default": "null"
+        },
+        {
+          "name": "source",
+          "type": "ShellMenuGroup | ShellMenuItem",
+          "required": true
+        },
+        {
+          "name": "triggerRef",
+          "type": "RefObject<HTMLElement | null>",
+          "required": false
+        }
+      ],
+      "variants": {},
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Navigation/ShellDropdown.tsx",
+        "line": 185
+      },
+      "propsType": "ShellDropdownProps",
+      "typeDefinitions": [
+        {
+          "name": "TcrnIconPathName",
+          "path": "packages/ui-react/src/components/Icon/icon-paths.generated.ts",
+          "line": 6,
+          "declaration": "export type TcrnIconPathName=(typeof tcrnIconPathNames)[number];"
+        },
+        {
+          "name": "IconName",
+          "path": "packages/ui-react/src/components/Icon/Icon.tsx",
+          "line": 20,
+          "declaration": "export type IconName = TcrnIconPathName;"
+        },
+        {
+          "name": "ProductShellSearchResult",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 1587,
+          "declaration": "export interface ProductShellSearchResult {\n  id: string;\n  title: string;\n  titleKey?: string;\n  meta?: string;\n  metaKey?: string;\n  href: string;\n  selected?: boolean;\n}"
+        },
+        {
+          "name": "ShellDropdownProps",
+          "path": "packages/ui-react/src/components/Navigation/ShellDropdown.tsx",
+          "line": 52,
+          "declaration": "export interface ShellDropdownProps extends Omit<HTMLAttributes<HTMLDivElement>, \"children\" | \"title\" | \"id\"> {\n  /** Id of the drop-down dialog: the aria-controls of the pinned item (ShellPins menuIdOf). */\n  id: string;\n  /** The pinned group or submenu whose entries the drop-down lists. */\n  source: ShellMenuGroup | ShellMenuItem;\n  /** Level of the drop-down's own rows: 2 under a pinned group, 3 (the default) under a pinned item. */\n  level?: number;\n  /** Whether the drop-down is open; closed, nothing is rendered. */\n  open: boolean;\n  /** Whether opening the drop-down moves focus to its search. Defaults to true. */\n  focusOnOpen?: boolean;\n  /** Asks to close the drop-down (Esc, a press outside, a choice). */\n  onOpenChange?: (open: boolean, reason: ShellLayerCloseReason) => void;\n  /** The pinned item; found through its aria-controls when omitted. */\n  triggerRef?: RefObject<HTMLElement | null>;\n  /** A clipping scroll frame for the cascades. Without it the side follows the viewport. */\n  cascadeBoundaryRef?: RefObject<HTMLElement | null>;\n  /** The row of the current page. */\n  selectedId?: string | null;\n  /** Ids of the pinned groups, items and children. */\n  pinnedIds?: readonly string[];\n  /** Pins or unpins a row; without it the rows have no pin. */\n  onPinnedChange?: (id: string, pinned: boolean) => void;\n  /** Placeholder of the search; \"Search {name}\" in the reader's language when omitted. */\n  searchPlaceholder?: string;\n  /** The search provider, given only this part of the menu; the model is searched when omitted. */\n  searchProvider?: ShellMenuSearchProvider;\n  /** Language of the copy; the page's own when omitted. */\n  locale?: TcrnLocale | string;\n  /**\n   * Static states for documentation, by row id: data-tcrn-preview-state. A row with a next level\n   * marked \"open\" starts with that level open (from the drop-down's own rows down), as a page\n   * rendered on the server shows a drop-down with its cascade.\n   */\n  previewStates?: Readonly<Record<string, string>>;\n  /**\n   * The name of the shell the drop-down belongs to, which tells it from another shell's on the same\n   * page: the drop-down is named \"{landmarkLabel} · {pinned entry}\" in the reader's language. Omitted,\n   * it is named by the pinned entry alone (TCRN-DS-SUB-184; ProductShell passes its own).\n   */\n  landmarkLabel?: string;\n}"
+        },
+        {
+          "name": "ShellMenuItem",
+          "path": "packages/ui-react/src/components/Navigation/ShellMenu.tsx",
+          "line": 89,
+          "declaration": "export interface ShellMenuItem {\n  /** Stable id: the key of the row in the pin preferences, the selected id and data-pin. */\n  id: string;\n  /** Visible name; it truncates on one line and is repeated in the title. */\n  label: string;\n  /** Destination of the row. A row with a next level opens it instead of navigating. */\n  href?: string;\n  /** Roster icon; the full menu's columns show it, the drop-down and the cascades do not. */\n  iconName?: IconName;\n  /** The next level. An item's children are the third level, theirs the fourth and last. */\n  children?: readonly ShellMenuItem[];\n  /**\n   * What the entry holds, said with its row to a screen reader (aria-describedby to a\n   * .tcrn-sr-only element); nothing is drawn, and without it the row's markup is unchanged.\n   */\n  description?: string;\n  /** Top-strip alignment when pinned (STORY-157). */\n  align?: \"start\" | \"end\";\n  /** External/secondary window link state (STORY-157). */\n  external?: boolean;\n  /** Role-gated or route-gated disabled state (STORY-157). */\n  disabled?: boolean;\n  /** Accessible explanation when disabled. */\n  disabledReason?: string;\n}"
+        },
+        {
+          "name": "ShellMenuGroup",
+          "path": "packages/ui-react/src/components/Navigation/ShellMenu.tsx",
+          "line": 116,
+          "declaration": "export interface ShellMenuGroup {\n  id: string;\n  label: string;\n  /**\n   * What the group (a category of the menu) holds, said to a screen reader with its title row in\n   * the panel and with its row in the Sheet (aria-describedby to a .tcrn-sr-only element); nothing\n   * is drawn, and without it the markup is unchanged.\n   */\n  description?: string;\n  iconName?: IconName;\n  /** Top-strip alignment inherited by pinned group/items unless overridden (STORY-157). */\n  align?: \"start\" | \"end\";\n  /** Role-gated or route-gated disabled state (STORY-157). */\n  disabled?: boolean;\n  disabledReason?: string;\n  items: readonly ShellMenuItem[];\n}"
+        },
+        {
+          "name": "ShellLayerCloseReason",
+          "path": "packages/ui-react/src/components/Navigation/ShellMenu.tsx",
+          "line": 146,
+          "declaration": "export type ShellLayerCloseReason = \"escape\" | \"outside-pointer\" | \"selection\";"
+        },
+        {
+          "name": "ShellMenuSearchProvider",
+          "path": "packages/ui-react/src/components/Navigation/ShellMenu.tsx",
+          "line": 152,
+          "declaration": "export type ShellMenuSearchProvider = (query: string, groups: readonly ShellMenuGroup[]) => readonly ProductShellSearchResult[];"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "mixed",
+      "constraint": "The shell owns anchored token-width columns, flip and viewport height. Level 3/4 columns use equal width and click-driven cascades.",
+      "implementation": "shell.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Navigation/ShellDropdown.tsx",
+      "sha256": "54521078174c027ca63665bb6ccdc895c05f51433ca5ae0beee5bddb520e59d2"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 183,
+      "snippet": "case \"ShellDropdown\": return <ShellExample locale={locale} mode={state === \"phone\" || state === \"sheet\" ? \"phone\" : name === \"ShellDropdown\" || state === \"dropdown\" || state === \"cascade\" ? \"drop\" : name === \"ShellMenu\" || state === \"menu\" || state === \"panel\" || state === \"search\" ? \"menu\" : \"band\"} initialPinCount={state === \"overflow\" ? 8 : 4} />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import type { ComponentProps } from \"react\";\nimport { ShellDropdown, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example(props: ComponentProps<typeof ShellDropdown>) {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", gap: \"var(--tcrn-space-2)\" }}>\n      <ShellDropdown {...props} />\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/shell.css.ts",
+          "sha256": "20eec486a1b9b350ef5c858965fe83bafb47dd361db5154a2bc49ab0b6b1e75b"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": "Supply the typed component props and read pattern/shell-preferences; the snippet does not invent product data or a backend adapter."
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-shelldropdown--default"
+      },
+      {
+        "state": "search",
+        "id": "components-shelldropdown--search"
+      },
+      {
+        "state": "cascade",
+        "id": "components-shelldropdown--cascade"
+      }
+    ]
+  }
+}

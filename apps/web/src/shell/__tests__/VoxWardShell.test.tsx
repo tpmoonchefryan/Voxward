@@ -25,12 +25,14 @@ describe("VoxWardShell & navigation model", () => {
     const rightItems = restricted.rightNavGroups[0]?.items ?? [];
 
     expect(leftItems.find((i) => i.id === "moderation")?.disabled).toBe(false);
+    expect(leftItems.find((i) => i.id === "dock")?.label).toBe("纯净弹幕姬");
+    expect(leftItems.find((i) => i.id === "overlay")).toBeUndefined();
     expect(leftItems.find((i) => i.id === "data")?.disabled).toBe(true);
     expect(rightItems.find((i) => i.id === "logs")?.disabled).toBe(true);
     expect(rightItems.find((i) => i.id === "users")?.disabled).toBe(true);
   });
 
-  it("renders ProductShell with symmetric pin groups, seasonal theme wiring, and account-synced persistence", () => {
+  it("renders ProductShell with 用户偏好 theme dropdown and links sign-in to standalone /login page", () => {
     const stubClient: ShellPreferencesClient = {
       getSession: async () => null,
       login: async () => {
@@ -56,7 +58,15 @@ describe("VoxWardShell & navigation model", () => {
     );
 
     expect(html).toContain("tcrn-product-shell");
+    expect(html).toContain('data-product-shell-semantic-api="menu-pins-theme-locale"');
+    expect(html).toContain("data-shell-avatar");
+    expect(html).toContain("主题与语言");
+    expect(html).toContain("登录账号");
+    expect(html).toContain("纯净弹幕姬");
     expect(html).toContain("工作台总览");
     expect(html).toContain("Shell body");
+    expect(html).not.toContain("tcrn-shell-theme-toggle");
+    expect(html).not.toContain("OBS 投屏");
+    expect(html).not.toContain("登录 VoxWard 工作台");
   });
 });

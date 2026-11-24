@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { CONTRACT_VERSION, type DecisionActor, type InferenceCapabilities } from "@voxward/contracts";
 import { z } from "zod";
@@ -45,8 +46,9 @@ import {
   type StoredRbacUser,
 } from "../db/channel-settings-store.js";
 import type { VoxwardDatabase } from "../db/client.js";
+import { authAccounts } from "../db/schema/index.js";
 import { authenticateRequest } from "./guard.js";
-import { findActiveMembership, listActiveMembershipsOf, type Membership } from "./members.js";
+import { findActiveMembership, listActiveMembers, listActiveMembershipsOf, type Membership } from "./members.js";
 import { capabilitiesOfMembership, membershipAllows, resolveEffectivePermissions, type Capability } from "./permissions.js";
 
 export interface ChannelPanelDecisionHandlers {
@@ -197,8 +199,15 @@ const ADAPTER_MODEL_SCHEMA = z
 
 const ADAPTER_CREATE_BODY = z
   .object({
-    category: z.enum(["LIVE_PLATFORM", "AI_PROVIDER"]),
-    driverId: z.enum(["youtube-live-v3", "kiro-cli", "openai-compat", "anthropic-compat"]),
+    category: z.enum(["LIVE_PLATFORM", "AI_PROVIDER", "OUTPUT_TARGET"]),
+    driverId: z.enum([
+      "youtube-live-v3",
+      "kiro-cli",
+      "openai-compat",
+      "anthropic-compat",
+      "obs-overlay-source",
+      "native-readonly-protocol",
+    ]),
     displayName: z.string().min(1).max(80),
     enabled: z.boolean(),
     config: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
@@ -898,7 +907,18 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       let actionSummary = `已执行运维动作：${action}`;
       let endpointUrl = "https://www.googleapis.com/youtube/v3/liveChat/messages";
 
-      if (current.driverId === "openai-compat" || current.driverId === "anthropic-compat" || current.driverId === "kiro-cli") {
+      if (current.category === "OUTPUT_TARGET") {
+        endpointUrl =
+          current.driverId === "obs-overlay-source" ? `/overlay/${channelId}` : "/output/v1/room";
+        actionSummary =
+          current.driverId === "obs-overlay-source"
+            ? "OBS 透明投屏通道就绪"
+            : "blivechat / 原生只读输出通道就绪";
+      } else if (
+        current.driverId === "openai-compat" ||
+        current.driverId === "anthropic-compat" ||
+        current.driverId === "kiro-cli"
+      ) {
         const base = typeof current.config.baseEndpoint === "string" && current.config.baseEndpoint
           ? current.config.baseEndpoint.replace(/\/$/, "")
           : current.driverId === "kiro-cli"
@@ -1034,12 +1054,52 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     },
   );
 
+function defaultRolesForMembership(member: Membership): string[] {
+  const roleIds: string[] = [];
+  if (member.role === "CHANNEL_OWNER") roleIds.push("role-owner");
+  else if (member.role === "MODERATOR") roleIds.push("role-moderator");
+  else roleIds.push("role-data-admin");
+  if (member.logAccess && member.role !== "CHANNEL_OWNER") {
+    roleIds.push("role-auditor");
+  }
+  return roleIds;
+}
+
+function hydrateRbacUsersFromChannel(database: VoxwardDatabase, channelId: string): StoredRbacUser[] {
+  const stored = readChannelSetting<StoredRbacUser[] | null>(database, channelId, "rbac-users", null);
+  if (stored !== null) return stored;
+  const members = listActiveMembers(database, channelId);
+  if (members.length === 0) return [];
+  const accountRows = database.orm
+    .select({
+      id: authAccounts.id,
+      loginName: authAccounts.loginName,
+      displayName: authAccounts.displayName,
+      disabledAt: authAccounts.disabledAt,
+    })
+    .from(authAccounts)
+    .where(inArray(authAccounts.id, members.map((m) => m.accountId)))
+    .all();
+  const accountMap = new Map(accountRows.map((row) => [row.id, row]));
+  return members.map((member) => {
+    const account = accountMap.get(member.accountId);
+    return {
+      accountId: member.accountId,
+      displayName: account?.displayName ?? member.accountId,
+      loginName: account?.loginName ?? member.accountId,
+      enabled: account?.disabledAt === null || account?.disabledAt === undefined,
+      roleIds: defaultRolesForMembership(member),
+      updatedAt: member.grantedAt,
+    };
+  });
+}
+
   app.get<{ Params: { channelId: string } }>("/channels/:channelId/rbac/users", async (request, reply) => {
     const { channelId } = request.params;
     requireChannelMember(database, request, channelId, ["members.manage"]);
     const roles = readRbacRoles(database, channelId);
     const roleMap = new Map(roles.map((r) => [r.id, r]));
-    const users = readRbacUsers(database, channelId).map((u) => {
+    const users = hydrateRbacUsersFromChannel(database, channelId).map((u) => {
       const assignedRoles = u.roleIds.map((id) => roleMap.get(id)).filter((r): r is StoredRbacRole => r !== undefined);
       return {
         ...u,
@@ -1056,7 +1116,9 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       requireChannelMember(database, request, channelId, ["members.manage"]);
       const parsed = RBAC_USER_BODY.safeParse(request.body);
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
-      const users = readRbacUsers(database, channelId).filter((u) => u.accountId !== parsed.data.accountId);
+      const users = hydrateRbacUsersFromChannel(database, channelId).filter(
+        (u) => u.accountId !== parsed.data.accountId,
+      );
       const record: StoredRbacUser = {
         accountId: parsed.data.accountId,
         displayName: parsed.data.displayName,
@@ -1081,7 +1143,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     async (request, reply) => {
       const { channelId, accountId } = request.params;
       requireChannelMember(database, request, channelId, ["members.manage"]);
-      const users = readRbacUsers(database, channelId);
+      const users = hydrateRbacUsersFromChannel(database, channelId);
       if (!users.some((u) => u.accountId === accountId)) throw new PanelRouteFailure(404, "USER_NOT_FOUND");
       writeRbacUsers(database, channelId, users.filter((u) => u.accountId !== accountId));
       return reply.code(204).send();

@@ -15,17 +15,10 @@ import {
   Switch,
   TableShell,
   Textarea,
-  type ShellThemeMode,
 } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
-import {
-  createShellPreferencesClient,
-  useVoxWardShell,
-  VoxWardShell,
-  type ShellPreferencesClient,
-  type VoxWardLocale,
-} from "../../shell";
+import { useVoxWardShell, VoxWardShell } from "../../shell";
 import {
   AdminApiFailure,
   createAdminApi,
@@ -38,7 +31,7 @@ import {
   type TermCategoryView,
 } from "./api";
 
-type SettingsSectionId = "general" | "blacklist" | "whitelist" | "scoring" | "retention";
+type SettingsSectionId = "blacklist" | "whitelist" | "scoring" | "retention";
 
 function matchKindLabel(kind: string): string {
   switch (kind) {
@@ -95,22 +88,15 @@ function TermRowActions({
 
 export interface AdminPageProps {
   readonly api?: AdminApi;
-  readonly prefsClient?: ShellPreferencesClient;
 }
 
-export function AdminPage({ api, prefsClient }: AdminPageProps) {
+export function AdminPage({ api }: AdminPageProps) {
   const params = useParams();
-  const { activeChannelId, locale, theme, reloadSession } = useVoxWardShell();
+  const { activeChannelId } = useVoxWardShell();
   const channelId = params.channelId ?? activeChannelId;
   const adminClient = useMemo(() => api ?? createAdminApi(), [api]);
-  const shellPrefsClient = useMemo(() => prefsClient ?? createShellPreferencesClient(), [prefsClient]);
 
-  const [section, setSection] = useState<SettingsSectionId>("general");
-
-  // General & Appearance state
-  const [themePref, setThemePref] = useState<ShellThemeMode>(theme);
-  const [localePref, setLocalePref] = useState<VoxWardLocale>(locale);
-  const [densityPref, setDensityPref] = useState<"comfortable" | "compact">("comfortable");
+  const [section, setSection] = useState<SettingsSectionId>("blacklist");
 
   // Term categories & entries state
   const [categories, setCategories] = useState<readonly TermCategoryView[]>([]);
@@ -120,6 +106,8 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
   const [catDesc, setCatDesc] = useState("");
   const [termSearch, setTermSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [showAddTermForm, setShowAddTermForm] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const [newTermText, setNewTermText] = useState("");
   const [newTermCategory, setNewTermCategory] = useState("");
   const [newTermMatchKind, setNewTermMatchKind] = useState<"EXACT" | "CONTAINS" | "REGEX">("EXACT");
@@ -133,11 +121,6 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
 
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: "positive" | "danger" | "warning"; text: string } | null>(null);
-
-  useEffect(() => {
-    setThemePref(theme);
-    setLocalePref(locale);
-  }, [theme, locale]);
 
   const loadChannelConfig = useCallback(async () => {
     try {
@@ -188,34 +171,6 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
       return entry.term.toLowerCase().includes(q) || entry.categoryCode.toLowerCase().includes(q);
     });
   }, [entries, activeListKind, categoryFilter, termSearch]);
-
-  const handleSaveAppearance = async () => {
-    setBusy(true);
-    setNotice(null);
-    try {
-      const existing = await shellPrefsClient.getShellPreferences();
-      await shellPrefsClient.saveShellPreferences({
-        pins: existing?.pins ?? ["moderation", "blocked", "data", "dock"],
-        rightPins: existing?.rightPins ?? ["logs", "integrations", "users", "settings"],
-        theme: themePref,
-        locale: localePref,
-        density: densityPref,
-      });
-      if (typeof document !== "undefined") {
-        document.documentElement.dataset.tcrnTheme = themePref;
-        document.documentElement.lang = localePref;
-      }
-      await reloadSession();
-      setNotice({ tone: "positive", text: "个人外观与语言偏好已保存至服务端。" });
-    } catch (error) {
-      setNotice({
-        tone: "danger",
-        text: error instanceof Error ? `外观保存失败：${error.message}` : "外观保存失败。",
-      });
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const handleAddCategory = async () => {
     if (!catCode.trim() || !catLabel.trim()) return;
@@ -288,6 +243,7 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
     };
     await persistEntries([item, ...entries], "词条已添加到当前词库。");
     setNewTermText("");
+    setShowAddTermForm(false);
   };
 
   const handleCsvImport = async () => {
@@ -298,6 +254,7 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
       const res = await adminClient.importTermEntriesCsv(channelId, activeListKind, csvText);
       setEntries(res.entries);
       setCsvText("");
+      setShowCsvImport(false);
       const firstErr = res.errors[0];
       if (firstErr !== undefined) {
         setNotice({
@@ -417,22 +374,7 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
   };
 
   const localNavigation = (
-    <nav className="vw-settings-nav" aria-label="系统设置分组">
-      <button
-        type="button"
-        className={
-          section === "general"
-            ? "vw-settings-nav-item vw-settings-nav-item--active"
-            : "vw-settings-nav-item"
-        }
-        onClick={() => {
-          setSection("general");
-          setCategoryFilter("ALL");
-        }}
-      >
-        常规与外观
-      </button>
-
+    <nav className="vw-settings-nav" aria-label="系统设置导航">
       <div className="vw-settings-group-title">规则与词库</div>
       <button
         type="button"
@@ -444,6 +386,8 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
         onClick={() => {
           setSection("blacklist");
           setCategoryFilter("ALL");
+          setShowAddTermForm(false);
+          setShowCsvImport(false);
         }}
       >
         黑名单词条
@@ -458,6 +402,8 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
         onClick={() => {
           setSection("whitelist");
           setCategoryFilter("ALL");
+          setShowAddTermForm(false);
+          setShowCsvImport(false);
         }}
       >
         白名单词条
@@ -494,14 +440,10 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
     <VoxWardShell
       activeNavId="settings"
       channelId={channelId}
-      showChannelSelector={section !== "general"}
+      showChannelSelector
       requireAuth
       pageTitle="系统设置"
-      pageDescription={
-        section === "general"
-          ? "管理账号全局主题外观、语言及界面密度偏好。"
-          : "维护当前选中频道的词库分类、规则词条、计分策略、AI 模型池绑定及数据保留周期。"
-      }
+      pageDescription="维护当前选中频道的词库分类、规则词条、计分策略、AI 模型池绑定及数据保留周期（个人主题与语言偏好已迁至右上角头像「用户偏好」）。"
     >
       <div className="vw-stack-md">
         {notice ? <BannerNotice tone={notice.tone}>{notice.text}</BannerNotice> : null}
@@ -511,64 +453,7 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
           navigationLabel="系统设置栏目"
           contentLabel="系统设置配置区"
         >
-          {section === "general" ? (
-            <section className="vw-panel-card" aria-label="常规与外观设置">
-              <strong>常规与外观（个人账号全局设置）</strong>
-              <span className="vw-caption">
-                外观与语言偏好保存在您的个人会话配置中，跨设备登录后自动还原。
-              </span>
-              <div className="vw-field-col--compact">
-                <label className="vw-field-label" htmlFor="pref-theme">
-                  界面主题
-                </label>
-                <Select
-                  id="pref-theme"
-                  value={themePref}
-                  onChange={(event) => setThemePref(event.target.value as ShellThemeMode)}
-                  options={[
-                    { value: "light", label: "浅色经典（Light）" },
-                    { value: "dark", label: "深色夜览（Dark）" },
-                    { value: "halloween", label: "万圣节限定（Halloween）" },
-                  ]}
-                />
-              </div>
-              <div className="vw-field-col--compact">
-                <label className="vw-field-label" htmlFor="pref-locale">
-                  界面语言
-                </label>
-                <Select
-                  id="pref-locale"
-                  value={localePref}
-                  onChange={(event) => setLocalePref(event.target.value as VoxWardLocale)}
-                  options={[
-                    { value: "zh-CN", label: "简体中文" },
-                    { value: "en", label: "English" },
-                  ]}
-                />
-              </div>
-              <div className="vw-field-col--compact">
-                <label className="vw-field-label" htmlFor="pref-density">
-                  工作台布局密度
-                </label>
-                <Select
-                  id="pref-density"
-                  value={densityPref}
-                  onChange={(event) =>
-                    setDensityPref(event.target.value === "compact" ? "compact" : "comfortable")
-                  }
-                  options={[
-                    { value: "comfortable", label: "标准舒适" },
-                    { value: "compact", label: "高信息密度" },
-                  ]}
-                />
-              </div>
-              <div>
-                <Button variant="primary" loading={busy} onClick={() => void handleSaveAppearance()}>
-                  保存外观与偏好
-                </Button>
-              </div>
-            </section>
-          ) : section === "blacklist" || section === "whitelist" ? (
+          {section === "blacklist" || section === "whitelist" ? (
             <div className="vw-stack-md">
               <section className="vw-panel-card" aria-label="词库分类管理（只增不删）">
                 <div className="vw-row-between">
@@ -591,7 +476,7 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
                   }))}
                   emptyState={<EmptyState title="暂无分类" />}
                 />
-                <div className="vw-row-wrap">
+                <div className="vw-input-action-row">
                   <div className="vw-field-col--compact">
                     <label className="vw-field-label" htmlFor="cat-code">
                       新分类代码
@@ -630,7 +515,7 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
                     disabled={busy || !catCode.trim() || !catLabel.trim()}
                     onClick={() => void handleAddCategory()}
                   >
-                    追加分类
+                    + 新增归类
                   </Button>
                 </div>
               </section>
@@ -642,9 +527,31 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
                       ? `黑名单词条库 (${filteredEntries.length})`
                       : `白名单词条库 (${filteredEntries.length})`}
                   </strong>
+                  <div className="vw-row-wrap">
+                    <Button
+                      size="sm"
+                      variant={showCsvImport ? "primary" : "secondary"}
+                      onClick={() => {
+                        setShowCsvImport((prev) => !prev);
+                        setShowAddTermForm(false);
+                      }}
+                    >
+                      {showCsvImport ? "收起 CSV 导入" : "CSV 导入"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={showAddTermForm ? "secondary" : "primary"}
+                      onClick={() => {
+                        setShowAddTermForm((prev) => !prev);
+                        setShowCsvImport(false);
+                      }}
+                    >
+                      {showAddTermForm ? "取消增添" : "+ 手动增添词条"}
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="vw-row-wrap">
+                <div className="vw-input-action-row">
                   <div className="vw-field-col">
                     <label className="vw-field-label" htmlFor="term-search">
                       搜索词条或分类
@@ -673,72 +580,104 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
                   </div>
                 </div>
 
-                <div className="vw-panel-card vw-panel-card--quiet">
-                  <strong>快速新增词条</strong>
-                  <div className="vw-row-wrap">
-                    <div className="vw-field-col">
-                      <label className="vw-field-label" htmlFor="new-term-text">
-                        词条内容 / 正则模式
-                      </label>
-                      <Input
-                        id="new-term-text"
-                        value={newTermText}
-                        onChange={(event) => setNewTermText(event.target.value)}
-                        placeholder={
-                          newTermMatchKind === "REGEX"
-                            ? "例如：加微[vV]信?\\d{4,10}（禁止回溯量词与零宽断言）"
-                            : "输入触发拦截或放行的词条文本"
-                        }
-                      />
+                {showAddTermForm ? (
+                  <div className="vw-panel-card vw-panel-card--quiet">
+                    <strong>手动增添词条</strong>
+                    <div className="vw-input-action-row">
+                      <div className="vw-field-col">
+                        <label className="vw-field-label" htmlFor="new-term-text">
+                          词条内容 / 正则模式
+                        </label>
+                        <Input
+                          id="new-term-text"
+                          value={newTermText}
+                          onChange={(event) => setNewTermText(event.target.value)}
+                          placeholder={
+                            newTermMatchKind === "REGEX"
+                              ? "例如：加微[vV]信?\\d{4,10}（禁止回溯量词与零宽断言）"
+                              : "输入触发拦截或放行的词条文本"
+                          }
+                        />
+                      </div>
+                      <div className="vw-field-col--compact">
+                        <label className="vw-field-label" htmlFor="new-term-cat">
+                          所属分类
+                        </label>
+                        <Select
+                          id="new-term-cat"
+                          value={effectiveNewCategory}
+                          onChange={(event) => setNewTermCategory(event.target.value)}
+                          options={
+                            scopedCategories.length > 0
+                              ? scopedCategories.map((c) => ({ value: c.code, label: c.label }))
+                              : [{ value: defaultCatForList, label: defaultCatForList }]
+                          }
+                        />
+                      </div>
+                      <div className="vw-field-col--compact">
+                        <label className="vw-field-label" htmlFor="new-term-kind">
+                          匹配模式
+                        </label>
+                        <Select
+                          id="new-term-kind"
+                          value={newTermMatchKind}
+                          onChange={(event) =>
+                            setNewTermMatchKind(
+                              event.target.value as "EXACT" | "CONTAINS" | "REGEX",
+                            )
+                          }
+                          options={[
+                            { value: "EXACT", label: "精确匹配" },
+                            { value: "CONTAINS", label: "包含子串" },
+                            { value: "REGEX", label: "受限正则" },
+                          ]}
+                        />
+                      </div>
+                      <Button
+                        variant="primary"
+                        disabled={busy || !newTermText.trim()}
+                        onClick={() => void handleAddTerm()}
+                      >
+                        确认增添
+                      </Button>
                     </div>
-                    <div className="vw-field-col--compact">
-                      <label className="vw-field-label" htmlFor="new-term-cat">
-                        所属分类
-                      </label>
-                      <Select
-                        id="new-term-cat"
-                        value={effectiveNewCategory}
-                        onChange={(event) => setNewTermCategory(event.target.value)}
-                        options={
-                          scopedCategories.length > 0
-                            ? scopedCategories.map((c) => ({ value: c.code, label: c.label }))
-                            : [{ value: defaultCatForList, label: defaultCatForList }]
-                        }
-                      />
-                    </div>
-                    <div className="vw-field-col--compact">
-                      <label className="vw-field-label" htmlFor="new-term-kind">
-                        匹配模式
-                      </label>
-                      <Select
-                        id="new-term-kind"
-                        value={newTermMatchKind}
-                        onChange={(event) =>
-                          setNewTermMatchKind(
-                            event.target.value as "EXACT" | "CONTAINS" | "REGEX",
-                          )
-                        }
-                        options={[
-                          { value: "EXACT", label: "精确匹配" },
-                          { value: "CONTAINS", label: "包含子串" },
-                          { value: "REGEX", label: "受限正则" },
-                        ]}
-                      />
-                    </div>
-                    <Button
-                      variant="primary"
-                      disabled={busy || !newTermText.trim()}
-                      onClick={() => void handleAddTerm()}
-                    >
-                      添加词条
-                    </Button>
+                    {newTermMatchKind === "REGEX" ? (
+                      <span className="vw-caption">
+                        安全规范（受限正则）：支持基础字符组、固定次数量词及线性选择；不允许环视断言（如前瞻/后顾）、反向引用或嵌套量词导致回溯爆炸。
+                      </span>
+                    ) : null}
                   </div>
-                  {newTermMatchKind === "REGEX" ? (
-                    <span className="vw-caption">
-                      安全规范（受限正则）：支持基础字符组、固定次数量词及线性选择；不允许环视断言（如前瞻/后顾）、反向引用或嵌套量词导致回溯爆炸。
-                    </span>
-                  ) : null}
-                </div>
+                ) : null}
+
+                {showCsvImport ? (
+                  <div className="vw-panel-card vw-panel-card--quiet">
+                    <strong>CSV 批量导入（格式：term,category,matchKind）</strong>
+                    <div className="vw-field-col--wide">
+                      <label className="vw-field-label" htmlFor="term-csv-box">
+                        每行一条规则
+                      </label>
+                      <Textarea
+                        id="term-csv-box"
+                        rows={4}
+                        value={csvText}
+                        onChange={(event) => setCsvText(event.target.value)}
+                        placeholder={`term,category,matchKind\n引流加群,${defaultCatForList},CONTAINS`}
+                      />
+                    </div>
+                    <div className="vw-row-wrap">
+                      <Button
+                        variant="primary"
+                        disabled={busy || !csvText.trim()}
+                        onClick={() => void handleCsvImport()}
+                      >
+                        校验并导入 CSV
+                      </Button>
+                      <Button variant="quiet" onClick={() => setShowCsvImport(false)}>
+                        取消
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
 
                 <TableShell
                   label="词条列表"
@@ -791,31 +730,6 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
                     />
                   }
                 />
-
-                <div className="vw-panel-card vw-panel-card--quiet">
-                  <strong>CSV 批量导入（格式：term,category,matchKind）</strong>
-                  <div className="vw-field-col--wide">
-                    <label className="vw-field-label" htmlFor="term-csv-box">
-                      每行一条规则
-                    </label>
-                    <Textarea
-                      id="term-csv-box"
-                      rows={4}
-                      value={csvText}
-                      onChange={(event) => setCsvText(event.target.value)}
-                      placeholder={`term,category,matchKind\n引流加群,${defaultCatForList},CONTAINS`}
-                    />
-                  </div>
-                  <div>
-                    <Button
-                      variant="secondary"
-                      disabled={busy || !csvText.trim()}
-                      onClick={() => void handleCsvImport()}
-                    >
-                      校验并导入 CSV
-                    </Button>
-                  </div>
-                </div>
               </section>
             </div>
           ) : section === "scoring" ? (
@@ -826,7 +740,7 @@ export function AdminPage({ api, prefsClient }: AdminPageProps) {
                   <>
                     <Switch
                       label="开启 Super Chat 精翻（全局唯一开关）"
-                      description="启用后，付费醒目留言将先由 AI 精翻再呈现至 OBS 投屏与主播侧边栏（审核控制台只读展示此状态）。"
+                      description="启用后，付费醒目留言将先由 AI 精翻再呈现至 OBS 投屏与纯净弹幕姬（审核控制台只读展示此状态）。"
                       checked={modelForm.scTranslationEnabled}
                       onChange={(event) =>
                         setModelForm({

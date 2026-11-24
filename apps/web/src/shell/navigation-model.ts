@@ -11,7 +11,6 @@ export type VoxWardNavId =
   | "blocked"
   | "data"
   | "dock"
-  | "overlay"
   | "sandbox"
   | "guides"
   | "logs"
@@ -114,8 +113,7 @@ export function buildVoxWardNavModel(options: BuildNavModelOptions): BuiltNavMod
     moderation: zh ? "审核后台" : "Moderation",
     blocked: zh ? "拦截管理" : "Blocked",
     data: zh ? "数据导出" : "Data Export",
-    dock: zh ? "主播侧边栏" : "Streamer Dock",
-    overlay: zh ? "OBS 投屏" : "OBS Overlay",
+    dock: zh ? "纯净弹幕姬" : "Pure Danmaku Dock",
     sandbox: zh ? "演练沙盒" : "Sandbox",
     guides: zh ? "接入指南" : "Guides",
     logs: zh ? "日志审计" : "Logs",
@@ -129,8 +127,7 @@ export function buildVoxWardNavModel(options: BuildNavModelOptions): BuiltNavMod
     moderation: zh ? "实时待审队列、AI 候选词确认与直播旁路流" : "Real-time moderation queue and AI candidate review",
     blocked: zh ? "已拦截记录评分重判与本地黑名单管理" : "Confirmed blocked records and channel blocklist",
     data: zh ? "用户记录核查、导出与匿名化删除" : "Data lookup, export, and subject anonymization",
-    dock: zh ? "在新窗口打开纯享版双栏主播侧边栏" : "Open headerless streamer dock in a new window",
-    overlay: zh ? "在新窗口预览透明无打扰 OBS 投屏舞台" : "Preview transparent quiet OBS stage in a new window",
+    dock: zh ? "在新窗口打开 YouTube 风格单栏纯净弹幕姬" : "Open headerless single-column YouTube-style dock",
     sandbox: zh ? "预设演示场景与四角色权限演练环境" : "Preset demo scenarios and role-switch sandbox",
     guides: zh ? "平台兼容矩阵、桌面回环拓扑与排障清单" : "Compatibility matrix, loopback topology, and troubleshooting",
     logs: zh ? "技术日志、变更日志与第三方 HTTP 集成日志" : "Technical, change, and integration audit logs",
@@ -200,9 +197,6 @@ export function buildVoxWardNavModel(options: BuildNavModelOptions): BuiltNavMod
       ),
     }),
     makeItem("dock", `/dock/${cid}`, "external-link", "start", {
-      external: true,
-    }),
-    makeItem("overlay", `/overlay/${cid}`, "layers", "start", {
       external: true,
     }),
     makeItem("overview", "/", "home", "start"),

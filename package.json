@@ -10,14 +10,14 @@
     "typecheck": "pnpm -r run typecheck && pnpm run bench:typecheck",
     "test": "vitest run",
     "check:deps": "node scripts/check-deps.mjs",
-    "check:ds": "tcrn-ds-check --project apps/web --index vendor/tcrn-ds/4.1.0/producer/ai/index.json --declaration .tcrn-ds.json",
+    "check:ds": "tcrn-ds-check --project apps/web --index vendor/tcrn-ds/4.2.0/ai/index.json --declaration .tcrn-ds.json",
     "bench:typecheck": "pnpm --filter @voxward/server exec tsc -p ../../bench/tsconfig.json",
     "bench:quality": "pnpm --filter @voxward/server exec tsx ../../bench/scripts/quality.ts",
     "bench:latency": "pnpm --filter @voxward/server exec tsx ../../bench/scripts/latency-capacity.ts",
     "bench:cleanup": "pnpm --filter @voxward/server exec tsx ../../bench/scripts/cleanup-observe.ts"
   },
   "devDependencies": {
-    "@tcrn/ds-consumer-tools": "4.1.0",
+    "@tcrn/ds-consumer-tools": "4.2.0",
     "vitest": "~3.2.7"
   }
 }

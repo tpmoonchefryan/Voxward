@@ -1,6 +1,7 @@
 export {
   SuperChatCard,
   SuperChatTicker,
+  SuperChatOverlayBar,
   resolveScTier,
   formatTickerCountdown,
   type ScTierDescriptor,

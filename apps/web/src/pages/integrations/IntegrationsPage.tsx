@@ -9,6 +9,7 @@ import {
   Input,
   KeyValueList,
   Menu,
+  SearchInput,
   Select,
   Switch,
   TableShell,
@@ -32,10 +33,17 @@ import {
 type ConfigValues = Record<string, string | number | boolean | null>;
 
 function categoryLabel(category: AdapterCategory): string {
-  return category === "LIVE_PLATFORM" ? "直播平台" : "AI 提供商";
+  switch (category) {
+    case "LIVE_PLATFORM":
+      return "直播平台";
+    case "AI_PROVIDER":
+      return "AI 提供商";
+    case "OUTPUT_TARGET":
+      return "下游输出适配器";
+  }
 }
 
-function driverDefaults(driverId: AdapterDriverId): ConfigValues {
+function driverDefaults(driverId: AdapterDriverId, channelId: string): ConfigValues {
   switch (driverId) {
     case "youtube-live-v3":
       return {
@@ -43,7 +51,6 @@ function driverDefaults(driverId: AdapterDriverId): ConfigValues {
         clientId: "",
         clientSecret: "",
         refreshToken: "",
-        syncActions: true,
       };
     case "kiro-cli":
       return {
@@ -58,6 +65,17 @@ function driverDefaults(driverId: AdapterDriverId): ConfigValues {
         apiKey: "",
         apiVersion: driverId === "anthropic-compat" ? "2023-06-01" : "v1",
       };
+    case "obs-overlay-source":
+      return {
+        roomId: channelId,
+        showOriginalText: true,
+        showTranslation: true,
+      };
+    case "native-readonly-protocol":
+      return {
+        protocolFlavor: "blivechat",
+        loopbackEndpoint: "ws://127.0.0.1:12450",
+      };
   }
 }
 
@@ -70,6 +88,9 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
   const [catalog, setCatalog] = useState<readonly AdapterCatalogEntry[]>([]);
   const [adapters, setAdapters] = useState<readonly ChannelAdapterView[]>([]);
   const [outputs, setOutputs] = useState<OutputsSummaryView>({ grants: [], tokens: [] });
+
+  const [listSearch, setListSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<"ALL" | AdapterCategory>("ALL");
 
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const addTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -85,24 +106,19 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
   const [draftConfig, setDraftConfig] = useState<ConfigValues>({});
   const [draftModels, setDraftModels] = useState<AdapterModelPoolItem[]>([]);
 
-  // Manual model add
+  // Manual model add form
   const [manualModelId, setManualModelId] = useState("");
   const [manualModelName, setManualModelName] = useState("");
   const [manualReasoning, setManualReasoning] = useState("medium");
 
-  // Delete adapter & one-time credentials
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [issuedSecret, setIssuedSecret] = useState<{ readonly kindLabel: string; readonly secret: string } | null>(null);
   const [lastActionResult, setLastActionResult] = useState<{
     readonly summary: string;
     readonly correlationId: string;
   } | null>(null);
-  const [issuedSecret, setIssuedSecret] = useState<{
-    readonly kindLabel: string;
-    readonly secret: string;
-  } | null>(null);
-
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<{ tone: "positive" | "danger" | "warning"; text: string } | null>(null);
+  const [notice, setNotice] = useState<{ tone: "positive" | "danger"; text: string } | null>(null);
 
   const loadAll = useCallback(async () => {
     try {
@@ -140,6 +156,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
     setDraftConfig({});
     setDraftModels([]);
     setLastActionResult(null);
+    setIssuedSecret(null);
   };
 
   const startEditFlow = (adapter: ChannelAdapterView) => {
@@ -153,6 +170,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
     setDraftConfig({ ...adapter.config });
     setDraftModels([...adapter.models]);
     setLastActionResult(null);
+    setIssuedSecret(null);
   };
 
   const handleSelectNewDriver = (driverIdValue: string) => {
@@ -165,7 +183,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
     }
     const meta = catalog.find((c) => c.driverId === id);
     setDraftDisplayName(meta?.displayName ?? "");
-    setDraftConfig(driverDefaults(id));
+    setDraftConfig(driverDefaults(id, channelId));
   };
 
   const activeCatalogMeta = useMemo(
@@ -177,6 +195,18 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
     () => catalog.filter((c) => c.category === draftCategory),
     [catalog, draftCategory],
   );
+
+  const filteredAdapters = useMemo(() => {
+    const q = listSearch.trim().toLowerCase();
+    return adapters.filter((a) => {
+      if (categoryFilter !== "ALL" && a.category !== categoryFilter) return false;
+      if (!q) return true;
+      return (
+        a.displayName.toLowerCase().includes(q) ||
+        a.driverId.toLowerCase().includes(q)
+      );
+    });
+  }, [adapters, categoryFilter, listSearch]);
 
   const handleSaveAdapter = async () => {
     if (draftDriverId === "" || !draftDisplayName.trim()) return;
@@ -194,7 +224,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
         });
         await loadAll();
         startEditFlow(created);
-        setNotice({ tone: "positive", text: "适配器实例已接入；现在可在模型池拉取远端模型或执行控制动作。" });
+        setNotice({ tone: "positive", text: "适配器实例已接入；可在「控制」页签执行连接诊断或凭据管理。" });
       } else if (editingAdapterId !== null) {
         const updated = await client.updateAdapter(channelId, editingAdapterId, {
           displayName: draftDisplayName.trim(),
@@ -204,7 +234,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
         });
         await loadAll();
         startEditFlow(updated);
-        setNotice({ tone: "positive", text: "适配器配置已保存；已启用的 AI 模型已同步至计分策略下拉列表。" });
+        setNotice({ tone: "positive", text: "适配器配置已保存。" });
       }
     } catch (error) {
       setNotice({
@@ -218,6 +248,14 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
 
   const handleRunAction = async (action: string) => {
     if (editingAdapterId === null) return;
+    if (action === "issue-output-token") {
+      await handleIssueToken();
+      return;
+    }
+    if (action === "issue-output-grant") {
+      await handleIssueGrant();
+      return;
+    }
     setBusy(true);
     setNotice(null);
     try {
@@ -313,14 +351,17 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
     setDraftConfig((prev) => ({ ...prev, [key]: value }));
   };
 
+  const obsRoomId = String(draftConfig.roomId ?? channelId) || channelId;
+  const obsPreviewHref = `/overlay/${encodeURIComponent(obsRoomId)}?preview=1`;
+
   return (
     <VoxWardShell
       activeNavId="integrations"
       channelId={channelId}
-      showChannelSelector
+      showChannelSelector={false}
       requireAuth
       pageTitle="系统集成"
-      pageDescription="接入直播平台拉流、AI 推理服务并签发 OBS 与桌面输出客户端只读连接凭据。"
+      pageDescription="全局配置直播平台拉流、AI 推理服务与下游输出适配器，并按具体驱动管理连接诊断与只读凭据。"
       pageActions={
         <div>
           <Button
@@ -341,7 +382,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
               {
                 id: "add-live",
                 label: "直播平台适配器",
-                description: "YouTube 直播聊天接入与平台删禁联动",
+                description: "YouTube Live 直播弹幕与 Super Chat 拉流接入",
                 onSelect: () => startAddFlow("LIVE_PLATFORM"),
               },
               {
@@ -349,6 +390,12 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
                 label: "AI 提供商适配器",
                 description: "Kiro CLI 本地运行时、OpenAI / Anthropic 基础协议",
                 onSelect: () => startAddFlow("AI_PROVIDER"),
+              },
+              {
+                id: "add-output",
+                label: "下游输出适配器",
+                description: "OBS 透明投屏源与 blivechat / 原生只读输出协议",
+                onSelect: () => startAddFlow("OUTPUT_TARGET"),
               },
             ]}
           />
@@ -361,8 +408,41 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
         {editorMode === "list" ? (
           <section className="vw-panel-card" aria-label="已配置适配器列表">
             <div className="vw-row-between">
-              <strong>已接入适配器实例 ({adapters.length})</strong>
+              <strong>已接入适配器实例 ({filteredAdapters.length})</strong>
+              <span className="vw-caption">停用后立即中断拉流、模型调用或下游推流，配置保留可随时重启</span>
             </div>
+
+            <div className="vw-input-action-row">
+              <div className="vw-field-col">
+                <label className="vw-field-label" htmlFor="adp-list-search">
+                  搜索适配器名称或协议驱动
+                </label>
+                <SearchInput
+                  id="adp-list-search"
+                  fill
+                  value={listSearch}
+                  onChange={(e) => setListSearch(e.target.value)}
+                  placeholder="输入名称或 driverId 过滤…"
+                />
+              </div>
+              <div className="vw-field-col--compact">
+                <label className="vw-field-label" htmlFor="adp-cat-filter">
+                  适配器类型
+                </label>
+                <Select
+                  id="adp-cat-filter"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value as "ALL" | AdapterCategory)}
+                  options={[
+                    { value: "ALL", label: `全部 (${adapters.length})` },
+                    { value: "LIVE_PLATFORM", label: "直播平台" },
+                    { value: "AI_PROVIDER", label: "AI 提供商" },
+                    { value: "OUTPUT_TARGET", label: "下游输出适配器" },
+                  ]}
+                />
+              </div>
+            </div>
+
             <TableShell
               label="适配器实例一览"
               columns={[
@@ -373,7 +453,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
                 { key: "lastStatus", label: "最近运维状态" },
                 { key: "actions", label: "操作", align: "end" },
               ]}
-              rows={adapters.map((a) => ({
+              rows={filteredAdapters.map((a) => ({
                 name: <UntrustedText text={a.displayName} />,
                 category: <Badge tone="neutral">{categoryLabel(a.category)}</Badge>,
                 driver: catalog.find((c) => c.driverId === a.driverId)?.displayName ?? a.driverId,
@@ -393,8 +473,8 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
               }))}
               emptyState={
                 <EmptyState
-                  title="尚未接入任何适配器"
-                  description="点击页面右上角「+ 接入新适配器」，接入直播平台拉流或 AI 模型提供商。"
+                  title="尚未接入符合条件的适配器"
+                  description="点击页面右上角「+ 接入新适配器」，选择直播平台、AI 提供商或下游输出适配器。"
                 />
               }
             />
@@ -432,7 +512,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
                   />
                 </div>
                 <span className="vw-muted">
-                  先选择具体驱动类型，再展开对应凭据表单、AI 模型池与连接控制操作。
+                  先选择具体驱动类型，再展开对应凭据表单、AI 模型池或下游输出控制页签。
                 </span>
               </div>
             ) : (
@@ -536,11 +616,6 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
                               />
                             </div>
                           </div>
-                          <Switch
-                            label="启用平台联动删帖与封禁同步"
-                            checked={draftConfig.syncActions !== false}
-                            onChange={(e) => updateConfigField("syncActions", e.target.checked)}
-                          />
                         </div>
                       ) : draftDriverId === "kiro-cli" ? (
                         <div className="vw-row-wrap">
@@ -566,7 +641,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
                           </div>
                           <div className="vw-field-col--compact">
                             <label className="vw-field-label" htmlFor="kiro-key">
-                              Kiro Token / Key（可选）
+                              KIRO API Key（独立 env 注入）
                             </label>
                             <Input
                               id="kiro-key"
@@ -576,17 +651,80 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
                             />
                           </div>
                         </div>
+                      ) : draftDriverId === "obs-overlay-source" ? (
+                        <div className="vw-stack-md">
+                          <div className="vw-field-col--compact">
+                            <label className="vw-field-label" htmlFor="obs-room-id">
+                              绑定推流频道标识（Room ID）
+                            </label>
+                            <Input
+                              id="obs-room-id"
+                              value={String(draftConfig.roomId ?? channelId)}
+                              onChange={(e) => updateConfigField("roomId", e.target.value)}
+                            />
+                          </div>
+                          <Switch
+                            label="渲染原语言弹幕与 SC 文本"
+                            checked={draftConfig.showOriginalText !== false}
+                            onChange={(e) => updateConfigField("showOriginalText", e.target.checked)}
+                          />
+                          <Switch
+                            label="优先叠显 Super Chat 精翻文本"
+                            checked={draftConfig.showTranslation !== false}
+                            onChange={(e) => updateConfigField("showTranslation", e.target.checked)}
+                          />
+                          <BannerNotice
+                            tone="info"
+                            title="OBS 浏览器透明源预览地址（无需令牌即可校验画面样式）"
+                            actions={
+                              <a href={obsPreviewHref} target="_blank" rel="noopener noreferrer">
+                                <Button size="sm" variant="primary">
+                                  打开 OBS 预览舞台 ↗
+                                </Button>
+                              </a>
+                            }
+                          >
+                            正式挂入 OBS 时请切至「控制」页签签发一次性令牌，并以 <span className="vw-mono">{`/overlay/${encodeURIComponent(obsRoomId)}#cred=<token>`}</span> 写入 Hash 片段。
+                          </BannerNotice>
+                        </div>
+                      ) : draftDriverId === "native-readonly-protocol" ? (
+                        <div className="vw-stack-md">
+                          <div className="vw-field-col--compact">
+                            <label className="vw-field-label" htmlFor="native-proto-flavor">
+                              原生只读协议目标
+                            </label>
+                            <Select
+                              id="native-proto-flavor"
+                              value={String(draftConfig.protocolFlavor ?? "blivechat")}
+                              onChange={(e) => updateConfigField("protocolFlavor", e.target.value)}
+                              options={[
+                                { value: "blivechat", label: "blivechat 桌面插件协议" },
+                                { value: "native-ws", label: "通用本机 WebSocket 只读输出端" },
+                              ]}
+                            />
+                          </div>
+                          <div className="vw-field-col">
+                            <label className="vw-field-label" htmlFor="native-loopback-url">
+                              本机回环桥接地址
+                            </label>
+                            <Input
+                              id="native-loopback-url"
+                              value={String(draftConfig.loopbackEndpoint ?? "ws://127.0.0.1:12450")}
+                              onChange={(e) => updateConfigField("loopbackEndpoint", e.target.value)}
+                            />
+                          </div>
+                        </div>
                       ) : (
                         <div className="vw-row-wrap">
                           <div className="vw-field-col">
                             <label className="vw-field-label" htmlFor="ai-base-url">
-                              基础请求端点（Base Endpoint）
+                              自定义 API Base Endpoint
                             </label>
                             <Input
                               id="ai-base-url"
                               value={String(draftConfig.baseEndpoint ?? "")}
                               onChange={(e) => updateConfigField("baseEndpoint", e.target.value)}
-                              placeholder="https://api.openai.com/v1"
+                              placeholder="https://api.openai.com/v1 或 https://api.anthropic.com"
                             />
                           </div>
                           <div className="vw-field-col--compact">
@@ -631,7 +769,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
                             )}
                           </div>
 
-                          <div className="vw-row-wrap">
+                          <div className="vw-input-action-row">
                             <div className="vw-field-col--compact">
                               <label className="vw-field-label" htmlFor="manual-model-id">
                                 手动添加模型标识
@@ -729,7 +867,7 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
                     <div className="vw-stack-md">
                       <Switch
                         label="启用此适配器实例"
-                        description="停用后将暂停拉流/调用，并自动从 AI 策略可选模型列表摘除。"
+                        description="停用后将暂停对应通道的拉流、模型调用或下游推流。"
                         checked={draftEnabled}
                         onChange={(e) => setDraftEnabled(e.target.checked)}
                       />
@@ -773,6 +911,102 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
                         </div>
                       ) : null}
 
+                      {issuedSecret ? (
+                        <BannerNotice
+                          tone="positive"
+                          title={`已签发${issuedSecret.kindLabel}（仅展示这一次）`}
+                          actions={
+                            <ClipboardCopyButton
+                              text={issuedSecret.secret}
+                              ariaLabel="复制一次性输出凭据"
+                              idleLabel="复制凭据"
+                              copiedLabel="已复制"
+                            />
+                          }
+                        >
+                          请立即复制并填入对应下游端配置；出于安全原则，平台不再次回显明文。
+                        </BannerNotice>
+                      ) : null}
+
+                      {draftDriverId === "obs-overlay-source" ? (
+                        <div className="vw-panel-card vw-panel-card--quiet">
+                          <div className="vw-row-between">
+                            <strong>OBS 投屏单向令牌 ({outputs.tokens.length})</strong>
+                            <div className="vw-row-wrap">
+                              <a href={obsPreviewHref} target="_blank" rel="noopener noreferrer">
+                                <Button size="sm" variant="quiet">
+                                  打开预览舞台 ↗
+                                </Button>
+                              </a>
+                              <Button size="sm" variant="primary" disabled={busy} onClick={() => void handleIssueToken()}>
+                                签发 OBS 投屏令牌
+                              </Button>
+                            </div>
+                          </div>
+                          <TableShell
+                            label="OBS 令牌列表"
+                            columns={[
+                              { key: "id", label: "令牌编号" },
+                              { key: "createdAt", label: "签发时间" },
+                              { key: "actions", label: "操作", align: "end" },
+                            ]}
+                            rows={outputs.tokens.map((t) => ({
+                              id: <span className="vw-mono">{t.tokenId}</span>,
+                              createdAt: new Date(t.createdAt).toLocaleString(),
+                              actions: (
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void client.revokeOutputToken(channelId, t.tokenId).then(loadAll)
+                                  }
+                                >
+                                  吊销
+                                </Button>
+                              ),
+                            }))}
+                            emptyState={<EmptyState title="暂无有效 OBS 令牌" />}
+                          />
+                        </div>
+                      ) : null}
+
+                      {draftDriverId === "native-readonly-protocol" ? (
+                        <div className="vw-panel-card vw-panel-card--quiet">
+                          <div className="vw-row-between">
+                            <strong>原生应用授权凭据 ({outputs.grants.length})</strong>
+                            <Button size="sm" variant="primary" disabled={busy} onClick={() => void handleIssueGrant()}>
+                              签发桌面插件凭据
+                            </Button>
+                          </div>
+                          <TableShell
+                            label="桌面输出授权列表"
+                            columns={[
+                              { key: "id", label: "授权编号" },
+                              { key: "kind", label: "输出目标" },
+                              { key: "actions", label: "操作", align: "end" },
+                            ]}
+                            rows={outputs.grants.map((g) => ({
+                              id: <span className="vw-mono">{g.grantId}</span>,
+                              kind: g.outputKind === "blivechat" ? "blivechat 桌面插件" : g.outputKind,
+                              actions: (
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void client.revokeOutputGrant(channelId, g.grantId).then(loadAll)
+                                  }
+                                >
+                                  吊销
+                                </Button>
+                              ),
+                            }))}
+                            emptyState={<EmptyState title="暂无桌面输出授权" />}
+                          />
+                        </div>
+                      ) : null}
+
                       {editorMode === "edit" ? (
                         <div>
                           <Button
@@ -791,97 +1025,6 @@ export function IntegrationsPage({ api }: { readonly api?: IntegrationsApi }) {
             )}
           </section>
         )}
-
-        <section className="vw-panel-card" aria-label="下游投屏与桌面应用凭据管理">
-          <div className="vw-row-between">
-            <strong>下游输出与单向只读连接凭据</strong>
-            <div className="vw-row-wrap">
-              <Button size="sm" variant="secondary" disabled={busy} onClick={() => void handleIssueToken()}>
-                签发 OBS 投屏令牌
-              </Button>
-              <Button size="sm" variant="primary" disabled={busy} onClick={() => void handleIssueGrant()}>
-                签发桌面插件凭据
-              </Button>
-            </div>
-          </div>
-
-          {issuedSecret ? (
-            <BannerNotice
-              tone="positive"
-              title={`已签发${issuedSecret.kindLabel}（仅展示这一次）`}
-              actions={
-                <ClipboardCopyButton
-                  text={issuedSecret.secret}
-                  ariaLabel="复制一次性输出凭据"
-                  idleLabel="复制凭据"
-                  copiedLabel="已复制"
-                />
-              }
-            >
-              请立即复制并填入 OBS 浏览器面板或桌面助手配置中；出于安全原则，平台不再次回显明文。
-            </BannerNotice>
-          ) : null}
-
-          <div className="vw-grid-2">
-            <div className="vw-panel-card vw-panel-card--quiet">
-              <strong>OBS 投屏单向令牌 ({outputs.tokens.length})</strong>
-              <TableShell
-                label="OBS 令牌列表"
-                columns={[
-                  { key: "id", label: "令牌编号" },
-                  { key: "createdAt", label: "签发时间" },
-                  { key: "actions", label: "操作", align: "end" },
-                ]}
-                rows={outputs.tokens.map((t) => ({
-                  id: <span className="vw-mono">{t.tokenId}</span>,
-                  createdAt: new Date(t.createdAt).toLocaleString(),
-                  actions: (
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      disabled={busy}
-                      onClick={() =>
-                        void client.revokeOutputToken(channelId, t.tokenId).then(loadAll)
-                      }
-                    >
-                      吊销
-                    </Button>
-                  ),
-                }))}
-                emptyState={<EmptyState title="暂无有效 OBS 令牌" />}
-              />
-            </div>
-
-            <div className="vw-panel-card vw-panel-card--quiet">
-              <strong>原生应用授权凭据 ({outputs.grants.length})</strong>
-              <TableShell
-                label="桌面输出授权列表"
-                columns={[
-                  { key: "id", label: "授权编号" },
-                  { key: "kind", label: "输出目标" },
-                  { key: "actions", label: "操作", align: "end" },
-                ]}
-                rows={outputs.grants.map((g) => ({
-                  id: <span className="vw-mono">{g.grantId}</span>,
-                  kind: g.outputKind === "blivechat" ? "blivechat 桌面插件" : g.outputKind,
-                  actions: (
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      disabled={busy}
-                      onClick={() =>
-                        void client.revokeOutputGrant(channelId, g.grantId).then(loadAll)
-                      }
-                    >
-                      吊销
-                    </Button>
-                  ),
-                }))}
-                emptyState={<EmptyState title="暂无桌面输出授权" />}
-              />
-            </div>
-          </div>
-        </section>
 
         <ConfirmActionDialog
           open={confirmDeleteOpen}

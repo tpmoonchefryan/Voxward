@@ -1,0 +1,208 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+  },
+  "id": "component/ProductLockup",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/04-brand",
+    "assets/brand"
+  ],
+  "optional": [],
+  "content": {
+    "name": "ProductLockup",
+    "board": "04-brand",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/04-brand/index.dc.html",
+      "sha256": "40b6b30f8709d8f13cb5f1909911fdf8783d42d99aac1dd05435101b5d52f2af",
+      "line": 35
+    },
+    "normativeText": "E · 锁定块与侧栏尺度 TCRN 产品字标 Hanken Grotesk 600，「TCRN」墨色、后缀使用文字角色色（TMS #2c63c8、Design System #4b59be）；Einzbern 与 Mana Orchestrate 是完整名称，Source Serif 4 墨色加 by TCRN TCRN TMS 艺人管理系统 Einzbern 项目记忆引擎 by TCRN Mana Orchestrate 项目记忆助手 by TCRN TCRN Design System 设计系统 TCRN TMS 艺人管理系统 Einzbern 项目记忆引擎 Mana Orchestrate 项目记忆助手 TCRN Design System 设计系统\nI 标语 五语按 registry 机制，字标永远拉丁；产品名与标语不提任何宿主名（Owner 2026-10-11） 产品 zh-CN en ja ko fr TCRN TMS 艺人管理系统 Talent Management System タレントマネジメントシステム 탤런트 관리 시스템 Système de gestion des talents Einzbern 项目记忆引擎 Project memory engine プロジェクト記憶エンジン 프로젝트 메모리 엔진 Moteur de mémoire de projet Mana Orchestrate 项目记忆助手 Project memory assistant プロジェクト記憶アシスタント 프로젝트 메모리 어시스턴트 Assistant mémoire de projet TCRN Design System 设计系统 Design System デザインシステム 디자인 시스템 Système de design",
+    "readerSummary": {
+      "zh-CN": "以 productId、locale 取得注册文案和标语。完整、紧凑和首行共用产品图形，TCRN 产品字标的后缀使用各自的深色。",
+      "en": "Pass productId and locale for registered wording and taglines. Full, rail and first-line lockups share the mark. TCRN wordmark suffixes use their product’s deep color.",
+      "ja": "productId と locale で登録文言を選びます。フル版・レール版・先頭行は同じマークを使います。TCRN のワードマークの接尾部には各製品の濃色を使います。",
+      "ko": "productId와 locale로 등록 문구와 태그라인을 선택합니다. 전체·레일·첫 줄은 같은 마크를 사용합니다. TCRN 워드마크의 접미부에는 해당 제품의 짙은 색을 사용합니다.",
+      "fr": "Fournir productId et locale pour les textes et slogans enregistrés. Les blocs complet, rail et première ligne partagent le symbole. Les suffixes TCRN utilisent la couleur foncée de leur produit."
+    },
+    "types": {
+      "name": "ProductLockup",
+      "kind": "function",
+      "props": [
+        {
+          "name": "firstLine",
+          "type": "ProductLockupFirstLineScale",
+          "required": false,
+          "enumValues": [
+            "rail",
+            "lockup"
+          ]
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "markVariant",
+          "type": "TcrnProductMarkVariant",
+          "required": false,
+          "enumValues": [
+            "color",
+            "mono",
+            "tile-tint",
+            "tile-deep"
+          ]
+        },
+        {
+          "name": "productId",
+          "type": "TcrnProductLogoId",
+          "required": true,
+          "enumValues": [
+            "design-system",
+            "tms",
+            "einzbern",
+            "mana-orchestrate",
+            "voxward"
+          ]
+        },
+        {
+          "name": "scale",
+          "type": "\"lockup\"|\"rail\"",
+          "required": false,
+          "enumValues": [
+            "rail",
+            "lockup"
+          ]
+        }
+      ],
+      "variants": {
+        "firstLine": [
+          "rail",
+          "lockup"
+        ],
+        "markVariant": [
+          "color",
+          "mono",
+          "tile-tint",
+          "tile-deep"
+        ],
+        "productId": [
+          "design-system",
+          "tms",
+          "einzbern",
+          "mana-orchestrate",
+          "voxward"
+        ],
+        "scale": [
+          "rail",
+          "lockup"
+        ]
+      },
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+        "line": 455
+      },
+      "propsType": "ProductLockupProps",
+      "typeDefinitions": [
+        {
+          "name": "TcrnProductMarkVariant",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 266,
+          "declaration": "export type TcrnProductMarkVariant = (typeof tcrnProductMarkVariants)[number];"
+        },
+        {
+          "name": "TcrnProductLogoId",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 421,
+          "declaration": "export type TcrnProductLogoId = keyof typeof tcrnProductLogoRegistry;"
+        },
+        {
+          "name": "ProductLockupFirstLineScale",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 453,
+          "declaration": "export type ProductLockupFirstLineScale=\"rail\"|\"lockup\";"
+        },
+        {
+          "name": "ProductLockupProps",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 454,
+          "declaration": "export interface ProductLockupProps extends ProductLogoProps { firstLine?:ProductLockupFirstLineScale;scale?:\"lockup\"|\"rail\" }"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "mixed",
+      "constraint": "Registered mark and scale fix the graphic; copy uses remaining parent space and truncates where specified. Keep the complete lockup geometry.",
+      "implementation": "brand.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+      "sha256": "13da445a97d76b134a7332faf3b8ddcc867325396c2dff8f0675c24e1bf6f3a2"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 139,
+      "snippet": "case \"ProductLockup\": return state === \"products\" ? tcrnProductMarkIds.map(productId => <ProductLockup key={productId} productId={productId} locale={locale} />)\n        : <ProductLockup productId=\"tms\" locale={locale} scale={state === \"rail\" ? \"rail\" : \"lockup\"} firstLine={state === \"first-line\" ? \"rail\" : undefined} />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { ProductLockup, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example() {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", gap: \"var(--tcrn-space-2)\" }}>\n      <ProductLockup productId=\"tms\" locale=\"en\" scale=\"rail\"/>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/brand.css.ts",
+          "sha256": "2f9ad88be35874416d21f853ea3a6474889a5a1bfecc82e78e28f11f3829af79"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-productlockup--default"
+      },
+      {
+        "state": "products",
+        "id": "components-productlockup--products"
+      },
+      {
+        "state": "rail",
+        "id": "components-productlockup--rail"
+      },
+      {
+        "state": "first-line",
+        "id": "components-productlockup--first-line"
+      }
+    ]
+  }
+}

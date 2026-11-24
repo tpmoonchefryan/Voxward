@@ -62,7 +62,7 @@ export function HomePage() {
     },
     {
       title: "拦截管理与黑名单",
-      desc: "评分重判历史拦截（绝不重发投屏），维护人工封禁与平台同步。",
+      desc: "评分重判历史拦截（绝不重发投屏），并管理频道人工黑名单用户。",
       to: `/channels/${encodedChannel}/blocked`,
     },
     {
@@ -72,7 +72,7 @@ export function HomePage() {
     },
     {
       title: "系统设置",
-      desc: "全局外观偏号、词库分类增修、CSV 导入、SC 精翻及计分策略。",
+      desc: "词库分类增修、CSV 导入、SC 精翻及计分策略。",
       to: `/settings/${encodedChannel}`,
     },
     {
@@ -130,7 +130,7 @@ export function HomePage() {
           <StatCard
             label="纯享投屏窗口"
             value="双输出模式就绪"
-            note="透明无头 OBS 投屏 + 双栏主播侧边栏"
+            note="透明无头 OBS 投屏 + 单栏纯净弹幕姬"
             tone="accent"
           />
         </div>
@@ -157,7 +157,7 @@ export function HomePage() {
             <div className="vw-row-wrap">
               <a href={`/dock/${encodedChannel}`} target="_blank" rel="noopener noreferrer">
                 <Button size="sm" variant="primary">
-                  打开纯享主播侧边栏 ↗
+                  打开纯净弹幕姬 ↗
                 </Button>
               </a>
               <a

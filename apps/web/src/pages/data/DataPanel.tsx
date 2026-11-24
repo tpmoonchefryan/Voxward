@@ -148,7 +148,7 @@ export function DataPanelView({
 
       <section className="vw-panel-card" aria-label="按观众标识查询">
         <form
-          className="vw-row-wrap"
+          className="vw-input-action-row"
           onSubmit={(event) => {
             event.preventDefault();
             onLookup();

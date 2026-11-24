@@ -9,12 +9,9 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import {
   Button,
-  Dialog,
-  InlineAlert,
-  Input,
   ProductShell,
   Select,
   useProductShellController,
@@ -31,7 +28,6 @@ import {
 } from "./navigation-model";
 import {
   createShellPreferencesClient,
-  ShellApiError,
   type SessionInfo,
   type ShellChannelSummary,
   type ShellPreferencesClient,
@@ -108,7 +104,12 @@ export function VoxWardShell({
   children,
 }: VoxWardShellProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const shellClient = useMemo(() => client ?? createShellPreferencesClient(), [client]);
+  const loginHref = useMemo(
+    () => `/login?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`,
+    [location.pathname, location.search],
+  );
 
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -119,12 +120,6 @@ export function VoxWardShell({
     locale?: VoxWardLocale;
     pins?: readonly string[];
   }>({});
-
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [loginName, setLoginName] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginBusy, setLoginBusy] = useState(false);
-  const [loginError, setLoginError] = useState<string | null>(null);
 
   const hydratingRef = useRef(false);
   const sessionRef = useRef<SessionInfo | null>(null);
@@ -203,6 +198,16 @@ export function VoxWardShell({
       setSession(currentSession);
       if (currentSession === null) {
         setChannels([]);
+        hydratingRef.current = true;
+        try {
+          setRightPins(DEFAULT_RIGHT_PINS);
+          controller.setPins(DEFAULT_LEFT_PINS);
+          controller.setTheme("light");
+          controller.setLocale("zh-CN");
+          applyThemeAttribute("light");
+        } finally {
+          hydratingRef.current = false;
+        }
         return;
       }
       const [loadedChannels, loadedPrefs] = await Promise.all([
@@ -210,31 +215,30 @@ export function VoxWardShell({
         shellClient.getShellPreferences(),
       ]);
       setChannels(loadedChannels);
-      if (loadedPrefs !== null) {
-        hydratingRef.current = true;
-        try {
-          const nextLeft =
-            loadedPrefs.pins.length > 0 ? loadedPrefs.pins : [...DEFAULT_LEFT_PINS];
-          const nextRight =
-            loadedPrefs.rightPins !== undefined && loadedPrefs.rightPins.length > 0
-              ? loadedPrefs.rightPins
-              : [...DEFAULT_RIGHT_PINS];
-          setPrefsSeed({
-            theme: loadedPrefs.theme,
-            locale: loadedPrefs.locale,
-            pins: nextLeft,
-          });
-          setRightPins(nextRight);
-          controller.setPins(nextLeft);
-          if (loadedPrefs.theme !== undefined) {
-            controller.setTheme(loadedPrefs.theme);
-          }
-          if (loadedPrefs.locale !== undefined) {
-            controller.setLocale(loadedPrefs.locale);
-          }
-        } finally {
-          hydratingRef.current = false;
-        }
+      hydratingRef.current = true;
+      try {
+        const nextLeft =
+          loadedPrefs !== null && loadedPrefs.pins.length > 0
+            ? loadedPrefs.pins
+            : [...DEFAULT_LEFT_PINS];
+        const nextRight =
+          loadedPrefs?.rightPins !== undefined && loadedPrefs.rightPins.length > 0
+            ? loadedPrefs.rightPins
+            : [...DEFAULT_RIGHT_PINS];
+        const nextTheme = loadedPrefs?.theme ?? "light";
+        const nextLocale = loadedPrefs?.locale ?? "zh-CN";
+        setPrefsSeed({
+          theme: nextTheme,
+          locale: nextLocale,
+          pins: nextLeft,
+        });
+        setRightPins(nextRight);
+        controller.setPins(nextLeft);
+        controller.setTheme(nextTheme);
+        controller.setLocale(nextLocale);
+        applyThemeAttribute(nextTheme);
+      } finally {
+        hydratingRef.current = false;
       }
     } finally {
       setSessionLoading(false);
@@ -244,6 +248,12 @@ export function VoxWardShell({
   useEffect(() => {
     void reloadSession();
   }, [reloadSession]);
+
+  useEffect(() => {
+    if (requireAuth && !sessionLoading && session === null && typeof window !== "undefined") {
+      void navigate(loginHref, { replace: true });
+    }
+  }, [requireAuth, sessionLoading, session, navigate, loginHref]);
 
   const resolvedChannelId = channelId ?? channels[0]?.channelId ?? "ch_demo_1";
   const activeChannel =
@@ -295,37 +305,25 @@ export function VoxWardShell({
     [activeNavId, navigate, onSelectChannel],
   );
 
-  const handleLoginSubmit = async () => {
-    setLoginBusy(true);
-    setLoginError(null);
-    try {
-      await shellClient.login(loginName.trim(), loginPassword);
-      setLoginPassword("");
-      setLoginOpen(false);
-      await reloadSession();
-    } catch (error) {
-      if (error instanceof ShellApiError) {
-        setLoginError(
-          error.code === "INVALID_CREDENTIALS"
-            ? controller.locale === "zh-CN"
-              ? "账号或密码不正确，请重试。"
-              : "Invalid credentials, please try again."
-            : error.code,
-        );
-      } else {
-        setLoginError(controller.locale === "zh-CN" ? "登录请求失败。" : "Sign in failed.");
-      }
-    } finally {
-      setLoginBusy(false);
-    }
-  };
-
   const handleLogout = async () => {
     try {
       await shellClient.logout();
     } finally {
       setSession(null);
       setChannels([]);
+      hydratingRef.current = true;
+      try {
+        setRightPins(DEFAULT_RIGHT_PINS);
+        controller.setPins(DEFAULT_LEFT_PINS);
+        controller.setTheme("light");
+        controller.setLocale("zh-CN");
+        applyThemeAttribute("light");
+      } finally {
+        hydratingRef.current = false;
+      }
+      if (requireAuth) {
+        void navigate(loginHref, { replace: true });
+      }
     }
   };
 
@@ -383,7 +381,7 @@ export function VoxWardShell({
       {zh ? "退出登录" : "Sign out"}
     </Button>
   ) : (
-    <Button variant="primary" size="sm" onClick={() => setLoginOpen(true)}>
+    <Button variant="primary" size="sm" onClick={() => void navigate(loginHref)}>
       {zh ? "登录账号" : "Sign in"}
     </Button>
   );
@@ -396,7 +394,7 @@ export function VoxWardShell({
     activeChannel,
     locale: controller.locale,
     theme: controller.theme,
-    openLoginDialog: () => setLoginOpen(true),
+    openLoginDialog: () => void navigate(loginHref),
     reloadSession,
   };
 
@@ -415,6 +413,7 @@ export function VoxWardShell({
           topBanner={topBanner}
           locales={VOXWARD_LOCALES}
           seasonalThemes={["halloween"]}
+          themeControl="menu"
           pinnedIds={controller.productShellControlProps.pinnedIds}
           onPinnedChange={controller.productShellControlProps.onPinnedChange}
           onPinsReorder={controller.productShellControlProps.onPinsReorder}
@@ -450,7 +449,7 @@ export function VoxWardShell({
                   tone="warning"
                   title={zh ? "需要登录会话" : "Session required"}
                   actions={
-                    <Button variant="primary" size="sm" onClick={() => setLoginOpen(true)}>
+                    <Button variant="primary" size="sm" onClick={() => void navigate(loginHref)}>
                       {zh ? "立即登录" : "Sign in"}
                     </Button>
                   }
@@ -465,54 +464,6 @@ export function VoxWardShell({
             )}
           </div>
         </ProductShell>
-
-        <Dialog
-          open={loginOpen}
-          onOpenChange={setLoginOpen}
-          title={zh ? "登录 VoxWard 工作台" : "Sign in to VoxWard"}
-        >
-          <div className="vw-stack-md">
-            {loginError ? <InlineAlert tone="danger">{loginError}</InlineAlert> : null}
-            <div className="vw-field-col">
-              <label htmlFor="vw-login-name">{zh ? "登录账号" : "Account"}</label>
-              <Input
-                id="vw-login-name"
-                value={loginName}
-                onChange={(event) => setLoginName(event.target.value)}
-                placeholder="owner / mod / data"
-                autoComplete="username"
-              />
-            </div>
-            <div className="vw-field-col">
-              <label htmlFor="vw-login-password">{zh ? "密码" : "Password"}</label>
-              <Input
-                id="vw-login-password"
-                type="password"
-                value={loginPassword}
-                onChange={(event) => setLoginPassword(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    void handleLoginSubmit();
-                  }
-                }}
-                autoComplete="current-password"
-              />
-            </div>
-            <div className="vw-row-wrap">
-              <Button
-                variant="primary"
-                loading={loginBusy}
-                disabled={loginName.trim() === "" || loginPassword === ""}
-                onClick={() => void handleLoginSubmit()}
-              >
-                {zh ? "确认登录" : "Sign in"}
-              </Button>
-              <Button variant="quiet" onClick={() => setLoginOpen(false)}>
-                {zh ? "取消" : "Cancel"}
-              </Button>
-            </div>
-          </div>
-        </Dialog>
       </div>
     </VoxWardShellContext.Provider>
   );
