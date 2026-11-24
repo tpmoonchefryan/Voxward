@@ -7,8 +7,22 @@ import {
   type NativeFrame,
   type WardBlockedFrame,
 } from "@voxward/contracts";
+import { DEFAULT_VOXWARD_LOCALE, OVERLAY_COPY, pickLocale, type VoxWardLocale } from "../../i18n";
 
-export const SAFE_ANONYMOUS_ALIAS = "匿名观众";
+export function safeAnonymousAliasFor(locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE): string {
+  return pickLocale(
+    {
+      en: "Viewer",
+      "zh-CN": "匿名观众",
+      ja: "匿名視聴者",
+      ko: "익명 시청자",
+      fr: "Spectateur",
+    },
+    locale,
+  );
+}
+
+export const SAFE_ANONYMOUS_ALIAS = safeAnonymousAliasFor(DEFAULT_VOXWARD_LOCALE);
 
 const CREDENTIAL_PATTERN = /^vwo_[A-Za-z0-9_-]{8,}$/;
 const FORBIDDEN_QUERY_KEYS = ["cred", "token", "credential"] as const;
@@ -36,14 +50,18 @@ export interface LocationLike {
  * Query parameters (`?cred=`, `?token=`, `?credential=`) are explicitly rejected per Q16 so credentials never
  * travel in HTTP request lines or server access logs.
  */
-export function parseOverlayCredential(loc: LocationLike): CredentialParseResult {
+export function parseOverlayCredential(
+  loc: LocationLike,
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): CredentialParseResult {
+  const copy = pickLocale(OVERLAY_COPY, locale).parseErrors;
   const params = new URLSearchParams(loc.search.startsWith("?") ? loc.search.slice(1) : loc.search);
   for (const key of FORBIDDEN_QUERY_KEYS) {
     if (params.has(key)) {
       return {
         ok: false,
         errorCode: "QUERY_CREDENTIAL_REJECTED",
-        message: "安全策略拒绝（Q16）：禁止通过 URL 查询参数（?cred= / ?token=）传递凭据，请使用 URL Fragment（#vwo_...）。",
+        message: copy.queryRejected,
       };
     }
   }
@@ -53,7 +71,7 @@ export function parseOverlayCredential(loc: LocationLike): CredentialParseResult
     return {
       ok: false,
       errorCode: "MISSING_CREDENTIAL",
-      message: "未在 URL Fragment 中检测到只读输出凭据（#vwo_... 或 #cred=vwo_...）。",
+      message: copy.missing,
     };
   }
 
@@ -67,7 +85,7 @@ export function parseOverlayCredential(loc: LocationLike): CredentialParseResult
     return {
       ok: false,
       errorCode: "INVALID_CREDENTIAL",
-      message: "URL Fragment 中的输出凭据格式无效，已拒绝连接。",
+      message: copy.invalid,
     };
   }
 
@@ -175,7 +193,12 @@ function toWardEvent(frame: WardBlockedFrame, validUntilMs: number): WardBlocked
   };
 }
 
-export function reduceStageFrame(state: StageState, frame: NativeFrame, nowMs = Date.now()): StageState {
+export function reduceStageFrame(
+  state: StageState,
+  frame: NativeFrame,
+  nowMs = Date.now(),
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): StageState {
   const pruned = pruneExpiredStageItems(state, nowMs);
 
   if (frame.type === "HELLO") {
@@ -184,7 +207,7 @@ export function reduceStageFrame(state: StageState, frame: NativeFrame, nowMs = 
       connectionStatus: "connected",
       heartbeatMs: frame.heartbeatMs,
       reconnectAttempt: 0,
-      statusMessage: "已连接只读输出通道（vw-output.v1）",
+      statusMessage: pickLocale(OVERLAY_COPY, locale).connectedStatus,
     };
   }
 
@@ -225,18 +248,19 @@ export function reconnectDelayMs(attempt: number, baseMs = 1_000, maxMs = 30_000
   return Math.min(maxMs, baseMs * 2 ** Math.max(0, attempt));
 }
 
-export function closeMessageFor(code: number): string {
+export function closeMessageFor(code: number, locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE): string {
+  const msgs = pickLocale(OVERLAY_COPY, locale).closeMessages;
   switch (code) {
     case NATIVE_CLOSE.GRANT_REVOKED.code:
-      return "输出凭据已被撤销（4403），已停止重连。请在管理后台重新签发凭据。";
+      return msgs["4403"]!;
     case NATIVE_CLOSE.CLIENT_DATA_NOT_ACCEPTED.code:
-      return "连接因协议错误关闭（4400：只读端不可发送数据帧），已停止重连。";
+      return msgs["4400"]!;
     case NATIVE_CLOSE.HEARTBEAT_TIMEOUT.code:
-      return "心跳超时（4408），正在尝试指数退避重连…";
+      return msgs["4408"]!;
     case NATIVE_CLOSE.SUBSCRIBER_BACKPRESSURE.code:
-      return "消费端背压超时（4413），正在尝试指数退避重连…";
+      return msgs["4413"]!;
     default:
-      return "连接已断开，正在尝试指数退避重连…";
+      return msgs.default!;
   }
 }
 

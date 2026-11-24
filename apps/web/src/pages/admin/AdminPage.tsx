@@ -1,896 +1,1255 @@
-import { LIST_KINDS, TERM_MATCH_KINDS, type ListKind, type TermMatchKind } from "@voxward/contracts";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router";
-import { UntrustedText } from "../../components/untrusted-text";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router";
+import {
+  Badge,
+  Button,
+  Dialog,
+  EmptyState,
+  Icon,
+  Input,
+  Menu,
+  NumberInput,
+  SearchInput,
+  Select,
+  SettingsLayout,
+  Switch,
+  TableShell,
+  Textarea,
+} from "@tcrn/ui-react/approved";
+import { BannerNotice } from "../../components/banner-notice";
+import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
+import { ADMIN_COPY, pickLocale, type AdminCopy } from "../../i18n";
+import { useVoxWardShell, VoxWardShell } from "../../shell";
 import {
   AdminApiFailure,
-  adminMessageFor,
   createAdminApi,
   type AdminApi,
   type AdminSettingsView,
-  type CandidateCardView,
-  type ChannelContextView,
-  type ChannelSummary,
-  type MemberView,
+  type ExtendedTermEntryView,
   type ModelSelectionView,
   type ModelSettingsResponseView,
   type ModelSettingsView,
-  type OutputsSummaryView,
-  type RuleIssueView,
-  type RulesStateView,
-  type SettingsIssueView,
+  type TermCategoryView,
 } from "./api";
 
-type ModelSlotKey = "realtimeModeration" | "scTranslation" | "review";
+type SettingsSectionId = "blacklist" | "whitelist" | "scoring" | "retention";
 
-const MODEL_SLOT_LABELS: readonly { readonly key: ModelSlotKey; readonly label: string }[] = [
-  { key: "realtimeModeration", label: "实时审核模型" },
-  { key: "scTranslation", label: "SC 精翻模型" },
-  { key: "review", label: "复核模型" },
-];
+type NoticeState = {
+  readonly tone: "positive" | "danger" | "warning";
+  readonly resolve: (copy: AdminCopy) => string;
+} | null;
 
-const EMPTY_MODEL_SETTINGS: ModelSettingsView = {
-  realtimeModeration: null,
-  scTranslation: null,
-  review: null,
-  scTranslationEnabled: false,
-};
-
-export interface AdminViewProps {
-  readonly channelId: string;
-  readonly channels: readonly ChannelSummary[];
-  readonly context: ChannelContextView | null;
-  readonly rules: RulesStateView | null;
-  readonly ruleIssues: readonly RuleIssueView[];
-  readonly modelIssues?: readonly SettingsIssueView[];
-  readonly candidates: readonly CandidateCardView[];
-  readonly members: readonly MemberView[];
-  readonly modelSettings: ModelSettingsResponseView | null;
-  readonly adminSettings: AdminSettingsView | null;
-  readonly outputs: OutputsSummaryView | null;
-  readonly error: string | null;
-  readonly onPublishRules?: (ruleSet: unknown) => void;
-  readonly onEditTerm?: (input: {
-    readonly action: "ADD" | "RETIRE";
-    readonly term: string;
-    readonly matchKind: TermMatchKind;
-    readonly language: string;
-    readonly groupCode: string;
-  }) => void;
-  readonly onEditSubjectList?: (subjectKey: string, listKind: ListKind | null) => void;
-  readonly onConfirmCandidate: (cardId: string) => void;
-  readonly onRejectCandidate: (cardId: string) => void;
-  readonly onGrantMember?: (input: {
-    readonly accountId: string;
-    readonly role: "CHANNEL_OWNER" | "MODERATOR" | "DATA_ADMIN";
-    readonly logAccess: boolean;
-    readonly dataAdmin: boolean;
-  }) => void;
-  readonly onRevokeMember: (accountId: string) => void;
-  readonly onSaveModelSettings?: (settings: ModelSettingsView) => void;
-  readonly onSaveAdminSettings?: (settings: AdminSettingsView) => void;
-  readonly onIssueOutputGrant?: () => void;
-  readonly onRevokeOutputGrant?: (grantId: string) => void;
-  readonly onIssueOutputToken?: () => void;
-  readonly onRevokeOutputToken?: (tokenId: string) => void;
+function matchKindLabel(kind: string, copy: AdminCopy): string {
+  switch (kind) {
+    case "EXACT":
+      return copy.matchKinds.EXACT;
+    case "CONTAINS":
+      return copy.matchKinds.CONTAINS;
+    case "REGEX":
+      return copy.matchKinds.REGEX;
+    case "NORMALIZED":
+      return copy.matchKinds.NORMALIZED;
+    default:
+      return copy.matchKinds.EXACT;
+  }
 }
 
-export function AdminView(props: AdminViewProps) {
-  const {
-    channelId,
-    channels,
-    context,
-    rules,
-    ruleIssues,
-    modelIssues: extraModelIssues = [],
-    candidates,
-    members,
-    modelSettings,
-    adminSettings,
-    outputs,
-    error,
-  } = props;
-  const caps = new Set(context?.capabilities ?? []);
-  const canEditRules = caps.has("list.edit") || caps.has("score.config");
-  const canEditList = caps.has("list.edit");
-
-  const [ruleJsonText, setRuleJsonText] = useState<string>(
-    () => (rules?.ruleSet ? JSON.stringify(rules.ruleSet, null, 2) : '{"version":"v1","groups":[]}'),
-  );
-  const [ruleJsonError, setRuleJsonError] = useState<string | null>(null);
-  const [termText, setTermText] = useState("");
-  const [termMatchKind, setTermMatchKind] = useState<TermMatchKind>("EXACT");
-  const [termLanguage, setTermLanguage] = useState("zh");
-  const [termGroupCode, setTermGroupCode] = useState("default");
-  const [subjectKey, setSubjectKey] = useState("");
-  const [subjectListKind, setSubjectListKind] = useState<ListKind>("BLACKLIST");
-
-  const [memberAccountId, setMemberAccountId] = useState("");
-  const [memberRole, setMemberRole] = useState<"CHANNEL_OWNER" | "MODERATOR" | "DATA_ADMIN">("MODERATOR");
-  const [memberLogAccess, setMemberLogAccess] = useState(false);
-  const [memberDataAdmin, setMemberDataAdmin] = useState(false);
-
-  const [draftModelSettings, setDraftModelSettings] = useState<ModelSettingsView>(
-    () => modelSettings?.settings ?? EMPTY_MODEL_SETTINGS,
-  );
-  const [draftAdminSettings, setDraftAdminSettings] = useState<AdminSettingsView | null>(
-    () => adminSettings,
-  );
-
-  useEffect(() => {
-    if (rules?.ruleSet !== undefined && rules.ruleSet !== null) {
-      setRuleJsonText(JSON.stringify(rules.ruleSet, null, 2));
-    }
-  }, [rules?.version, rules?.ruleSet]);
-
-  useEffect(() => {
-    if (modelSettings !== null) {
-      setDraftModelSettings(modelSettings.settings);
-    }
-  }, [modelSettings]);
-
-  useEffect(() => {
-    if (adminSettings !== null) {
-      setDraftAdminSettings(adminSettings);
-    }
-  }, [adminSettings]);
-
-  const availableModels = modelSettings?.capabilities.models ?? [];
-  const combinedModelIssues = [...(modelSettings?.issues ?? []), ...extraModelIssues];
-
-  function updateModelSlot(slot: ModelSlotKey, nextModelId: string) {
-    if (!nextModelId) {
-      setDraftModelSettings((prev) => ({ ...prev, [slot]: null }));
-      return;
-    }
-    const modelCap = availableModels.find((m) => m.modelId === nextModelId);
-    const prevSelection = draftModelSettings[slot];
-    const nextReasoning =
-      modelCap && modelCap.reasoningLevels.length > 0
-        ? prevSelection !== null && modelCap.reasoningLevels.includes(prevSelection.reasoning ?? "")
-          ? prevSelection.reasoning
-          : (modelCap.reasoningLevels[0] ?? null)
-        : null;
-    const selection: ModelSelectionView = { modelId: nextModelId, reasoning: nextReasoning };
-    setDraftModelSettings((prev) => ({ ...prev, [slot]: selection }));
-  }
-
-  function updateModelReasoning(slot: ModelSlotKey, nextReasoning: string) {
-    setDraftModelSettings((prev) => {
-      const current = prev[slot];
-      if (current === null) return prev;
-      return { ...prev, [slot]: { ...current, reasoning: nextReasoning || null } };
-    });
-  }
-
-  function handlePublishRulesClick() {
-    setRuleJsonError(null);
-    try {
-      const parsed: unknown = JSON.parse(ruleJsonText);
-      props.onPublishRules?.(parsed);
-    } catch {
-      setRuleJsonError("规则 JSON 格式无效。");
-    }
-  }
+function TermRowActions({
+  entry,
+  copy,
+  onEdit,
+  onDelete,
+}: {
+  readonly entry: ExtendedTermEntryView;
+  readonly copy: AdminCopy;
+  readonly onEdit: (entry: ExtendedTermEntryView) => void;
+  readonly onDelete: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   return (
-    <main>
-      <h1>频道管理台</h1>
-      {error !== null ? (
-        <p role="alert" data-testid="admin-error">
-          {error}
-        </p>
-      ) : null}
-
-      {!channelId ? (
-        <section aria-label="频道选择">
-          <h2>选择已授权频道</h2>
-          {channels.length === 0 ? <p>暂无已授权频道。</p> : null}
-          <ul>
-            {channels.map((ch) => (
-              <li key={ch.channelId}>
-                <Link to={`/admin/${encodeURIComponent(ch.channelId)}`}>
-                  <UntrustedText text={ch.displayName} /> ({ch.role})
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {context !== null ? (
-        <>
-          <p>
-            当前频道：<UntrustedText text={context.displayName} />（角色：{context.role}）
-          </p>
-
-          {(context.faults.platformFault !== null || context.faults.modelFault !== null) ? (
-            <section role="alert" data-testid="admin-fault-banner">
-              <h2>连接与系统故障状态</h2>
-              {context.faults.platformFault !== null ? (
-                <p>
-                  平台连接故障：<UntrustedText text={context.faults.platformFault.code} /> —{" "}
-                  <UntrustedText text={context.faults.platformFault.message} />
-                </p>
-              ) : null}
-              {context.faults.modelFault !== null ? (
-                <p>
-                  模型服务故障：<UntrustedText text={context.faults.modelFault.code} /> —{" "}
-                  <UntrustedText text={context.faults.modelFault.message} />
-                </p>
-              ) : null}
-            </section>
-          ) : null}
-
-          <nav aria-label="关联面板入口">
-            <h2>关联面板</h2>
-            <ul>
-              <li>
-                <Link to={`/dock/${encodeURIComponent(channelId)}`}>主播 Dock</Link>
-              </li>
-              <li>
-                <Link to={`/moderation/${encodeURIComponent(channelId)}`}>房管协作台</Link>
-              </li>
-              {caps.has("data.handle") ? (
-                <li>
-                  <Link to={`/data/${encodeURIComponent(channelId)}`}>用户数据面板</Link>
-                </li>
-              ) : null}
-              {caps.has("logs.view") ? (
-                <li>
-                  <Link to={`/logs/${encodeURIComponent(channelId)}`}>日志查看器</Link>
-                </li>
-              ) : null}
-            </ul>
-          </nav>
-
-          {caps.has("queue.read") || canEditRules ? (
-            <section aria-label="规则名单与候选词">
-              <h2>规则、名单与候选词（Q12 / Q50）</h2>
-              {rules !== null ? (
-                <p>
-                  当前规则版本：v{rules.version}，有效词条 {rules.terms.length} 条，名单 {rules.entries.length} 条
-                </p>
-              ) : null}
-              {ruleIssues.length > 0 ? (
-                <ul data-testid="rule-issues">
-                  {ruleIssues.map((issue, idx) => (
-                    <li key={`${issue.code}-${idx}`}>
-                      <UntrustedText text={issue.code} /> (<UntrustedText text={issue.ref} />)
-                      {issue.hint !== undefined ? (
-                        <>
-                          {" — 建议："}
-                          <UntrustedText text={issue.hint} />
-                        </>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {canEditRules ? (
-                <div>
-                  <h3>规则集发布（Q12）</h3>
-                  <textarea
-                    aria-label="规则集 JSON"
-                    rows={5}
-                    value={ruleJsonText}
-                    onChange={(e) => setRuleJsonText(e.target.value)}
-                  />
-                  {ruleJsonError !== null ? <p role="alert">{ruleJsonError}</p> : null}
-                  <button type="button" onClick={handlePublishRulesClick}>
-                    发布规则
-                  </button>
-                </div>
-              ) : null}
-
-              <h3>词条列表</h3>
-              {rules !== null && rules.terms.length > 0 ? (
-                <ul>
-                  {rules.terms.map((t) => (
-                    <li key={t.id}>
-                      <UntrustedText text={t.term} /> ({t.matchKind} / {t.language} / {t.groupCode})
-                      {canEditList ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            props.onEditTerm?.({
-                              action: "RETIRE",
-                              term: t.term,
-                              matchKind: t.matchKind as TermMatchKind,
-                              language: t.language,
-                              groupCode: t.groupCode,
-                            })
-                          }
-                        >
-                          移除词条
-                        </button>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>暂无有效词条。</p>
-              )}
-              {canEditList ? (
-                <div>
-                  <input
-                    aria-label="新增词条"
-                    placeholder="输入词条"
-                    value={termText}
-                    onChange={(e) => setTermText(e.target.value)}
-                  />
-                  <select
-                    aria-label="词条匹配模式"
-                    value={termMatchKind}
-                    onChange={(e) => setTermMatchKind(e.target.value as TermMatchKind)}
-                  >
-                    {TERM_MATCH_KINDS.map((k) => (
-                      <option key={k} value={k}>
-                        {k}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    aria-label="词条语言"
-                    value={termLanguage}
-                    onChange={(e) => setTermLanguage(e.target.value)}
-                  />
-                  <input
-                    aria-label="词条分组"
-                    value={termGroupCode}
-                    onChange={(e) => setTermGroupCode(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!termText.trim()) return;
-                      props.onEditTerm?.({
-                        action: "ADD",
-                        term: termText.trim(),
-                        matchKind: termMatchKind,
-                        language: termLanguage.trim() || "zh",
-                        groupCode: termGroupCode.trim() || "default",
-                      });
-                      setTermText("");
-                    }}
-                  >
-                    添加词条
-                  </button>
-                </div>
-              ) : null}
-
-              <h3>主体黑白名单</h3>
-              {rules !== null && rules.entries.length > 0 ? (
-                <ul>
-                  {rules.entries.map((entry) => (
-                    <li key={entry.id}>
-                      <UntrustedText text={entry.subjectKey} /> [{entry.listKind}]
-                      {canEditList ? (
-                        <button
-                          type="button"
-                          onClick={() => props.onEditSubjectList?.(entry.subjectKey, null)}
-                        >
-                          移出名单
-                        </button>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>暂无主体名单记录。</p>
-              )}
-              {canEditList ? (
-                <div>
-                  <input
-                    aria-label="主体键"
-                    placeholder="platformSubjectKey"
-                    value={subjectKey}
-                    onChange={(e) => setSubjectKey(e.target.value)}
-                  />
-                  <select
-                    aria-label="名单类型"
-                    value={subjectListKind}
-                    onChange={(e) => setSubjectListKind(e.target.value as ListKind)}
-                  >
-                    {LIST_KINDS.map((kind) => (
-                      <option key={kind} value={kind}>
-                        {kind}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!subjectKey.trim()) return;
-                      props.onEditSubjectList?.(subjectKey.trim(), subjectListKind);
-                      setSubjectKey("");
-                    }}
-                  >
-                    保存主体名单
-                  </button>
-                </div>
-              ) : null}
-
-              <h3>候选词卡片</h3>
-              {candidates.length === 0 ? <p>暂无候选词。</p> : null}
-              <ul>
-                {candidates.map((card) => (
-                  <li key={card.id}>
-                    <UntrustedText text={card.term} /> [{card.status}]
-                    {card.note !== null ? (
-                      <>
-                        {" — "}
-                        <UntrustedText text={card.note} />
-                      </>
-                    ) : null}
-                    {canEditList && card.status === "PENDING_CONFIRMATION" ? (
-                      <div>
-                        <button type="button" onClick={() => props.onConfirmCandidate(card.id)}>
-                          确认入库
-                        </button>
-                        <button type="button" onClick={() => props.onRejectCandidate(card.id)}>
-                          拒绝
-                        </button>
-                      </div>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {caps.has("members.manage") ? (
-            <section aria-label="成员与权限管理">
-              <h2>成员与权限（Q17 / Q34）</h2>
-              <ul>
-                {members.map((m) => (
-                  <li key={m.accountId}>
-                    <UntrustedText text={m.accountId} /> — {m.role}
-                    {m.logAccess ? " [日志]" : ""}
-                    {m.dataAdmin ? " [数据管理员]" : ""}
-                    <button type="button" onClick={() => props.onRevokeMember(m.accountId)}>
-                      撤销权限
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <div>
-                <h3>邀请 / 授予成员权限</h3>
-                <input
-                  aria-label="成员账号 ID"
-                  placeholder="accountId"
-                  value={memberAccountId}
-                  onChange={(e) => setMemberAccountId(e.target.value)}
-                />
-                <select
-                  aria-label="成员角色"
-                  value={memberRole}
-                  onChange={(e) => {
-                    const nextRole = e.target.value as "CHANNEL_OWNER" | "MODERATOR" | "DATA_ADMIN";
-                    setMemberRole(nextRole);
-                    if (nextRole !== "CHANNEL_OWNER") setMemberDataAdmin(false);
-                  }}
-                >
-                  <option value="MODERATOR">MODERATOR</option>
-                  <option value="CHANNEL_OWNER">CHANNEL_OWNER</option>
-                  <option value="DATA_ADMIN">DATA_ADMIN</option>
-                </select>
-                <label>
-                  <input
-                    type="checkbox"
-                    aria-label="允许查看日志"
-                    checked={memberLogAccess}
-                    onChange={(e) => setMemberLogAccess(e.target.checked)}
-                  />
-                  允许查看日志
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    aria-label="授予数据管理员（Q34）"
-                    checked={memberRole === "CHANNEL_OWNER" && memberDataAdmin}
-                    disabled={memberRole !== "CHANNEL_OWNER"}
-                    onChange={(e) => setMemberDataAdmin(e.target.checked)}
-                  />
-                  数据管理员（仅频道主）
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!memberAccountId.trim()) return;
-                    props.onGrantMember?.({
-                      accountId: memberAccountId.trim(),
-                      role: memberRole,
-                      logAccess: memberLogAccess,
-                      dataAdmin: memberRole === "CHANNEL_OWNER" ? memberDataAdmin : false,
-                    });
-                    setMemberAccountId("");
-                  }}
-                >
-                  授予权限
-                </button>
-              </div>
-            </section>
-          ) : null}
-
-          {caps.has("score.config") && modelSettings !== null ? (
-            <section aria-label="模型配置">
-              <h2>模型配置（Q48）</h2>
-              <p>
-                适配器：<UntrustedText text={modelSettings.capabilities.providerName} />（SC 精翻：
-                {draftModelSettings.scTranslationEnabled ? "开启" : "关闭"}）
-              </p>
-              {availableModels.length === 0 ? <p>当前适配器未声明可用模型。</p> : null}
-              {MODEL_SLOT_LABELS.map(({ key, label }) => {
-                const selection = draftModelSettings[key];
-                const selectedModel = availableModels.find((m) => m.modelId === selection?.modelId);
-                const reasoningLevels = selectedModel?.reasoningLevels ?? [];
-                return (
-                  <div key={key}>
-                    <label>
-                      {label}模型
-                      <select
-                        aria-label={`${label}模型`}
-                        value={selection?.modelId ?? ""}
-                        onChange={(e) => updateModelSlot(key, e.target.value)}
-                      >
-                        <option value="">未配置</option>
-                        {availableModels.map((m) => {
-                          const displayName = (m as { readonly displayName?: string }).displayName ?? m.modelId;
-                          return (
-                            <option key={m.modelId} value={m.modelId}>
-                              {displayName}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </label>
-                    <label>
-                      {label}推理档位
-                      <select
-                        aria-label={`${label}推理档位`}
-                        value={selection?.reasoning ?? ""}
-                        disabled={selection === null || reasoningLevels.length === 0}
-                        onChange={(e) => updateModelReasoning(key, e.target.value)}
-                      >
-                        <option value="">无推理档位</option>
-                        {reasoningLevels.map((lvl) => (
-                          <option key={lvl} value={lvl}>
-                            {lvl}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                );
-              })}
-              <label>
-                <input
-                  type="checkbox"
-                  aria-label="启用 SC 精翻"
-                  checked={draftModelSettings.scTranslationEnabled}
-                  onChange={(e) =>
-                    setDraftModelSettings((prev) => ({ ...prev, scTranslationEnabled: e.target.checked }))
-                  }
-                />
-                启用 SC 精翻
-              </label>
-              <button type="button" onClick={() => props.onSaveModelSettings?.(draftModelSettings)}>
-                保存模型配置
-              </button>
-              {combinedModelIssues.length > 0 ? (
-                <ul data-testid="model-issues">
-                  {combinedModelIssues.map((issue, idx) => (
-                    <li key={`${issue.code}-${idx}`}>
-                      {issue.code} ({issue.path})
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </section>
-          ) : null}
-
-          {caps.has("score.config") && adminSettings !== null && draftAdminSettings !== null ? (
-            <section aria-label="评分队列与保留配置">
-              <h2>评分、队列与保留策略</h2>
-              <p>
-                评分范围：{adminSettings.scoring.minScore} ~ {adminSettings.scoring.maxScore}（初始{" "}
-                {adminSettings.scoring.initialScore}）
-              </p>
-              <p>
-                队列并发：实时 {adminSettings.queue.realtimeConcurrency} / SC {adminSettings.queue.scConcurrency}
-              </p>
-              <p>
-                保留天数：变更日志 {adminSettings.retention.changeLogDays} 天 / 技术日志{" "}
-                {adminSettings.retention.technicalLogDays} 天 / 证据 {adminSettings.retention.evidenceDays} 天
-              </p>
-              <div>
-                <label>
-                  最低分
-                  <input
-                    type="number"
-                    aria-label="最低分"
-                    value={draftAdminSettings.scoring.minScore}
-                    onChange={(e) =>
-                      setDraftAdminSettings((prev) =>
-                        prev ? { ...prev, scoring: { ...prev.scoring, minScore: Number(e.target.value) } } : prev,
-                      )
-                    }
-                  />
-                </label>
-                <label>
-                  初始分
-                  <input
-                    type="number"
-                    aria-label="初始分"
-                    value={draftAdminSettings.scoring.initialScore}
-                    onChange={(e) =>
-                      setDraftAdminSettings((prev) =>
-                        prev ? { ...prev, scoring: { ...prev.scoring, initialScore: Number(e.target.value) } } : prev,
-                      )
-                    }
-                  />
-                </label>
-                <label>
-                  最高分
-                  <input
-                    type="number"
-                    aria-label="最高分"
-                    value={draftAdminSettings.scoring.maxScore}
-                    onChange={(e) =>
-                      setDraftAdminSettings((prev) =>
-                        prev ? { ...prev, scoring: { ...prev.scoring, maxScore: Number(e.target.value) } } : prev,
-                      )
-                    }
-                  />
-                </label>
-                <label>
-                  实时并发
-                  <input
-                    type="number"
-                    aria-label="实时并发"
-                    value={draftAdminSettings.queue.realtimeConcurrency}
-                    onChange={(e) =>
-                      setDraftAdminSettings((prev) =>
-                        prev
-                          ? { ...prev, queue: { ...prev.queue, realtimeConcurrency: Number(e.target.value) } }
-                          : prev,
-                      )
-                    }
-                  />
-                </label>
-                <label>
-                  SC 并发
-                  <input
-                    type="number"
-                    aria-label="SC 并发"
-                    value={draftAdminSettings.queue.scConcurrency}
-                    onChange={(e) =>
-                      setDraftAdminSettings((prev) =>
-                        prev ? { ...prev, queue: { ...prev.queue, scConcurrency: Number(e.target.value) } } : prev,
-                      )
-                    }
-                  />
-                </label>
-                <label>
-                  技术日志保留天数
-                  <input
-                    type="number"
-                    aria-label="技术日志保留天数"
-                    value={draftAdminSettings.retention.technicalLogDays}
-                    onChange={(e) =>
-                      setDraftAdminSettings((prev) =>
-                        prev
-                          ? { ...prev, retention: { ...prev.retention, technicalLogDays: Number(e.target.value) } }
-                          : prev,
-                      )
-                    }
-                  />
-                </label>
-                <button type="button" onClick={() => props.onSaveAdminSettings?.(draftAdminSettings)}>
-                  保存策略配置
-                </button>
-              </div>
-            </section>
-          ) : null}
-
-          {(caps.has("output.manage") || caps.has("tokens.manage")) && outputs !== null ? (
-            <section aria-label="输出端配置">
-              <h2>输出端与只读凭据</h2>
-              <p>
-                原生输出授权：{outputs.grants.length} 个 | 只读输出令牌：{outputs.tokens.length} 个
-              </p>
-              {caps.has("output.manage") ? (
-                <div>
-                  <button type="button" onClick={() => props.onIssueOutputGrant?.()}>
-                    签发输出授权
-                  </button>
-                  <ul>
-                    {outputs.grants.map((g) => (
-                      <li key={g.grantId}>
-                        <UntrustedText text={g.grantId} /> ({g.outputKind} / {g.scope})
-                        <button type="button" onClick={() => props.onRevokeOutputGrant?.(g.grantId)}>
-                          吊销授权
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              {caps.has("tokens.manage") ? (
-                <div>
-                  <button type="button" onClick={() => props.onIssueOutputToken?.()}>
-                    签发只读令牌
-                  </button>
-                  <ul>
-                    {outputs.tokens.map((t) => (
-                      <li key={t.tokenId}>
-                        <UntrustedText text={t.tokenId} /> ({t.createdAt})
-                        <button type="button" onClick={() => props.onRevokeOutputToken?.(t.tokenId)}>
-                          吊销令牌
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-        </>
-      ) : null}
-    </main>
+    <div className="vw-table-actions">
+      <Button
+        ref={triggerRef}
+        aria-label={copy.termActionsAria}
+        size="sm"
+        variant="quiet"
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        <Icon name="more-horizontal" size="sm" />
+      </Button>
+      <Menu
+        open={open}
+        onOpenChange={setOpen}
+        triggerRef={triggerRef}
+        placement="bottom-end"
+        label={copy.termMenuLabel}
+        items={[
+          { id: "edit", label: copy.editTermItem, onSelect: () => onEdit(entry) },
+          { id: "delete", label: copy.deleteTermItem, danger: true, onSelect: () => onDelete(entry.id) },
+        ]}
+      />
+    </div>
   );
 }
 
-export interface AdminPageState {
-  readonly channels: readonly ChannelSummary[];
-  readonly context: ChannelContextView | null;
-  readonly rules: RulesStateView | null;
-  readonly ruleIssues: readonly RuleIssueView[];
-  readonly modelIssues: readonly SettingsIssueView[];
-  readonly candidates: readonly CandidateCardView[];
-  readonly members: readonly MemberView[];
-  readonly modelSettings: ModelSettingsResponseView | null;
-  readonly adminSettings: AdminSettingsView | null;
-  readonly outputs: OutputsSummaryView | null;
-  readonly error: string | null;
-}
-
-export const INITIAL_ADMIN_PAGE_STATE: AdminPageState = {
-  channels: [],
-  context: null,
-  rules: null,
-  ruleIssues: [],
-  modelIssues: [],
-  candidates: [],
-  members: [],
-  modelSettings: null,
-  adminSettings: null,
-  outputs: null,
-  error: null,
-};
-
-export function createAdminPageController(
-  client: AdminApi,
-  channelId: string,
-  setState: (updater: (prev: AdminPageState) => AdminPageState) => void,
-) {
-  async function refresh() {
-    setState((prev) => ({ ...prev, error: null }));
-    try {
-      if (!channelId) {
-        const nextChannels = await client.listChannels();
-        setState((prev) => ({ ...prev, channels: nextChannels, context: null }));
-        return;
-      }
-      const ctx = await client.getContext(channelId);
-      const caps = new Set(ctx.capabilities);
-      const nextRules =
-        caps.has("queue.read") || caps.has("list.edit") || caps.has("score.config")
-          ? await client.getRules(channelId)
-          : null;
-      const nextCandidates = caps.has("queue.read") ? await client.listCandidates(channelId) : [];
-      const nextMembers = caps.has("members.manage") ? await client.listMembers(channelId) : [];
-      const nextModelSettings = caps.has("score.config") ? await client.getModelSettings(channelId) : null;
-      const nextAdminSettings = caps.has("score.config") ? await client.getAdminSettings(channelId) : null;
-      const nextOutputs =
-        caps.has("output.manage") || caps.has("tokens.manage") ? await client.getOutputs(channelId) : null;
-      setState((prev) => ({
-        ...prev,
-        context: ctx,
-        rules: nextRules,
-        candidates: nextCandidates,
-        members: nextMembers,
-        modelSettings: nextModelSettings,
-        adminSettings: nextAdminSettings,
-        outputs: nextOutputs,
-      }));
-    } catch (err) {
-      setState((prev) => ({
-        ...prev,
-        ruleIssues: err instanceof AdminApiFailure && err.issues !== undefined ? err.issues : prev.ruleIssues,
-        modelIssues:
-          err instanceof AdminApiFailure && err.settingsIssues !== undefined ? err.settingsIssues : prev.modelIssues,
-        error: adminMessageFor(err),
-      }));
-    }
+export function buildTermCsvTemplate(
+  listKind: "BLACKLIST" | "WHITELIST",
+  categories: readonly TermCategoryView[],
+): { readonly filename: string; readonly content: string } {
+  const scoped = categories.filter((c) => c.listKind === listKind);
+  if (listKind === "WHITELIST") {
+    const primaryCat = scoped[0]?.code ?? "friendly";
+    return {
+      filename: "voxward-whitelist-template.csv",
+      content: [
+        "term,category,matchKind",
+        `Tonight setlist is great,${primaryCat},EXACT`,
+        `encore,${primaryCat},CONTAINS`,
+      ].join("\n"),
+    };
   }
-
-  async function runMutation(action: () => Promise<unknown>) {
-    setState((prev) => ({ ...prev, error: null, ruleIssues: [], modelIssues: [] }));
-    try {
-      await action();
-      await refresh();
-    } catch (err) {
-      setState((prev) => ({
-        ...prev,
-        ruleIssues: err instanceof AdminApiFailure && err.issues !== undefined ? err.issues : prev.ruleIssues,
-        modelIssues:
-          err instanceof AdminApiFailure && err.settingsIssues !== undefined ? err.settingsIssues : prev.modelIssues,
-        error: adminMessageFor(err),
-      }));
-    }
-  }
-
+  const primaryCat = scoped[0]?.code ?? "spam";
+  const secondaryCat =
+    scoped.find((c) => c.code === "sensitive")?.code ?? scoped[1]?.code ?? primaryCat;
   return {
-    refresh,
-    publishRules: (ruleSet: unknown) => runMutation(() => client.publishRules(channelId, ruleSet)),
-    editTerm: (input: Parameters<AdminApi["editTerm"]>[1]) => runMutation(() => client.editTerm(channelId, input)),
-    editSubjectList: (key: string, listKind: ListKind | null) =>
-      runMutation(() => client.editSubjectList(channelId, key, listKind)),
-    confirmCandidate: (cardId: string) => runMutation(() => client.confirmCandidate(channelId, cardId)),
-    rejectCandidate: (cardId: string) => runMutation(() => client.rejectCandidate(channelId, cardId)),
-    grantMember: (input: Parameters<AdminApi["grantMember"]>[1]) =>
-      runMutation(() => client.grantMember(channelId, input)),
-    revokeMember: (accountId: string) => runMutation(() => client.revokeMember(channelId, accountId)),
-    saveModelSettings: (settings: ModelSettingsView) =>
-      runMutation(() => client.saveModelSettings(channelId, settings)),
-    saveAdminSettings: (settings: AdminSettingsView) =>
-      runMutation(() => client.saveAdminSettings(channelId, settings)),
-    issueOutputGrant: () => runMutation(() => client.issueOutputGrant(channelId)),
-    revokeOutputGrant: (grantId: string) => runMutation(() => client.revokeOutputGrant(channelId, grantId)),
-    issueOutputToken: () => runMutation(() => client.issueOutputToken(channelId)),
-    revokeOutputToken: (tokenId: string) => runMutation(() => client.revokeOutputToken(channelId, tokenId)),
+    filename: "voxward-blacklist-template.csv",
+    content: [
+      "term,category,matchKind",
+      `free-nitro-scam,${primaryCat},EXACT`,
+      `join-rebate-group,${primaryCat},CONTAINS`,
+      `promo[vV]chat?\\d{6},${secondaryCat},REGEX`,
+    ].join("\n"),
   };
 }
 
-export function AdminPage({ api }: { readonly api?: AdminApi } = {}) {
-  const { channelId = "" } = useParams();
-  const client = useMemo(() => api ?? createAdminApi(), [api]);
-  const [state, setState] = useState<AdminPageState>(INITIAL_ADMIN_PAGE_STATE);
-  const controller = useMemo(() => createAdminPageController(client, channelId, setState), [client, channelId]);
+export interface AdminPageProps {
+  readonly api?: AdminApi;
+}
+
+function AdminSurface({
+  channelIdParam,
+  api,
+}: {
+  readonly channelIdParam?: string;
+  readonly api?: AdminApi;
+}) {
+  const { activeChannelId, locale } = useVoxWardShell();
+  const channelId = channelIdParam ?? activeChannelId;
+  const copy = pickLocale(ADMIN_COPY, locale);
+  const adminClient = useMemo(() => api ?? createAdminApi(), [api]);
+  const csvFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [section, setSection] = useState<SettingsSectionId>("blacklist");
+
+  // Term categories & entries state
+  const [categories, setCategories] = useState<readonly TermCategoryView[]>([]);
+  const [entries, setEntries] = useState<readonly ExtendedTermEntryView[]>([]);
+  const [catCode, setCatCode] = useState("");
+  const [catLabel, setCatLabel] = useState("");
+  const [catDesc, setCatDesc] = useState("");
+  const [termSearch, setTermSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [showAddTermForm, setShowAddTermForm] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
+  const [newTermText, setNewTermText] = useState("");
+  const [newTermCategory, setNewTermCategory] = useState("");
+  const [newTermMatchKind, setNewTermMatchKind] = useState<"EXACT" | "CONTAINS" | "REGEX">("EXACT");
+  const [csvText, setCsvText] = useState("");
+  const [editingEntry, setEditingEntry] = useState<ExtendedTermEntryView | null>(null);
+
+  // Scoring, model, retention state
+  const [modelResp, setModelResp] = useState<ModelSettingsResponseView | null>(null);
+  const [modelForm, setModelForm] = useState<ModelSettingsView | null>(null);
+  const [adminForm, setAdminForm] = useState<AdminSettingsView | null>(null);
+
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<NoticeState>(null);
+
+  const loadChannelConfig = useCallback(async () => {
+    try {
+      const [cats, entList, mod, adm] = await Promise.all([
+        adminClient.listTermCategories(channelId),
+        adminClient.listTermEntries(channelId),
+        adminClient.getModelSettings(channelId),
+        adminClient.getAdminSettings(channelId),
+      ]);
+      setCategories(cats);
+      setEntries(entList);
+      setModelResp(mod);
+      setModelForm(mod.settings);
+      setAdminForm(adm);
+    } catch (error) {
+      if (error instanceof AdminApiFailure && error.status === 401) {
+        return;
+      }
+      setNotice({
+        tone: "danger",
+        resolve: (c) =>
+          error instanceof AdminApiFailure
+            ? c.messages.loadFailedCode(error.code)
+            : c.messages.loadFailed,
+      });
+    }
+  }, [adminClient, channelId]);
 
   useEffect(() => {
-    void controller.refresh();
-  }, [controller]);
+    void loadChannelConfig();
+  }, [loadChannelConfig]);
+
+  const activeListKind: "BLACKLIST" | "WHITELIST" =
+    section === "whitelist" ? "WHITELIST" : "BLACKLIST";
+
+  const scopedCategories = useMemo(
+    () => categories.filter((c) => c.listKind === activeListKind),
+    [categories, activeListKind],
+  );
+
+  const defaultCatForList = scopedCategories[0]?.code ?? (activeListKind === "WHITELIST" ? "friendly" : "spam");
+  const effectiveNewCategory =
+    scopedCategories.some((c) => c.code === newTermCategory) ? newTermCategory : defaultCatForList;
+
+  const filteredEntries = useMemo(() => {
+    const q = termSearch.trim().toLowerCase();
+    return entries.filter((entry) => {
+      if (entry.listKind !== activeListKind) return false;
+      if (categoryFilter !== "ALL" && entry.categoryCode !== categoryFilter) return false;
+      if (!q) return true;
+      return entry.term.toLowerCase().includes(q) || entry.categoryCode.toLowerCase().includes(q);
+    });
+  }, [entries, activeListKind, categoryFilter, termSearch]);
+
+  const handleAddCategory = async () => {
+    if (!catCode.trim() || !catLabel.trim()) return;
+    setBusy(true);
+    setNotice(null);
+    try {
+      const next = await adminClient.createTermCategory(channelId, {
+        code: catCode.trim(),
+        label: catLabel.trim(),
+        listKind: activeListKind,
+        description: catDesc.trim(),
+      });
+      setCategories(next);
+      setCatCode("");
+      setCatLabel("");
+      setCatDesc("");
+      setNotice({ tone: "positive", resolve: (c) => c.messages.catAdded });
+    } catch (error) {
+      setNotice({
+        tone: "danger",
+        resolve: (c) =>
+          error instanceof AdminApiFailure && error.status === 409
+            ? c.messages.catDuplicate
+            : error instanceof AdminApiFailure
+              ? c.messages.catFailedCode(error.code)
+              : c.messages.catFailed,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const persistEntries = async (
+    next: readonly ExtendedTermEntryView[],
+    resolveSuccess: (c: AdminCopy) => string,
+  ) => {
+    setBusy(true);
+    setNotice(null);
+    try {
+      const saved = await adminClient.saveTermEntries(channelId, next);
+      setEntries(saved);
+      setNotice({ tone: "positive", resolve: resolveSuccess });
+    } catch (error) {
+      if (error instanceof AdminApiFailure && error.issues && error.issues.length > 0) {
+        const first = error.issues[0];
+        if (first !== undefined) {
+          setNotice({
+            tone: "danger",
+            resolve: (c) => first.hint ?? c.messages.ruleFailedCode(first.code),
+          });
+        }
+      } else {
+        setNotice({
+          tone: "danger",
+          resolve: (c) =>
+            error instanceof AdminApiFailure
+              ? c.messages.saveTermFailedCode(error.code)
+              : c.messages.saveTermFailed,
+        });
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleAddTerm = async () => {
+    const trimmed = newTermText.trim();
+    if (!trimmed) return;
+    const item: ExtendedTermEntryView = {
+      id: `term-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      listKind: activeListKind,
+      term: trimmed,
+      categoryCode: effectiveNewCategory,
+      matchKind: newTermMatchKind,
+      enabled: true,
+    };
+    await persistEntries([item, ...entries], (c) => c.messages.termAdded);
+    setNewTermText("");
+    setShowAddTermForm(false);
+  };
+
+  const handleDownloadCsvTemplate = () => {
+    const { filename, content } = buildTermCsvTemplate(activeListKind, categories);
+    if (typeof document !== "undefined" && typeof URL.createObjectURL === "function") {
+      const blob = new Blob([`\uFEFF${content}`], { type: "text/csv;charset=utf-8" });
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(href);
+    }
+    const kindSnapshot = activeListKind;
+    setNotice({
+      tone: "positive",
+      resolve: (c) => c.messages.csvDownloaded(kindSnapshot, filename),
+    });
+  };
+
+  const handleCsvFileSelected = async (file: File | null) => {
+    if (file === null) return;
+    const text = (await file.text()).replace(/^\uFEFF/, "");
+    setCsvText(text);
+    setNotice({
+      tone: "positive",
+      resolve: (c) => c.messages.csvFileLoaded(file.name),
+    });
+  };
+
+  const handleCsvImport = async () => {
+    const normalized = csvText.replace(/^\uFEFF/, "");
+    if (!normalized.trim()) return;
+    setBusy(true);
+    setNotice(null);
+    try {
+      const res = await adminClient.importTermEntriesCsv(channelId, activeListKind, normalized);
+      setEntries(res.entries);
+      setCsvText("");
+      setShowCsvImport(false);
+      const firstErr = res.errors[0];
+      if (firstErr !== undefined) {
+        setNotice({
+          tone: "warning",
+          resolve: (c) =>
+            c.messages.csvPartial(res.imported, res.errors.length, firstErr.line, firstErr.message),
+        });
+      } else {
+        setNotice({
+          tone: "positive",
+          resolve: (c) => c.messages.csvDone(res.imported),
+        });
+      }
+    } catch (error) {
+      setNotice({
+        tone: "danger",
+        resolve: (c) =>
+          error instanceof AdminApiFailure
+            ? c.messages.csvFailedCode(error.code)
+            : c.messages.csvFailed,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSaveModels = async () => {
+    if (modelForm === null) return;
+    setBusy(true);
+    setNotice(null);
+    try {
+      const saved = await adminClient.saveModelSettings(channelId, modelForm);
+      setModelResp(saved);
+      setModelForm(saved.settings);
+      setNotice({ tone: "positive", resolve: (c) => c.messages.modelsSaved });
+    } catch (error) {
+      setNotice({
+        tone: "danger",
+        resolve: (c) =>
+          error instanceof AdminApiFailure
+            ? c.messages.modelsFailedCode(error.code)
+            : c.messages.modelsFailed,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSaveAdminSettings = async (resolveOk: (c: AdminCopy) => string) => {
+    if (adminForm === null) return;
+    setBusy(true);
+    setNotice(null);
+    try {
+      const saved = await adminClient.saveAdminSettings(channelId, adminForm);
+      setAdminForm(saved);
+      setNotice({ tone: "positive", resolve: resolveOk });
+    } catch (error) {
+      setNotice({
+        tone: "danger",
+        resolve: (c) =>
+          error instanceof AdminApiFailure
+            ? c.messages.policyFailedCode(error.code)
+            : c.messages.policyFailed,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const modelChoices = modelResp?.capabilities.models ?? [];
+
+  const renderModelPicker = (
+    idPrefix: string,
+    label: string,
+    value: ModelSelectionView | null,
+    onChange: (next: ModelSelectionView | null) => void,
+  ) => {
+    const selectedModel = modelChoices.find((m) => m.modelId === value?.modelId);
+    const levels = selectedModel?.reasoningLevels ?? [];
+    return (
+      <div className="vw-row-wrap">
+        <div className="vw-field-col">
+          <label className="vw-field-label" htmlFor={`${idPrefix}-model`}>
+            {label}
+          </label>
+          <Select
+            id={`${idPrefix}-model`}
+            value={value?.modelId ?? ""}
+            onChange={(event) => {
+              const chosenId = event.target.value;
+              if (!chosenId) {
+                onChange(null);
+                return;
+              }
+              const cap = modelChoices.find((m) => m.modelId === chosenId);
+              onChange({
+                modelId: chosenId,
+                reasoning: cap?.reasoningLevels[0] ?? null,
+              });
+            }}
+            options={[
+              { value: "", label: copy.unboundModelOption },
+              ...modelChoices.map((m) => ({
+                value: m.modelId,
+                label: "displayName" in m && typeof m.displayName === "string" ? m.displayName : m.modelId,
+              })),
+            ]}
+          />
+        </div>
+        {levels.length > 0 ? (
+          <div className="vw-field-col--compact">
+            <label className="vw-field-label" htmlFor={`${idPrefix}-reasoning`}>
+              {copy.reasoningLabel}
+            </label>
+            <Select
+              id={`${idPrefix}-reasoning`}
+              value={value?.reasoning ?? levels[0]}
+              onChange={(event) =>
+                onChange({
+                  modelId: value?.modelId ?? "",
+                  reasoning: event.target.value,
+                })
+              }
+              options={levels.map((lv) => ({ value: lv, label: lv }))}
+            />
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const localNavigation = (
+    <nav className="vw-settings-nav" aria-label={copy.navAria}>
+      <div className="vw-settings-group-title">{copy.navGroupRules}</div>
+      <button
+        type="button"
+        className={
+          section === "blacklist"
+            ? "vw-settings-nav-item vw-settings-nav-item--sub vw-settings-nav-item--active"
+            : "vw-settings-nav-item vw-settings-nav-item--sub"
+        }
+        onClick={() => {
+          setSection("blacklist");
+          setCategoryFilter("ALL");
+          setShowAddTermForm(false);
+          setShowCsvImport(false);
+        }}
+      >
+        {copy.navBlacklist}
+      </button>
+      <button
+        type="button"
+        className={
+          section === "whitelist"
+            ? "vw-settings-nav-item vw-settings-nav-item--sub vw-settings-nav-item--active"
+            : "vw-settings-nav-item vw-settings-nav-item--sub"
+        }
+        onClick={() => {
+          setSection("whitelist");
+          setCategoryFilter("ALL");
+          setShowAddTermForm(false);
+          setShowCsvImport(false);
+        }}
+      >
+        {copy.navWhitelist}
+      </button>
+
+      <hr className="vw-divider-rule" />
+
+      <button
+        type="button"
+        className={
+          section === "scoring"
+            ? "vw-settings-nav-item vw-settings-nav-item--active"
+            : "vw-settings-nav-item"
+        }
+        onClick={() => setSection("scoring")}
+      >
+        {copy.navScoring}
+      </button>
+      <button
+        type="button"
+        className={
+          section === "retention"
+            ? "vw-settings-nav-item vw-settings-nav-item--active"
+            : "vw-settings-nav-item"
+        }
+        onClick={() => setSection("retention")}
+      >
+        {copy.navRetention}
+      </button>
+    </nav>
+  );
 
   return (
-    <AdminView
-      channelId={channelId}
-      channels={state.channels}
-      context={state.context}
-      rules={state.rules}
-      ruleIssues={state.ruleIssues}
-      modelIssues={state.modelIssues}
-      candidates={state.candidates}
-      members={state.members}
-      modelSettings={state.modelSettings}
-      adminSettings={state.adminSettings}
-      outputs={state.outputs}
-      error={state.error}
-      onPublishRules={(ruleSet) => void controller.publishRules(ruleSet)}
-      onEditTerm={(input) => void controller.editTerm(input)}
-      onEditSubjectList={(key, listKind) => void controller.editSubjectList(key, listKind)}
-      onConfirmCandidate={(cardId) => void controller.confirmCandidate(cardId)}
-      onRejectCandidate={(cardId) => void controller.rejectCandidate(cardId)}
-      onGrantMember={(input) => void controller.grantMember(input)}
-      onRevokeMember={(accountId) => void controller.revokeMember(accountId)}
-      onSaveModelSettings={(settings) => void controller.saveModelSettings(settings)}
-      onSaveAdminSettings={(settings) => void controller.saveAdminSettings(settings)}
-      onIssueOutputGrant={() => void controller.issueOutputGrant()}
-      onRevokeOutputGrant={(grantId) => void controller.revokeOutputGrant(grantId)}
-      onIssueOutputToken={() => void controller.issueOutputToken()}
-      onRevokeOutputToken={(tokenId) => void controller.revokeOutputToken(tokenId)}
-    />
+    <div className="vw-stack-md">
+      {notice ? <BannerNotice tone={notice.tone}>{notice.resolve(copy)}</BannerNotice> : null}
+
+      <SettingsLayout
+        navigation={localNavigation}
+        navigationLabel={copy.settingsNavLabel}
+        contentLabel={copy.settingsContentLabel}
+      >
+        {section === "blacklist" || section === "whitelist" ? (
+          <div className="vw-stack-md">
+            <section className="vw-panel-card" aria-label={copy.categoriesAria}>
+              <div className="vw-row-between">
+                <strong>
+                  {activeListKind === "BLACKLIST" ? copy.blacklistCatTitle : copy.whitelistCatTitle}
+                </strong>
+                <Badge tone="neutral">{copy.appendOnlyBadge}</Badge>
+              </div>
+              <TableShell
+                label={copy.catTableLabel}
+                columns={[
+                  { key: "code", label: copy.colCatCode },
+                  { key: "label", label: copy.colCatLabel },
+                  { key: "description", label: copy.colCatDesc },
+                ]}
+                rows={scopedCategories.map((c) => ({
+                  code: <span className="vw-mono">{c.code}</span>,
+                  label: c.label,
+                  description: c.description || <span className="vw-muted">{copy.noDesc}</span>,
+                }))}
+                emptyState={<EmptyState title={copy.emptyCatTitle} />}
+              />
+              <div className="vw-input-action-row">
+                <div className="vw-field-col--compact">
+                  <label className="vw-field-label" htmlFor="cat-code">
+                    {copy.newCatCodeLabel}
+                  </label>
+                  <Input
+                    id="cat-code"
+                    value={catCode}
+                    onChange={(event) => setCatCode(event.target.value)}
+                    placeholder={copy.newCatCodePlaceholder}
+                  />
+                </div>
+                <div className="vw-field-col--compact">
+                  <label className="vw-field-label" htmlFor="cat-label">
+                    {copy.newCatLabelLabel}
+                  </label>
+                  <Input
+                    id="cat-label"
+                    value={catLabel}
+                    onChange={(event) => setCatLabel(event.target.value)}
+                    placeholder={copy.newCatLabelPlaceholder}
+                  />
+                </div>
+                <div className="vw-field-col">
+                  <label className="vw-field-label" htmlFor="cat-desc">
+                    {copy.newCatDescLabel}
+                  </label>
+                  <Input
+                    id="cat-desc"
+                    value={catDesc}
+                    onChange={(event) => setCatDesc(event.target.value)}
+                    placeholder={copy.newCatDescPlaceholder}
+                  />
+                </div>
+                <Button
+                  variant="secondary"
+                  disabled={busy || !catCode.trim() || !catLabel.trim()}
+                  onClick={() => void handleAddCategory()}
+                >
+                  {copy.addCatBtn}
+                </Button>
+              </div>
+            </section>
+
+            <section className="vw-panel-card" aria-label={copy.termsAria}>
+              <div className="vw-row-between">
+                <strong>
+                  {activeListKind === "BLACKLIST"
+                    ? copy.blacklistTermsHeading(filteredEntries.length)
+                    : copy.whitelistTermsHeading(filteredEntries.length)}
+                </strong>
+                <div className="vw-row-wrap">
+                  <Button
+                    size="sm"
+                    variant="quiet"
+                    data-download-csv-template=""
+                    onClick={handleDownloadCsvTemplate}
+                  >
+                    {copy.downloadTemplateBtn}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={showCsvImport ? "primary" : "secondary"}
+                    onClick={() => {
+                      setShowCsvImport((prev) => !prev);
+                      setShowAddTermForm(false);
+                    }}
+                  >
+                    {showCsvImport ? copy.closeCsvBtn : copy.csvImportBtn}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={showAddTermForm ? "secondary" : "primary"}
+                    onClick={() => {
+                      setShowAddTermForm((prev) => !prev);
+                      setShowCsvImport(false);
+                    }}
+                  >
+                    {showAddTermForm ? copy.cancelAddTermBtn : copy.addTermBtn}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="vw-input-action-row">
+                <div className="vw-field-col">
+                  <label className="vw-field-label" htmlFor="term-search">
+                    {copy.searchTermLabel}
+                  </label>
+                  <SearchInput
+                    id="term-search"
+                    fill
+                    value={termSearch}
+                    onChange={(event) => setTermSearch(event.target.value)}
+                    placeholder={copy.searchTermPlaceholder}
+                  />
+                </div>
+                <div className="vw-field-col--compact">
+                  <label className="vw-field-label" htmlFor="term-cat-filter">
+                    {copy.filterCatLabel}
+                  </label>
+                  <Select
+                    id="term-cat-filter"
+                    value={categoryFilter}
+                    onChange={(event) => setCategoryFilter(event.target.value)}
+                    options={[
+                      { value: "ALL", label: copy.allCatsOption },
+                      ...scopedCategories.map((c) => ({ value: c.code, label: c.label })),
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {showAddTermForm ? (
+                <div className="vw-panel-card vw-panel-card--quiet">
+                  <strong>{copy.addTermHeading}</strong>
+                  <div className="vw-input-action-row">
+                    <div className="vw-field-col">
+                      <label className="vw-field-label" htmlFor="new-term-text">
+                        {copy.newTermContentLabel}
+                      </label>
+                      <Input
+                        id="new-term-text"
+                        value={newTermText}
+                        onChange={(event) => setNewTermText(event.target.value)}
+                        placeholder={
+                          newTermMatchKind === "REGEX"
+                            ? copy.newTermRegexPlaceholder
+                            : copy.newTermPlainPlaceholder
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="new-term-cat">
+                        {copy.newTermCatLabel}
+                      </label>
+                      <Select
+                        id="new-term-cat"
+                        value={effectiveNewCategory}
+                        onChange={(event) => setNewTermCategory(event.target.value)}
+                        options={
+                          scopedCategories.length > 0
+                            ? scopedCategories.map((c) => ({ value: c.code, label: c.label }))
+                            : [{ value: defaultCatForList, label: defaultCatForList }]
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="new-term-kind">
+                        {copy.matchKindLabel}
+                      </label>
+                      <Select
+                        id="new-term-kind"
+                        value={newTermMatchKind}
+                        onChange={(event) =>
+                          setNewTermMatchKind(
+                            event.target.value as "EXACT" | "CONTAINS" | "REGEX",
+                          )
+                        }
+                        options={[
+                          { value: "EXACT", label: copy.matchKinds.EXACT },
+                          { value: "CONTAINS", label: copy.matchKinds.CONTAINS },
+                          { value: "REGEX", label: copy.matchKinds.REGEX },
+                        ]}
+                      />
+                    </div>
+                    <Button
+                      variant="primary"
+                      disabled={busy || !newTermText.trim()}
+                      onClick={() => void handleAddTerm()}
+                    >
+                      {copy.confirmAddTermBtn}
+                    </Button>
+                  </div>
+                  {newTermMatchKind === "REGEX" ? (
+                    <span className="vw-caption">{copy.regexNote}</span>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {showCsvImport ? (
+                <div className="vw-panel-card vw-panel-card--quiet">
+                  <div className="vw-row-between">
+                    <strong>{copy.csvHeading}</strong>
+                    <div className="vw-row-wrap">
+                      <Button size="sm" variant="secondary" onClick={handleDownloadCsvTemplate}>
+                        {copy.downloadTemplateBtn}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => csvFileInputRef.current?.click()}
+                      >
+                        {copy.pickCsvFileBtn}
+                      </Button>
+                      <input
+                        ref={csvFileInputRef}
+                        type="file"
+                        accept=".csv,text/csv"
+                        hidden
+                        aria-label={copy.csvFileInputAria}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null;
+                          event.target.value = "";
+                          void handleCsvFileSelected(file);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <span className="vw-caption">{copy.csvColumnsHint(defaultCatForList)}</span>
+                  <div className="vw-field-col--wide">
+                    <label className="vw-field-label" htmlFor="term-csv-box">
+                      {copy.csvRowsLabel}
+                    </label>
+                    <Textarea
+                      id="term-csv-box"
+                      rows={4}
+                      value={csvText}
+                      onChange={(event) => setCsvText(event.target.value)}
+                      placeholder={copy.csvPlaceholder(defaultCatForList)}
+                    />
+                  </div>
+                  <div className="vw-row-wrap">
+                    <Button
+                      variant="primary"
+                      disabled={busy || !csvText.trim()}
+                      onClick={() => void handleCsvImport()}
+                    >
+                      {copy.validateImportCsvBtn}
+                    </Button>
+                    <Button variant="quiet" onClick={() => setShowCsvImport(false)}>
+                      {copy.cancelBtn}
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
+              <TableShell
+                label={copy.termsTableLabel}
+                columns={[
+                  { key: "term", label: copy.colTerm },
+                  { key: "category", label: copy.colCategory },
+                  { key: "matchKind", label: copy.colMatchKind },
+                  { key: "enabled", label: copy.colEnabled },
+                  { key: "actions", label: copy.colActions, align: "end" },
+                ]}
+                rows={filteredEntries.map((entry) => ({
+                  term: <UntrustedText text={entry.term} />,
+                  category:
+                    categories.find((c) => c.code === entry.categoryCode)?.label ??
+                    entry.categoryCode,
+                  matchKind: <Badge tone="neutral">{matchKindLabel(entry.matchKind, copy)}</Badge>,
+                  enabled: (
+                    <Switch
+                      label={entry.enabled ? copy.enabledSwitchLabel : copy.disabledSwitchLabel}
+                      checked={entry.enabled}
+                      onChange={(event) =>
+                        void persistEntries(
+                          entries.map((item) =>
+                            item.id === entry.id
+                              ? { ...item, enabled: event.target.checked }
+                              : item,
+                          ),
+                          (c) => c.messages.termToggled,
+                        )
+                      }
+                    />
+                  ),
+                  actions: (
+                    <TermRowActions
+                      entry={entry}
+                      copy={copy}
+                      onEdit={(item) => setEditingEntry(item)}
+                      onDelete={(id) =>
+                        void persistEntries(
+                          entries.filter((item) => item.id !== id),
+                          (c) => c.messages.termDeleted,
+                        )
+                      }
+                    />
+                  ),
+                }))}
+                emptyState={
+                  <EmptyState
+                    title={copy.emptyTermsTitle}
+                    description={copy.emptyTermsDesc}
+                  />
+                }
+              />
+            </section>
+          </div>
+        ) : section === "scoring" ? (
+          <div className="vw-stack-md">
+            <section className="vw-panel-card" aria-label={copy.modelsAria}>
+              <strong>{copy.modelsHeading}</strong>
+              {modelForm !== null ? (
+                <>
+                  <Switch
+                    label={copy.scToggleLabel}
+                    description={copy.scToggleDesc}
+                    checked={modelForm.scTranslationEnabled}
+                    onChange={(event) =>
+                      setModelForm({
+                        ...modelForm,
+                        scTranslationEnabled: event.target.checked,
+                      })
+                    }
+                  />
+                  {modelResp?.modelFault ? (
+                    <BannerNotice tone="warning">{modelResp.modelFault.message}</BannerNotice>
+                  ) : null}
+                  {renderModelPicker(
+                    "mod-realtime",
+                    copy.modelRealtimeLabel,
+                    modelForm.realtimeModeration,
+                    (next) => setModelForm({ ...modelForm, realtimeModeration: next }),
+                  )}
+                  {renderModelPicker(
+                    "mod-sc",
+                    copy.modelScLabel,
+                    modelForm.scTranslation,
+                    (next) => setModelForm({ ...modelForm, scTranslation: next }),
+                  )}
+                  {renderModelPicker(
+                    "mod-review",
+                    copy.modelReviewLabel,
+                    modelForm.review,
+                    (next) => setModelForm({ ...modelForm, review: next }),
+                  )}
+                  <div>
+                    <Button
+                      variant="primary"
+                      loading={busy}
+                      onClick={() => void handleSaveModels()}
+                    >
+                      {copy.saveModelsBtn}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <EmptyState title={copy.loadingModelsTitle} />
+              )}
+            </section>
+
+            <section className="vw-panel-card" aria-label={copy.scoringAria}>
+              <strong>{copy.scoringHeading}</strong>
+              {adminForm !== null ? (
+                <>
+                  <div className="vw-row-wrap">
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="sc-init">
+                        {copy.scoreInitLabel}
+                      </label>
+                      <NumberInput
+                        id="sc-init"
+                        value={adminForm.scoring.initialScore}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            scoring: {
+                              ...adminForm.scoring,
+                              initialScore: Number(e.target.value) || 0,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="sc-min">
+                        {copy.scoreMinLabel}
+                      </label>
+                      <NumberInput
+                        id="sc-min"
+                        value={adminForm.scoring.minScore}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            scoring: {
+                              ...adminForm.scoring,
+                              minScore: Number(e.target.value) || 0,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="sc-max">
+                        {copy.scoreMaxLabel}
+                      </label>
+                      <NumberInput
+                        id="sc-max"
+                        value={adminForm.scoring.maxScore}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            scoring: {
+                              ...adminForm.scoring,
+                              maxScore: Number(e.target.value) || 0,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="sc-reward">
+                        {copy.scoreRewardLabel}
+                      </label>
+                      <NumberInput
+                        id="sc-reward"
+                        value={adminForm.scoring.rewardDelta}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            scoring: {
+                              ...adminForm.scoring,
+                              rewardDelta: Number(e.target.value) || 0,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="sc-penalty">
+                        {copy.scorePenaltyLabel}
+                      </label>
+                      <NumberInput
+                        id="sc-penalty"
+                        value={adminForm.scoring.penaltyDelta}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            scoring: {
+                              ...adminForm.scoring,
+                              penaltyDelta: Number(e.target.value) || 0,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="vw-row-wrap">
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="q-rt">
+                        {copy.queueRtLabel}
+                      </label>
+                      <NumberInput
+                        id="q-rt"
+                        value={adminForm.queue.realtimeConcurrency}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            queue: {
+                              ...adminForm.queue,
+                              realtimeConcurrency: Number(e.target.value) || 1,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="q-sc">
+                        {copy.queueScLabel}
+                      </label>
+                      <NumberInput
+                        id="q-sc"
+                        value={adminForm.queue.scConcurrency}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            queue: {
+                              ...adminForm.queue,
+                              scConcurrency: Number(e.target.value) || 1,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="q-batch">
+                        {copy.queueBatchLabel}
+                      </label>
+                      <NumberInput
+                        id="q-batch"
+                        value={adminForm.queue.reviewBatchSize}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            queue: {
+                              ...adminForm.queue,
+                              reviewBatchSize: Number(e.target.value) || 1,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="q-deadline">
+                        {copy.queueDeadlineLabel}
+                      </label>
+                      <NumberInput
+                        id="q-deadline"
+                        value={adminForm.queue.taskDeadlineMs}
+                        onChange={(e) =>
+                          setAdminForm({
+                            ...adminForm,
+                            queue: {
+                              ...adminForm.queue,
+                              taskDeadlineMs: Number(e.target.value) || 1000,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Button
+                      variant="primary"
+                      loading={busy}
+                      onClick={() => void handleSaveAdminSettings((c) => c.messages.scoringSaved)}
+                    >
+                      {copy.saveScoringBtn}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <EmptyState title={copy.loadingScoringTitle} />
+              )}
+            </section>
+          </div>
+        ) : (
+          <section className="vw-panel-card" aria-label={copy.retentionAria}>
+            <strong>{copy.retentionHeading}</strong>
+            {adminForm !== null ? (
+              <>
+                <div className="vw-row-wrap">
+                  <div className="vw-field-col--compact">
+                    <label className="vw-field-label" htmlFor="ret-change">
+                      {copy.retChangeLabel}
+                    </label>
+                    <NumberInput
+                      id="ret-change"
+                      value={adminForm.retention.changeLogDays}
+                      onChange={(e) =>
+                        setAdminForm({
+                          ...adminForm,
+                          retention: {
+                            ...adminForm.retention,
+                            changeLogDays: Number(e.target.value) || 1,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="vw-field-col--compact">
+                    <label className="vw-field-label" htmlFor="ret-tech">
+                      {copy.retTechLabel}
+                    </label>
+                    <NumberInput
+                      id="ret-tech"
+                      value={adminForm.retention.technicalLogDays}
+                      onChange={(e) =>
+                        setAdminForm({
+                          ...adminForm,
+                          retention: {
+                            ...adminForm.retention,
+                            technicalLogDays: Number(e.target.value) || 1,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="vw-field-col--compact">
+                    <label className="vw-field-label" htmlFor="ret-evidence">
+                      {copy.retEvidenceLabel}
+                    </label>
+                    <NumberInput
+                      id="ret-evidence"
+                      value={adminForm.retention.evidenceDays}
+                      onChange={(e) =>
+                        setAdminForm({
+                          ...adminForm,
+                          retention: {
+                            ...adminForm.retention,
+                            evidenceDays: Number(e.target.value) || 1,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Button
+                    variant="primary"
+                    loading={busy}
+                    onClick={() => void handleSaveAdminSettings((c) => c.messages.retentionSaved)}
+                  >
+                    {copy.saveRetentionBtn}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <EmptyState title={copy.loadingRetentionTitle} />
+            )}
+          </section>
+        )}
+      </SettingsLayout>
+
+      <Dialog
+        open={editingEntry !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingEntry(null);
+        }}
+        title={copy.editDialogTitle}
+      >
+        {editingEntry !== null ? (
+          <div className="vw-stack-md">
+            <div className="vw-field-col">
+              <label className="vw-field-label" htmlFor="edit-term-input">
+                {copy.editTermTextLabel}
+              </label>
+              <Input
+                id="edit-term-input"
+                value={editingEntry.term}
+                onChange={(e) => setEditingEntry({ ...editingEntry, term: e.target.value })}
+              />
+            </div>
+            <div className="vw-field-col--compact">
+              <label className="vw-field-label" htmlFor="edit-term-kind">
+                {copy.matchKindLabel}
+              </label>
+              <Select
+                id="edit-term-kind"
+                value={editingEntry.matchKind}
+                onChange={(e) =>
+                  setEditingEntry({
+                    ...editingEntry,
+                    matchKind: e.target.value as ExtendedTermEntryView["matchKind"],
+                  })
+                }
+                options={[
+                  { value: "EXACT", label: copy.matchKinds.EXACT },
+                  { value: "CONTAINS", label: copy.matchKinds.CONTAINS },
+                  { value: "REGEX", label: copy.matchKinds.REGEX },
+                ]}
+              />
+            </div>
+            <div className="vw-row-wrap">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  const saved = editingEntry;
+                  setEditingEntry(null);
+                  void persistEntries(
+                    entries.map((item) => (item.id === saved.id ? saved : item)),
+                    (c) => c.messages.termUpdated,
+                  );
+                }}
+              >
+                {copy.saveEditBtn}
+              </Button>
+              <Button variant="quiet" onClick={() => setEditingEntry(null)}>
+                {copy.cancelBtn}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Dialog>
+    </div>
+  );
+}
+
+export function AdminPage({ api }: AdminPageProps) {
+  const params = useParams();
+
+  return (
+    <VoxWardShell
+      activeNavId="settings"
+      channelId={params.channelId}
+      showChannelSelector
+      requireAuth
+      pageTitle={(locale) => pickLocale(ADMIN_COPY, locale).pageTitle}
+      pageDescription={(locale) => pickLocale(ADMIN_COPY, locale).pageDescription}
+    >
+      <AdminSurface channelIdParam={params.channelId} api={api} />
+    </VoxWardShell>
   );
 }

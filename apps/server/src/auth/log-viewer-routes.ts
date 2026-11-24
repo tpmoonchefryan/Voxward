@@ -1,8 +1,11 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { LogViewer, ViewerFailureCode, ViewerResult } from "@voxward/contracts";
 import { z } from "zod";
+import { readIntegrationLogs } from "../db/channel-settings-store.js";
 import type { VoxwardDatabase } from "../db/client.js";
 import { authenticateRequest } from "./guard.js";
+import { findActiveMembership } from "./members.js";
+import { membershipAllows } from "./permissions.js";
 
 export interface LogViewerRoutesOptions {
   readonly database: VoxwardDatabase;
@@ -92,6 +95,27 @@ export const logViewerRoutes: FastifyPluginAsync<LogViewerRoutesOptions> = async
           limit: query.limit ?? null,
         }),
       );
+    },
+  );
+
+  app.get<{ Params: { channelId: string } }>(
+    "/internal/channels/:channelId/logs/integration",
+    async (request, reply) => {
+      const actorRef = sessionAccountOf(database, request);
+      const membership = findActiveMembership(database, request.params.channelId, actorRef);
+      if (membership === undefined || !membershipAllows(membership, "logs.view")) {
+        throw new ViewerRouteFailure(403, "FORBIDDEN");
+      }
+      const query = parseQuery(CHANGE_QUERY, request.query);
+      const all = readIntegrationLogs(database, request.params.channelId);
+      const filtered = query.correlationId
+        ? all.filter((item) => item.correlationId === query.correlationId)
+        : all;
+      const limit = query.limit ?? 50;
+      const offset = query.cursor ? Math.max(0, Number.parseInt(query.cursor, 10) || 0) : 0;
+      const page = filtered.slice(offset, offset + limit);
+      const nextCursor = offset + page.length < filtered.length ? String(offset + page.length) : null;
+      return reply.header("cache-control", "no-store").send({ items: page, nextCursor });
     },
   );
 };

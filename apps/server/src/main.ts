@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { buildApp } from "./app.js";
 import { describeConfigError, loadConfig } from "./config/load.js";
+import { registerProductionSpaRoutes, resolveWebDistDir } from "./config/web-static.js";
 import { DatabaseSetupError, openDatabase, type VoxwardDatabase } from "./db/client.js";
 import { runMigrations } from "./db/migrate.js";
 import { createTombstoneLedger } from "./db/tombstone-ledger.js";
@@ -29,6 +30,10 @@ const app = buildApp({
   tombstoneLedger,
   retentionSweepIntervalMs: config.databaseFile === ":memory:" ? undefined : 60_000,
 });
+const webDistDir = resolveWebDistDir();
+if (webDistDir !== undefined) {
+  registerProductionSpaRoutes(app, webDistDir);
+}
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {

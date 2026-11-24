@@ -75,3 +75,10 @@ No design authority is configured for the resolved work context. No authority wa
 ### 3. Documentation & Server Tests
 - `docs/obs/setup.md`: OBS Browser Source (`/overlay/:roomId#...`) and Custom Dock (`/dock/:roomId`) setup instructions, transparent background CSS, and fragment-only credential security notes.
 - `apps/server/test/output-adapter/protocol/s023-q16-q25.test.ts`: Tests `buildApp` against Q16 (WS `vw-cred.` subprotocol auth, query-string refusal, no log echo) and Q25 (400/414 fixed `{ error }`, Pino log redaction of percent-encoded credentials in URL and `Host` header).
+
+### 4. 2026-11-24 VW-Draft-01 验收修订（VOXWARD-INIT-002）
+- 依据 Owner 已验收纪要 `minutes:9e93ffb0` 与 `minutes:35d3f3f6`：
+  - 审核拦截（BLOCK）消息后端静默丢弃、不向 OBS 下游发送；`/overlay/:roomId` 彻底移除 `WardBarrier` 拦截提示框、拦截音效与静音开关；
+  - 若快速通道已上屏消息事后被追回拦截，`/overlay/:roomId` 仅静默移除匹配 `platformOrder` 的已上屏气泡，不渲染任何拦截提示或触发声音；
+  - 明确 VoxWard 仅控制自有 `/overlay/:roomId`（400×800 竖屏透明源）内部气泡与 YouTube 7 档 SC 卡片样式，不控制 OBS 主画面或第三方 blivechat 皮肤。
+- 详细实现规范见 `.kiro/specs/voxward-frontend-v2/design.md`。

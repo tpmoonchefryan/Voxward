@@ -1,27 +1,15 @@
-import type { DeleteMode } from "@voxward/contracts";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { UntrustedText } from "../../components/untrusted-text";
-import { ApiFailure, createDataApi, messageFor, type DataApi, type SubjectPanel, type VerificationInput } from "./api";
+import type { DeleteMode } from "@voxward/contracts";
+import { Badge, Button, Card, EmptyState, Input, KeyValueList, TableShell } from "@tcrn/ui-react/approved";
+import { BannerNotice } from "../../components/banner-notice";
+import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
+import { DATA_COPY, DEFAULT_VOXWARD_LOCALE, pickLocale, type DataCopy, type VoxWardLocale } from "../../i18n";
+import { VoxWardShell, useVoxWardShell } from "../../shell";
+import { createDataApi, messageFor, type DataApi, type SubjectPanel, type VerificationInput } from "./api";
 import { DeleteActions } from "./DeleteActions";
-import { IDLE_FLOW, deleteRequestInput, reduceDeleteFlow, type DeleteFlow, type DeleteFlowEvent } from "./flow";
-import { NOTICE_TEXT, RequestStatus } from "./RequestStatus";
-
-const IDENTITY_LABEL: Readonly<Record<string, string>> = {
-  CHANNEL_OWNER: "主播",
-  MODERATOR: "房管",
-  PAID_MEMBER: "付费会员",
-  VERIFIED_ACCOUNT: "已验证账号",
-  UNKNOWN: "未知",
-};
-
-const LIST_LABEL: Readonly<Record<string, string>> = { BLACKLIST: "黑名单", WHITELIST: "白名单" };
-
-const CATEGORY_LABEL: Readonly<Record<string, string>> = {
-  TECHNICAL_LOG: "技术日志",
-  EVIDENCE: "证据正文",
-  CHANGE_LOG: "变更日志",
-};
+import { deleteRequestInput, IDLE_FLOW, reduceDeleteFlow, type DeleteFlow } from "./flow";
+import { RequestStatus } from "./RequestStatus";
 
 export interface DataPanelViewProps {
   readonly channelId: string;
@@ -31,174 +19,294 @@ export interface DataPanelViewProps {
   readonly subject: SubjectPanel | null;
   readonly flow: DeleteFlow;
   readonly message: string | null;
+  readonly locale?: VoxWardLocale;
   readonly onQueryChange: (value: string) => void;
   readonly onLookup: () => void;
   readonly onChoose: (mode: DeleteMode) => void;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
   readonly onVerify: (requestId: string, input: VerificationInput) => void;
+  readonly onExecute?: (requestId: string) => void;
 }
 
-function SubjectSummary({ subject }: { readonly subject: SubjectPanel }) {
+function listLabel(list: SubjectPanel["list"], copy: DataCopy): string {
+  if (list === "BLACKLIST") return copy.listBlacklist;
+  if (list === "WHITELIST") return copy.listWhitelist;
+  return copy.listNormal;
+}
+
+function SubjectSummary({
+  subject,
+  copy,
+}: {
+  readonly subject: SubjectPanel;
+  readonly copy: DataCopy;
+}) {
+  const uniqueNotices = [...new Set(subject.notices)];
   return (
-    <section aria-label="主体概况">
-      <h2>主体概况</h2>
-      <p>
-        主体 <bdi>
-          <UntrustedText text={subject.subjectRef} />
-        </bdi>
-      </p>
-      <p>当前评分：{subject.currentScore === null ? "无记录" : subject.currentScore}</p>
-      <p>身份来源：{subject.identity === null ? "无记录" : (IDENTITY_LABEL[subject.identity.kind] ?? "未知")}</p>
-      <p>名单：{subject.list === null ? "无" : LIST_LABEL[subject.list]}</p>
-      <p>记分例外：{subject.exception?.active === true ? "有效" : "无"}</p>
-      <p>评分记录：{subject.ledgerEntryCount} 条</p>
-      <h3>保留的数据</h3>
-      <ul>
-        {subject.retention.map((item) => (
-          <li key={item.category}>
-            {CATEGORY_LABEL[item.category] ?? "其他"}：{item.count} 条，保留 {item.retentionDays} 天（自创建起算，到期后删除）
-          </li>
-        ))}
-      </ul>
+    <section aria-label={copy.summaryAria} className="vw-panel-card">
+      <h2>{copy.summaryHeading}</h2>
+      <KeyValueList
+        items={[
+          {
+            key: "ref",
+            label: copy.labelSubjectRef,
+            value: (
+              <bdi>
+                <UntrustedText text={subject.subjectRef} />
+              </bdi>
+            ),
+          },
+          {
+            key: "score",
+            label: copy.labelScore,
+            value: subject.currentScore === null ? copy.scoreUnset : String(subject.currentScore),
+          },
+          {
+            key: "list",
+            label: copy.labelList,
+            value: (
+              <Badge
+                tone={
+                  subject.list === "BLACKLIST"
+                    ? "danger"
+                    : subject.list === "WHITELIST"
+                      ? "positive"
+                      : "neutral"
+                }
+              >
+                {listLabel(subject.list, copy)}
+              </Badge>
+            ),
+          },
+          {
+            key: "exception",
+            label: copy.labelException,
+            value: subject.exception?.active ? copy.exceptionActive : copy.exceptionNormal,
+          },
+          {
+            key: "ledger",
+            label: copy.labelLedger,
+            value: copy.ledgerCount(subject.ledgerEntryCount),
+          },
+        ]}
+      />
+
+      {subject.retention.length > 0 ? (
+        <TableShell
+          label={copy.retentionTableLabel}
+          columns={[
+            { key: "category", label: copy.colCategory },
+            { key: "count", label: copy.colCount },
+            { key: "days", label: copy.colDays },
+          ]}
+          rows={subject.retention.map((row) => ({
+            category: row.category,
+            count: row.count,
+            days: copy.daysUnit(row.retentionDays),
+          }))}
+        />
+      ) : null}
+
+      {uniqueNotices.map((code) => (
+        <BannerNotice key={code} tone="warning">
+          {copy.notices[code] ?? copy.noticeFallback}
+        </BannerNotice>
+      ))}
     </section>
   );
 }
 
-/**
- * The panel as a pure view. Without data.handle it shows the refusal and nothing else, so the lookup, the subject, and
- * every deletion or verification action stay out of the page.
- */
-export function DataPanelView(props: DataPanelViewProps) {
-  const { channelId, dataHandle, query, subject, flow, message } = props;
+export function DataPanelView({
+  channelId,
+  dataHandle,
+  query,
+  subject,
+  flow,
+  message,
+  locale = DEFAULT_VOXWARD_LOCALE,
+  onQueryChange,
+  onLookup,
+  onChoose,
+  onConfirm,
+  onCancel,
+  onVerify,
+  onExecute,
+}: DataPanelViewProps) {
+  const copy = pickLocale(DATA_COPY, locale);
+
+  if (dataHandle === null) {
+    return (
+      <section aria-label={copy.checkingAria}>
+        <Card>
+          <EmptyState title={copy.checkingTitle} description={copy.checkingDesc(channelId)} />
+        </Card>
+      </section>
+    );
+  }
+
+  if (!dataHandle) {
+    return (
+      <section aria-label={copy.noPermAria}>
+        <BannerNotice tone="warning">{copy.noPermMsg}</BannerNotice>
+      </section>
+    );
+  }
+
   return (
-    <main>
-      <h1>用户数据面板</h1>
-      <p>
-        频道 <bdi>
-          <UntrustedText text={channelId} />
-        </bdi>
-      </p>
-      {dataHandle === null ? <p>正在检查权限…</p> : null}
-      {dataHandle === false ? (
-        <p role="alert">当前账号没有数据管理权限，无法查看或操作本频道的数据请求。</p>
-      ) : null}
-      {dataHandle === true ? (
-        <>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              props.onLookup();
-            }}
-          >
-            <label>
-              主体引用（稳定 ID）
-              <input value={query} onChange={(event) => props.onQueryChange(event.target.value)} />
+    <div className="vw-stack-lg">
+      {message ? <BannerNotice tone="warning">{message}</BannerNotice> : null}
+
+      <section className="vw-panel-card" aria-label={copy.lookupAria}>
+        <form
+          className="vw-input-action-row"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onLookup();
+          }}
+        >
+          <div className="vw-field-col">
+            <label className="vw-field-label" htmlFor="data-subject-lookup">
+              {copy.subjectRefLabel}
             </label>
-            <button type="submit">查询</button>
-          </form>
-          <p>按稳定 ID 定位主体，不按昵称查找。</p>
-          {message !== null ? <p role="alert">{message}</p> : null}
-          {subject !== null ? (
-            <>
-              <SubjectSummary subject={subject} />
-              <RequestStatus requests={subject.requests} canVerify onVerify={props.onVerify} />
-              <DeleteActions
-                flow={flow}
-                onChoose={props.onChoose}
-                onConfirm={props.onConfirm}
-                onCancel={props.onCancel}
-              />
-              <ul>
-                {subject.notices.map((code) => (
-                  <li key={code}>{NOTICE_TEXT[code] ?? ""}</li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-        </>
-      ) : null}
-    </main>
+            <Input
+              id="data-subject-lookup"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder={copy.subjectRefPlaceholder}
+            />
+          </div>
+          <Button type="submit" variant="primary" disabled={query.trim() === ""}>
+            {copy.lookupBtn}
+          </Button>
+        </form>
+      </section>
+
+      {subject !== null ? (
+        <div className="vw-stack-lg">
+          <SubjectSummary subject={subject} copy={copy} />
+          <DeleteActions
+            flow={flow}
+            locale={locale}
+            onChoose={onChoose}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+          />
+          <RequestStatus
+            requests={subject.requests}
+            canVerify={true}
+            locale={locale}
+            onVerify={onVerify}
+            onExecute={onExecute}
+          />
+        </div>
+      ) : (
+        <Card tone="quiet">
+          <EmptyState title={copy.emptyTitle} description={copy.emptyDesc} />
+        </Card>
+      )}
+    </div>
   );
 }
 
-function codeOf(error: unknown): string {
-  return error instanceof ApiFailure ? error.code : "INTERNAL_ERROR";
+export interface DataComplianceSurfaceProps {
+  readonly channelId: string;
+  readonly api?: DataApi;
+  readonly forceDataHandle?: boolean;
+  readonly locale?: VoxWardLocale;
 }
 
-/** The page: loads the capability, looks a subject up by its stable reference, and drives the deletion flow. */
-export function DataPanelPage() {
-  const { channelId = "" } = useParams();
-  const api = useMemo<DataApi>(() => createDataApi(), []);
-  const [dataHandle, setDataHandle] = useState<boolean | null>(null);
+export function DataComplianceSurface({
+  channelId,
+  api,
+  forceDataHandle,
+  locale,
+}: DataComplianceSurfaceProps) {
+  const { locale: shellLocale } = useVoxWardShell();
+  const resolvedLocale = locale ?? shellLocale;
+  const client = useMemo(() => api ?? createDataApi(), [api]);
+  const [dataHandle, setDataHandle] = useState<boolean | null>(forceDataHandle ?? null);
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState<SubjectPanel | null>(null);
   const [flow, setFlow] = useState<DeleteFlow>(IDLE_FLOW);
-  const [message, setMessage] = useState<string | null>(null);
+  const [errorObj, setErrorObj] = useState<unknown>(null);
 
   useEffect(() => {
+    if (forceDataHandle !== undefined) {
+      setDataHandle(forceDataHandle);
+      return;
+    }
     let active = true;
-    api
+    setDataHandle(null);
+    client
       .capabilities(channelId)
-      .then((capabilities) => {
-        if (active) setDataHandle(capabilities.dataHandle);
+      .then((res) => {
+        if (active) setDataHandle(res.dataHandle);
       })
-      .catch((error: unknown) => {
+      .catch((error) => {
         if (!active) return;
         setDataHandle(false);
-        setMessage(messageFor(error));
+        setErrorObj(error);
       });
     return () => {
       active = false;
     };
-  }, [api, channelId]);
+  }, [channelId, client, forceDataHandle]);
 
-  async function refresh(subjectRef: string): Promise<void> {
+  const handleLookup = useCallback(async () => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    setErrorObj(null);
+    setFlow(IDLE_FLOW);
     try {
-      setSubject(await api.subject(channelId, subjectRef));
+      const panel = await client.subject(channelId, trimmed);
+      setSubject(panel);
     } catch (error) {
       setSubject(null);
-      setMessage(messageFor(error));
+      setErrorObj(error);
     }
-  }
+  }, [channelId, client, query]);
 
-  function dispatch(event: DeleteFlowEvent): void {
-    setFlow((state) => reduceDeleteFlow(state, event));
-  }
-
-  async function lookup(): Promise<void> {
-    const subjectRef = query.trim();
-    if (subjectRef === "") {
-      setMessage("请输入主体引用。");
-      return;
-    }
-    setMessage(null);
-    setFlow(IDLE_FLOW);
-    await refresh(subjectRef);
-  }
-
-  async function confirm(): Promise<void> {
-    if (subject === null || flow.phase !== "confirming") return;
-    const input = deleteRequestInput(subject.subjectRef, flow.mode);
-    dispatch({ type: "confirm" });
+  const handleConfirmDelete = async () => {
+    if (flow.phase !== "confirming" || subject === null) return;
+    const mode = flow.mode;
+    setFlow((prev) => reduceDeleteFlow(prev, { type: "confirm" }));
     try {
-      const registered = await api.register(channelId, input);
-      dispatch({ type: "registered", requestId: registered.requestId });
-      await refresh(subject.subjectRef);
+      const req = await client.register(channelId, deleteRequestInput(subject.subjectRef, mode));
+      setFlow((prev) => reduceDeleteFlow(prev, { type: "registered", requestId: req.requestId }));
+      const refreshed = await client.subject(channelId, subject.subjectRef);
+      setSubject(refreshed);
     } catch (error) {
-      dispatch({ type: "failed", code: codeOf(error) });
+      const code = error instanceof Error && "code" in error ? String((error as { code: string }).code) : "INTERNAL_ERROR";
+      setFlow((prev) => reduceDeleteFlow(prev, { type: "failed", code }));
     }
-  }
+  };
 
-  async function verify(requestId: string, input: VerificationInput): Promise<void> {
+  const handleVerify = async (requestId: string, input: VerificationInput) => {
     if (subject === null) return;
+    setErrorObj(null);
     try {
-      await api.decideVerification(channelId, requestId, input);
-      await refresh(subject.subjectRef);
+      await client.decideVerification(channelId, requestId, input);
+      const refreshed = await client.subject(channelId, subject.subjectRef);
+      setSubject(refreshed);
     } catch (error) {
-      setMessage(messageFor(error));
+      setErrorObj(error);
     }
-  }
+  };
+
+  const handleExecute = async (requestId: string) => {
+    if (subject === null) return;
+    setErrorObj(null);
+    try {
+      await client.execute(channelId, requestId);
+      const refreshed = await client.subject(channelId, subject.subjectRef);
+      setSubject(refreshed);
+    } catch (error) {
+      setErrorObj(error);
+    }
+  };
+
+  const message = errorObj === null ? null : messageFor(errorObj, resolvedLocale);
 
   return (
     <DataPanelView
@@ -208,12 +316,33 @@ export function DataPanelPage() {
       subject={subject}
       flow={flow}
       message={message}
+      locale={resolvedLocale}
       onQueryChange={setQuery}
-      onLookup={() => void lookup()}
-      onChoose={(mode) => dispatch({ type: "choose", mode })}
-      onConfirm={() => void confirm()}
-      onCancel={() => dispatch({ type: "cancel" })}
-      onVerify={(requestId, input) => void verify(requestId, input)}
+      onLookup={() => void handleLookup()}
+      onChoose={(mode) => setFlow((prev) => reduceDeleteFlow(prev, { type: "choose", mode }))}
+      onConfirm={() => void handleConfirmDelete()}
+      onCancel={() => setFlow((prev) => reduceDeleteFlow(prev, { type: "cancel" }))}
+      onVerify={(reqId, inp) => void handleVerify(reqId, inp)}
+      onExecute={(reqId) => void handleExecute(reqId)}
     />
+  );
+}
+
+export function DataPanelPage({ api }: { readonly api?: DataApi }) {
+  const params = useParams();
+  const { activeChannelId } = useVoxWardShell();
+  const channelId = params.channelId ?? activeChannelId;
+
+  return (
+    <VoxWardShell
+      activeNavId="data"
+      channelId={channelId}
+      showChannelSelector
+      requireAuth
+      pageTitle={(locale) => pickLocale(DATA_COPY, locale).pageTitle}
+      pageDescription={(locale) => pickLocale(DATA_COPY, locale).pageDescription}
+    >
+      <DataComplianceSurface channelId={channelId} api={api} />
+    </VoxWardShell>
   );
 }

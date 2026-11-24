@@ -28,11 +28,12 @@ import { runShortTransaction } from "../../../src/db/transaction.js";
 import { CERTIFICATE_SUMMARY, createAuditStore } from "../../../src/modules/audit-store/index.js";
 import { replayTombstones } from "../../../src/modules/data-lifecycle-service/index.js";
 import { buildRegistry } from "../../../src/modules/registry.js";
-import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../../db/helpers.js";
+import { migratedDatabase, removeDirectory, scratchDirectory } from "../../db/helpers.js";
 
 const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" };
 const PASSWORD = "correct horse battery";
-const NOW = new Date(T0);
+const NOW = new Date();
+const T0 = NOW.toISOString();
 
 function sha256(text: string): string {
   return createHash("sha256").update(text).digest("hex");

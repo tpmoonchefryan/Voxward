@@ -1,0 +1,190 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "530772cfcd2d1213db4b65dd0414066255226a947377412e4d7221533315cade"
+  },
+  "id": "component/ShellPins",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/07b-shell-lower",
+    "pattern/shell-preferences",
+    "assets/icons"
+  ],
+  "optional": [
+    "pattern/customer-list-boundary"
+  ],
+  "content": {
+    "name": "ShellPins",
+    "board": "07b-shell-lower",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/07b-shell-lower/index.dc.html",
+      "sha256": "cad83aab5c53df23e6477e3bc9c4e49f0ec465061e2cc161b3b58cbb282ec26f",
+      "line": 60
+    },
+    "normativeText": "固定项存储 ：每用户每产品，服务端偏好（跨设备）；可固定分组、项或子菜单；上限 6，顺序为固定顺序，可拖排；第 7 项起只在菜单里标记已固定。\n完整菜单与下拉都是临时浮层：选中、Esc、点外部即收；没有收起钮；与键之间留 6px。\n标按钮 aria-expanded 、 aria-haspopup=\"dialog\" ；固定的二级菜单同样；浮层 role=\"dialog\" 非模态。\n触摸端：标按钮 ≥ 40，Sheet 行 44，图钉热区 44。",
+    "readerSummary": {
+      "en": "Provide ordered pins and reorder callbacks. Show at most six, move overflow to the menu and hide the strip group below 1024. Pin buttons retain item-specific names.",
+      "zh-CN": "提供有序固定项与重排回调。最多显示六项，溢出进菜单，低于 1024 整组隐藏。图钉保留含项名的名称。",
+      "ja": "順序付き固定項と並べ替えコールバックを指定します。最大6個、残りはメニューへ、1024未満は帯を隠します。ピン名には項目名を含めます。",
+      "ko": "정렬된 고정 항목과 재정렬 콜백을 제공합니다. 최대 6개, 나머지는 메뉴로 이동하고 1024 미만이면 그룹을 숨깁니다. 핀 이름은 항목명을 포함합니다.",
+      "fr": "Fournir favoris ordonnés et réordonnancement. Six visibles au maximum, surplus dans le menu ; groupe masqué sous 1024. Chaque épingle garde un nom lié à l’élément."
+    },
+    "types": {
+      "name": "ShellPins",
+      "kind": "function",
+      "props": [
+        {
+          "name": "align",
+          "type": "ShellPinPlacement",
+          "required": false,
+          "default": "\"start\"",
+          "enumValues": [
+            "end",
+            "start"
+          ]
+        },
+        {
+          "name": "items",
+          "type": "readonly ShellPinItem[]",
+          "required": true
+        },
+        {
+          "name": "landmarkLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "locale",
+          "type": "TcrnLocale | string",
+          "required": false
+        },
+        {
+          "name": "menuIdOf",
+          "type": "(id: string) => string",
+          "required": false
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(openId: string | null) => void",
+          "required": false
+        },
+        {
+          "name": "onPinsReorder",
+          "type": "(orderedIds: readonly string[]) => void",
+          "required": false
+        },
+        {
+          "name": "openId",
+          "type": "string | null",
+          "required": false,
+          "default": "null"
+        },
+        {
+          "name": "selectedId",
+          "type": "string | null",
+          "required": false,
+          "default": "null"
+        }
+      ],
+      "variants": {
+        "align": [
+          "end",
+          "start"
+        ]
+      },
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Navigation/ShellPins.tsx",
+        "line": 158
+      },
+      "propsType": "ShellPinsProps",
+      "typeDefinitions": [
+        {
+          "name": "ShellPinPlacement",
+          "path": "packages/ui-react/src/components/Navigation/ShellPins.tsx",
+          "line": 39,
+          "declaration": "export type ShellPinPlacement = \"start\" | \"end\";"
+        },
+        {
+          "name": "ShellPinItem",
+          "path": "packages/ui-react/src/components/Navigation/ShellPins.tsx",
+          "line": 41,
+          "declaration": "export interface ShellPinItem {\n  /** Stable id: the key of the item in the pin preferences and in data-pin. */\n  id: string;\n  /** Visible name; it truncates on one line and is repeated in the title. */\n  label: string;\n  /** Destination of an item without a drop-down. */\n  href?: string;\n  /** Whether the item opens a drop-down instead of navigating. */\n  hasMenu?: boolean;\n  /** Placement of the pinned group in the top strip (STORY-157). */\n  align?: ShellPinPlacement;\n  /** Whether the link opens an external/secondary window with stroke & external indicator (STORY-157). */\n  external?: boolean;\n  /** Role-gated or route-gated disabled state (STORY-157). */\n  disabled?: boolean;\n  /** Accessible explanation when disabled. */\n  disabledReason?: string;\n}"
+        },
+        {
+          "name": "ShellPinsProps",
+          "path": "packages/ui-react/src/components/Navigation/ShellPins.tsx",
+          "line": 85,
+          "declaration": "export interface ShellPinsProps extends Omit<HTMLAttributes<HTMLElement>, \"children\"> {\n  /** Pinned items in the reader's order. */\n  items: readonly ShellPinItem[];\n  /** The item of the current page (a link) or of the menu the current page sits in (a button). */\n  selectedId?: string | null;\n  /** The item whose drop-down is open. */\n  openId?: string | null;\n  /** Asks to open the drop-down of an item, or to close it (null). */\n  onOpenChange?: (openId: string | null) => void;\n  /** Id of the drop-down an item opens, for aria-controls; derived from a generated id when omitted. */\n  menuIdOf?: (id: string) => string;\n  /** Language of the group's name; the page's own when omitted. */\n  locale?: TcrnLocale | string;\n  /**\n   * The shell's name, which tells this group from another shell's on the same page: the group is\n   * named \"{landmarkLabel} · {pinned items}\" in the reader's language (TCRN-DS-SUB-148). An\n   * aria-label given outright wins.\n   */\n  landmarkLabel?: string;\n  /**\n   * Takes a new order of the items, every id of `items` in it: when a drag in the band ends with\n   * the dragged item in a new place, or when Alt+← / Alt+→ moves the focused item one place\n   * (TCRN-DS-SUB-149). Without it the items do not move.\n   */\n  onPinsReorder?: (orderedIds: readonly string[]) => void;\n  /** Placement of the group in the top strip (\"start\" by default; \"end\" for right backoffice pins). */\n  align?: ShellPinPlacement;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "mixed",
+      "constraint": "Items follow content within the shell strip; at most six are visible, overflow stays in the menu and below 1024 the strip group hides.",
+      "implementation": "shell.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Navigation/ShellPins.tsx",
+      "sha256": "8b814abd631326bd39a011d81fe9005048eaea65624ca84d26a8109f8e121d8b"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 183,
+      "snippet": "case \"ShellPins\":\ncase \"ShellDropdown\": return <ShellExample locale={locale} mode={state === \"phone\" || state === \"sheet\" ? \"phone\" : name === \"ShellDropdown\" || state === \"dropdown\" || state === \"cascade\" ? \"drop\" : name === \"ShellMenu\" || state === \"menu\" || state === \"panel\" || state === \"search\" ? \"menu\" : \"band\"} initialPinCount={state === \"overflow\" ? 8 : 4} />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import type { ComponentProps } from \"react\";\nimport { ShellPins, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example(props: ComponentProps<typeof ShellPins>) {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", gap: \"var(--tcrn-space-2)\" }}>\n      <ShellPins {...props} />\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/shell.css.ts",
+          "sha256": "20eec486a1b9b350ef5c858965fe83bafb47dd361db5154a2bc49ab0b6b1e75b"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": "Supply the typed component props and read pattern/shell-preferences; the snippet does not invent product data or a backend adapter."
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-shellpins--default"
+      },
+      {
+        "state": "overflow",
+        "id": "components-shellpins--overflow"
+      },
+      {
+        "state": "reorder",
+        "id": "components-shellpins--reorder"
+      }
+    ]
+  }
+}

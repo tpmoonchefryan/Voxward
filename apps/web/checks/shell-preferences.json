@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "tcrn.shell-preference-evidence.v1",
+  "source": "http-observation",
+  "scope": {
+    "user": "alice",
+    "tenant": "ch-1",
+    "product": "voxward"
+  },
+  "initialPins": [
+    "moderation",
+    "blocked",
+    "data"
+  ],
+  "actions": [
+    {
+      "kind": "pin",
+      "status": "success",
+      "submitted": [
+        "moderation",
+        "blocked",
+        "data",
+        "guides"
+      ],
+      "readback": [
+        "moderation",
+        "blocked",
+        "data",
+        "guides"
+      ]
+    },
+    {
+      "kind": "unpin",
+      "status": "success",
+      "submitted": [
+        "moderation",
+        "data",
+        "guides"
+      ],
+      "readback": [
+        "moderation",
+        "data",
+        "guides"
+      ]
+    },
+    {
+      "kind": "reorder",
+      "status": "success",
+      "submitted": [
+        "guides",
+        "moderation",
+        "data"
+      ],
+      "readback": [
+        "guides",
+        "moderation",
+        "data"
+      ]
+    }
+  ],
+  "freshSessionReadback": [
+    "guides",
+    "moderation",
+    "data"
+  ],
+  "isolatedUserReadback": [
+    "moderation",
+    "blocked",
+    "data"
+  ],
+  "isolatedTenantReadback": [
+    "moderation",
+    "blocked",
+    "data"
+  ],
+  "isolatedProductReadback": [
+    "moderation",
+    "blocked",
+    "data"
+  ],
+  "failureReported": true,
+  "command": "pnpm exec vitest run apps/server/test/auth/shell-preferences.test.ts"
+}

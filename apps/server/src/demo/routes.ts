@@ -38,6 +38,7 @@ const CUSTOM_EVENT_BODY = z
     subjectKey: z.string().min(1).max(64),
     text: z.string().min(1).max(500),
     isPaid: z.boolean().optional(),
+    amountDisplay: z.string().max(32).nullable().optional(),
     translationText: z.string().max(500).nullable().optional(),
   })
   .strict();

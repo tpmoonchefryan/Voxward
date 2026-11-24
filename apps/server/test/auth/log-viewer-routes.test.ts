@@ -26,7 +26,7 @@ import { technicalEntry } from "../audit-store/viewer/viewer-helpers.js";
 
 const config: ServerConfig = { host: "127.0.0.1", port: 3000, adapters: "synthetic", databaseFile: "data/voxward.sqlite3" };
 const PASSWORD = "correct horse battery";
-const NOW = new Date(T0);
+const NOW = new Date();
 const CH1 = "channel-1";
 const CH2 = "channel-2";
 const NO_ACCESS: AuditAccess = { channelsFor: () => [], capabilitiesFor: () => new Set<string>() };

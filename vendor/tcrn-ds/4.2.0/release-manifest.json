@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "tcrn.release-candidate.v1",
+  "publication": "unpublished",
+  "repository": "tpmoonchefryan/TCRN-Design-System",
+  "plannedTag": "v4.2.0",
+  "candidate": {
+    "version": "4.2.0",
+    "commit": "c114e5e324ca30fe6bc52cadf16c7f039b5953a3",
+    "dirty": false
+  },
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "530772cfcd2d1213db4b65dd0414066255226a947377412e4d7221533315cade"
+  },
+  "docsManifestSha256": "2c7179bf38d1b9cf444c0788425c163ebde26dabe943ceb645180f7fa534b1ba",
+  "plannedUrlsReachability": "not-verified; no release created by this command",
+  "packages": [
+    {
+      "name": "@tcrn/ui-tokens",
+      "version": "4.2.0",
+      "archive": "tcrn-ui-tokens-4.2.0.tgz",
+      "bytes": 11546561,
+      "sha256": "21664ca743cee9a7b9e1197cdc22957feff8f0d62a89d925ee5aeb1364a9b584",
+      "plannedUrl": "https://github.com/tpmoonchefryan/TCRN-Design-System/releases/download/v4.2.0/tcrn-ui-tokens-4.2.0.tgz"
+    },
+    {
+      "name": "@tcrn/ui-copy-state",
+      "version": "4.2.0",
+      "archive": "tcrn-ui-copy-state-4.2.0.tgz",
+      "bytes": 11338,
+      "sha256": "58e6349f9b38d43d5448e13b86e5871f00949dfd8a925b0fa31f3c78c610b63b",
+      "plannedUrl": "https://github.com/tpmoonchefryan/TCRN-Design-System/releases/download/v4.2.0/tcrn-ui-copy-state-4.2.0.tgz"
+    },
+    {
+      "name": "@tcrn/ui-react",
+      "version": "4.2.0",
+      "archive": "tcrn-ui-react-4.2.0.tgz",
+      "bytes": 322181,
+      "sha256": "19e62470d6c9686cdff3d6622389713899b2d1fef24df20095c552a88f0859e4",
+      "plannedUrl": "https://github.com/tpmoonchefryan/TCRN-Design-System/releases/download/v4.2.0/tcrn-ui-react-4.2.0.tgz"
+    },
+    {
+      "name": "@tcrn/ds-consumer-tools",
+      "version": "4.2.0",
+      "archive": "tcrn-ds-consumer-tools-4.2.0.tgz",
+      "bytes": 21099,
+      "sha256": "51168ce6d21b8009c4944bdb4f1a5e922fc0dbb711c4278071cf3c03956bc008",
+      "plannedUrl": "https://github.com/tpmoonchefryan/TCRN-Design-System/releases/download/v4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz"
+    }
+  ]
+}

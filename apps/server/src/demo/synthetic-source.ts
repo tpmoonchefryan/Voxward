@@ -134,6 +134,7 @@ export function buildCustomSyntheticEvent(
     readonly subjectKey: string;
     readonly text: string;
     readonly isPaid?: boolean;
+    readonly amountDisplay?: string | null;
     readonly translationText?: string | null;
   },
   seq: number,
@@ -147,7 +148,7 @@ export function buildCustomSyntheticEvent(
     identityKind: "UNKNOWN",
     text: input.text,
     isPaid: input.isPaid ?? false,
-    amountDisplay: input.isPaid ? "$5.00" : null,
+    amountDisplay: input.amountDisplay !== undefined ? input.amountDisplay : input.isPaid ? "$5.00" : null,
     translationText: input.translationText ?? null,
     receivedAt: nowIso,
     scenarioTag: "custom",

@@ -8,6 +8,8 @@ import {
   TECHNICAL_LEVELS,
   TECHNICAL_STAGES,
   TECHNICAL_STATUSES,
+  type ChangeKind,
+  type ChangeOutcome,
   type LogPage,
   type LogViewerChangeItem,
   type LogViewerEvidence,
@@ -15,6 +17,38 @@ import {
   type LogViewerTechnicalItem,
   type TechnicalData,
 } from "@voxward/contracts";
+import {
+  DEFAULT_VOXWARD_LOCALE,
+  LOGS_COPY,
+  pickLocale,
+  type VoxWardLocale,
+} from "../../i18n";
+
+export type {
+  LogPage,
+  LogViewerChangeItem,
+  LogViewerEvidence,
+  LogViewerTechnicalDetail,
+  LogViewerTechnicalItem,
+  TechnicalData,
+};
+
+export interface IntegrationLogItem {
+  readonly id: string;
+  readonly correlationId: string;
+  readonly adapterId: string;
+  readonly adapterName: string;
+  readonly providerKind: "LIVE_PLATFORM" | "AI_PROVIDER";
+  readonly method: string;
+  readonly url: string;
+  readonly statusCode: number;
+  readonly latencyMs: number;
+  readonly requestHeaders: Readonly<Record<string, string>>;
+  readonly responseHeaders: Readonly<Record<string, string>>;
+  readonly rawRequestBody: string | null;
+  readonly rawResponseBody: string | null;
+  readonly occurredAt: string;
+}
 
 /** A failed read. `code` is the server's fixed code, or `NETWORK` or `INVALID_RESPONSE` when the client raised it. */
 export class LogApiError extends Error {
@@ -52,7 +86,7 @@ function logsPath(channelId: string): string {
 function withQuery(path: string, query: Readonly<Record<string, string | number | null | undefined>>): string {
   const params = new URLSearchParams();
   for (const [name, value] of Object.entries(query)) {
-    if (value !== null && value !== undefined) params.set(name, String(value));
+    if (value !== null && value !== undefined && value !== "") params.set(name, String(value));
   }
   const text = params.toString();
   return text === "" ? path : `${path}?${text}`;
@@ -125,20 +159,51 @@ export async function fetchChain(
   return items;
 }
 
-/** A short Chinese message for the reader. The message depends only on the fixed code. */
-export function describeLogError(error: unknown): string {
-  if (!(error instanceof LogApiError)) return "加载失败。";
+export async function fetchIntegrationPage(
+  channelId: string,
+  query: PageQuery = {},
+  options: ApiOptions = {},
+): Promise<LogPage<IntegrationLogItem>> {
+  const url = withQuery(`${logsPath(channelId)}/integration`, {
+    cursor: query.cursor,
+    limit: query.limit,
+    correlationId: query.correlationId,
+  });
+  return parsePage(await requestJson(url, options), parseIntegrationItem);
+}
+
+export function labelForChangeKind(
+  kind: ChangeKind,
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): string {
+  return pickLocale(LOGS_COPY, locale).changeKinds[kind] ?? kind;
+}
+
+export function labelForChangeOutcome(
+  outcome: ChangeOutcome,
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): string {
+  return pickLocale(LOGS_COPY, locale).changeOutcomes[outcome] ?? outcome;
+}
+
+/** A short message for the reader in the selected locale. The message depends only on the fixed code. */
+export function describeLogError(
+  error: unknown,
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): string {
+  const errors = pickLocale(LOGS_COPY, locale).errors;
+  if (!(error instanceof LogApiError)) return errors.nonError;
   switch (error.code) {
     case "UNAUTHENTICATED":
-      return "请先登录。";
+      return errors.UNAUTHENTICATED;
     case "FORBIDDEN":
-      return "没有查看该频道日志的权限。";
+      return errors.FORBIDDEN;
     case "NOT_FOUND":
-      return "这条日志不存在，或已经到期。";
+      return errors.NOT_FOUND;
     case "NETWORK":
-      return "无法连接服务器。";
+      return errors.NETWORK;
     default:
-      return "加载失败，请稍后再试。";
+      return errors.fallback;
   }
 }
 
@@ -146,7 +211,7 @@ async function requestJson(url: string, options: ApiOptions): Promise<unknown> {
   const send: FetchLike = options.fetchImpl ?? ((input, init) => fetch(input, init));
   let response: Response;
   try {
-    response = await send(url, { headers: { accept: "application/json" }, cache: "no-store" });
+    response = await send(url, { credentials: "same-origin", headers: { accept: "application/json" }, cache: "no-store" });
   } catch {
     throw new LogApiError("NETWORK", null);
   }
@@ -263,7 +328,6 @@ function parseTechnicalItem(value: unknown): LogViewerTechnicalItem | undefined 
   if (value.contractVersion !== CONTRACT_VERSION) return undefined;
   const missing = Object.values(fields).some((field) => field === undefined);
   if (missing) return undefined;
-  // Every field was checked above, so the narrowing below is safe.
   return { ...fields, contractVersion: CONTRACT_VERSION } as LogViewerTechnicalItem;
 }
 
@@ -292,4 +356,54 @@ function parseEvidence(value: unknown): LogViewerEvidence[] | undefined {
     evidence.push({ kind, state, payload });
   }
   return evidence;
+}
+
+function parseStringMap(value: unknown): Record<string, string> | undefined {
+  if (!isRecord(value)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (typeof v === "string") out[k] = v;
+  }
+  return out;
+}
+
+function parseIntegrationItem(value: unknown): IntegrationLogItem | undefined {
+  if (!isRecord(value)) return undefined;
+  const requestHeaders = parseStringMap(value.requestHeaders);
+  const responseHeaders = parseStringMap(value.responseHeaders);
+  if (
+    typeof value.id !== "string" ||
+    typeof value.correlationId !== "string" ||
+    typeof value.adapterId !== "string" ||
+    typeof value.adapterName !== "string" ||
+    (value.providerKind !== "LIVE_PLATFORM" && value.providerKind !== "AI_PROVIDER") ||
+    typeof value.method !== "string" ||
+    typeof value.url !== "string" ||
+    typeof value.statusCode !== "number" ||
+    typeof value.latencyMs !== "number" ||
+    requestHeaders === undefined ||
+    responseHeaders === undefined ||
+    typeof value.occurredAt !== "string"
+  ) {
+    return undefined;
+  }
+  const rawRequestBody = nullableString(value.rawRequestBody);
+  const rawResponseBody = nullableString(value.rawResponseBody);
+  if (rawRequestBody === undefined || rawResponseBody === undefined) return undefined;
+  return {
+    id: value.id,
+    correlationId: value.correlationId,
+    adapterId: value.adapterId,
+    adapterName: value.adapterName,
+    providerKind: value.providerKind,
+    method: value.method,
+    url: value.url,
+    statusCode: value.statusCode,
+    latencyMs: value.latencyMs,
+    requestHeaders,
+    responseHeaders,
+    rawRequestBody,
+    rawResponseBody,
+    occurredAt: value.occurredAt,
+  };
 }

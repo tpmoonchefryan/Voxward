@@ -15,72 +15,70 @@ export interface TroubleshootingItem {
 
 export const INTEGRATION_SUPPORT_MATRIX: readonly SupportMatrixEntry[] = [
   {
-    id: "native-obs",
-    target: "VoxWard 原生 OBS Overlay",
+    id: "youtube-live",
+    target: "YouTube 直播聊天 API v3",
     status: "SUPPORTED",
-    statusLabel: "支持（自托管 WebSocket + # 片段）",
-    endpointOrDocs: "/overlay/:roomId · /output/v1/room (vw-output.v1)",
-    summary:
-      "浏览器/OBS 源通过页面 URL # 片段传入只读凭据并立即清除片段，使用 Sec-WebSocket-Protocol 订阅获准展示事件（DELIVER）与无原文/身份的 WARD_BLOCKED。",
+    statusLabel: "官方协议支持",
+    endpointOrDocs: "平台适配适配器 › YouTube Live Data v3",
+    summary: "支持直播弹幕与 Super Chat 拉流与会员身份基础分映射。",
   },
   {
-    id: "blivechat",
-    target: "blivechat 兼容 WS 协议适配",
+    id: "obs-overlay",
+    target: "OBS 浏览器投屏源（透明无头）",
+    status: "SUPPORTED",
+    statusLabel: "官方投屏输出",
+    endpointOrDocs: "系统集成 › 下游输出适配器 › OBS 透明投屏源",
+    summary: "通过单向加密通道接收放行消息与 7 级 Super Chat；后置拦截自动无声撤回。",
+  },
+  {
+    id: "blivechat-native",
+    target: "blivechat 桌面插件 / 原生回环客户端",
     status: "VERIFIED_LOOPBACK",
-    statusLabel: "协议适配已验证（限本机 loopback E2E）",
-    endpointOrDocs: "/output/blivechat/v1/chat (blivechat-v1.x-json-ws)",
-    summary:
-      "已通过本机 loopback HTTP+WS 验证握手、JOIN_ROOM、HEARTBEAT->HEARTBEAT_REPLY、ALLOW DELIVER 映射为 ADD_TEXT/ADD_SUPER_CHAT（含 text 与 translation）、WARD_BLOCKED 不泄密及撤销 4403 断开；本环境未启动上游独立 blivechat 桌面/Python 二进制进程联调。",
+    statusLabel: "本机回环已验证",
+    endpointOrDocs: "系统集成 › 下游输出适配器 › blivechat / 原生只读输出协议",
+    summary: "云端 VoxWard 经本机 127.0.0.1 回环隧道将过审弹幕桥接至桌面呈现端。",
   },
   {
-    id: "onecomme",
-    target: "OneComme（わんコメ）",
-    status: "UNSUPPORTED",
-    statusLabel: "不支持云端直推",
-    endpointOrDocs: "https://onecomme.com/docs/developer/http-api/ · /plugin/",
-    summary:
-      "云服务器上的 localhost:11180 不是主播本机 PC。MVP 不开发新本机代理，且禁止以反向上传弹幕取代官方平台 API 接入。",
+    id: "kiro-cli-runtime",
+    target: "Kiro CLI 本地推理运行时",
+    status: "VERIFIED_LOOPBACK",
+    statusLabel: "本机受限运行时已验证",
+    endpointOrDocs: "系统集成 › AI 提供商 › Kiro CLI",
+    summary: "以一次性受限运行目录执行弹幕合规分类与 SC 精翻，任务结束自动销毁临时现场。",
   },
   {
-    id: "vts",
-    target: "VTube Studio (VTS)",
+    id: "third-party-sdk",
+    target: "第三方未经签名插件直连",
     status: "UNSUPPORTED",
-    statusLabel: "不支持无本地插件/代理直连",
-    endpointOrDocs: "VTS 本机插件 API（仅主播 PC 本机运行）",
-    summary:
-      "VTS 本机插件 API 仅在主播 PC 本机运行，超出无本机代理 MVP 范围。替代方案仅可由 OBS/浏览器消费只读事件。",
+    statusLabel: "出于安全隔离不支持",
+    endpointOrDocs: "请使用「系统集成」签发只读输出凭据接入",
+    summary: "下游展示端一律禁止上行写控制指令，仅允许通过只读授权接收放行数据。",
   },
 ];
 
 export const TROUBLESHOOTING_ITEMS: readonly TroubleshootingItem[] = [
   {
-    code: "401",
-    symptom: "WebSocket 升级被拒绝（401 Unauthorized）",
-    resolution: "检查 Sec-WebSocket-Protocol 是否包含有效的 vw-cred.<credential>，以及凭据是否已被撤销。",
+    code: "WS_4403",
+    symptom: "OBS 投屏或桌面端提示凭据失效（4403）且停止自动重连",
+    resolution:
+      "该通道凭据已被管理员撤销。请前往「集成管理 › 下游输出凭据」重新签发新凭据并更新本地配置。",
   },
   {
-    code: "404",
-    symptom: "WebSocket 升级返回 404 Not Found",
-    resolution: "确认连接路径为 /output/v1/room（原生）或 /output/blivechat/v1/chat（blivechat 兼容）。",
+    code: "WS_4400",
+    symptom: "连接建立后立即以只读协议违规断开（4400）",
+    resolution:
+      "OBS 浏览器或桌面输出端不允许向服务端发送任何控制帧或弹幕写入消息，请检查客户端脚本版本。",
   },
   {
-    code: "4400",
-    symptom: "连接被以 4400 CLIENT_DATA_NOT_ACCEPTED 关闭",
-    resolution: "输出端点严格只读。原生协议不接受任何客户端数据帧；blivechat 仅接受 JOIN_ROOM 与 HEARTBEAT。",
+    code: "SC_TR_OFF",
+    symptom: "Super Chat 卡片正常显示但未出现中文精翻文本",
+    resolution:
+      "请确认频道所有者已在「系统设置 › 计分与运行策略」开启 SC 精翻开关，并在该页绑定了有效 AI 翻译模型。",
   },
   {
-    code: "4403",
-    symptom: "连接立即以 4403 GRANT_REVOKED 断开",
-    resolution: "该输出凭据已在频道面板撤销或失效。请在后台重新签发只读凭据并更新 OBS/客户端配置。",
-  },
-  {
-    code: "4408",
-    symptom: "连接因 4408 HEARTBEAT_TIMEOUT 断开",
-    resolution: "检查网络连通性与客户端 WebSocket pong/HEARTBEAT 响应是否超时。",
-  },
-  {
-    code: "localhost:11180",
-    symptom: "云端配置填写 localhost:11180 无法推送至主播电脑",
-    resolution: "云端服务器上的 localhost 指向服务器自身而非主播 PC。请改用 VoxWard 原生 OBS Overlay（/overlay/:roomId）。",
+    code: "LOOPBACK_CONN",
+    symptom: "云端部署无法直连主播电脑上的桌面输出端",
+    resolution:
+      "请主播在播控电脑启动 VoxWard 桌面辅助连接器，使用一次性输出凭据建立出站 WSS 长连接后再将本地回环端指向本机客户端。",
   },
 ];

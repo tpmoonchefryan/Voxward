@@ -11,7 +11,24 @@ export default defineConfig({
       "/healthz": "http://127.0.0.1:3000",
       "/internal": "http://127.0.0.1:3000",
       "/auth": "http://127.0.0.1:3000",
-      "/channels": "http://127.0.0.1:3000",
+      "/channels": {
+        target: "http://127.0.0.1:3000",
+        bypass(req) {
+          const url = req.url ?? "";
+          if (
+            req.method === "GET" &&
+            req.headers.accept?.includes("text/html") &&
+            /^\/channels\/[^/]+\/blocked(?:$|\?)/.test(url)
+          ) {
+            return "/index.html";
+          }
+          return undefined;
+        },
+      },
+      "/output": {
+        target: "http://127.0.0.1:3000",
+        ws: true,
+      },
       "/sandbox-api": process.env.VOXWARD_SANDBOX_ORIGIN ?? "http://127.0.0.1:3100",
     },
   },

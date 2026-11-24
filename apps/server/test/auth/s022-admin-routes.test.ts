@@ -13,7 +13,7 @@ import { createCandidateStore, type CandidateStore } from "../../src/modules/mod
 import { buildRegistry } from "../../src/modules/registry.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
 
-const NOW = new Date("2026-11-14T08:00:00.000Z");
+const NOW = new Date();
 const PASSWORD = "test-password-1234";
 const CH1 = "channel-admin-1";
 const CH2 = "channel-admin-2";

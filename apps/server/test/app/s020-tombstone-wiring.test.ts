@@ -178,10 +178,12 @@ describe("S020 composition root tombstone wiring", () => {
     runShortTransaction(database, (tx) => {
       grantMembership(tx, { channelId: CHANNEL, accountId: viewerAccount, role: "CHANNEL_OWNER", logAccess: true, now: NOW });
     });
+    const b12Now = new Date();
+    const b12Day = (offsetDays: number) => new Date(b12Now.getTime() + offsetDays * 86_400_000).toISOString();
     const logs = createAuditLogPort(database);
     const secretText = "B12_DELETED_EXPIRED_SECRET_TEXT";
-    logs.insertTechnicalLog(techLog("log-b12", "corr-b12", null, null, day(7)), [
-      evidence("ev-b12", "MESSAGE_TEXT", secretText, day(7)),
+    logs.insertTechnicalLog({ ...techLog("log-b12", "corr-b12", null, null, b12Day(7)), createdAt: b12Day(0) }, [
+      evidence("ev-b12", "MESSAGE_TEXT", secretText, b12Day(7)),
     ]);
 
     app = buildApp({ modules: buildRegistry(config), logger: false, database, tombstoneLedger: ledger });
@@ -203,7 +205,7 @@ describe("S020 composition root tombstone wiring", () => {
       evidenceDays: 1,
     });
 
-    const swept = app.retention?.sweepExpired({ nowIso: day(2) });
+    const swept = app.retention?.sweepExpired({ nowIso: b12Day(2) });
     expect(swept?.removed).toMatchObject({ evidence: 1, technicalLogs: 1 });
     expect(count(database, "technical_log_evidence where id = 'ev-b12'")).toBe(0);
     expect(count(database, "technical_logs where id = 'log-b12'")).toBe(0);

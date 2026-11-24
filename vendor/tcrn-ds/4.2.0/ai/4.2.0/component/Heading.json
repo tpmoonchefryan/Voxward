@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "530772cfcd2d1213db4b65dd0414066255226a947377412e4d7221533315cade"
+  },
+  "id": "component/Heading",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/02-typography"
+  ],
+  "optional": [],
+  "content": {
+    "name": "Heading",
+    "board": "02-typography",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/02-typography/index.dc.html",
+      "sha256": "6d3b02974d1442634739fba8ae28a27fb16e766f2cc3186cc451875ccf47515d",
+      "line": 220
+    },
+    "normativeText": "Heading level 1–4 · visualLevel 1–4 一句话：标签级别由 level 定，外观由 visualLevel 定，1 至 3 级衬线 400、4 级怪诞体 600，一律单行截断。 须提供 ：文本 children； level （默认 2）；需要和文档结构不同的外观时给 visualLevel 。 容器 ：由页头、区段、卡片提供宽度；标题自己不折行，装不下截断加 title（C7）。 用 ：页标题 h1/2、区段 h3、卡片与设置行 h4。 不用 ：表头与指标标签（用 caps 样式）；按钮与导航项文字。",
+    "readerSummary": {
+      "en": "Text children; level sets structure, visualLevel sets appearance. Truncate one line with title; avoid labels and navigation.",
+      "zh-CN": "文本 children；level 定结构，visualLevel 定外观。单行截断加 title，不作标签与导航。",
+      "ja": "本文を指定し、level は構造、visualLevel は外観を決めます。1行省略と title を使い、ラベルやナビには使いません。",
+      "ko": "텍스트를 제공하고 level로 구조, visualLevel로 모양을 정합니다. 한 줄 말줄임과 title을 사용하며 레이블·탐색에는 쓰지 않습니다.",
+      "fr": "Fournir le texte ; level règle la structure, visualLevel l’apparence. Une ligne tronquée avec title ; éviter libellés et navigation."
+    },
+    "types": {
+      "name": "Heading",
+      "kind": "function",
+      "props": [
+        {
+          "name": "level",
+          "type": "1 | 2 | 3 | 4",
+          "required": false,
+          "default": "2",
+          "enumValues": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "name": "visualLevel",
+          "type": "1 | 2 | 3 | 4",
+          "required": false,
+          "default": "level",
+          "enumValues": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      ],
+      "variants": {
+        "level": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "visualLevel": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Typography/Typography.tsx",
+        "line": 76
+      },
+      "propsType": "HeadingProps",
+      "typeDefinitions": [
+        {
+          "name": "HeadingProps",
+          "path": "packages/ui-react/src/components/Typography/Typography.tsx",
+          "line": 67,
+          "declaration": "export interface HeadingProps extends HTMLAttributes<HTMLHeadingElement> {\n  level?: 1 | 2 | 3 | 4;\n  visualLevel?: 1 | 2 | 3 | 4;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "fill",
+      "constraint": "The parent sets the line width; one line truncates with a title. Do not stretch its type scale.",
+      "implementation": "formal-layout.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Typography/Typography.tsx",
+      "sha256": "167f76aa6d63eddfdc6c2d7e6aeae17677d671a217621d9c918c8afce0b9a207"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 123,
+      "snippet": "case \"Heading\": return state === \"levels\"\n        ? ([1, 2, 3, 4] as const).map(level => <Heading key={level} level={level}>{c.project}</Heading>)\n        : <Heading level={2}>{state === \"truncated\" ? `${c.project} · `.repeat(20) : c.project}</Heading>;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { Heading, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example() {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", gap: \"var(--tcrn-space-2)\" }}>\n      <Heading level={2} visualLevel={3}>Title</Heading>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/formal-layout.css.ts",
+          "sha256": "e41c15025b19442b30091c7bb99a49fca6331fbf8bd1d1762cd7294ac1ad6918"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-heading--default"
+      },
+      {
+        "state": "levels",
+        "id": "components-heading--levels"
+      },
+      {
+        "state": "truncated",
+        "id": "components-heading--truncated"
+      }
+    ]
+  }
+}

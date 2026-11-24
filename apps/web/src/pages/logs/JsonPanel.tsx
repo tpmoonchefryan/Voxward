@@ -1,14 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
-import type { LogViewerEvidence, LogViewerTechnicalDetail } from "@voxward/contracts";
-import { IsolatedText } from "./IsolatedText";
+import type { LogViewerEvidence, LogViewerTechnicalDetail, TechnicalData } from "@voxward/contracts";
+import { Badge, Card, EmptyState, KeyValueList } from "@tcrn/ui-react/approved";
+import { BannerNotice } from "../../components/banner-notice";
+import {
+  DEFAULT_VOXWARD_LOCALE,
+  LOGS_COPY,
+  pickLocale,
+  type LogsCopy,
+  type VoxWardLocale,
+} from "../../i18n";
 import { describeLogError, fetchTechnicalDetail, type FetchLike } from "./api";
-
-const EVIDENCE_LABELS: Readonly<Record<LogViewerEvidence["kind"], string>> = {
-  MESSAGE_TEXT: "消息原文",
-  TRANSLATION: "译文",
-  ITEM_ID_MAP: "临时编号映射",
-  VALIDATED_JSON: "校验后 JSON",
-};
+import { IsolatedText } from "./IsolatedText";
 
 /** Pretty-prints a validated JSON payload. A payload that does not parse is shown as it is, and says so. */
 export function formatValidatedJson(payload: string): { readonly text: string; readonly parsed: boolean } {
@@ -19,20 +21,80 @@ export function formatValidatedJson(payload: string): { readonly text: string; r
   }
 }
 
+function evidenceBody(item: LogViewerEvidence, copy: LogsCopy["jsonPanel"]): ReactNode {
+  if (item.state === "EXPIRED") {
+    return (
+      <div className="vw-row-wrap">
+        <Badge tone="neutral">{copy.expiredBadge}</Badge>
+      </div>
+    );
+  }
+  if (item.payload === null) {
+    return <span className="vw-muted">{copy.emptyPayload}</span>;
+  }
+  if (item.kind === "VALIDATED_JSON") {
+    const formatted = formatValidatedJson(item.payload);
+    return (
+      <div className="vw-stack-sm">
+        {!formatted.parsed ? <Badge tone="warning">{copy.invalidJsonBadge}</Badge> : null}
+        <pre>
+          <IsolatedText text={formatted.text} />
+        </pre>
+      </div>
+    );
+  }
+  return (
+    <pre>
+      <IsolatedText text={item.payload} />
+    </pre>
+  );
+}
+
+function DataList({
+  data,
+  copy,
+}: {
+  readonly data: TechnicalData;
+  readonly copy: LogsCopy["jsonPanel"];
+}) {
+  const entries = Object.entries(data);
+  if (entries.length === 0) return null;
+  return (
+    <div className="vw-stack-sm">
+      <span className="vw-caption">{copy.stageData}</span>
+      <div className="vw-row-wrap">
+        {entries.map(([key, value]) => (
+          <Badge key={key} tone="neutral">
+            <span className="vw-mono">
+              {key}: {value === null ? copy.none : <IsolatedText text={String(value)} />}
+            </span>
+          </Badge>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export interface JsonPanelProps {
   readonly channelId: string;
   readonly logId: string;
   readonly fetchImpl?: FetchLike;
+  readonly locale?: VoxWardLocale;
 }
 
 type DetailState =
   | { readonly status: "loading" }
-  | { readonly status: "error"; readonly message: string }
+  | { readonly status: "error"; readonly error: unknown }
   | { readonly status: "ready"; readonly detail: LogViewerTechnicalDetail };
 
-/** Loads one entry's detail and shows it. The chain view renders this for the selected entry. */
-export function JsonPanel({ channelId, logId, fetchImpl }: JsonPanelProps) {
+export function JsonPanel({
+  channelId,
+  logId,
+  fetchImpl,
+  locale = DEFAULT_VOXWARD_LOCALE,
+}: JsonPanelProps) {
   const [state, setState] = useState<DetailState>({ status: "loading" });
+  const copy = pickLocale(LOGS_COPY, locale).jsonPanel;
 
   useEffect(() => {
     let active = true;
@@ -42,86 +104,91 @@ export function JsonPanel({ channelId, logId, fetchImpl }: JsonPanelProps) {
         if (active) setState({ status: "ready", detail });
       })
       .catch((error: unknown) => {
-        if (active) setState({ status: "error", message: describeLogError(error) });
+        if (active) setState({ status: "error", error });
       });
     return () => {
       active = false;
     };
   }, [channelId, logId, fetchImpl]);
 
-  if (state.status === "loading") return <p role="status">正在加载详情…</p>;
-  if (state.status === "error") return <p role="alert">{state.message}</p>;
-  return <JsonPanelView detail={state.detail} />;
+  if (state.status === "loading") return <EmptyState title={copy.loadingTitle} />;
+  if (state.status === "error") {
+    return <BannerNotice tone="danger">{describeLogError(state.error, locale)}</BannerNotice>;
+  }
+  return <JsonPanelView detail={state.detail} locale={locale} />;
 }
 
-/**
- * The detail as it is shown. Content sections are collapsed by default. A content kind the reader lacks the permission
- * for is not in `evidence`, so no section is rendered for it.
- */
-export function JsonPanelView({ detail }: { readonly detail: LogViewerTechnicalDetail }) {
+export function JsonPanelView({
+  detail,
+  locale = DEFAULT_VOXWARD_LOCALE,
+}: {
+  readonly detail: LogViewerTechnicalDetail;
+  readonly locale?: VoxWardLocale;
+}) {
+  const copy = pickLocale(LOGS_COPY, locale).jsonPanel;
   return (
-    <section aria-label="日志详情">
-      <dl>
-        <dt>任务</dt>
-        <dd>{detail.taskId === null ? "无" : <IsolatedText text={detail.taskId} />}</dd>
-        <dt>模型</dt>
-        <dd>{detail.modelRef === null ? "无" : <IsolatedText text={detail.modelRef} />}</dd>
-        <dt>契约版本</dt>
-        <dd>
-          <IsolatedText text={detail.contractVersion} />
-        </dd>
-        <dt>规则模板版本</dt>
-        <dd>{detail.ruleTemplateVersion === null ? "无" : <IsolatedText text={detail.ruleTemplateVersion} />}</dd>
-        <dt>批次</dt>
-        <dd>{detail.batchId === null ? "无" : <IsolatedText text={detail.batchId} />}</dd>
-        <dt>错误代码</dt>
-        <dd>{detail.errorCode === null ? "无" : <IsolatedText text={detail.errorCode} />}</dd>
-      </dl>
-      {detail.data === null ? null : <DataList data={detail.data} />}
+    <section aria-label={copy.aria} className="vw-stack-md">
+      <Card>
+        <div className="vw-stack-sm">
+          <div className="vw-row-between">
+            <strong>{copy.headerTitle(detail.sequence, detail.stage)}</strong>
+            <Badge tone="neutral">
+              <span className="vw-mono">
+                <IsolatedText text={detail.id} />
+              </span>
+            </Badge>
+          </div>
+          <KeyValueList
+            items={[
+              {
+                key: "taskId",
+                label: copy.labelTask,
+                value: detail.taskId === null ? copy.none : <IsolatedText text={detail.taskId} />,
+              },
+              {
+                key: "modelRef",
+                label: copy.labelModel,
+                value: detail.modelRef === null ? copy.none : <IsolatedText text={detail.modelRef} />,
+              },
+              {
+                key: "contractVersion",
+                label: copy.labelContract,
+                value: <IsolatedText text={detail.contractVersion} />,
+              },
+              {
+                key: "ruleTemplateVersion",
+                label: copy.labelRuleVer,
+                value:
+                  detail.ruleTemplateVersion === null ? (
+                    copy.none
+                  ) : (
+                    <IsolatedText text={detail.ruleTemplateVersion} />
+                  ),
+              },
+              {
+                key: "batchId",
+                label: copy.labelBatch,
+                value: detail.batchId === null ? copy.none : <IsolatedText text={detail.batchId} />,
+              },
+              {
+                key: "errorCode",
+                label: copy.labelErrorCode,
+                value: detail.errorCode === null ? copy.none : <IsolatedText text={detail.errorCode} />,
+              },
+            ]}
+          />
+          {detail.data === null ? null : <DataList data={detail.data} copy={copy} />}
+        </div>
+      </Card>
+
       {detail.evidence.map((item) => (
-        <details key={item.kind}>
-          <summary>{EVIDENCE_LABELS[item.kind]}</summary>
-          {evidenceBody(item)}
-        </details>
+        <Card key={item.kind} tone="quiet">
+          <details>
+            <summary>{copy.evidenceLabels[item.kind]}</summary>
+            {evidenceBody(item, copy)}
+          </details>
+        </Card>
       ))}
     </section>
-  );
-}
-
-function DataList({ data }: { readonly data: Readonly<Record<string, string | number | boolean | null>> }) {
-  return (
-    <dl aria-label="阶段数据">
-      {Object.entries(data).map(([key, value]) => (
-        <div key={key}>
-          <dt>
-            <IsolatedText text={key} />
-          </dt>
-          <dd>
-            <IsolatedText text={value === null ? "无" : String(value)} />
-          </dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-function evidenceBody(item: LogViewerEvidence): ReactNode {
-  if (item.state === "EXPIRED") return <p>内容已到期</p>;
-  if (item.payload === null) return <p role="alert">内容缺失</p>;
-  if (item.kind === "VALIDATED_JSON") {
-    const formatted = formatValidatedJson(item.payload);
-    return (
-      <>
-        {formatted.parsed ? null : <p>未通过 JSON 解析，以下为原文。</p>}
-        <pre>
-          <IsolatedText text={formatted.text} />
-        </pre>
-      </>
-    );
-  }
-  return (
-    <pre>
-      <IsolatedText text={item.payload} />
-    </pre>
   );
 }

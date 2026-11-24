@@ -1,6 +1,6 @@
 {
   "name": "@voxward/web",
-  "version": "0.0.0",
+  "version": "0.1.0-rc.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,6 +9,9 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@tcrn/ui-copy-state": "4.2.0",
+    "@tcrn/ui-react": "4.2.0",
+    "@tcrn/ui-tokens": "4.2.0",
     "@voxward/contracts": "workspace:*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

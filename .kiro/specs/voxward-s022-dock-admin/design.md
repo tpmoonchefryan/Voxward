@@ -146,3 +146,12 @@ All `/channels/:channelId/...` routes authenticate via `authenticateRequest` (se
   - In `AdminPage.tsx` / `AdminView`, render real `<select>` controls for `realtimeModeration`, `scTranslation`, and `review` model IDs and `reasoningLevels` from `modelSettings.capabilities.models`, wired to `saveModelSettings`, displaying returned `issues`.
   - Wire the remaining 10 `AdminApi` mutations gated by `caps` (`list.edit`, `score.config`, `members.manage`, `output.manage`, `tokens.manage`): `publishRules` (updating `ruleIssues` on 400 `REGEX_HINTS` for Q12), `editTerm`, `editSubjectList`, `grantMember` (Q17/Q34), `saveAdminSettings`, and `issueOutputGrant` / `revokeOutputGrant` / `issueOutputToken` / `revokeOutputToken`.
 - **`N12a` (Scoring Bounds Validation)**: In `apps/server/src/auth/channel-panel-routes.ts`, add `.refine((s) => s.minScore <= s.initialScore && s.initialScore <= s.maxScore)` to `SCORING_BODY` so invalid order returns `400`.
+
+### 8. 2026-11-24 VW-Draft-02..04 验收修订（VOXWARD-INIT-002）
+- 依据 Owner 已验收纪要 `minutes:73541fe2`、`minutes:33e47135`、`minutes:db88b159`、`minutes:b95eb9d6`、`minutes:317b10e7`、`minutes:61a23f82`、`minutes:2c2a0b8e`、`minutes:c1ee1bbd`、`minutes:e3e856c4`、`minutes:85405dd0`、`minutes:a744fc50`，前端页面职责拆分并重构如下：
+  - `/dock/:roomId` 收口为纯净双列主播副屏弹幕姬（无审核队列、无 SC 精翻开关、无关闭/退款 SC 按钮，完整对齐 YouTube 7 档 SC 颜色与 Ticker 置顶倒计时）；
+  - `/moderation/:channelId` 收口为全页双列等高审核后台（左列待审核拦截队列 + `AI 候选词待确认` 页签 + 页头只读 SC 精翻状态徽章；右列审核前实时流与 SC Ticker）；
+  - 新增 `/channels/:channelId/blocked`（`03B · 拦截管理`：已确认拦截重判仅改本频道积分绝不补发 OBS/blivechat；黑名单用户管理仅做手动拉黑与可选 YouTube 封禁同步）；
+  - `/admin/:channelId?`（及 `/settings/:channelId?`）收敛为基于 `SettingsLayout` 的单分类静态系统设置（唯一归口 SC 精翻开关、无语种/更新时间列、归类只增不删、Regex 正则与 CSV 导入、模型选值源自集成管理模型池）；
+  - 独立出 `/integrations/:channelId?`（适配器列表首页、`+ 接入新适配器 ▾`、系统词典单一下拉先选常驻、`基础配置`/`控制` 两页签、AI 可用模型池、统一归口 `/outputs` 下游凭据）与 `/users/:channelId?`（完整多角色 RBAC `Deny > Grant > Not Set` 矩阵）。
+- 所有模块细节见 `.kiro/specs/voxward-frontend-v2/design.md`。

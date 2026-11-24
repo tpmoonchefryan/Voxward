@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "530772cfcd2d1213db4b65dd0414066255226a947377412e4d7221533315cade"
+  },
+  "id": "component/StagePipeline",
+  "kind": "adopted-component",
+  "required": [
+    "global",
+    "pattern/batch3-components-and-shell"
+  ],
+  "optional": [
+    "pattern/seasonal-halloween-theme"
+  ],
+  "content": {
+    "name": "StagePipeline",
+    "status": "adopted-batch3-candidate",
+    "types": {
+      "name": "StagePipeline",
+      "kind": "function",
+      "props": [
+        {
+          "name": "density",
+          "type": "Density",
+          "required": false,
+          "default": "\"comfortable\"",
+          "enumValues": [
+            "comfortable",
+            "compact",
+            "dense"
+          ]
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "locale",
+          "type": "TcrnLocale | string",
+          "required": false
+        },
+        {
+          "name": "stages",
+          "type": "PipelineStage[]",
+          "required": true
+        }
+      ],
+      "variants": {
+        "density": [
+          "comfortable",
+          "compact",
+          "dense"
+        ]
+      },
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/DataDisplay/DomainDisplay.tsx",
+        "line": 888
+      },
+      "propsType": "StagePipelineProps",
+      "typeDefinitions": [
+        {
+          "name": "Density",
+          "path": "packages/ui-react/src/components/DataDisplay/DataDisplay.tsx",
+          "line": 1157,
+          "declaration": "export type Density = \"comfortable\" | \"compact\" | \"dense\";"
+        },
+        {
+          "name": "PipelineStage",
+          "path": "packages/ui-react/src/components/DataDisplay/DomainDisplay.tsx",
+          "line": 853,
+          "declaration": "export interface PipelineStage {\n  id: string;\n  label: string;\n  state: CopyStateInput;\n  owner: string;\n  references: string[];\n  nextAction?: string;\n}"
+        },
+        {
+          "name": "StagePipelineProps",
+          "path": "packages/ui-react/src/components/DataDisplay/DomainDisplay.tsx",
+          "line": 881,
+          "declaration": "export interface StagePipelineProps {\n  label?: string;\n  stages: PipelineStage[];\n  density?: Density;\n  locale?: TcrnLocale | string;\n}"
+        }
+      ]
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/DataDisplay/DomainDisplay.tsx",
+      "sha256": "b9fe0fd4771137b15c9879d457845328fcb93da7a0392def8a0bd7b8740d2a8b"
+    },
+    "specimenSource": {
+      "path": "apps/storybook/src/voxward-batch3.stories.tsx",
+      "sha256": "bc3c3a6235c8d64b71f9b5117abfb6f90b8c5b97036cc74c98f6023525b1cdb2"
+    }
+  }
+}

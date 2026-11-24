@@ -101,7 +101,8 @@ describe("log API client", () => {
 
     expect(error).toBeInstanceOf(LogApiError);
     expect(error).toMatchObject({ code: "FORBIDDEN", status: 403 });
-    expect(describeLogError(error)).toBe("没有查看该频道日志的权限。");
+    expect(describeLogError(error)).toBe("You do not have permission to view logs for this channel.");
+    expect(describeLogError(error, "zh-CN")).toBe("没有查看该频道日志的权限。");
   });
 
   it("treats a body that is not a page as an error, not as an empty chain", async () => {

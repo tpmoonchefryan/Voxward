@@ -1,0 +1,623 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.2.0",
+      "@tcrn/ui-tokens": "4.2.0",
+      "@tcrn/ui-copy-state": "4.2.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "530772cfcd2d1213db4b65dd0414066255226a947377412e4d7221533315cade"
+  },
+  "id": "component/ProductShell",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/07b-shell-lower",
+    "pattern/shell-preferences",
+    "assets/icons"
+  ],
+  "optional": [
+    "pattern/customer-list-boundary"
+  ],
+  "content": {
+    "name": "ProductShell",
+    "board": "07b-shell-lower",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/07b-shell-lower/index.dc.html",
+      "sha256": "cad83aab5c53df23e6477e3bc9c4e49f0ec465061e2cc161b3b58cbb282ec26f",
+      "line": 58
+    },
+    "normativeText": "产品须提供\n菜单模型 ：分组 → 项 → 子项（三级）→ 子项（四级）；图标名出自名册、路由、五语标签。\n固定项存储 ：每用户每产品，服务端偏好（跨设备）；可固定分组、项或子菜单；上限 6，顺序为固定顺序，可拖排；第 7 项起只在菜单里标记已固定。\n搜索提供者 ：完整菜单搜全站目标；下拉里的搜索只搜该子树；复用 ProductShellSearch。\n品牌资产 ：三版都出自 Logos 板：标（A 段）、侧栏尺度（E 段侧栏）、锁定块（E 段）；产品只传产品键，不传颜色或文案。\n产品清单 ：切换产品在头像菜单里，锁定块不承担。\nPageHeader 必有 ：面包屑 + 标题 + 动作；目录与书签在页内独立空间（TocRail、书签栏）。\n\n何时用与不用\nTMS、AOS、Atelier、DS 文档站都用这一套顶带壳；没有常驻侧栏。\n标按钮是桌面端唯一的完整菜单入口；一段即开，没有小面板。\n完整菜单与下拉都是临时浮层：选中、Esc、点外部即收；没有收起钮；与键之间留 6px。\n固定的二级菜单从顶带纵向下拉；三、四级按 点击 向右级联，不按悬停。\n右下角锁定块只装饰，不可点、不进 Tab 序列。\n\n键盘与读屏\n⌘K / Ctrl+K 打开完整菜单并聚焦搜索； Esc 关闭，焦点回标按钮；菜单内 ↑↓ 走项，→ 进入子项列，← 回左列。\n标按钮 aria-expanded 、 aria-haspopup=\"dialog\" ；固定的二级菜单同样；浮层 role=\"dialog\" 非模态。\n图钉是真按钮， aria-pressed ，可见名「固定到顶带：合约」；行获焦时图钉同 hover 出现。\n所有可见字符串五语同源；图标钮都有 aria-label。\n触摸端：标按钮 ≥ 40，Sheet 行 44，图钉热区 44。",
+    "readerSummary": {
+      "en": "Supply the four-level menu, global search, per-user/product server pins, registered brand key, avatar products and PageHeader. No permanent sidebar or invented mark.",
+      "zh-CN": "提供四级菜单、全站搜索、按用户产品服务端固定项、注册品牌键、头像产品表与 PageHeader。不设常驻侧栏或虚构标。",
+      "ja": "4階層メニュー、全体検索、ユーザー・製品別のサーバー固定項、登録キー、製品一覧、PageHeader を指定します。常設サイドバーはありません。",
+      "ko": "4단계 메뉴·전역 검색·사용자와 제품별 서버 고정 항목·등록 키·제품 목록·PageHeader를 제공합니다. 상시 사이드바는 없습니다.",
+      "fr": "Fournir menu à quatre niveaux, recherche globale, favoris serveur par utilisateur/produit, clé enregistrée, produits de l’avatar et PageHeader. Sans barre latérale permanente."
+    },
+    "types": {
+      "name": "ProductShell",
+      "kind": "function",
+      "props": [
+        {
+          "name": "account",
+          "type": "ProductShellAccount",
+          "required": false
+        },
+        {
+          "name": "accountMenuOpen",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "availableThemes",
+          "type": "readonly ShellThemeMode[]",
+          "required": false
+        },
+        {
+          "name": "brandProductId",
+          "type": "TcrnProductMarkId",
+          "required": true,
+          "enumValues": [
+            "design-system",
+            "tms",
+            "einzbern",
+            "mana-orchestrate",
+            "voxward"
+          ]
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "required": true,
+          "slot": true
+        },
+        {
+          "name": "contentId",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "contentLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "contentRole",
+          "type": "\"main\" | \"region\"",
+          "required": false,
+          "enumValues": [
+            "main",
+            "region"
+          ]
+        },
+        {
+          "name": "currentLocale",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "currentRouteLabel",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "currentRouteLabelKey",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "currentTheme",
+          "type": "ShellThemeMode",
+          "required": false,
+          "enumValues": [
+            "light",
+            "dark",
+            "halloween"
+          ]
+        },
+        {
+          "name": "defaultMenuQuery",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "dropdownBoundaryRef",
+          "type": "RefObject<HTMLElement | null>",
+          "required": false
+        },
+        {
+          "name": "focusNavigationOnOpen",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "headerActions",
+          "type": "ReactNode",
+          "required": false,
+          "slot": true
+        },
+        {
+          "name": "landmarkLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "localeDefinition",
+          "type": "ProductShellLocaleDefinition",
+          "required": false
+        },
+        {
+          "name": "localeMenuOpen",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "locales",
+          "type": "readonly ShellLocaleOption[]",
+          "required": true
+        },
+        {
+          "name": "menuOpen",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "menuQuery",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "menuShortcut",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "moduleName",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "navGroups",
+          "type": "readonly ProductShellNavGroup[]",
+          "required": true
+        },
+        {
+          "name": "notifications",
+          "type": "ProductShellNotifications",
+          "required": false
+        },
+        {
+          "name": "onAccountMenuOpenChange",
+          "type": "(open: boolean) => void",
+          "required": false
+        },
+        {
+          "name": "onLocaleChange",
+          "type": "(locale: string) => void",
+          "required": false
+        },
+        {
+          "name": "onLocaleMenuOpenChange",
+          "type": "(open: boolean, reason: ProductShellLocaleMenuChangeReason) => void",
+          "required": false
+        },
+        {
+          "name": "onMenuOpenChange",
+          "type": "(open: boolean, reason: ProductShellMenuChangeReason) => void",
+          "required": false
+        },
+        {
+          "name": "onMenuQueryChange",
+          "type": "(query: string) => void",
+          "required": false
+        },
+        {
+          "name": "onOpenPinChange",
+          "type": "(id: string | null) => void",
+          "required": false
+        },
+        {
+          "name": "onPinnedChange",
+          "type": "(id: string, pinned: boolean) => void",
+          "required": false
+        },
+        {
+          "name": "onPinsReorder",
+          "type": "(orderedIds: readonly string[]) => void",
+          "required": false
+        },
+        {
+          "name": "onRightPinsReorder",
+          "type": "(orderedIds: readonly string[]) => void",
+          "required": false
+        },
+        {
+          "name": "onSearchQueryChange",
+          "type": "(query: string) => void",
+          "required": false
+        },
+        {
+          "name": "onThemeChange",
+          "type": "(theme: ShellThemeMode) => void",
+          "required": false
+        },
+        {
+          "name": "openPinId",
+          "type": "string | null",
+          "required": false
+        },
+        {
+          "name": "pageHeader",
+          "type": "PageHeaderProps",
+          "required": true
+        },
+        {
+          "name": "pinnedIds",
+          "type": "readonly string[]",
+          "required": false
+        },
+        {
+          "name": "previewStates",
+          "type": "Readonly<Record<string, string>>",
+          "required": false
+        },
+        {
+          "name": "productName",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "products",
+          "type": "readonly ProductShellProduct[]",
+          "required": false
+        },
+        {
+          "name": "rightNavGroups",
+          "type": "readonly ProductShellNavGroup[]",
+          "required": false
+        },
+        {
+          "name": "rightNavItems",
+          "type": "readonly ShellPinItem[]",
+          "required": false
+        },
+        {
+          "name": "rightPinnedIds",
+          "type": "readonly string[]",
+          "required": false
+        },
+        {
+          "name": "searchPlaceholder",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "searchProvider",
+          "type": "ShellMenuSearchProvider",
+          "required": false
+        },
+        {
+          "name": "seasonalThemes",
+          "type": "readonly SeasonalShellThemeMode[]",
+          "required": false
+        },
+        {
+          "name": "skipLinkLabel",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "themeControl",
+          "type": "\"auto\" | \"toggle\" | \"menu\"",
+          "required": false,
+          "enumValues": [
+            "menu",
+            "auto",
+            "toggle"
+          ]
+        },
+        {
+          "name": "topBanner",
+          "type": "ReactNode",
+          "required": false,
+          "slot": true
+        }
+      ],
+      "variants": {
+        "brandProductId": [
+          "design-system",
+          "tms",
+          "einzbern",
+          "mana-orchestrate",
+          "voxward"
+        ],
+        "contentRole": [
+          "main",
+          "region"
+        ],
+        "currentTheme": [
+          "light",
+          "dark",
+          "halloween"
+        ],
+        "themeControl": [
+          "menu",
+          "auto",
+          "toggle"
+        ]
+      },
+      "slots": [
+        "children",
+        "headerActions",
+        "topBanner"
+      ],
+      "source": {
+        "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+        "line": 2068
+      },
+      "propsType": "ProductShellProps",
+      "typeDefinitions": [
+        {
+          "name": "Density",
+          "path": "packages/ui-react/src/components/DataDisplay/DataDisplay.tsx",
+          "line": 1157,
+          "declaration": "export type Density = \"comfortable\" | \"compact\" | \"dense\";"
+        },
+        {
+          "name": "PageHeaderBreadcrumb",
+          "path": "packages/ui-react/src/components/DataDisplay/DomainDisplay.tsx",
+          "line": 221,
+          "declaration": "export interface PageHeaderBreadcrumb {\n  id: string;\n  label: string;\n  href?: string;\n}"
+        },
+        {
+          "name": "ActionDescriptor",
+          "path": "packages/ui-react/src/components/DataDisplay/DomainDisplay.tsx",
+          "line": 227,
+          "declaration": "export interface ActionDescriptor {\n  id: string;\n  label: string;\n  disabledReason: string;\n}"
+        },
+        {
+          "name": "PageHeaderProps",
+          "path": "packages/ui-react/src/components/DataDisplay/DomainDisplay.tsx",
+          "line": 233,
+          "declaration": "export interface PageHeaderProps {\n  title: string;\n  description?: ReactNode;\n  /**\n   * The trail down to this page, on one line above the title (07b board, section D row 面包屑).\n   * The last crumb without an href is the current page. Inside ProductShell an omitted trail is the\n   * current position in the shell's menu model.\n   */\n  breadcrumbs?: readonly PageHeaderBreadcrumb[];\n  meta?: ReactNode;\n  actions?: ActionDescriptor[] | ReactNode;\n  density?: Density;\n  /** Which language the trail's built-in name is said in; defaults to the page's own. */\n  locale?: TcrnLocale | string;\n  /**\n   * The title's heading level: 2 when omitted; 1 for the page's own title, which ProductShell's\n   * paper gives it unless told otherwise. Both levels set the title in the level-2 type, so the\n   * level changes the outline and not the look (TCRN-DS-SUB-163).\n   */\n  headingLevel?: 1 | 2;\n  /**\n   * The name of the shell the header sits in, which tells its trail from another page header's on\n   * the same page: the trail is named \"{landmarkLabel} · {trail}\" in the reader's language\n   * (TCRN-DS-SUB-148). ProductShell passes its own `landmarkLabel`.\n   */\n  landmarkLabel?: string;\n}"
+        },
+        {
+          "name": "TcrnIconPathName",
+          "path": "packages/ui-react/src/components/Icon/icon-paths.generated.ts",
+          "line": 6,
+          "declaration": "export type TcrnIconPathName=(typeof tcrnIconPathNames)[number];"
+        },
+        {
+          "name": "IconName",
+          "path": "packages/ui-react/src/components/Icon/Icon.tsx",
+          "line": 20,
+          "declaration": "export type IconName = TcrnIconPathName;"
+        },
+        {
+          "name": "TcrnProductLogoId",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 421,
+          "declaration": "export type TcrnProductLogoId = keyof typeof tcrnProductLogoRegistry;"
+        },
+        {
+          "name": "SeasonalShellThemeMode",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 470,
+          "declaration": "export type SeasonalShellThemeMode = \"halloween\";"
+        },
+        {
+          "name": "ShellThemeMode",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 471,
+          "declaration": "export type ShellThemeMode = \"light\" | \"dark\" | SeasonalShellThemeMode;"
+        },
+        {
+          "name": "ProductShellLocaleMenuChangeReason",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 472,
+          "declaration": "export type ProductShellLocaleMenuChangeReason = \"trigger\" | \"selection\" | \"outside-pointer\" | \"escape\" | \"controller\";"
+        },
+        {
+          "name": "ShellLocaleOption",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 579,
+          "declaration": "export interface ShellLocaleOption {\n  locale: string;\n  /** BCP 47 language tag when the product locale id uses another vocabulary. */\n  lang?: string;\n  nativeName: string;\n}"
+        },
+        {
+          "name": "ProductShellSearchResult",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 1587,
+          "declaration": "export interface ProductShellSearchResult {\n  id: string;\n  title: string;\n  titleKey?: string;\n  meta?: string;\n  metaKey?: string;\n  href: string;\n  selected?: boolean;\n}"
+        },
+        {
+          "name": "ProductShellNavItem",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 1797,
+          "declaration": "export interface ProductShellNavItem extends ShellMenuItem {\n  labelKey?: string;\n  /** The current page: the shell derives the selected row, the selected pin and the current position from it. */\n  selected?: boolean;\n  children?: readonly ProductShellNavItem[];\n}"
+        },
+        {
+          "name": "ProductShellNavGroup",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 1810,
+          "declaration": "export interface ProductShellNavGroup extends ShellMenuGroup {\n  labelKey?: string;\n  descriptionKey?: string;\n  sectionLabel?: string;\n  sectionLabelKey?: string;\n  selected?: boolean;\n  items: readonly ProductShellNavItem[];\n}"
+        },
+        {
+          "name": "ProductShellMenuChangeReason",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 1820,
+          "declaration": "export type ProductShellMenuChangeReason = \"trigger\" | ShellMenuOpenChangeReason;"
+        },
+        {
+          "name": "ProductShellAccount",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 1823,
+          "declaration": "export interface ProductShellAccount {\n  name: string;\n  /** What the avatar shows; the first character of the name when omitted. */\n  initials?: string;\n}"
+        },
+        {
+          "name": "ProductShellProduct",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 1830,
+          "declaration": "export interface ProductShellProduct {\n  id: string;\n  label: string;\n  href: string;\n  /** The product this shell belongs to: aria-current=\"page\", the 6% wash and weight 600. */\n  current?: boolean;\n}"
+        },
+        {
+          "name": "ProductShellNotifications",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 1839,
+          "declaration": "export interface ProductShellNotifications {\n  /** Unread notifications: more than none shows the dot and is said in the bell's name. */\n  unread?: number;\n  onOpen?: () => void;\n}"
+        },
+        {
+          "name": "ProductShellProps",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 1845,
+          "declaration": "export interface ProductShellProps extends HTMLAttributes<HTMLDivElement>, ShellSeasonalThemeOptions {\n  productName: string;\n  moduleName: string;\n  /** The product key: the brand button's mark and wordmark and the full menu's lockup, from logos2 as they are. */\n  brandProductId: TcrnProductMarkId;\n  /** Name of the current page, the current position's last step when no menu entry is selected. */\n  currentRouteLabel: string;\n  currentRouteLabelKey?: string;\n  /** The menu model: groups → items → children → children (C-7). */\n  navGroups: readonly ProductShellNavGroup[];\n  /** Optional right-aligned backoffice nav groups included in the menu model and pinned right group (STORY-157). */\n  rightNavGroups?: readonly ProductShellNavGroup[];\n  /** Explicit right-aligned backoffice pin items rendered before the right account cluster (STORY-157). */\n  rightNavItems?: readonly ShellPinItem[];\n  /** Ids of right-aligned backoffice entries from `navGroups` / `rightNavGroups` (STORY-157). */\n  rightPinnedIds?: readonly string[];\n  /** Reorder handler for the right-aligned backoffice pinned group (STORY-157). */\n  onRightPinsReorder?: (orderedIds: readonly string[]) => void;\n  /**\n   * Optional full-width environment banner mounted between the top strip and `.tcrn-product-shell__paper`\n   * with `var(--tcrn-space-3)` horizontal inset alignment; omitted or null keeps the 2-row shell grid at 0px impact (STORY-158).\n   */\n  topBanner?: ReactNode;\n  locales: readonly ShellLocaleOption[];\n  currentLocale: string;\n  /** Complete product-owned copy and BCP 47 tag for currentLocale; scoped to this shell. */\n  localeDefinition?: ProductShellLocaleDefinition;\n  /**\n   * The page's header, the paper's first row: the trail, the title and the page's actions (07b\n   * board, section E, \"PageHeader 必有\"). Required, so a shell page without one does not type-check.\n   * An omitted trail is the current position in `navGroups` (group › … › page); an omitted locale is\n   * `currentLocale`; an omitted heading level is 1, the page's own title (TCRN-DS-SUB-163) — a shell\n   * shown inside another page's paper gives 2.\n   */\n  pageHeader: PageHeaderProps;\n  /** The page below its header. */\n  children: ReactNode;\n  currentTheme?: ShellThemeMode;\n  localeMenuOpen?: boolean;\n  /**\n   * Product-owned controls for the top-right cluster, before the bell and the avatar, which stay\n   * rightmost so their position does not move as products add controls. Omitting it renders the\n   * cluster without them.\n   */\n  headerActions?: ReactNode;\n  /** The signed-in reader; the avatar shows their initials. */\n  account?: ProductShellAccount;\n  /** The products the avatar menu switches between; the full menu and the lockup carry no product list. */\n  products?: readonly ProductShellProduct[];\n  notifications?: ProductShellNotifications;\n  /** Ids of the pinned groups, items and children in the reader's order; the band shows the first six. */\n  pinnedIds?: readonly string[];\n  /** Pins or unpins an entry; without it the menu rows have no pin. */\n  onPinnedChange?: (id: string, pinned: boolean) => void;\n  /**\n   * Takes the pins' new order, every id of `pinnedIds` in it, when the reader moves a pinned item\n   * in the band: a drag that ends with it in a new place, or Alt+← / Alt+→ on it (TCRN-DS-SUB-149).\n   * useProductShellController's productShellControlProps connect it to movePin, which keeps the\n   * order in the pins preference (the product's backend through onPinsChange; never a cookie).\n   * Without it the pinned items do not move.\n   */\n  onPinsReorder?: (orderedIds: readonly string[]) => void;\n  /** Whether the full menu is open; the shell keeps its own state when omitted. */\n  menuOpen?: boolean;\n  /**\n   * Whether ⌘K / Ctrl+K opens this shell's full menu: the key is registered on the document, once\n   * per shell, so a page with several shells lets one of them have it and passes false to the\n   * others. On by default (ShellMenu's `shortcut`; TCRN-DS-SUB-185).\n   */\n  menuShortcut?: boolean;\n  onMenuOpenChange?: (open: boolean, reason: ProductShellMenuChangeReason) => void;\n  /** The pinned item whose drop-down is open; the shell keeps its own state when omitted. */\n  openPinId?: string | null;\n  onOpenPinChange?: (id: string | null) => void;\n  /** Whether the open full menu or pin drop-down takes focus. Defaults to true. */\n  focusNavigationOnOpen?: boolean;\n  /** The scroll frame that clips pin drop-down cascades, when the shell is embedded. */\n  dropdownBoundaryRef?: RefObject<HTMLElement | null>;\n  /**\n   * Static states for documentation, by menu row or group id (data-tcrn-preview-state), passed to\n   * the full menu and the drop-downs; a drop-down row marked \"open\" starts with its next level open.\n   */\n  previewStates?: Readonly<Record<string, string>>;\n  /** Whether the avatar menu is open; the shell keeps its own state when omitted. */\n  accountMenuOpen?: boolean;\n  onAccountMenuOpenChange?: (open: boolean) => void;\n  /** Placeholder of the full menu's search. */\n  searchPlaceholder?: string;\n  /** The full menu's search provider (whole-site targets); the menu model is searched when omitted. */\n  searchProvider?: ShellMenuSearchProvider;\n  onSearchQueryChange?: (query: string) => void;\n  /**\n   * A name for this shell, which tells its landmarks from another shell's on the same page (axe\n   * landmark-unique): every named landmark of the shell — the band, the pinned items, the full menu\n   * (panel or Sheet) and its bottom bar's trail, the drop-downs, the avatar menu and its product\n   * switcher, the content region and the page header's trail — is named \"{landmarkLabel} · {name}\"\n   * in the reader's language. A `contentLabel` or a page header's own `landmarkLabel` is used as it\n   * is given. Omitted, they keep the built-in names (TCRN-DS-SUB-148, TCRN-DS-SUB-184).\n   */\n  landmarkLabel?: string;\n  /** The full menu's query, for a product that holds it; the menu keeps its own when omitted (ShellMenu's `query`). */\n  menuQuery?: string;\n  /** The query the full menu's own starts from, such as a page rendered with a query typed (ShellMenu's `defaultQuery`). */\n  defaultMenuQuery?: string;\n  /** Asks to change the full menu's query: as it is typed, and to empty when the menu closes (ShellMenu's `onQueryChange`). */\n  onMenuQueryChange?: (query: string) => void;\n  /** How theme selection renders inside the avatar menu: dropdown menu when >2 themes or explicitly \"menu\". */\n  themeControl?: \"auto\" | \"toggle\" | \"menu\";\n  onThemeChange?: (theme: ShellThemeMode) => void;\n  onLocaleMenuOpenChange?: (open: boolean, reason: ProductShellLocaleMenuChangeReason) => void;\n  onLocaleChange?: (locale: string) => void;\n  contentId?: string;\n  contentRole?: \"main\" | \"region\";\n  contentLabel?: string;\n  skipLinkLabel?: string;\n}"
+        },
+        {
+          "name": "TcrnProductMarkId",
+          "path": "packages/ui-react/src/components/Navigation/product-mark-id.ts",
+          "line": 18,
+          "declaration": "export type TcrnProductMarkId = (typeof tcrnProductMarkIds)[number];"
+        },
+        {
+          "name": "TcrnShellCopy",
+          "path": "packages/ui-react/src/components/Navigation/shell-copy.ts",
+          "line": 30,
+          "declaration": "export interface TcrnShellCopy {\n  /** Brand button name while the full menu is closed: pressing it opens the navigation. */\n  openNavigationOf: (productName: string) => string;\n  /** Brand button name while the full menu is open: pressing it closes the navigation. */\n  closeNavigationOf: (productName: string) => string;\n  /** Name of the pinned items group in the top band. */\n  pinnedItems: string;\n  /** Name of the right-aligned backoffice pinned items group in the top band (STORY-157). */\n  backofficePinnedItems?: string;\n  /** Screen-reader hint for pinned or menu links that open in a new window (STORY-157). */\n  opensInNewWindow?: string;\n  /** Default disabled reason when a shell pin or nav item is unavailable in the current role/route (STORY-157). */\n  navItemUnavailable?: string;\n  /** Name of the full menu (the dialog the brand button opens). */\n  navigation: string;\n  /** Placeholder of the full menu's search. */\n  searchNavigation: string;\n  /** Label of the current position in the full menu's bottom bar; also the name of that trail. */\n  currentPosition: string;\n  /** Title of the full menu's group of pinned items, shown narrower than 1024. */\n  pinnedGroup: string;\n  /** Placeholder of a drop-down's search, which searches the pinned entry's part of the menu. */\n  searchWithin: (name: string) => string;\n  /** Name of the avatar menu, and of the avatar when no account is given. */\n  account: string;\n  /** Avatar name: the reader and what the menu holds. */\n  accountMenuOf: (name: string) => string;\n  /** Name and heading of the avatar menu's product switcher. */\n  switchProduct: string;\n  /** Name of the avatar menu's theme and language controls. */\n  themeAndLanguage: string;\n  /** Heading of the avatar menu's user preferences section. */\n  userPreferences?: string;\n  /** Accessible and visible label for the theme dropdown inside user preferences. */\n  themeLabel?: string;\n  /** Accessible and visible label for the language dropdown inside user preferences. */\n  languageLabel?: string;\n  /** Theme dropdown option label for light mode. */\n  themeOptionLight?: string;\n  /** Theme dropdown option label for dark mode. */\n  themeOptionDark?: string;\n  /** Theme dropdown option label for seasonal halloween mode. */\n  themeOptionHalloween?: string;\n  /** Bell name, with the unread count when there is one. */\n  notificationsOf: (unread: number) => string;\n  /** Title of the Sheet's list of pinned entries, with their count. */\n  pinnedItemsOf: (count: number) => string;\n  /** Title of the Sheet's list of every group. */\n  allNavigation: string;\n  /** A landmark's name in one shell of several on a page: the shell's name, then the landmark's. */\n  landmarkOf: (prefix: string, name: string) => string;\n}"
+        },
+        {
+          "name": "ProductShellChromeCopy",
+          "path": "packages/ui-react/src/components/Navigation/shell-copy.ts",
+          "line": 236,
+          "declaration": "export interface ProductShellChromeCopy {\n  switchToLight: string;\n  switchToDark: string;\n  switchToHalloween?: string;\n  language: string;\n  collapseSideNav: string;\n  expandSideNav: string;\n  /**\n   * The mobile navigation control, which is a different control from the two\n   * above and says a different thing.\n   *\n   * `collapseSideNav`/`expandSideNav` narrow the desktop rail to icons — the\n   * destinations stay on screen. Below the mobile breakpoint the rail is not a\n   * rail, and the same control would be a no-op, so it is hidden there; this\n   * one shows and hides the navigation itself. Reusing either label would tell\n   * a screen-reader user the rail is about to narrow when it is about to\n   * disappear.\n   */\n  showNavigation: string;\n  hideNavigation: string;\n  breadcrumb: string;\n  searchShell: string;\n  searchPlaceholder: string;\n  searchResults: string;\n  searchEmpty: string;\n  currentLocation: string;\n  shellWorkspace: string;\n  skipToContent: string;\n  /**\n   * The five with no prop behind them at all.\n   *\n   * A bad default at least lets a consumer pass the right string; these were\n   * literals inline in the JSX, so a product shipping a ja route had no way to\n   * reach them short of forking the component. Two are the only accessible name\n   * their nav has.\n   */\n  navItemUnavailable: string;\n  moduleSections: string;\n  sectionNavigation: string;\n  productLauncher: string;\n  productSwitcher: string;\n  /**\n   * Two names composed from a value the consumer supplied. Concatenating an\n   * English word onto a translated product or module name yields a string in\n   * neither language, so the composition is per locale.\n   */\n  brandHomeOf: (productName: string) => string;\n  shellControlsOf: (moduleName: string) => string;\n  /**\n   * The pin control of a NavItem or NavGroup row (TCRN-DS-SUB-123). It is icon-only,\n   * so this is its whole accessible name; it says the action and the row it acts on,\n   * and the action flips with the pinned state.\n   */\n  pinToStrip: (label: string) => string;\n  unpinFromStrip: (label: string) => string;\n}"
+        },
+        {
+          "name": "ProductShellCopy",
+          "path": "packages/ui-react/src/components/Navigation/shell-copy.ts",
+          "line": 294,
+          "declaration": "export interface ProductShellCopy {\n  shell: TcrnShellCopy;\n  chrome: ProductShellChromeCopy;\n  productTagline: (productId: TcrnProductLogoId) => string;\n}"
+        },
+        {
+          "name": "ProductShellLocaleDefinition",
+          "path": "packages/ui-react/src/components/Navigation/shell-copy.ts",
+          "line": 300,
+          "declaration": "export interface ProductShellLocaleDefinition<Locale extends string = string> {\n  /** Product identifier, preserved in state, preferences and callbacks (for example zh_HANT). */\n  locale: Locale;\n  /** BCP 47 tag for the rendered subtree (for example zh-Hant). */\n  lang: string;\n  copy: ProductShellCopy;\n}"
+        },
+        {
+          "name": "ShellMenuItem",
+          "path": "packages/ui-react/src/components/Navigation/ShellMenu.tsx",
+          "line": 89,
+          "declaration": "export interface ShellMenuItem {\n  /** Stable id: the key of the row in the pin preferences, the selected id and data-pin. */\n  id: string;\n  /** Visible name; it truncates on one line and is repeated in the title. */\n  label: string;\n  /** Destination of the row. A row with a next level opens it instead of navigating. */\n  href?: string;\n  /** Roster icon; the full menu's columns show it, the drop-down and the cascades do not. */\n  iconName?: IconName;\n  /** The next level. An item's children are the third level, theirs the fourth and last. */\n  children?: readonly ShellMenuItem[];\n  /**\n   * What the entry holds, said with its row to a screen reader (aria-describedby to a\n   * .tcrn-sr-only element); nothing is drawn, and without it the row's markup is unchanged.\n   */\n  description?: string;\n  /** Top-strip alignment when pinned (STORY-157). */\n  align?: \"start\" | \"end\";\n  /** External/secondary window link state (STORY-157). */\n  external?: boolean;\n  /** Role-gated or route-gated disabled state (STORY-157). */\n  disabled?: boolean;\n  /** Accessible explanation when disabled. */\n  disabledReason?: string;\n}"
+        },
+        {
+          "name": "ShellMenuGroup",
+          "path": "packages/ui-react/src/components/Navigation/ShellMenu.tsx",
+          "line": 116,
+          "declaration": "export interface ShellMenuGroup {\n  id: string;\n  label: string;\n  /**\n   * What the group (a category of the menu) holds, said to a screen reader with its title row in\n   * the panel and with its row in the Sheet (aria-describedby to a .tcrn-sr-only element); nothing\n   * is drawn, and without it the markup is unchanged.\n   */\n  description?: string;\n  iconName?: IconName;\n  /** Top-strip alignment inherited by pinned group/items unless overridden (STORY-157). */\n  align?: \"start\" | \"end\";\n  /** Role-gated or route-gated disabled state (STORY-157). */\n  disabled?: boolean;\n  disabledReason?: string;\n  items: readonly ShellMenuItem[];\n}"
+        },
+        {
+          "name": "ShellLayerCloseReason",
+          "path": "packages/ui-react/src/components/Navigation/ShellMenu.tsx",
+          "line": 146,
+          "declaration": "export type ShellLayerCloseReason = \"escape\" | \"outside-pointer\" | \"selection\";"
+        },
+        {
+          "name": "ShellMenuOpenChangeReason",
+          "path": "packages/ui-react/src/components/Navigation/ShellMenu.tsx",
+          "line": 149,
+          "declaration": "export type ShellMenuOpenChangeReason = \"shortcut\" | ShellLayerCloseReason;"
+        },
+        {
+          "name": "ShellMenuSearchProvider",
+          "path": "packages/ui-react/src/components/Navigation/ShellMenu.tsx",
+          "line": 152,
+          "declaration": "export type ShellMenuSearchProvider = (query: string, groups: readonly ShellMenuGroup[]) => readonly ProductShellSearchResult[];"
+        },
+        {
+          "name": "ShellPinPlacement",
+          "path": "packages/ui-react/src/components/Navigation/ShellPins.tsx",
+          "line": 39,
+          "declaration": "export type ShellPinPlacement = \"start\" | \"end\";"
+        },
+        {
+          "name": "ShellPinItem",
+          "path": "packages/ui-react/src/components/Navigation/ShellPins.tsx",
+          "line": 41,
+          "declaration": "export interface ShellPinItem {\n  /** Stable id: the key of the item in the pin preferences and in data-pin. */\n  id: string;\n  /** Visible name; it truncates on one line and is repeated in the title. */\n  label: string;\n  /** Destination of an item without a drop-down. */\n  href?: string;\n  /** Whether the item opens a drop-down instead of navigating. */\n  hasMenu?: boolean;\n  /** Placement of the pinned group in the top strip (STORY-157). */\n  align?: ShellPinPlacement;\n  /** Whether the link opens an external/secondary window with stroke & external indicator (STORY-157). */\n  external?: boolean;\n  /** Role-gated or route-gated disabled state (STORY-157). */\n  disabled?: boolean;\n  /** Accessible explanation when disabled. */\n  disabledReason?: string;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "fill",
+      "constraint": "The shell fills its viewport/container. Existing breakpoints select the narrow menu; page content owns its width, not action components.",
+      "implementation": "shell.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+      "sha256": "13da445a97d76b134a7332faf3b8ddcc867325396c2dff8f0675c24e1bf6f3a2"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 181,
+      "snippet": "case \"ProductShell\": if (state === \"product-locales\") return <ProductLocaleExample />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import type { ComponentProps } from \"react\";\nimport { ProductShell, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example(props: ComponentProps<typeof ProductShell>) {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", gap: \"var(--tcrn-space-2)\" }}>\n      <ProductShell {...props} />\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/shell.css.ts",
+          "sha256": "20eec486a1b9b350ef5c858965fe83bafb47dd361db5154a2bc49ab0b6b1e75b"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": "Supply the typed component props and read pattern/shell-preferences; the snippet does not invent product data or a backend adapter."
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-productshell--default"
+      },
+      {
+        "state": "menu",
+        "id": "components-productshell--menu"
+      },
+      {
+        "state": "dropdown",
+        "id": "components-productshell--dropdown"
+      },
+      {
+        "state": "phone",
+        "id": "components-productshell--phone"
+      },
+      {
+        "state": "overflow",
+        "id": "components-productshell--overflow"
+      },
+      {
+        "state": "product-locales",
+        "id": "components-productshell--product-locales"
+      }
+    ]
+  }
+}

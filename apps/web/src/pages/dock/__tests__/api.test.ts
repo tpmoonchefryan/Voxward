@@ -45,6 +45,7 @@ describe("Dock API client", () => {
     });
 
     await expect(api.getDock("ch-1")).rejects.toMatchObject({ status: 403, code: "FORBIDDEN" });
-    expect(dockMessageFor(new DockApiFailure(403, "FORBIDDEN"))).toContain("撤销");
+    expect(dockMessageFor(new DockApiFailure(403, "FORBIDDEN"))).toContain("revoked");
+    expect(dockMessageFor(new DockApiFailure(403, "FORBIDDEN"), "zh-CN")).toContain("撤销");
   });
 });

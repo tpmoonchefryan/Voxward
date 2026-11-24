@@ -101,9 +101,33 @@ describe("data-panel API client", () => {
     expect(server.calls[3]?.csrf).toBe("csrf-new");
   });
 
-  it("shows fixed text for a known code, the generic line for an unknown one, and a network line otherwise", () => {
-    expect(messageFor(new ApiFailure(403, "FORBIDDEN"))).toBe("当前账号没有数据管理权限，无法执行此操作。");
-    expect(messageFor(new ApiFailure(500, "SOMETHING_NEW"))).toBe("操作没有完成，请稍后再试。");
-    expect(messageFor(new TypeError("fetch failed"))).toBe("无法连接服务，请检查网络后重试。");
+  it("executes a verified cleanup request via POST /execute with CSRF token", async () => {
+    const server = fakeFetch([
+      { status: 200, body: { csrfToken: "csrf-exec" } },
+      { status: 200, body: { requestId: "req-1", stage: "COMPLETED" } },
+    ]);
+    const api = createDataApi(server.fetch);
+    const result = await api.execute("channel-1", "req-1");
+    expect(result.stage).toBe("COMPLETED");
+    expect(server.calls[1]).toEqual({
+      url: "/channels/channel-1/data/requests/req-1/execute",
+      method: "POST",
+      csrf: "csrf-exec",
+    });
+  });
+
+  it("shows fixed text for a known code, generic line otherwise, across locales", () => {
+    expect(messageFor(new ApiFailure(403, "FORBIDDEN"))).toBe(
+      "Current account has no data compliance permission for this operation.",
+    );
+    expect(messageFor(new ApiFailure(500, "SOMETHING_NEW"))).toBe(
+      "Action did not complete. Please try again later.",
+    );
+    expect(messageFor(new TypeError("fetch failed"))).toBe(
+      "Unable to connect to the service. Check your network.",
+    );
+    expect(messageFor(new ApiFailure(403, "FORBIDDEN"), "zh-CN")).toBe(
+      "当前账号没有数据管理权限，无法执行此操作。",
+    );
   });
 });
