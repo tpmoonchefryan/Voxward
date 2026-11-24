@@ -1,4 +1,4 @@
-> 说明：本文档以[英文原版](./README.md)为准 · `synced-to: 03a4a0214d64a5fbb531715c2693872629852b977d7e29c2f9cd3ed1f8927438`
+> 说明：本文档以[英文原版](./README.md)为准 · `synced-to: 3f5c65f612537959611e4bdfb684ed7542ef3a8f945f802921244f1fee92951a`
 
 <div align="center">
 
@@ -15,6 +15,7 @@
 [English](./README.md) · **简体中文** · [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Français](./README.fr.md)
 
 [![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
+[![live-sandbox](https://img.shields.io/badge/Live%20Demo-在线沙盒体验-f58a33?style=flat-square)](https://voxward.tcrn-platform.com/sandbox)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
 [![discussions](https://img.shields.io/badge/Discussions-主播试点联系-0b6b65?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/discussions)
@@ -68,10 +69,12 @@ VoxWard 将职责拆解为自托管中间件的协同流水线：
 
 ## Kiroween 2026 评委速览
 
+> **在线零配置沙盒（开箱即用）**：直接在浏览器打开 **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)**（无需登录、YouTube 密钥或大模型 API Key）。
+
 - **运行前提**：`Node.js >= 24`、`pnpm 12.18`（无需额外安装外部数据库，内嵌 SQLite WAL）。
 - **技术栈**：TypeScript、Fastify 5、React 19、Vite、Drizzle ORM + `better-sqlite3`、WebSocket (`ws`)、`@tcrn/ui-react@4.2.0`、Docker 与 k3s（`local-path` + Traefik）。
 
-评审无需准备 Google Cloud 凭据、YouTube OAuth 令牌或外部 LLM API Key，可直接启动**零密钥合成演示沙盒**（若环境变量中误配真实密钥，沙盒守卫会自动 fail-closed 拒绝启动）：
+评审也可在本地直接启动相同的**零密钥合成演示沙盒**（若环境变量中误配真实密钥，沙盒守卫会自动 fail-closed 拒绝启动）：
 
 ```bash
 pnpm install --frozen-lockfile
@@ -85,7 +88,7 @@ node deploy/sandbox/start-sandbox.mjs
 2. 观察顶部的**实时弹幕流模拟器**：持续推送普通弹幕与带倒计时进度条的置顶/信息流 Super Chat 卡片（可调频或点击 **`+ Push SC Now`** 手动插播）。
 3. 依次触发 6 个预设场景，并在 **`Streamer View`、`Moderator View`、`Data Auditor`、`Stage Visitor`** 四个演示角色间切换，检验真实工作台组件与服务端权限隔离。
 
-如需在 k3s 集群上托管在线评审演示，可应用无状态清单 [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/)（详见 [`deploy/k3s/README.md`](./deploy/k3s/README.md)）。
+如需在自己的 k3s 集群上托管在线评审演示，可应用无状态清单 [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/)（详见 [`deploy/k3s/README.md`](./deploy/k3s/README.md)）。
 
 详细参赛说明见 [Kiroween 2026 提交说明](./docs/KIROWEEN.md)。
 
@@ -157,11 +160,13 @@ Voxward/
 
 预发布版本 `rc0.1.0` 已在本地完成 `pnpm check:deps`、`pnpm check:ds`、`pnpm typecheck`、`pnpm build`、`node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`、`pnpm test -- --run`（187 组测试文件、2,019 项测试全过）及 Playwright 全链路 E2E 验证。
 
+容器与在线沙盒已通过实测：多阶段 [`Dockerfile`](./Dockerfile) 已在 Cloud Build 构建通过，k3s `/sandbox` 清单已上线 **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)** 并完成公网 HTTPS 与 Playwright E2E 验证。
+
 仍属外部部署前提、未在合成环境下伪造实测结果的边界（详见 [`docs/deployment/troubleshooting-and-quotas.md`](./docs/deployment/troubleshooting-and-quotas.md) 与 [`deploy/kiro-runtime/README.md`](./deploy/kiro-runtime/README.md)）：
 
 - 真实独立 Linux 运行账号下的 `kiro-cli` 调用实测（`VW-S029-KIRO-REAL`）与真实模型延迟/费用基准（`VOXWARD-SUB-050`）。
 - 部署方独立 Google Cloud 项目 OAuth 审核及 YouTube API 配额与频道计分用途合规确认。
-- 容器与 k3s 部署清单（[`Dockerfile`](./Dockerfile)、[`deploy/k3s/`](./deploy/k3s/)）已完成 YAML 语法、运行约束与脱敏卫生静态校验；实际 `docker build` 与集群 `kubectl apply` 需在构建机及目标 k3s 集群上执行验证。
+- 自托管生产版 k3s 清单（[`deploy/k3s/production/`](./deploy/k3s/production/)，含 `local-path` RWO 持久卷与一次性 Owner 引导 Job）已完成 YAML 语法与运行约束静态校验，实际落地需在你的生产集群上执行验证。
 
 ## 迈向 v1.0 路线图
 

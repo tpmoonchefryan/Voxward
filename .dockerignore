@@ -8,10 +8,11 @@
 **/dist
 .turbo
 .tmp
-data
-coverage
-bench
-docs
+/data
+/apps/server/data
+/coverage
+/bench
+/docs
 *.log
 *.sqlite
 *.sqlite3
@@ -21,6 +22,6 @@ docs
 .env.*
 !.env.example
 .DS_Store
-deploy/k3s
-deploy/server
-deploy/kiro-runtime
+/deploy/k3s
+/deploy/server
+/deploy/kiro-runtime

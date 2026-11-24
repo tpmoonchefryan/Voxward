@@ -8,7 +8,9 @@ It stitches traditionally separate pieces — live chat ingestion, deterministic
 
 ## 1. Zero-Credential Judge Quickstart (`/sandbox`)
 
-Judges do not need Google Cloud credentials, YouTube OAuth tokens, or external AI API keys. The isolated synthetic sandbox fails closed if real secrets are present and runs completely self-contained:
+> **Live Online Sandbox (Zero Setup)**: Judges can evaluate VoxWard immediately at **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)** with no local build, Google Cloud credentials, or API keys required.
+
+To run the same zero-credential synthetic sandbox locally:
 
 ```bash
 pnpm install --frozen-lockfile

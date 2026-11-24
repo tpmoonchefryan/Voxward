@@ -1,4 +1,4 @@
-> Remarque : la [version anglaise](./README.md) fait foi · `synced-to: 03a4a0214d64a5fbb531715c2693872629852b977d7e29c2f9cd3ed1f8927438`
+> Remarque : la [version anglaise](./README.md) fait foi · `synced-to: 3f5c65f612537959611e4bdfb684ed7542ef3a8f945f802921244f1fee92951a`
 
 <div align="center">
 
@@ -15,6 +15,7 @@ Intergiciel auto-hébergé de modération de chat et danmaku en direct, notation
 [English](./README.md) · [简体中文](./README.zh-CN.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md) · **Français**
 
 [![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
+[![live-sandbox](https://img.shields.io/badge/Live%20Demo-Bac%20%C3%A0%20sable%20en%20ligne-f58a33?style=flat-square)](https://voxward.tcrn-platform.com/sandbox)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
 [![discussions](https://img.shields.io/badge/Discussions-Pilotes%20Streamers-0b6b65?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/discussions)
@@ -68,10 +69,12 @@ VoxWard sépare proprement les responsabilités dans un intergiciel auto-héberg
 
 ## Démarrage rapide Jury Kiroween 2026
 
+> **Bac à sable en ligne (sans installation)** : ouvrez directement **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)** dans votre navigateur (aucune connexion, clé YouTube ou clé LLM requise).
+
 - **Prérequis d'exécution** : `Node.js >= 24`, `pnpm 12.18` (aucune base de données externe requise — SQLite WAL embarqué).
 - **Pile technique** : TypeScript, Fastify 5, React 19, Vite, Drizzle ORM + `better-sqlite3`, WebSocket (`ws`), `@tcrn/ui-react@4.2.0`, Docker & k3s (`local-path` + Traefik).
 
-Aucune clé API YouTube ou LLM n'est requise. Le bac à sable synthétique échoue en sécurité (fail-closed) si des secrets de production sont présents dans l'environnement :
+Vous pouvez également lancer le même bac à sable synthétique localement (il échoue en sécurité / fail-closed si des secrets de production sont détectés) :
 
 ```bash
 pnpm install --frozen-lockfile
@@ -85,7 +88,7 @@ Ouvrez ensuite **`http://127.0.0.1:3100/sandbox`** dans votre navigateur :
 2. Observez le **Simulateur de flux en direct** injecter des messages danmaku et des cartes Super Chat avec compte à rebours (ou cliquez sur **`+ Push SC Now`**).
 3. Testez les 6 scénarios prédéfinis et les 4 rôles de démonstration (**`Streamer View`, `Moderator View`, `Data Auditor`, `Stage Visitor`**) à travers le bureau de modération, le dock pur, la scène OBS, la conformité des données et les journaux.
 
-Pour héberger une démo jury en ligne sur k3s, appliquez le recouvrement sans état [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/) (voir [`deploy/k3s/README.md`](./deploy/k3s/README.md)).
+Pour héberger votre propre démo jury en ligne sur k3s, appliquez le recouvrement sans état [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/) (voir [`deploy/k3s/README.md`](./deploy/k3s/README.md)).
 
 Voir le guide dédié : [Kiroween 2026 Submission Guide](./docs/KIROWEEN.md).
 
@@ -157,11 +160,13 @@ Le déploiement en production cible un serveur Linux derrière un proxy inverse 
 
 Pour `rc0.1.0` : `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm build`, `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`, `pnpm test -- --run` (187 fichiers / 2 019 tests) et tests Playwright E2E ont tous réussi.
 
+Déploiement conteneurisé vérifié en direct : le [`Dockerfile`](./Dockerfile) multi-étapes compile avec succès sur Cloud Build et la configuration k3s `/sandbox` est en ligne et vérifiée en HTTPS + Playwright E2E sur **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)**.
+
 Éléments hors périmètre de vérification synthétique (voir [`docs/deployment/troubleshooting-and-quotas.md`](./docs/deployment/troubleshooting-and-quotas.md) et [`deploy/kiro-runtime/README.md`](./deploy/kiro-runtime/README.md)) :
 
 - Exécution réelle de `kiro-cli` sous compte Linux dédié (`VW-S029-KIRO-REAL`) et mesures de latence/coût réelles (`VOXWARD-SUB-050`).
 - Vérification OAuth Google Cloud et confirmation des quotas/règles YouTube pour le scoring par chaîne auprès de la plateforme.
-- Les fichiers conteneur et k3s ([`Dockerfile`](./Dockerfile), [`deploy/k3s/`](./deploy/k3s/)) ont été validés statiquement (syntaxe YAML, invariants d'exécution et hygiène des chemins) ; `docker build` et `kubectl apply` doivent être exécutés sur votre hôte de build / cluster k3s cible.
+- La configuration k3s de production auto-hébergée ([`deploy/k3s/production/`](./deploy/k3s/production/), incluant le volume `local-path` RWO et l'amorçage unique) est validée statiquement (YAML et invariants) et doit être vérifiée sur votre cluster cible.
 
 ## Feuille de route vers la v1.0
 

@@ -1,4 +1,4 @@
-> 참고: 이 문서는 [영문 원본](./README.md)을 정본으로 합니다 · `synced-to: 03a4a0214d64a5fbb531715c2693872629852b977d7e29c2f9cd3ed1f8927438`
+> 참고: 이 문서는 [영문 원본](./README.md)을 정본으로 합니다 · `synced-to: 3f5c65f612537959611e4bdfb684ed7542ef3a8f945f802921244f1fee92951a`
 
 <div align="center">
 
@@ -15,6 +15,7 @@
 [English](./README.md) · [简体中文](./README.zh-CN.md) · [日本語](./README.ja.md) · **한국어** · [Français](./README.fr.md)
 
 [![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
+[![live-sandbox](https://img.shields.io/badge/Live%20Demo-온라인%20샌드박스-f58a33?style=flat-square)](https://voxward.tcrn-platform.com/sandbox)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
 [![discussions](https://img.shields.io/badge/Discussions-스트리머%20파일럿-0b6b65?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/discussions)
@@ -68,10 +69,12 @@ VoxWard는 역할을 명확히 나눈 셀프 호스팅 미들웨어입니다:
 
 ## Kiroween 2026 심사위원 빠른 시작
 
+> **온라인 샌드박스(설치 불필요)**: 브라우저에서 **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)** 를 바로 여세요(로그인, YouTube 키 또는 LLM API 키가 필요하지 않습니다).
+
 - **실행 전제 조건**: `Node.js >= 24`, `pnpm 12.18` (외부 DB 불필요 — 내장 SQLite WAL 사용).
 - **기술 스택**: TypeScript, Fastify 5, React 19, Vite, Drizzle ORM + `better-sqlite3`, WebSocket (`ws`), `@tcrn/ui-react@4.2.0`, Docker & k3s (`local-path` + Traefik).
 
-심사위원은 Google Cloud 자격 증명, YouTube OAuth 토큰 또는 외부 AI API 키 없이 **무비밀(Zero-Secret) 샌드박스**를 실행할 수 있습니다(운영 비밀 값이 감지되면 fail-closed로 시작을 거부합니다):
+로컬 환경에서도 동일한 **무비밀(Zero-Secret) 샌드박스**를 실행할 수 있습니다(운영 비밀 값이 감지되면 fail-closed로 시작을 거부합니다):
 
 ```bash
 pnpm install --frozen-lockfile
@@ -85,7 +88,7 @@ node deploy/sandbox/start-sandbox.mjs
 2. **Live Stream Simulator** 로 연속 채팅 흐름과 카운트다운 SC 알약을 확인하거나 **`+ Push SC Now`** 를 눌러 즉시 테스트할 수 있습니다.
 3. 6가지 사전 시나리오를 실행하고 4가지 데모 역할(**`Streamer View`, `Moderator View`, `Data Auditor`, `Stage Visitor`**)을 오가며 검토 워크벤치, Pure Dock, OBS 스테이지, 데이터 규정 준수 패널, 스냅샷 로그를 검증할 수 있습니다.
 
-k3s에서 온라인 심사위원 데모를 호스팅하려면 상태 비저장 [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/) 오버레이를 적용하세요([`deploy/k3s/README.md`](./deploy/k3s/README.md) 참고).
+직접 k3s에서 온라인 심사위원 데모를 호스팅하려면 상태 비저장 [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/) 오버레이를 적용하세요([`deploy/k3s/README.md`](./deploy/k3s/README.md) 참고).
 
 자세한 내용은 [Kiroween 2026 제출 가이드](./docs/KIROWEEN.md)를 참고하세요.
 
@@ -157,11 +160,13 @@ Voxward/
 
 `rc0.1.0` 기준 로컬에서 `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm build`, `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`, `pnpm test -- --run`(187개 파일, 2,019개 테스트) 및 Playwright E2E 검증을 통과했습니다.
 
+컨테이너 및 온라인 샌드박스 실배포 검증: 멀티 스테이지 [`Dockerfile`](./Dockerfile) 은 Cloud Build에서 정상 빌드되었으며, k3s `/sandbox` 배포는 **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)** 에서 실제 HTTPS 및 Playwright E2E 검증을 마쳤습니다.
+
 실제 외부 자격 증명이 필요하여 합성 검증 범위에 포함되지 않는 경계([`docs/deployment/troubleshooting-and-quotas.md`](./docs/deployment/troubleshooting-and-quotas.md), [`deploy/kiro-runtime/README.md`](./deploy/kiro-runtime/README.md) 참고):
 
 - 격리된 Linux 계정에서 실제 `kiro-cli` 런타임 실행(`VW-S029-KIRO-REAL`) 및 실제 모델 지연·비용 벤치마크(`VOXWARD-SUB-050`).
 - 운영자의 Google Cloud 프로젝트 OAuth 앱 검증 및 YouTube API 할당량·정책 확인.
-- 컨테이너 및 k3s 배포 자산([`Dockerfile`](./Dockerfile), [`deploy/k3s/`](./deploy/k3s/))은 YAML 구문, 런타임 불변 조건 및 경로 위생에 대해 정적 검증을 마쳤으며, 실제 `docker build`와 클러스터 `kubectl apply`는 운영자의 빌드 호스트 및 대상 k3s 클러스터에서 실행해야 합니다.
+- 셀프 호스팅 운영용 k3s 매니페스트([`deploy/k3s/production/`](./deploy/k3s/production/), `local-path` RWO PVC 및 일회성 소유자 부트스트랩 포함)는 YAML 구문 및 불변 조건 정적 검증을 마쳤으며, 실제 적용은 운영자의 대상 클러스터에서 검증해야 합니다.
 
 ## v1.0 로드맵
 

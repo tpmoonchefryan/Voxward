@@ -13,6 +13,7 @@ Cross-language livestream danmaku & chat moderation, channel-scoped trust scorin
 **English** · [简体中文](./README.zh-CN.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Français](./README.fr.md)
 
 [![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
+[![live-sandbox](https://img.shields.io/badge/Live%20Demo-Online%20Sandbox-f58a33?style=flat-square)](https://voxward.tcrn-platform.com/sandbox)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
 [![discussions](https://img.shields.io/badge/Discussions-Streamer%20Pilots-0b6b65?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/discussions)
@@ -66,10 +67,12 @@ VoxWard separates concerns cleanly into a self-hosted middleware:
 
 ## Kiroween 2026 Judge Quickstart
 
+> **Live Online Sandbox (Zero Setup)**: Open **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)** directly in your browser (no login, YouTube key, or LLM key required).
+
 - **Runtime Prerequisites**: `Node.js >= 24`, `pnpm 12.18` (zero external database needed — embedded SQLite WAL).
 - **Tech Stack**: TypeScript, Fastify 5, React 19, Vite, Drizzle ORM + `better-sqlite3`, WebSocket (`ws`), `@tcrn/ui-react@4.2.0`, Docker & k3s (`local-path` + Traefik).
 
-Reviewers can evaluate the complete frontend + backend pipeline in **zero-credential Sandbox mode** (no YouTube API key or LLM API key required). The launcher fails closed if real production secrets are present.
+Reviewers can also run the complete frontend + backend pipeline locally in **zero-credential Sandbox mode** (no YouTube API key or LLM API key required; the launcher fails closed if real production secrets are present):
 
 ```bash
 pnpm install --frozen-lockfile
@@ -83,7 +86,7 @@ Open **`http://127.0.0.1:3100/sandbox`** in your browser:
 2. Watch the **Live Stream Simulator** push continuous danmaku and timed Super Chat pills (or click **`+ Push SC Now`**).
 3. Run the 6 preset scenarios and switch between **`Streamer View`**, **`Moderator View`**, **`Data Auditor`**, and **`Stage Visitor`** across the Moderation Desk, Pure Dock, OBS Stage Preview, Data Compliance Panel, and Snapshot Log views.
 
-To host an online judge demo on k3s, apply the stateless [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/) overlay (see [`deploy/k3s/README.md`](./deploy/k3s/README.md)).
+To host your own online judge demo on k3s, apply the stateless [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/) overlay (see [`deploy/k3s/README.md`](./deploy/k3s/README.md)).
 
 For full contest notes, see [Kiroween 2026 Submission Guide](./docs/KIROWEEN.md).
 
@@ -155,11 +158,13 @@ Production deployment targets self-hosted Linux servers behind an HTTPS reverse 
 
 Local engineering checks verified at release candidate `rc0.1.0`: `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm build`, `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`, `pnpm test -- --run` (187 test files, 2,019 tests), and Playwright E2E across all routes in Sandbox/LAN preview.
 
+Containerized deployment checks verified live: the multi-stage [`Dockerfile`](./Dockerfile) builds cleanly on Cloud Build and the k3s `/sandbox` overlay is live and verified over HTTPS + Playwright E2E at **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)**.
+
 External dependencies explicitly left outside synthetic verification (see [`docs/deployment/troubleshooting-and-quotas.md`](./docs/deployment/troubleshooting-and-quotas.md) and [`deploy/kiro-runtime/README.md`](./deploy/kiro-runtime/README.md)):
 
 - Live host execution of an isolated `kiro-cli` OS user (`VW-S029-KIRO-REAL`) and live AI provider latency/cost benchmarks (`VOXWARD-SUB-050`).
 - Operator-owned Google Cloud OAuth verification and YouTube API quota/policy confirmation for channel-scoped scoring.
-- Container and k3s deployment assets ([`Dockerfile`](./Dockerfile), [`deploy/k3s/`](./deploy/k3s/)) are statically validated for YAML syntax, runtime invariants, and path hygiene; live `docker build` and cluster `kubectl apply` remain to be executed on the operator's build host / target k3s cluster.
+- Self-hosted production k3s deployment ([`deploy/k3s/production/`](./deploy/k3s/production/) with `local-path` RWO PVC and one-time owner bootstrap) remains validated statically via YAML/invariant checks and must be verified on the operator's target production cluster.
 
 ## Roadmap Toward v1.0
 
