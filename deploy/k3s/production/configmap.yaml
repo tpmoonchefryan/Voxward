@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: voxward-config
+  namespace: voxward
+  labels:
+    app.kubernetes.io/name: voxward
+    app.kubernetes.io/part-of: voxward
+data:
+  VOXWARD_HOST: "0.0.0.0"
+  VOXWARD_PORT: "3000"
+  VOXWARD_ADAPTERS: "synthetic"
+  VOXWARD_DATABASE_FILE: "/var/lib/voxward/voxward.sqlite3"
+  VOXWARD_KIRO_TIMEOUT_MS: "120000"

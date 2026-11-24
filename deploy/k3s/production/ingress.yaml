@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: voxward
+  namespace: voxward
+  labels:
+    app.kubernetes.io/name: voxward
+    app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: voxward
+  # Traefik preserves the client Host header by default (required for authorizeSocketHandshake
+  # same-origin validation) and natively upgrades WebSocket connections.
+  # TLS is mandatory in production because vw_session cookies carry `HttpOnly; Secure; SameSite=Strict`.
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - voxward.example.com
+      secretName: voxward-tls
+  rules:
+    - host: voxward.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: voxward
+                port:
+                  name: http

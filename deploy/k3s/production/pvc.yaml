@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: voxward-data
+  namespace: voxward
+  labels:
+    app.kubernetes.io/name: voxward
+    app.kubernetes.io/part-of: voxward
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi

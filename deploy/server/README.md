@@ -52,5 +52,6 @@ VOXWARD_BOOTSTRAP_PASSWORD='replace-with-strong-passphrase' \
 ## 5. 关联文档
 
 - 完整运维与排障手册：`docs/deployment/remote-deploy.md`
+- k3s 容器化与 `/sandbox` / 生产部署清单：`deploy/k3s/README.md`
 - Kiro 受限运行环境：`deploy/kiro-runtime/README.md`（注意：`VW-S029-KIRO-REAL` 仍为 `UNVERIFIED`）
 - YouTube 凭据配置：`docs/deployment/youtube-credentials.md`

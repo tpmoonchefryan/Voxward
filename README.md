@@ -47,6 +47,8 @@ Open **`http://127.0.0.1:3100/sandbox`** in your browser:
 2. Watch the **Live Stream Simulator** push continuous danmaku and timed Super Chat pills (or click **`+ Push SC Now`**).
 3. Run the 6 preset scenarios and switch between **`Streamer View`**, **`Moderator View`**, **`Data Auditor`**, and **`Stage Visitor`** across the Moderation Desk, Pure Dock, OBS Stage Preview, Data Compliance Panel, and Snapshot Log views.
 
+To host an online judge demo on k3s, apply the stateless [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/) overlay (see [`deploy/k3s/README.md`](./deploy/k3s/README.md)).
+
 For full contest notes, see [Kiroween 2026 Submission Guide](./docs/KIROWEEN.md).
 
 ---
@@ -94,9 +96,10 @@ This repository preserves its Kiro development artifacts in-tree:
 
 ## Self-Hosted Deployment
 
-Production deployment targets self-hosted Linux servers behind an HTTPS reverse proxy (such as Caddy) bound to loopback (`127.0.0.1:3000`) with strict `HttpOnly; Secure; SameSite=Strict` cookies and explicit one-time owner bootstrap.
+Production deployment targets self-hosted Linux servers behind an HTTPS reverse proxy (such as Caddy) bound to loopback (`127.0.0.1:3000`) or single-node **k3s** clusters via the multi-stage [`Dockerfile`](./Dockerfile) and Kustomize manifests under [`deploy/k3s/`](./deploy/k3s/) (`replicas: 1` + `Recreate` + `local-path` RWO for SQLite WAL, `enableServiceLinks: false`, Traefik HTTPS/WSS, strict `HttpOnly; Secure; SameSite=Strict` cookies, and one-time owner bootstrap).
 
-- Quick template & bootstrap guide: [`deploy/server/README.md`](./deploy/server/README.md)
+- Linux systemd & reverse-proxy templates: [`deploy/server/README.md`](./deploy/server/README.md)
+- k3s container & manifests (`/sandbox` + production): [`deploy/k3s/README.md`](./deploy/k3s/README.md)
 - Detailed remote deploy runbook: [`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
 - OBS & YouTube setup: [`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
 
@@ -108,6 +111,7 @@ External dependencies explicitly left outside synthetic verification (see [`docs
 
 - Live host execution of an isolated `kiro-cli` OS user (`VW-S029-KIRO-REAL`) and live AI provider latency/cost benchmarks (`VOXWARD-SUB-050`).
 - Operator-owned Google Cloud OAuth verification and YouTube API quota/policy confirmation for channel-scoped scoring.
+- Container and k3s deployment assets ([`Dockerfile`](./Dockerfile), [`deploy/k3s/`](./deploy/k3s/)) are statically validated for YAML syntax, runtime invariants, and path hygiene; live `docker build` and cluster `kubectl apply` remain to be executed on the operator's build host / target k3s cluster.
 
 ---
 
@@ -121,4 +125,5 @@ External dependencies explicitly left outside synthetic verification (see [`docs
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Local workflow, DS/deps gates & five-language sync rules | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | Community standards & confidential reporting | [EN](./CODE_OF_CONDUCT.md) · [zh-CN](./docs/i18n/zh-CN/CODE_OF_CONDUCT.md) · [JA](./docs/i18n/ja/CODE_OF_CONDUCT.md) · [KO](./docs/i18n/ko/CODE_OF_CONDUCT.md) · [FR](./docs/i18n/fr/CODE_OF_CONDUCT.md) |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Release history (`rc0.1.0`) | English |
+| [`deploy/k3s/README.md`](./deploy/k3s/README.md) | k3s container build, online `/sandbox` & self-hosted production manifests | English |
 | [`LICENSE`](./LICENSE) & [`NOTICE`](./NOTICE) | Apache-2.0 license, third-party & bundled SIL OFL 1.1 font notices | English (authoritative) |

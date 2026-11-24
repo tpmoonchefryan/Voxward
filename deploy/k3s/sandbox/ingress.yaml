@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: voxward-sandbox
+  namespace: voxward-sandbox
+  labels:
+    app.kubernetes.io/name: voxward-sandbox
+    app.kubernetes.io/component: sandbox
+    app.kubernetes.io/part-of: voxward
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - sandbox.voxward.example.com
+      secretName: voxward-sandbox-tls
+  rules:
+    - host: sandbox.voxward.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: voxward-sandbox
+                port:
+                  name: http

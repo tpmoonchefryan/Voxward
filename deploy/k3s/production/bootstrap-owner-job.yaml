@@ -1,0 +1,82 @@
+# One-time Channel Owner bootstrap Job.
+# Before applying:
+#   1. Scale `deploy/voxward` to 0 (`kubectl -n voxward scale deploy/voxward --replicas=0`)
+#      so the ReadWriteOnce local-path volume and SQLite WAL lock have no active writer.
+#   2. Create a short-lived Secret `voxward-bootstrap-secret` with key `password` (>= 12 chars).
+#   3. Apply this Job, verify `Complete`, then delete both the Job and `voxward-bootstrap-secret`.
+#   4. Scale `deploy/voxward` back to 1.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: voxward-bootstrap-owner
+  namespace: voxward
+  labels:
+    app.kubernetes.io/name: voxward
+    app.kubernetes.io/component: bootstrap-owner
+    app.kubernetes.io/part-of: voxward
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: voxward
+        app.kubernetes.io/component: bootstrap-owner
+        app.kubernetes.io/part-of: voxward
+    spec:
+      restartPolicy: Never
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bootstrap-owner
+          image: ghcr.io/tpmoonchefryan/voxward:rc0.1.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - scripts/bootstrap-owner.mjs
+            - --db
+            - /var/lib/voxward/voxward.sqlite3
+            - --channel-id
+            - main-room
+            - --login-name
+            - owner
+            - --display-name
+            - Channel Owner
+          env:
+            - name: VOXWARD_BOOTSTRAP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: voxward-bootstrap-secret
+                  key: password
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/voxward
+            - name: runtime-tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: voxward-data
+        - name: runtime-tmp
+          emptyDir:
+            sizeLimit: 32Mi

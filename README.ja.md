@@ -1,4 +1,4 @@
-> 注：本ドキュメントは[英語版](./README.md)を正文とします · `synced-to: 457d240e8b0837101b230a1a54ac606b7500ddc3c4766c964c43a1e533c66360`
+> 注：本ドキュメントは[英語版](./README.md)を正文とします · `synced-to: ed4a3f04d6252f8b49e1d2f0af7615e782f96c8571a84329221b8e43caed2196`
 
 <div align="center">
 
@@ -49,6 +49,8 @@ node deploy/sandbox/start-sandbox.mjs
 2. **Live Stream Simulator** により通常コメントとカウントダウン付きピン留め SC が連続再生されます（**`+ Push SC Now`** で即時挿入も可能）。
 3. 6 つのプリセットシナリオを実行し、4 種のデモロール（**`Streamer View`、`Moderator View`、`Data Auditor`、`Stage Visitor`**）でモデレーション画面・Pure Dock・OBS ステージ・データ準拠パネル・スナップショットログの権限境界を確認できます。
 
+k3s 上でオンライン審査用デモをホストする場合は、ステートレスな [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/) オーバーレイを適用してください（詳細は [`deploy/k3s/README.md`](./deploy/k3s/README.md)）。
+
 応募詳細は [Kiroween 2026 提出ガイド](./docs/KIROWEEN.md) を参照してください。
 
 ---
@@ -96,9 +98,10 @@ flowchart LR
 
 ## セルフホスト運用
 
-本番デプロイは HTTPS リバースプロキシ（Caddy 等）背後の Linux サーバー（`127.0.0.1:3000` ループバック待機、`HttpOnly; Secure; SameSite=Strict` Cookie、ワンタイムオーナー初期化 CLI）を前提としています。
+本番デプロイは HTTPS リバースプロキシ（Caddy 等）背後の Linux サーバー（`127.0.0.1:3000` ループバック待機）、またはマルチステージ [`Dockerfile`](./Dockerfile) と [`deploy/k3s/`](./deploy/k3s/) Kustomize マニフェストによる単一ノード **k3s** クラスター（SQLite WAL 保護のため `replicas: 1` + `Recreate` + `local-path` RWO、`enableServiceLinks: false`、Traefik HTTPS/WSS、`HttpOnly; Secure; SameSite=Strict` Cookie、ワンタイムオーナー初期化）に対応しています。
 
-- デプロイテンプレート: [`deploy/server/README.md`](./deploy/server/README.md)
+- Linux systemd / プロキシテンプレート: [`deploy/server/README.md`](./deploy/server/README.md)
+- k3s コンテナ・マニフェスト（`/sandbox` + 本番）: [`deploy/k3s/README.md`](./deploy/k3s/README.md)
 - リモート構築手順: [`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
 - OBS / YouTube 連携設定: [`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
 
@@ -110,6 +113,7 @@ flowchart LR
 
 - 隔離 Linux ユーザー下での実 `kiro-cli` 実行（`VW-S029-KIRO-REAL`）および実モデルのレイテンシ・コスト計測（`VOXWARD-SUB-050`）。
 - 運用者自身の Google Cloud プロジェクトによる YouTube OAuth 審査・クオータ申請とプラットフォーム規約確認。
+- コンテナおよび k3s デプロイ定義（[`Dockerfile`](./Dockerfile)、[`deploy/k3s/`](./deploy/k3s/)）は YAML 構文・ランタイム不変条件・パス衛生チェックの静的検証済みですが、実際の `docker build` およびクラスターへの `kubectl apply` はビルド環境および対象 k3s クラスターでの実行が必要です。
 
 ---
 
@@ -123,4 +127,5 @@ flowchart LR
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | 開発環境、検証ゲート、多言語ドキュメント同期ルール | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | 行動規範と非公開の報告手順 | [EN](./CODE_OF_CONDUCT.md) · [zh-CN](./docs/i18n/zh-CN/CODE_OF_CONDUCT.md) · [JA](./docs/i18n/ja/CODE_OF_CONDUCT.md) · [KO](./docs/i18n/ko/CODE_OF_CONDUCT.md) · [FR](./docs/i18n/fr/CODE_OF_CONDUCT.md) |
 | [`CHANGELOG.md`](./CHANGELOG.md) | リリース変更履歴（`rc0.1.0`） | English |
+| [`deploy/k3s/README.md`](./deploy/k3s/README.md) | k3s コンテナビルド、オンライン `/sandbox` およびセルフホスト本番マニフェスト | English |
 | [`LICENSE`](./LICENSE) & [`NOTICE`](./NOTICE) | Apache-2.0 ライセンスおよび SIL OFL 1.1 フォントを含む第三者表記 | English (authoritative) |

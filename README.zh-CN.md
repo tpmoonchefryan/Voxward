@@ -1,4 +1,4 @@
-> 说明：本文档以[英文原版](./README.md)为准 · `synced-to: 457d240e8b0837101b230a1a54ac606b7500ddc3c4766c964c43a1e533c66360`
+> 说明：本文档以[英文原版](./README.md)为准 · `synced-to: ed4a3f04d6252f8b49e1d2f0af7615e782f96c8571a84329221b8e43caed2196`
 
 <div align="center">
 
@@ -49,6 +49,8 @@ node deploy/sandbox/start-sandbox.mjs
 2. 观察顶部的**实时弹幕流模拟器**：持续推送普通弹幕与带倒计时进度条的置顶/信息流 Super Chat 卡片（可调频或点击 **`+ Push SC Now`** 手动插播）。
 3. 依次触发 6 个预设场景，并在 **`Streamer View`、`Moderator View`、`Data Auditor`、`Stage Visitor`** 四个演示角色间切换，检验真实工作台组件与服务端权限隔离。
 
+如需在 k3s 集群上托管在线评审演示，可应用无状态清单 [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/)（详见 [`deploy/k3s/README.md`](./deploy/k3s/README.md)）。
+
 详细参赛说明见 [Kiroween 2026 提交说明](./docs/KIROWEEN.md)。
 
 ---
@@ -96,9 +98,10 @@ flowchart LR
 
 ## 自托管部署
 
-生产部署面向主播或运维托管的 Linux 服务器：后端绑定本机回环端口（`127.0.0.1:3000`），前置 HTTPS 反向代理（如 Caddy），启用 `HttpOnly; Secure; SameSite=Strict` 会话 Cookie，并通过一次性 CLI 引导初始化首位所有者账号。
+生产部署面向主播或运维托管的 Linux 服务器（后端绑定本机回环端口 `127.0.0.1:3000` 并前置 Caddy 等 HTTPS 反代）或单节点 **k3s** 集群——通过多阶段 [`Dockerfile`](./Dockerfile) 与 [`deploy/k3s/`](./deploy/k3s/) Kustomize 清单（`replicas: 1` + `Recreate` + `local-path` RWO 保护 SQLite WAL、`enableServiceLinks: false`、Traefik HTTPS/WSS、`HttpOnly; Secure; SameSite=Strict` Cookie 与一次性所有者引导）。
 
-- 部署模板与引导命令：[`deploy/server/README.md`](./deploy/server/README.md)
+- Linux systemd 与反代模板：[`deploy/server/README.md`](./deploy/server/README.md)
+- k3s 容器与清单（`/sandbox` + 生产）：[`deploy/k3s/README.md`](./deploy/k3s/README.md)
 - 完整远端自托管手册：[`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
 - OBS 与 YouTube OAuth 配置：[`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
 
@@ -110,6 +113,7 @@ flowchart LR
 
 - 真实独立 Linux 运行账号下的 `kiro-cli` 调用实测（`VW-S029-KIRO-REAL`）与真实模型延迟/费用基准（`VOXWARD-SUB-050`）。
 - 部署方独立 Google Cloud 项目 OAuth 审核及 YouTube API 配额与频道计分用途合规确认。
+- 容器与 k3s 部署清单（[`Dockerfile`](./Dockerfile)、[`deploy/k3s/`](./deploy/k3s/)）已完成 YAML 语法、运行约束与脱敏卫生静态校验；实际 `docker build` 与集群 `kubectl apply` 需在构建机及目标 k3s 集群上执行验证。
 
 ---
 
@@ -123,4 +127,5 @@ flowchart LR
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | 环境要求、校验门禁、开发约定与五语文档同步规范 | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | 社区行为准则与私密投诉通道 | [EN](./CODE_OF_CONDUCT.md) · [zh-CN](./docs/i18n/zh-CN/CODE_OF_CONDUCT.md) · [JA](./docs/i18n/ja/CODE_OF_CONDUCT.md) · [KO](./docs/i18n/ko/CODE_OF_CONDUCT.md) · [FR](./docs/i18n/fr/CODE_OF_CONDUCT.md) |
 | [`CHANGELOG.md`](./CHANGELOG.md) | 版本变更日志（`rc0.1.0`） | English |
+| [`deploy/k3s/README.md`](./deploy/k3s/README.md) | k3s 容器构建、在线 `/sandbox` 与自托管生产部署清单 | English |
 | [`LICENSE`](./LICENSE) & [`NOTICE`](./NOTICE) | Apache-2.0 许可证、第三方包与 SIL OFL 1.1 字体声明 | English (authoritative) |

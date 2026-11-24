@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voxward
+  namespace: voxward
+  labels:
+    app.kubernetes.io/name: voxward
+    app.kubernetes.io/component: server
+    app.kubernetes.io/part-of: voxward
+spec:
+  replicas: 1
+  strategy:
+    # SQLite WAL + ReadWriteOnce local-path PVC must never run two Pods concurrently.
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: voxward
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: voxward
+        app.kubernetes.io/component: server
+        app.kubernetes.io/part-of: voxward
+    spec:
+      # Critical: prevents Kubernetes from injecting VOXWARD_SERVICE_HOST / VOXWARD_PORT=tcp://...
+      # which apps/server/src/config/load.ts rejects with CONFIG_UNKNOWN_KEY.
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: voxward
+          # Replace with voxward:local when importing directly via `k3s ctr images import`.
+          image: ghcr.io/tpmoonchefryan/voxward:rc0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: voxward-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/voxward
+            - name: runtime-tmp
+              mountPath: /tmp
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: voxward-data
+        - name: runtime-tmp
+          emptyDir:
+            sizeLimit: 64Mi

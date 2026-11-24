@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: voxward
+  labels:
+    app.kubernetes.io/name: voxward
+    app.kubernetes.io/part-of: voxward

@@ -1,4 +1,4 @@
-> 참고: 이 문서는 [영문 원본](./README.md)을 정본으로 합니다 · `synced-to: 457d240e8b0837101b230a1a54ac606b7500ddc3c4766c964c43a1e533c66360`
+> 참고: 이 문서는 [영문 원본](./README.md)을 정본으로 합니다 · `synced-to: ed4a3f04d6252f8b49e1d2f0af7615e782f96c8571a84329221b8e43caed2196`
 
 <div align="center">
 
@@ -49,6 +49,8 @@ node deploy/sandbox/start-sandbox.mjs
 2. **Live Stream Simulator** 로 연속 채팅 흐름과 카운트다운 SC 알약을 확인하거나 **`+ Push SC Now`** 를 눌러 즉시 테스트할 수 있습니다.
 3. 6가지 사전 시나리오를 실행하고 4가지 데모 역할(**`Streamer View`, `Moderator View`, `Data Auditor`, `Stage Visitor`**)을 오가며 검토 워크벤치, Pure Dock, OBS 스테이지, 데이터 규정 준수 패널, 스냅샷 로그를 검증할 수 있습니다.
 
+k3s에서 온라인 심사위원 데모를 호스팅하려면 상태 비저장 [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/) 오버레이를 적용하세요([`deploy/k3s/README.md`](./deploy/k3s/README.md) 참고).
+
 자세한 내용은 [Kiroween 2026 제출 가이드](./docs/KIROWEEN.md)를 참고하세요.
 
 ---
@@ -96,9 +98,10 @@ flowchart LR
 
 ## 셀프 호스팅 배포
 
-운영 배포는 HTTPS 리버스 프록시(Caddy 등) 뒤의 Linux 서버(`127.0.0.1:3000` 루프백 바인딩, `HttpOnly; Secure; SameSite=Strict` 쿠키, 일회성 소유자 부트스트랩 CLI)를 기준으로 합니다.
+운영 배포는 HTTPS 리버스 프록시(Caddy 등) 뒤의 Linux 서버(`127.0.0.1:3000` 루프백 바인딩) 또는 멀티 스테이지 [`Dockerfile`](./Dockerfile) 과 [`deploy/k3s/`](./deploy/k3s/) Kustomize 매니페스트 기반 단일 노드 **k3s** 클러스터(SQLite WAL 보호를 위한 `replicas: 1` + `Recreate` + `local-path` RWO, `enableServiceLinks: false`, Traefik HTTPS/WSS, `HttpOnly; Secure; SameSite=Strict` 쿠키, 일회성 소유자 부트스트랩)를 지원합니다.
 
-- 배포 템플릿: [`deploy/server/README.md`](./deploy/server/README.md)
+- Linux systemd 및 프록시 템플릿: [`deploy/server/README.md`](./deploy/server/README.md)
+- k3s 컨테이너 및 매니페스트(`/sandbox` + 운영): [`deploy/k3s/README.md`](./deploy/k3s/README.md)
 - 원격 배포 매뉴얼: [`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
 - OBS 및 YouTube 연동: [`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
 
@@ -110,6 +113,7 @@ flowchart LR
 
 - 격리된 Linux 계정에서 실제 `kiro-cli` 런타임 실행(`VW-S029-KIRO-REAL`) 및 실제 모델 지연·비용 벤치마크(`VOXWARD-SUB-050`).
 - 운영자의 Google Cloud 프로젝트 OAuth 앱 검증 및 YouTube API 할당량·정책 확인.
+- 컨테이너 및 k3s 배포 자산([`Dockerfile`](./Dockerfile), [`deploy/k3s/`](./deploy/k3s/))은 YAML 구문, 런타임 불변 조건 및 경로 위생에 대해 정적 검증을 마쳤으며, 실제 `docker build`와 클러스터 `kubectl apply`는 운영자의 빌드 호스트 및 대상 k3s 클러스터에서 실행해야 합니다.
 
 ---
 
@@ -123,4 +127,5 @@ flowchart LR
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | 개발 환경, 검증 게이트 및 5개 언어 문서 동기화 규칙 | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | 커뮤니티 행동 강령 및 비공개 신고 안내 | [EN](./CODE_OF_CONDUCT.md) · [zh-CN](./docs/i18n/zh-CN/CODE_OF_CONDUCT.md) · [JA](./docs/i18n/ja/CODE_OF_CONDUCT.md) · [KO](./docs/i18n/ko/CODE_OF_CONDUCT.md) · [FR](./docs/i18n/fr/CODE_OF_CONDUCT.md) |
 | [`CHANGELOG.md`](./CHANGELOG.md) | 릴리스 변경 이력 (`rc0.1.0`) | English |
+| [`deploy/k3s/README.md`](./deploy/k3s/README.md) | k3s 컨테이너 빌드, 온라인 `/sandbox` 및 셀프 호스팅 운영 매니페스트 | English |
 | [`LICENSE`](./LICENSE) & [`NOTICE`](./NOTICE) | Apache-2.0 라이선스 및 SIL OFL 1.1 폰트를 포함한 제3자 고지 | English (authoritative) |

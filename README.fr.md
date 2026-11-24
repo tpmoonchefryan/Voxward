@@ -1,4 +1,4 @@
-> Remarque : la [version anglaise](./README.md) fait foi · `synced-to: 457d240e8b0837101b230a1a54ac606b7500ddc3c4766c964c43a1e533c66360`
+> Remarque : la [version anglaise](./README.md) fait foi · `synced-to: ed4a3f04d6252f8b49e1d2f0af7615e782f96c8571a84329221b8e43caed2196`
 
 <div align="center">
 
@@ -49,6 +49,8 @@ Ouvrez ensuite **`http://127.0.0.1:3100/sandbox`** dans votre navigateur :
 2. Observez le **Simulateur de flux en direct** injecter des messages danmaku et des cartes Super Chat avec compte à rebours (ou cliquez sur **`+ Push SC Now`**).
 3. Testez les 6 scénarios prédéfinis et les 4 rôles de démonstration (**`Streamer View`, `Moderator View`, `Data Auditor`, `Stage Visitor`**) à travers le bureau de modération, le dock pur, la scène OBS, la conformité des données et les journaux.
 
+Pour héberger une démo jury en ligne sur k3s, appliquez le recouvrement sans état [`deploy/k3s/sandbox/`](./deploy/k3s/sandbox/) (voir [`deploy/k3s/README.md`](./deploy/k3s/README.md)).
+
 Voir le guide dédié : [Kiroween 2026 Submission Guide](./docs/KIROWEEN.md).
 
 ---
@@ -96,9 +98,10 @@ Ce dépôt conserve ses artefacts de développement Kiro :
 
 ## Déploiement auto-hébergé
 
-Le déploiement en production cible un serveur Linux derrière un proxy inverse HTTPS (ex. Caddy) sur interface locale (`127.0.0.1:3000`) avec cookies `HttpOnly; Secure; SameSite=Strict` et initialisation unique du propriétaire via CLI.
+Le déploiement en production cible un serveur Linux derrière un proxy inverse HTTPS (ex. Caddy) sur interface locale (`127.0.0.1:3000`) ou un cluster **k3s** mono-nœud via le [`Dockerfile`](./Dockerfile) multi-étapes et les manifestes Kustomize [`deploy/k3s/`](./deploy/k3s/) (`replicas: 1` + `Recreate` + volume `local-path` RWO pour SQLite WAL, `enableServiceLinks: false`, Traefik HTTPS/WSS, cookies `HttpOnly; Secure; SameSite=Strict` et amorçage unique du propriétaire).
 
-- Modèles et démarrage : [`deploy/server/README.md`](./deploy/server/README.md)
+- Modèles Linux systemd & proxy inverse : [`deploy/server/README.md`](./deploy/server/README.md)
+- Conteneur & manifestes k3s (`/sandbox` + production) : [`deploy/k3s/README.md`](./deploy/k3s/README.md)
 - Guide de déploiement complet : [`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
 - Configuration OBS & YouTube : [`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
 
@@ -110,6 +113,7 @@ Pour `rc0.1.0` : `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm bui
 
 - Exécution réelle de `kiro-cli` sous compte Linux dédié (`VW-S029-KIRO-REAL`) et mesures de latence/coût réelles (`VOXWARD-SUB-050`).
 - Vérification OAuth Google Cloud et confirmation des quotas/règles YouTube pour le scoring par chaîne auprès de la plateforme.
+- Les fichiers conteneur et k3s ([`Dockerfile`](./Dockerfile), [`deploy/k3s/`](./deploy/k3s/)) ont été validés statiquement (syntaxe YAML, invariants d'exécution et hygiène des chemins) ; `docker build` et `kubectl apply` doivent être exécutés sur votre hôte de build / cluster k3s cible.
 
 ---
 
@@ -123,4 +127,5 @@ Pour `rc0.1.0` : `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm bui
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Prérequis, portes de validation et synchronisation multilingue | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | Code de conduite et signalement confidentiel | [EN](./CODE_OF_CONDUCT.md) · [zh-CN](./docs/i18n/zh-CN/CODE_OF_CONDUCT.md) · [JA](./docs/i18n/ja/CODE_OF_CONDUCT.md) · [KO](./docs/i18n/ko/CODE_OF_CONDUCT.md) · [FR](./docs/i18n/fr/CODE_OF_CONDUCT.md) |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Historique des versions (`rc0.1.0`) | English |
+| [`deploy/k3s/README.md`](./deploy/k3s/README.md) | Build conteneur k3s, manifestes `/sandbox` en ligne et production auto-hébergée | English |
 | [`LICENSE`](./LICENSE) & [`NOTICE`](./NOTICE) | Licence Apache-2.0 et mentions tierces (incluant polices SIL OFL 1.1) | English (authoritative) |
