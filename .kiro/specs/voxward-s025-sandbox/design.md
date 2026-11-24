@@ -116,3 +116,9 @@ No design authority is configured for the resolved work context. No authority wa
 - **N17a / N17b 加固与证据规范**：
   - `apps/server/src/demo/scenarios/index.ts` 两处 `scoreExceptions` 查询补上 `isNull(scoreExceptions.removedAt)`。
   - `.kiro/specs/voxward-s025-sandbox/evidence/self-check.md` 全部命令与路径统一使用仓库相对路径。
+
+### 7. 2026-11-24 VW-Draft-07 验收修订（VOXWARD-INIT-002）
+- 依据 Owner 已验收纪要 `minutes:fe749147`：
+  - `/sandbox` 摒弃独立「五合一调试台」拼盘布局，直接复用正式产品界面（`VoxWardShell` / `ProductShell` + 2px 结界顶线 + 正式 `ModerationView` / `DataPanelView` / 纯净 `DockView`），仅在顶栏下方通过 `ProductShell` `topBanner` 插槽常驻合成演示标识与角色切换/预设场景/一键重置控制栏；
+  - 角色权限联动顶栏导航可用态与页面视图（`DEMO_STAGE_VIEWER` 展示纯净副屏与后台越权提示），界面彻底剥离内部枚举名与源码路径；
+  - 全部后端 `/sandbox-api/*` 隔离守卫与 `redactSnapshotForCapabilities` 保持不变。

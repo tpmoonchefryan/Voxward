@@ -759,3 +759,10 @@ Kiro CLI／Crew 是 MVP 的实际 AI 与协调选型，同时保留 Kiro 开发�
 | 完整提案包含具体建议、原因、投入回报、验收与开发计划 | 第 17–20 节 |
 
 本文替代旧稿中与上述决策冲突的设计，包括白名单完全绕过检查、语音独立裁决、浏览器默认回环注入、固定子代理数量、无限累积队列、全局无限保序等待及未经实测的性能承诺。后续 Specs 以本版的产品决策为基础，外部许可与实测状态按证据更新。
+
+## 21. 2026-11-17 至 2026-11-24 UI/UX 草稿验收补充修订（VOXWARD-INIT-002）
+
+依据 Penpot 设计稿 `VW-Draft-00`..`VW-Draft-08` Owner 验收纪要（详见 `.kiro/specs/voxward-frontend-v2/`）：
+1. **OBS 舞台静默拦截边界**：`BLOCK` 裁决对 OBS 舞台静默丢弃，`/overlay/:roomId` 不显示拦截提示框或播放拦截音效（事后追回仅静默撤回对应气泡）；仅控制自有 `/overlay/:roomId` 网页气泡与 SC 样式，不控制第三方 `blivechat` 皮肤。
+2. **副屏弹幕姬与审核/管理职责分离**：`/dock/:roomId` 为纯净无顶栏双列弹幕姬，完整对齐 YouTube Super Chat 7 档颜色与 Ticker 置顶倒计时且禁止手动关闭或退回 SC；审核与重判归口 `/moderation/:channelId` 与 `/channels/:channelId/blocked`（拦截管理重判仅修正本频道积分、绝不向弹幕姬补发；黑名单用户仅 VoxWard 手动拉黑，不做 0 分自动拉黑与 YouTube 反向同步）；静态系统设置、集成适配器/模型池/输出凭据、以及 `Deny > Grant > Not Set` 多角色 RBAC 分别独立归口 `/admin/:channelId?`、`/integrations/:channelId?` 与 `/users/:channelId?`。
+3. **沙盒复用与设计系统权威**：`/sandbox` 直接复用正式 01–06 界面与 `ProductShell` `topBanner` 控制条；全站前端基于 `TCRN-Design-System@4.1.0` 正式包实现并纳入 `tcrn-ds-check` 契约校验。
