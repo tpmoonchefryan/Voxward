@@ -1,0 +1,957 @@
+{
+  "schemaVersion": "tcrn.ai-index.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.1.0",
+      "@tcrn/ui-tokens": "4.1.0",
+      "@tcrn/ui-copy-state": "4.1.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "candidate": {
+    "version": "4.1.0",
+    "commit": "ca4e98d8eea401e9175913ab10d2444567ec3cff",
+    "dirty": false
+  },
+  "sourceManifest": {
+    "path": "ai/4.1.0/sources.json",
+    "sha256": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "publication": "local-candidate-only",
+  "globalRequired": [
+    "global"
+  ],
+  "rules": [
+    {
+      "id": "global",
+      "kind": "global",
+      "path": "ai/4.1.0/global.json",
+      "sha256": "223fc06908b56c405bea7d5061b96319a87af3f81eeb1261728ad09145f1911d",
+      "required": [
+        "tokens/core",
+        "assets/fonts",
+        "standard/01-tokens",
+        "pattern/component-layout"
+      ],
+      "optional": [
+        "pattern/customer-list-boundary",
+        "pattern/seasonal-halloween-theme",
+        "pattern/batch3-components-and-shell"
+      ]
+    },
+    {
+      "id": "standard/01-tokens",
+      "kind": "standard",
+      "path": "ai/4.1.0/standard/01-tokens.json",
+      "sha256": "e0c488ff7a476d4cfb94a6f0256b416aec42db7d88fe993e7285b2911ccbcc5c",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "standard/02-typography",
+      "kind": "standard",
+      "path": "ai/4.1.0/standard/02-typography.json",
+      "sha256": "045f108a1b179d4614e3047190777b218331c78c539bfc7c3312dd055e4ee8aa",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "standard/03-icons",
+      "kind": "standard",
+      "path": "ai/4.1.0/standard/03-icons.json",
+      "sha256": "d610cafe6f850eac28399c78f0831343a0547407d6f9477c098d0ef400d84b5c",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "standard/04-brand",
+      "kind": "standard",
+      "path": "ai/4.1.0/standard/04-brand.json",
+      "sha256": "9f1a800880837576fd827ba5f9b26f2efce0bab74e2a10b5706419039c5a7b8f",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "standard/05-actions",
+      "kind": "standard",
+      "path": "ai/4.1.0/standard/05-actions.json",
+      "sha256": "e2302af72a73c482451a17fbfafbd5b309e2f01a0de83de9245bcaee334b1d26",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "standard/06-inputs",
+      "kind": "standard",
+      "path": "ai/4.1.0/standard/06-inputs.json",
+      "sha256": "46606f8a04f6d8451322eae96f7aadf523201ac7a8a85dcfdb4e549ae97cd7b2",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "standard/07a-shell-upper",
+      "kind": "standard",
+      "path": "ai/4.1.0/standard/07a-shell-upper.json",
+      "sha256": "3c29930d02974f147f78e5df0fab8afe6b67a4e5dc9ffcb913f758d4cb81069d",
+      "required": [
+        "standard/07b-shell-lower"
+      ],
+      "optional": []
+    },
+    {
+      "id": "standard/07b-shell-lower",
+      "kind": "standard",
+      "path": "ai/4.1.0/standard/07b-shell-lower.json",
+      "sha256": "22ee66d0c316339fdfd6ba92170f8fbec6679923473e195de8c870554a6c72eb",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "tokens/core",
+      "kind": "tokens",
+      "path": "ai/4.1.0/tokens/core.json",
+      "sha256": "0a68a18b5a1c20ec1eb269a25425efd9ca48abe980d22d6f1afcc84ea50caeda",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "tokens/shell",
+      "kind": "tokens",
+      "path": "ai/4.1.0/tokens/shell.json",
+      "sha256": "9a9e79c1d66901ed9307285ce47c35eac08ec4a4c6d8e04449c363f639aeb6e8",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "assets/fonts",
+      "kind": "assets",
+      "path": "ai/4.1.0/assets/fonts.json",
+      "sha256": "bd7f021ddcb6059dd2ee0da937c6e12262d9b26159f232b65a0e2aa6a418759d",
+      "required": [
+        "standard/02-typography"
+      ],
+      "optional": []
+    },
+    {
+      "id": "assets/icons",
+      "kind": "assets",
+      "path": "ai/4.1.0/assets/icons.json",
+      "sha256": "d0796fd5666c0ce8aba91e2700b0fce936607a2b76310be75f6e9abd78c60599",
+      "required": [
+        "standard/03-icons"
+      ],
+      "optional": []
+    },
+    {
+      "id": "assets/brand",
+      "kind": "assets",
+      "path": "ai/4.1.0/assets/brand.json",
+      "sha256": "34ca5b4be127383b89ab126b31e22c294a23b3074ce38505bb4504efb94f20a8",
+      "required": [
+        "standard/04-brand"
+      ],
+      "optional": []
+    },
+    {
+      "id": "pattern/component-layout",
+      "kind": "pattern",
+      "path": "ai/4.1.0/pattern/component-layout.json",
+      "sha256": "b11176ab0942f349aa3f4115c7ae50bbe7dfaaa82097e4d918a8ac1048b2917f",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "pattern/shell-preferences",
+      "kind": "pattern",
+      "path": "ai/4.1.0/pattern/shell-preferences.json",
+      "sha256": "49bfe6675752fd5377bd254bdc754c2091c11b08039b0a04b1532b29a4969f79",
+      "required": [
+        "tokens/shell",
+        "assets/brand",
+        "standard/07a-shell-upper",
+        "pattern/product-locales"
+      ],
+      "optional": []
+    },
+    {
+      "id": "pattern/product-locales",
+      "kind": "pattern",
+      "path": "ai/4.1.0/pattern/product-locales.json",
+      "sha256": "013356c84aa19f560d36c155b62d51147913be23cd75955d6be14fdbc82ad560",
+      "required": [],
+      "optional": []
+    },
+    {
+      "id": "pattern/customer-list-boundary",
+      "kind": "pattern",
+      "path": "ai/4.1.0/pattern/customer-list-boundary.json",
+      "sha256": "a0d48e43199118925bc7203412c3f5737443d1da7963520e1f13c5f8fd553779",
+      "required": [
+        "pattern/product-locales"
+      ],
+      "optional": []
+    },
+    {
+      "id": "pattern/seasonal-halloween-theme",
+      "kind": "pattern",
+      "path": "ai/4.1.0/pattern/seasonal-halloween-theme.json",
+      "sha256": "d83a98445afd69c3ebd3fe8d92f6f09a270b788633fab84f225fad4ab677f229",
+      "required": [
+        "tokens/core",
+        "tokens/shell",
+        "standard/01-tokens"
+      ],
+      "optional": []
+    },
+    {
+      "id": "pattern/batch3-components-and-shell",
+      "kind": "pattern",
+      "path": "ai/4.1.0/pattern/batch3-components-and-shell.json",
+      "sha256": "b7b86a100927f4241389bdde2930f2384d36d22eb28cc226967d9e799f0a0d85",
+      "required": [
+        "tokens/core",
+        "tokens/shell",
+        "assets/brand",
+        "assets/icons",
+        "pattern/shell-preferences"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/Heading",
+      "kind": "component",
+      "path": "ai/4.1.0/component/Heading.json",
+      "sha256": "3850d9e23ebf1c3be36af0e4610eb25e1fc38c8a9a92189659fdb2870ca19cad",
+      "required": [
+        "global",
+        "standard/02-typography"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/Text",
+      "kind": "component",
+      "path": "ai/4.1.0/component/Text.json",
+      "sha256": "b31d7d6f916145aaff99b30016588dd238c4da6a38c8ccf457549565fc0d1d6a",
+      "required": [
+        "global",
+        "standard/02-typography"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/Highlight",
+      "kind": "component",
+      "path": "ai/4.1.0/component/Highlight.json",
+      "sha256": "87a118e457dcf6ef8bfb0acb96a24bb26a2b764757f1b15cc265b5f5683c1ba0",
+      "required": [
+        "global",
+        "standard/02-typography"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/Icon",
+      "kind": "component",
+      "path": "ai/4.1.0/component/Icon.json",
+      "sha256": "84405f57ef9f7fdab5040df98eef946e2ccdbfcbccf6bd3d87d87bdc60f2fbcc",
+      "required": [
+        "global",
+        "standard/03-icons",
+        "assets/icons"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/ProductLogo",
+      "kind": "component",
+      "path": "ai/4.1.0/component/ProductLogo.json",
+      "sha256": "4553d1282a4758139657f2de5511efe1e7c81fb6b1cf680c890ae4a85cc556fb",
+      "required": [
+        "global",
+        "standard/04-brand",
+        "assets/brand"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/ProductLockup",
+      "kind": "component",
+      "path": "ai/4.1.0/component/ProductLockup.json",
+      "sha256": "91a924f482c3dc245f592ac025954faf8d7f31430f25d162a7d13b78f712a1ad",
+      "required": [
+        "global",
+        "standard/04-brand",
+        "assets/brand"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/Button",
+      "kind": "component",
+      "path": "ai/4.1.0/component/Button.json",
+      "sha256": "d1e8b341d0525863990c3f3309788f58aa7989913e6617236033785bc765efec",
+      "required": [
+        "global",
+        "standard/05-actions"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/IconButton",
+      "kind": "component",
+      "path": "ai/4.1.0/component/IconButton.json",
+      "sha256": "71f28a04e79ae2ae0b236e2c4d0aa97176d78bff01826caae3f9f1169006e3a8",
+      "required": [
+        "global",
+        "standard/05-actions"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/LinkButton",
+      "kind": "component",
+      "path": "ai/4.1.0/component/LinkButton.json",
+      "sha256": "c2cb0c0008d06cba938d665c74c98ec1dc1235babc6162da66d5c33c0acc37e1",
+      "required": [
+        "global",
+        "standard/05-actions"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/ClipboardCopyButton",
+      "kind": "component",
+      "path": "ai/4.1.0/component/ClipboardCopyButton.json",
+      "sha256": "0a737fdb87dd8fe66b632f7b7fd3e90ccf1ca0dda5ef3816ff888001d29818f9",
+      "required": [
+        "global",
+        "standard/05-actions"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/ButtonGroup",
+      "kind": "component",
+      "path": "ai/4.1.0/component/ButtonGroup.json",
+      "sha256": "109961d4e1f17054fac824e51e76f9f388f64e3defa68f2dc63fbadac58af320",
+      "required": [
+        "global",
+        "standard/05-actions"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/Input",
+      "kind": "component",
+      "path": "ai/4.1.0/component/Input.json",
+      "sha256": "3099addb16254c006b75906940a99e5d9bc0b523518ae761b1d2031c121cc802",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/Textarea",
+      "kind": "component",
+      "path": "ai/4.1.0/component/Textarea.json",
+      "sha256": "04c6b91ad55ded06b3ae8430bbfa7978e50854d416064b9d48a7dba5f19c3478",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/SearchInput",
+      "kind": "component",
+      "path": "ai/4.1.0/component/SearchInput.json",
+      "sha256": "bb71087b573ca565754daeb9c81a9cbda24bf89467cd20cf0faed615b551a546",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/SuggestInput",
+      "kind": "component",
+      "path": "ai/4.1.0/component/SuggestInput.json",
+      "sha256": "0cf1800fa380984bf43d2ec30d158593c1e8091adb58de6efb58ec88f3f0b552",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/Select",
+      "kind": "component",
+      "path": "ai/4.1.0/component/Select.json",
+      "sha256": "30d61df29873271ad0c4775cd65890b32d72163d80c55fee5692ef90bd471a94",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/MultiSelect",
+      "kind": "component",
+      "path": "ai/4.1.0/component/MultiSelect.json",
+      "sha256": "5185483ea105573ba4609ca04715cc599e8836c28c258038f74fa2be15206b42",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/NumberInput",
+      "kind": "component",
+      "path": "ai/4.1.0/component/NumberInput.json",
+      "sha256": "1bb99df353dc56fbc0178179cb6857aad185413398075f446ba98eddbd78de1f",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/DatePicker",
+      "kind": "component",
+      "path": "ai/4.1.0/component/DatePicker.json",
+      "sha256": "b86b38a5a445b72c04f9e598276be39ba628d9c6fd8d794b310e3e684d613379",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/Checkbox",
+      "kind": "component",
+      "path": "ai/4.1.0/component/Checkbox.json",
+      "sha256": "8ad74a8d3e4575487e16518b9bcbaa6b2092f7badda89859ce76329ef1253db7",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/RadioGroup",
+      "kind": "component",
+      "path": "ai/4.1.0/component/RadioGroup.json",
+      "sha256": "13d86afcde4023139c61dd7e3d071d5f4dd374cad1d8f9f722a14375b9edac5e",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/Switch",
+      "kind": "component",
+      "path": "ai/4.1.0/component/Switch.json",
+      "sha256": "a98f85cecd7377136c6c7e72e16dc5db1f7eea8e73f6bb59bf43ee9e3adc9c14",
+      "required": [
+        "global",
+        "standard/06-inputs"
+      ],
+      "optional": []
+    },
+    {
+      "id": "component/ProductShell",
+      "kind": "component",
+      "path": "ai/4.1.0/component/ProductShell.json",
+      "sha256": "96c3bb438fff3eebb5613819c2b88282e189e071ae78f55b434f2f99188c9dcb",
+      "required": [
+        "global",
+        "standard/07b-shell-lower",
+        "pattern/shell-preferences",
+        "assets/icons"
+      ],
+      "optional": [
+        "pattern/customer-list-boundary"
+      ]
+    },
+    {
+      "id": "component/ShellBrandButton",
+      "kind": "component",
+      "path": "ai/4.1.0/component/ShellBrandButton.json",
+      "sha256": "10302afa26511b374efe84a1483bdd93ce39625351e6920288da4c76697d1e9f",
+      "required": [
+        "global",
+        "standard/07a-shell-upper",
+        "pattern/shell-preferences",
+        "assets/icons"
+      ],
+      "optional": [
+        "pattern/customer-list-boundary"
+      ]
+    },
+    {
+      "id": "component/ShellMenu",
+      "kind": "component",
+      "path": "ai/4.1.0/component/ShellMenu.json",
+      "sha256": "bb4ba31b6886fb1876ea181b9d3791d73e6d3584815900d6127d9c2ccaaeda6d",
+      "required": [
+        "global",
+        "standard/07b-shell-lower",
+        "pattern/shell-preferences",
+        "assets/icons"
+      ],
+      "optional": [
+        "pattern/customer-list-boundary"
+      ]
+    },
+    {
+      "id": "component/ShellPins",
+      "kind": "component",
+      "path": "ai/4.1.0/component/ShellPins.json",
+      "sha256": "824653d08c0ff0fdeb56f55fcaca45fdd55faba4915335850e539d6a7db5ab62",
+      "required": [
+        "global",
+        "standard/07b-shell-lower",
+        "pattern/shell-preferences",
+        "assets/icons"
+      ],
+      "optional": [
+        "pattern/customer-list-boundary"
+      ]
+    },
+    {
+      "id": "component/ShellDropdown",
+      "kind": "component",
+      "path": "ai/4.1.0/component/ShellDropdown.json",
+      "sha256": "89361c64fa7d33f8448c4a41993674c0daeddbaef7c1e8de7169298c3e1144fc",
+      "required": [
+        "global",
+        "standard/07b-shell-lower",
+        "pattern/shell-preferences",
+        "assets/icons"
+      ],
+      "optional": [
+        "pattern/customer-list-boundary"
+      ]
+    },
+    {
+      "id": "component/ShellIntro",
+      "kind": "component",
+      "path": "ai/4.1.0/component/ShellIntro.json",
+      "sha256": "5b605c26d8753ea9fa3c71b14441ad6815527028ea950fc2e6cf6d843b45a0bc",
+      "required": [
+        "global",
+        "standard/07a-shell-upper",
+        "pattern/shell-preferences",
+        "assets/icons"
+      ],
+      "optional": [
+        "pattern/customer-list-boundary"
+      ]
+    },
+    {
+      "id": "component/Avatar",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/Avatar.json",
+      "sha256": "b8dc911af57adfaa708c40b1d97197dff337ba122e0e5c2b8635f54b23e8d6ec",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/Badge",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/Badge.json",
+      "sha256": "bac5e5d168fb481eaa3b01a6d566c2b2d744585ad4a675a4f3593d7d8d7f7205",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/Card",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/Card.json",
+      "sha256": "d3c28bb423ddb7d4d0b18521cc254a902dec4806c465c82b8801fb37e5cf7af8",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/CollapsibleRegion",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/CollapsibleRegion.json",
+      "sha256": "9af5068765bcbfb794449ce93947dfb6a9eda65daf409a92fb94e1be4031e944",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/ConfirmActionDialog",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/ConfirmActionDialog.json",
+      "sha256": "57211da0460aa94330bcffe9c2cde0b74b728293cc627d55bf2b4a5eddac379e",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/Dialog",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/Dialog.json",
+      "sha256": "1bab682825a71fdc2f322db338e6bba30807552bac3dd6f70cc666d96865bbc7",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/Divider",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/Divider.json",
+      "sha256": "d83de2e17aba1b0023bbc57d45b944e96908917653a47fe78732d47d9fcf5d3c",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/EmptyState",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/EmptyState.json",
+      "sha256": "fc09a407586a3f385f69d03971fdee95901474f4d42c54d68e84c91bb1637576",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/EnvironmentBanner",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/EnvironmentBanner.json",
+      "sha256": "77776a61b588f8ad3a41704131ec16ef96a9f0d1b84e3a1433a47998b7e9ea5b",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/ErrorState",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/ErrorState.json",
+      "sha256": "7c69670ade9557d0cd581e922fa64fb45df95038766f47c7ddbc2122a4e08725",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/InlineAlert",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/InlineAlert.json",
+      "sha256": "2253f0cbdcc223c34c5fb83b0c20d97740acdc4c5546a307eabd1c42a70f52e0",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/InlineConfirmBar",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/InlineConfirmBar.json",
+      "sha256": "822d9036657d50a457e057883cfb2715b9718cbf313f3c54656f4ce9de874eba",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/KeyValueList",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/KeyValueList.json",
+      "sha256": "e60c2d4522bca61adc1b905669301bb879f780bf0d525fb6c72dc30cb8b3bbe3",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/Menu",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/Menu.json",
+      "sha256": "4febd7a9bfc00e4bdc2eada9a1dda1b546a0d984737c3298d90f831fee7bf10a",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/Popover",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/Popover.json",
+      "sha256": "a75cd6a77c23ca39270d4eb66ebde17298dcd4b94bee0ef753b9d50209349368",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/RawPayloadBox",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/RawPayloadBox.json",
+      "sha256": "f3d4d07c6b1b89b1b0a4d2deceb5b850a0b252871041402f81a2164c3d9c0f59",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/RecordTable",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/RecordTable.json",
+      "sha256": "d86183b2613e002b5fde709b438c2930815a26a6eb2ccb563594098c8bbd967d",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/SegmentedNav",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/SegmentedNav.json",
+      "sha256": "6a36009fbf14f9940da3202dfdd5b81f514ac3ba9b81ada34d022dd4db8ca5a7",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/SettingsLayout",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/SettingsLayout.json",
+      "sha256": "6721f72190fa502c789c86c595197b287e444e69beaf9cb873f392acaf6fdab8",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/SplitView",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/SplitView.json",
+      "sha256": "569555945b18c0a6c33d355ae40c9fce53841d8e8c35eb8e74ff815107c90832",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/StagePipeline",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/StagePipeline.json",
+      "sha256": "7f42f59c9fee7ff259aa56180029f577e9a521e5a81dce61ef89202a4c83d16e",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/StatCard",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/StatCard.json",
+      "sha256": "498d15185b3ed28f9d522a98e83efccd0cf3bc1fc01c2faa9750565a96c0b93d",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/StateSurface",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/StateSurface.json",
+      "sha256": "1440dea33396dba3e09a9bf409ba8f17fda425e6211866817efa74386132ea7a",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/StatusBadge",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/StatusBadge.json",
+      "sha256": "c0669b15abe10102914e745f0ab9d8ffb4496a018e3d12f71d9851b1f52841b4",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/StatusDot",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/StatusDot.json",
+      "sha256": "3718d5e079881fa1875d0b46b074a20e91710c064f8d331140cb44c2637aa662",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/Surface",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/Surface.json",
+      "sha256": "017b7ca8fd777e939d4f34c6358594c6af9cfd0bf7d9de5ae3021a0e87537ae3",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/TableShell",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/TableShell.json",
+      "sha256": "d85163dd0c4a1b97bb67ad773adc1c04b8384c2f6068b35c37c06370ecdbe151",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/TableToolbar",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/TableToolbar.json",
+      "sha256": "d915a98371f3fa8480374f36d2a8f5185fe1a9cbe73b3d4d8dd78808db4e37a2",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    },
+    {
+      "id": "component/Tooltip",
+      "kind": "adopted-component",
+      "path": "ai/4.1.0/component/Tooltip.json",
+      "sha256": "acfd9b91b1618d3d439fa18a11b91f5d702980036981fbdd241cef435890d8e8",
+      "required": [
+        "global",
+        "pattern/batch3-components-and-shell"
+      ],
+      "optional": [
+        "pattern/seasonal-halloween-theme"
+      ]
+    }
+  ],
+  "refresh": {
+    "invalidateOn": [
+      "packageVersions",
+      "standardSource",
+      "sourceDigest",
+      "shard sha256",
+      "required dependency"
+    ],
+    "action": "Refresh the index and required closure atomically from one trusted producer build; rerun consumer-contract-check."
+  },
+  "compatibility": "ai-consumption-contract.json",
+  "coverage": {
+    "formalComponents": 28,
+    "engineeringExportsAreFormal": false
+  }
+}

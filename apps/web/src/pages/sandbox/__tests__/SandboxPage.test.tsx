@@ -1,150 +1,132 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
-import { SandboxView } from "../SandboxPage";
+import { SANDBOX_BANNER_TEXT, SandboxPage, SandboxView } from "../SandboxPage";
 import type { SandboxSnapshot } from "../api";
-import { route } from "../route";
 
-const SAMPLE_SNAPSHOT: SandboxSnapshot = {
-  banner: "SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）",
+const SNAPSHOT: SandboxSnapshot = {
+  banner: SANDBOX_BANNER_TEXT,
   syntheticOnly: true,
-  channelId: "sandbox-ch-01",
+  channelId: "ch_sandbox_1",
   subjects: [
     {
-      subjectId: "sbx-sub-alice",
-      subjectKey: "demo-viewer-alice",
-      currentScore: 11,
+      subjectId: "sub_sb_1",
+      subjectKey: "<img src=x onerror=alert(1)>",
+      currentScore: 100,
       processingGeneration: 1,
-      hasException: true,
+      hasException: false,
     },
   ],
   reviewQueue: [
     {
-      taskId: "sbx-task-1",
-      eventId: "sbx-ev-1",
-      correlationId: "sbx-corr-1",
-      subjectRef: "demo-viewer-charlie",
-      kind: "REALTIME_REVIEW",
-      status: "PENDING",
-      originalText: "<script>alert(1)</script>",
+      taskId: "task_1",
+      eventId: "ev_1",
+      correlationId: "corr_1",
+      subjectRef: "user_q",
+      kind: "MODERATION_REVIEW",
+      status: "OPEN",
+      originalText: "Can this <script> pass?",
     },
   ],
   blockedItems: [
     {
-      eventId: "sbx-ev-2",
-      correlationId: "sbx-corr-2",
-      subjectRef: "demo-viewer-bob",
+      eventId: "ev_blk_1",
+      correlationId: "corr_2",
+      subjectRef: "spammer_1",
       classification: "BLOCK",
-      originalText: "spam-link-xyz",
+      originalText: "spam link here",
     },
   ],
   approvedStage: [
     {
-      eventId: "sbx-ev-3",
-      correlationId: "sbx-corr-3",
-      subjectKey: "demo-viewer-hana",
-      text: "神回ありがとう！",
-      translation: "Thanks for the awesome stream!",
-      decidedAt: "2026-11-14T00:00:00.000Z",
+      eventId: "ev_ok_1",
+      correlationId: "corr_3",
+      subjectKey: "Supporter",
+      text: "Thanks for the awesome stream!",
+      translation: "直播真棒！",
+      decidedAt: "2026-11-24T00:00:00.000Z",
     },
   ],
-  changeLogs: [
-    {
-      id: "sbx-chg-1",
-      changeKind: "DECISION",
-      summary: "SANDBOX_ALLOW scenario=superchat-translation",
-      correlationId: "sbx-corr-3",
-    },
-  ],
-  technicalLogs: [
-    {
-      id: "sbx-tlog-1",
-      stage: "MODERATION",
-      status: "OK",
-      correlationId: "sbx-corr-3",
-    },
-  ],
-  dataRequests: [
-    {
-      id: "sbx-req-1",
-      subjectId: "sbx-sub-alice",
-      kind: "DELETE",
-      mode: "DELETE_AND_EXCEPT",
-      executionState: "COMPLETED",
-    },
-  ],
+  changeLogs: [],
+  technicalLogs: [],
+  dataRequests: [],
   cacheEntryCount: 1,
 };
 
-describe("SandboxPage", () => {
-  it("exports /sandbox route", () => {
-    expect(route.path).toBe("/sandbox");
-  });
-
-  it("renders synthetic banner, scenarios, escaped untrusted text, stage output, and privacy status", () => {
+describe("SandboxView & SandboxPage (VW-Draft-07)", () => {
+  it("renders synthetic EnvironmentBanner, role switchers, 6 scenarios, and reuses formal workbenches", () => {
     const html = renderToStaticMarkup(
-      <SandboxView
-        role="DEMO_STREAMER"
-        capabilities={["sandbox.read", "sandbox.scenario", "sandbox.reset", "review.decide", "stage.read", "logs.read"]}
-        snapshot={SAMPLE_SNAPSHOT}
-        loading={false}
-        error={null}
-        onSelectRole={() => {}}
-        onTriggerScenario={() => {}}
-        onDecideReview={() => {}}
-        onReset={() => {}}
-      />,
+      <MemoryRouter>
+        <SandboxView
+          role="DEMO_STREAMER"
+          capabilities={["sandbox.scenario", "review.decide", "stage.read"]}
+          snapshot={SNAPSHOT}
+          loading={false}
+          error={null}
+          onSelectRole={() => {}}
+          onTriggerScenario={() => {}}
+          onDecideReview={() => {}}
+          onReset={() => {}}
+        />
+      </MemoryRouter>,
     );
 
-    expect(html).toContain("SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）");
-    expect(html).toContain("正常聊天评分");
-    expect(html).toContain("一键重置沙盒");
-    expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
-    expect(html).toContain("Thanks for the awesome stream!");
-    expect(html).toContain("DELETE_AND_EXCEPT");
-    expect(html).toContain("记分例外：是");
+    expect(html).toContain(SANDBOX_BANNER_TEXT);
+    expect(html).toContain("正式审核工作台视图");
+    expect(html).toContain("Can this &lt;script&gt; pass?");
   });
 
   it("disables privacy delete scenario buttons when role lacks privacy.delete", () => {
     const html = renderToStaticMarkup(
-      <SandboxView
-        role="DEMO_MODERATOR"
-        capabilities={["sandbox.read", "sandbox.scenario", "review.decide", "logs.read"]}
-        snapshot={SAMPLE_SNAPSHOT}
-        loading={false}
-        error={null}
-        onSelectRole={() => {}}
-        onTriggerScenario={() => {}}
-        onDecideReview={() => {}}
-        onReset={() => {}}
-      />,
+      <MemoryRouter>
+        <SandboxView
+          role="DEMO_MODERATOR"
+          capabilities={["sandbox.scenario", "review.decide", "stage.read"]}
+          snapshot={SNAPSHOT}
+          loading={false}
+          error={null}
+          onSelectRole={() => {}}
+          onTriggerScenario={() => {}}
+          onDecideReview={() => {}}
+          onReset={() => {}}
+        />
+      </MemoryRouter>,
     );
 
-    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>隐私仅删除 \(DELETE\)<\/button>/);
-    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>删除并加例外 \(DELETE_AND_EXCEPT\)<\/button>/);
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[\s\S]*?5\. 登记仅删数据请求/);
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[\s\S]*?6\. 删除并加入记分例外/);
   });
 
-  it("hides review queue, blocked originalText, subject details, and logs for DEMO_STAGE_VIEWER", () => {
+  it("refuses backend views for DEMO_STAGE_VIEWER and renders embedded pure dock", () => {
     const html = renderToStaticMarkup(
-      <SandboxView
-        role="DEMO_STAGE_VIEWER"
-        capabilities={["sandbox.read", "stage.read"]}
-        snapshot={SAMPLE_SNAPSHOT}
-        loading={false}
-        error={null}
-        onSelectRole={() => {}}
-        onTriggerScenario={() => {}}
-        onDecideReview={() => {}}
-        onReset={() => {}}
-      />,
+      <MemoryRouter>
+        <SandboxView
+          role="DEMO_STAGE_VIEWER"
+          capabilities={["stage.read"]}
+          snapshot={SNAPSHOT}
+          loading={false}
+          error={null}
+          onSelectRole={() => {}}
+          onTriggerScenario={() => {}}
+          onDecideReview={() => {}}
+          onReset={() => {}}
+        />
+      </MemoryRouter>,
     );
 
-    expect(html).toContain("SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）");
-    expect(html).toContain("Thanks for the awesome stream!");
-    expect(html).not.toContain("<h2>人工审核队列");
-    expect(html).not.toContain("已拦截内容");
-    expect(html).not.toContain("观众评分与隐私例外状态");
-    expect(html).not.toContain("变更日志");
-    expect(html).not.toContain("spam-link-xyz");
-    expect(html).not.toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
+    expect(html).toContain("后台功能已按当前角色策略拒止");
+    expect(html).toContain("主播纯享侧边栏");
+    expect(html).not.toContain("实时待审队列");
+  });
+
+  it("wraps SandboxPage in VoxWardShell with EnvironmentBanner in topBanner", () => {
+    const html = renderToStaticMarkup(
+      <MemoryRouter>
+        <SandboxPage />
+      </MemoryRouter>,
+    );
+
+    expect(html).toContain("tcrn-product-shell");
+    expect(html).toContain(SANDBOX_BANNER_TEXT);
   });
 });

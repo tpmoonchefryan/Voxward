@@ -77,10 +77,18 @@ export interface ModelSettingsView {
   readonly scTranslationEnabled: boolean;
 }
 
+export interface AdapterExtendedModelCapability {
+  readonly modelId: string;
+  readonly displayName?: string;
+  readonly reasoningLevels: readonly string[];
+}
+
 export interface ModelSettingsResponseView {
   readonly settings: ModelSettingsView;
   readonly issues: readonly SettingsIssueView[];
-  readonly capabilities: InferenceCapabilities;
+  readonly capabilities: InferenceCapabilities & {
+    readonly models?: readonly AdapterExtendedModelCapability[];
+  };
   readonly modelFault: FaultBanner | null;
 }
 
@@ -106,8 +114,36 @@ export interface AdminSettingsView {
 }
 
 export interface OutputsSummaryView {
-  readonly grants: readonly { readonly grantId: string; readonly outputKind: string; readonly scope: string; readonly createdAt: string }[];
+  readonly grants: readonly {
+    readonly grantId: string;
+    readonly outputKind: string;
+    readonly scope: string;
+    readonly createdAt: string;
+  }[];
   readonly tokens: readonly { readonly tokenId: string; readonly createdAt: string }[];
+}
+
+export interface TermCategoryView {
+  readonly code: string;
+  readonly label: string;
+  readonly listKind: "BLACKLIST" | "WHITELIST";
+  readonly description: string;
+  readonly createdAt: string;
+}
+
+export interface ExtendedTermEntryView {
+  readonly id: string;
+  readonly listKind: "BLACKLIST" | "WHITELIST";
+  readonly term: string;
+  readonly categoryCode: string;
+  readonly matchKind: "EXACT" | "CONTAINS" | "REGEX" | "NORMALIZED";
+  readonly enabled: boolean;
+}
+
+export interface CsvImportResultView {
+  readonly imported: number;
+  readonly errors: readonly { readonly line: number; readonly message: string }[];
+  readonly entries: readonly ExtendedTermEntryView[];
 }
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -133,32 +169,24 @@ export class AdminApiFailure extends Error {
   }
 }
 
-export const ADMIN_ERROR_TEXT: Readonly<Record<string, string>> = {
-  UNAUTHENTICATED: "请先登录。",
-  FORBIDDEN: "当前账号无权访问此管理项。",
-  CSRF_INVALID: "页面已过期，请刷新后重试。",
-  RULE_SET_INVALID: "规则集校验未通过，请查看改写提示。",
-  SELECTION_REFUSED: "所选模型或推理参数不被当前适配器支持。",
-  SETTINGS_INVALID: "模型设置格式无效。",
-  INVALID_REQUEST: "提交的参数无效。",
-  INTERNAL_ERROR: "服务暂时不可用，请稍后再试。",
-};
-
-export function adminMessageFor(error: unknown): string {
-  if (error instanceof AdminApiFailure) return ADMIN_ERROR_TEXT[error.code] ?? "操作未完成，请稍后重试。";
-  return "无法连接服务，请检查网络后重试。";
-}
-
 export interface AdminApi {
   listChannels(): Promise<readonly ChannelSummary[]>;
   getContext(channelId: string): Promise<ChannelContextView>;
   getRules(channelId: string): Promise<RulesStateView>;
-  publishRules(channelId: string, ruleSet: unknown): Promise<{ readonly version: number }>;
+  publishRules(channelId: string, ruleSet: unknown): Promise<{ readonly version: number; readonly ruleSet: unknown }>;
   editSubjectList(channelId: string, subjectKey: string, listKind: ListKind | null): Promise<{ readonly status: string }>;
   editTerm(
     channelId: string,
     input: { readonly action: "ADD" | "RETIRE"; readonly term: string; readonly matchKind: TermMatchKind; readonly language: string; readonly groupCode: string },
   ): Promise<{ readonly status: string }>;
+  listTermCategories(channelId: string): Promise<readonly TermCategoryView[]>;
+  createTermCategory(
+    channelId: string,
+    input: { readonly code: string; readonly label: string; readonly listKind: "BLACKLIST" | "WHITELIST"; readonly description?: string },
+  ): Promise<readonly TermCategoryView[]>;
+  listTermEntries(channelId: string): Promise<readonly ExtendedTermEntryView[]>;
+  saveTermEntries(channelId: string, entries: readonly ExtendedTermEntryView[]): Promise<readonly ExtendedTermEntryView[]>;
+  importTermEntriesCsv(channelId: string, listKind: "BLACKLIST" | "WHITELIST", csvText: string): Promise<CsvImportResultView>;
   listCandidates(channelId: string): Promise<readonly CandidateCardView[]>;
   confirmCandidate(channelId: string, cardId: string): Promise<{ readonly card: CandidateCardView }>;
   rejectCandidate(channelId: string, cardId: string): Promise<{ readonly card: CandidateCardView }>;
@@ -173,9 +201,9 @@ export interface AdminApi {
   getAdminSettings(channelId: string): Promise<AdminSettingsView>;
   saveAdminSettings(channelId: string, settings: AdminSettingsView): Promise<AdminSettingsView>;
   getOutputs(channelId: string): Promise<OutputsSummaryView>;
-  issueOutputGrant(channelId: string): Promise<unknown>;
+  issueOutputGrant(channelId: string): Promise<{ readonly grantId?: string; readonly credential?: string }>;
   revokeOutputGrant(channelId: string, grantId: string): Promise<void>;
-  issueOutputToken(channelId: string): Promise<unknown>;
+  issueOutputToken(channelId: string): Promise<{ readonly id?: string; readonly token?: string }>;
   revokeOutputToken(channelId: string, tokenId: string): Promise<void>;
 }
 
@@ -249,6 +277,16 @@ export function createAdminApi(fetcher: FetchLike = (input, init) => fetch(input
     editSubjectList: (channelId, subjectKey, listKind) =>
       mutateJson("POST", `/channels/${encodeURIComponent(channelId)}/lists/subjects`, { subjectKey, listKind }),
     editTerm: (channelId, input) => mutateJson("POST", `/channels/${encodeURIComponent(channelId)}/lists/terms`, input),
+    listTermCategories: async (channelId) =>
+      (await getJson<{ categories: TermCategoryView[] }>(`/channels/${encodeURIComponent(channelId)}/term-categories`)).categories,
+    createTermCategory: async (channelId, input) =>
+      (await mutateJson<{ categories: TermCategoryView[] }>("POST", `/channels/${encodeURIComponent(channelId)}/term-categories`, input)).categories,
+    listTermEntries: async (channelId) =>
+      (await getJson<{ entries: ExtendedTermEntryView[] }>(`/channels/${encodeURIComponent(channelId)}/term-entries`)).entries,
+    saveTermEntries: async (channelId, entries) =>
+      (await mutateJson<{ entries: ExtendedTermEntryView[] }>("PUT", `/channels/${encodeURIComponent(channelId)}/term-entries`, { entries })).entries,
+    importTermEntriesCsv: (channelId, listKind, csvText) =>
+      mutateJson("POST", `/channels/${encodeURIComponent(channelId)}/term-entries/import-csv`, { listKind, csvText }),
     listCandidates: async (channelId) =>
       (await getJson<{ cards: CandidateCardView[] }>(`/channels/${encodeURIComponent(channelId)}/candidates`)).cards,
     confirmCandidate: (channelId, cardId) =>

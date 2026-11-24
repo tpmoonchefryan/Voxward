@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.1.0",
+      "@tcrn/ui-tokens": "4.1.0",
+      "@tcrn/ui-copy-state": "4.1.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "id": "component/LinkButton",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/05-actions"
+  ],
+  "optional": [],
+  "content": {
+    "name": "LinkButton",
+    "board": "05-actions",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/05-actions/index.dc.html",
+      "sha256": "c7498b7bf317ce36cca13b2508ff1016874b3984f3374b14dcd42df24933f6ff",
+      "line": 114
+    },
+    "normativeText": "LinkButton href · variant primary|secondary|quiet 一句话：长得像按钮的链接，用于导航到另一页；同一对表，没有 loading 与 disabled。 须提供 ： href ；外链加 external-link 图标与 rel。 不用 ：触发请求或提交（用 Button）；正文里的链接（用 Text 的 link 样式）。",
+    "readerSummary": {
+      "en": "Provide href; external links include external-link and rel. This navigates and has no loading/disabled API; requests and submissions use Button.",
+      "zh-CN": "提供 href；外链带 external-link 与 rel。用于导航，不提供 loading/disabled；请求和提交用 Button。",
+      "ja": "href を指定し、外部リンクには external-link と rel を付けます。移動用で loading/disabled はなく、送信には Button を使います。",
+      "ko": "href를 제공하고 외부 링크에 external-link·rel을 붙입니다. 탐색용이며 loading/disabled가 없고 요청·제출은 Button을 씁니다.",
+      "fr": "Fournir href ; ajouter external-link et rel aux liens externes. Navigation sans loading/disabled ; requêtes et soumissions utilisent Button."
+    },
+    "types": {
+      "name": "LinkButton",
+      "kind": "function",
+      "props": [
+        {
+          "name": "size",
+          "type": "Size",
+          "required": false,
+          "default": "\"md\"",
+          "enumValues": [
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\" | \"quiet\"",
+          "required": false,
+          "default": "\"secondary\"",
+          "enumValues": [
+            "primary",
+            "secondary",
+            "quiet"
+          ]
+        }
+      ],
+      "variants": {
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "variant": [
+          "primary",
+          "secondary",
+          "quiet"
+        ]
+      },
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Button/Button.tsx",
+        "line": 136
+      },
+      "propsType": "LinkButtonProps",
+      "typeDefinitions": [
+        {
+          "name": "Size",
+          "path": "packages/ui-react/src/components/Button/Button.tsx",
+          "line": 6,
+          "declaration": "type Size = \"sm\" | \"md\" | \"lg\";"
+        },
+        {
+          "name": "LinkButtonProps",
+          "path": "packages/ui-react/src/components/Button/Button.tsx",
+          "line": 131,
+          "declaration": "export interface LinkButtonProps extends AnchorHTMLAttributes<HTMLAnchorElement> {\n  variant?: \"primary\" | \"secondary\" | \"quiet\";\n  size?: Size;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "content",
+      "constraint": "Navigation text and optional icon determine width with token insets. Long labels ellipsize at the parent limit; do not fill a grid track.",
+      "implementation": "actions.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Button/Button.tsx",
+      "sha256": "0d2fb48da3065d13121ead9a9027fde1d811ba45f3079073c4a079e122f674c7"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 148,
+      "snippet": "case \"LinkButton\": return state === \"variants\" ? ([\"primary\", \"secondary\", \"quiet\"] as const).map(variant => <LinkButton key={variant} href={`#${id}-result`} variant={variant}>{c.invoice}</LinkButton>)\n        : <LinkButton href={state === \"external\" ? \"https://example.com/\" : `#${id}-result`} rel={state === \"external\" ? \"noreferrer\" : undefined} data-tcrn-preview-state={state === \"focus\" ? \"focus\" : undefined}>{c.invoice}{state === \"external\" && <Icon name=\"external-link\" />}</LinkButton>;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { LinkButton, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example() {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", justifyItems: \"start\", gap: \"var(--tcrn-space-2)\" }}>\n      <LinkButton href=\"/invoices\" variant=\"quiet\">Invoices</LinkButton>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/actions.css.ts",
+          "sha256": "867422711e7934ae0a06d531808867a32216620e62130e77770e172887cde54a"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-linkbutton--default"
+      },
+      {
+        "state": "variants",
+        "id": "components-linkbutton--variants"
+      },
+      {
+        "state": "external",
+        "id": "components-linkbutton--external"
+      },
+      {
+        "state": "focus",
+        "id": "components-linkbutton--focus"
+      }
+    ]
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.1.0",
+      "@tcrn/ui-tokens": "4.1.0",
+      "@tcrn/ui-copy-state": "4.1.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "id": "component/TableShell",
+  "kind": "adopted-component",
+  "required": [
+    "global",
+    "pattern/batch3-components-and-shell"
+  ],
+  "optional": [
+    "pattern/seasonal-halloween-theme"
+  ],
+  "content": {
+    "name": "TableShell",
+    "status": "adopted-batch3-candidate",
+    "types": {
+      "name": "TableShell",
+      "kind": "function",
+      "props": [
+        {
+          "name": "columns",
+          "type": "TableColumn[]",
+          "required": true
+        },
+        {
+          "name": "emptyState",
+          "type": "ReactNode",
+          "required": false,
+          "slot": true
+        },
+        {
+          "name": "getRowId",
+          "type": "(row: Record<string, ReactNode>, index: number) => string",
+          "required": false,
+          "default": "defaultTableRowId",
+          "slot": true
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "onSelectedRowIdsChange",
+          "type": "(ids: string[]) => void",
+          "required": false
+        },
+        {
+          "name": "rows",
+          "type": "Array<Record<string, ReactNode>>",
+          "required": true,
+          "slot": true
+        },
+        {
+          "name": "selectableRows",
+          "type": "boolean",
+          "required": false,
+          "default": "false"
+        },
+        {
+          "name": "selectAllLabel",
+          "type": "string",
+          "required": false,
+          "default": "\"Select all rows\""
+        },
+        {
+          "name": "selectedRowIds",
+          "type": "readonly string[]",
+          "required": false
+        },
+        {
+          "name": "selectRowLabel",
+          "type": "(row: Record<string, ReactNode>, index: number) => string",
+          "required": false,
+          "slot": true
+        }
+      ],
+      "variants": {},
+      "slots": [
+        "emptyState",
+        "getRowId",
+        "rows",
+        "selectRowLabel"
+      ],
+      "source": {
+        "path": "packages/ui-react/src/components/DataDisplay/DataDisplay.tsx",
+        "line": 45
+      },
+      "propsType": "TableShellProps",
+      "typeDefinitions": [
+        {
+          "name": "TableColumn",
+          "path": "packages/ui-react/src/components/DataDisplay/DataDisplay.tsx",
+          "line": 13,
+          "declaration": "export interface TableColumn {\n  key: string;\n  label: string;\n  width?: string;\n  align?: \"start\" | \"center\" | \"end\";\n}"
+        },
+        {
+          "name": "TableShellProps",
+          "path": "packages/ui-react/src/components/DataDisplay/DataDisplay.tsx",
+          "line": 20,
+          "declaration": "export interface TableShellProps {\n  columns: TableColumn[];\n  rows: Array<Record<string, ReactNode>>;\n  emptyState?: ReactNode;\n  label?: string;\n  selectableRows?: boolean;\n  selectedRowIds?: readonly string[];\n  onSelectedRowIdsChange?: (ids: string[]) => void;\n  getRowId?: (row: Record<string, ReactNode>, index: number) => string;\n  selectAllLabel?: string;\n  selectRowLabel?: (row: Record<string, ReactNode>, index: number) => string;\n}"
+        }
+      ]
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/DataDisplay/DataDisplay.tsx",
+      "sha256": "2460f4ef5a4fdc8cbfccd727ee485b761bcc4e9ad5b4eedb638255d4f20caac5"
+    },
+    "specimenSource": {
+      "path": "apps/storybook/src/voxward-batch3.stories.tsx",
+      "sha256": "b80155b5eb30369bd9b8a8de2dcad10af9a43c93acb971d2243be36b245d3358"
+    }
+  }
+}

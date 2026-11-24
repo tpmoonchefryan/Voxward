@@ -1,4 +1,7 @@
 import type { DeleteMode } from "@voxward/contracts";
+import { Button, Card, InlineConfirmBar } from "@tcrn/ui-react/approved";
+import { BannerNotice } from "../../components/banner-notice";
+import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
 import { ERROR_TEXT } from "./api";
 import type { DeleteFlow } from "./flow";
 
@@ -27,45 +30,73 @@ export interface DeleteActionsProps {
   readonly onCancel: () => void;
 }
 
-/**
- * The two deletion entries. Registration only: the page never claims that data is deleted. A user who lacks
- * data.handle never reaches this component, because the panel does not render it for them.
- */
 export function DeleteActions({ flow, onChoose, onConfirm, onCancel }: DeleteActionsProps) {
   if (flow.phase === "registered") {
     return (
-      <section aria-label="删除请求">
-        <p role="status">已登记请求，状态：待核验。尚未删除任何数据。</p>
+      <section aria-label="删除与数据清理请求" className="vw-stack-md">
+        <h2>删除操作</h2>
+        <BannerNotice tone="positive">
+          已登记请求，状态：待核验。尚未删除任何数据。（编号：
+          <bdi>
+            <UntrustedText text={flow.requestId} />
+          </bdi>
+          ）
+        </BannerNotice>
       </section>
     );
   }
-  const busy = flow.phase === "submitting";
+
   return (
-    <section aria-label="删除请求">
-      <h2>登记删除请求</h2>
-      <p>登记后需要核验，核验通过后才会执行。登记本身不删除任何数据。</p>
-      {MODES.map((mode) => (
-        <div key={mode}>
-          <button type="button" disabled={busy} onClick={() => onChoose(mode)}>
-            {MODE_COPY[mode].label}
-          </button>
-          <p>{MODE_COPY[mode].effect}</p>
-        </div>
-      ))}
-      <p>{MINIMAL_PREFERENCE_NOTE}</p>
+    <section aria-label="删除与数据清理请求" className="vw-stack-md">
+      <h2>删除操作</h2>
+      <p className="vw-caption">登记本身不删除任何数据，需经人工核验后由异步队列执行清理。</p>
+
+      <div className="vw-grid-2">
+        {MODES.map((mode) => (
+          <Card key={mode}>
+            <div className="vw-stack-sm">
+              <strong>{MODE_COPY[mode].label}</strong>
+              <p className="vw-muted">{MODE_COPY[mode].effect}</p>
+              {mode === "DELETE_AND_EXCEPT" ? (
+                <p className="vw-caption">{MINIMAL_PREFERENCE_NOTE}</p>
+              ) : null}
+              <div>
+                <Button
+                  size="sm"
+                  variant={mode === "DELETE_AND_EXCEPT" ? "danger" : "secondary"}
+                  disabled={flow.phase === "submitting"}
+                  onClick={() => onChoose(mode)}
+                >
+                  {MODE_COPY[mode].label}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {flow.phase === "confirming" && flow.errorCode !== null ? (
+        <BannerNotice tone="danger">
+          {ERROR_TEXT[flow.errorCode] ?? `登记失败 (${flow.errorCode})`}
+        </BannerNotice>
+      ) : null}
+
       {flow.phase === "confirming" || flow.phase === "submitting" ? (
-        <div role="group" aria-label="确认登记">
-          <p>将登记：{MODE_COPY[flow.mode].label}</p>
-          <button type="button" disabled={busy} onClick={onConfirm}>
-            确认登记
-          </button>
-          <button type="button" disabled={busy} onClick={onCancel}>
-            取消
-          </button>
-          {flow.phase === "confirming" && flow.errorCode !== null ? (
-            <p role="alert">{ERROR_TEXT[flow.errorCode] ?? "登记没有完成，请稍后再试。"}</p>
-          ) : null}
-        </div>
+        <InlineConfirmBar
+          open
+          tone="danger"
+          title={`将登记：${MODE_COPY[flow.mode].label}`}
+          message={
+            flow.mode === "DELETE_AND_EXCEPT"
+              ? MINIMAL_PREFERENCE_NOTE
+              : MODE_COPY[flow.mode].effect
+          }
+          confirmLabel={flow.phase === "submitting" ? "正在登记…" : "确认登记删除请求"}
+          cancelLabel="取消"
+          disabled={flow.phase === "submitting"}
+          onConfirm={onConfirm}
+          onCancel={onCancel}
+        />
       ) : null}
     </section>
   );

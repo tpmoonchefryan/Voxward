@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest 
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import type { VoxwardDatabase } from "../db/client.js";
+import { readShellPreferences, writeShellPreferences } from "../db/channel-settings-store.js";
 import { revokeOutputGrant } from "../db/output-store.js";
 import { authAccounts, CHANNEL_ROLES } from "../db/schema/index.js";
 import { runShortTransaction } from "../db/transaction.js";
@@ -77,6 +78,24 @@ const BATCH_BODY = z
       .max(100),
   })
   .strict();
+const SHELL_PREF_QUERY = z
+  .object({
+    product: z.string().min(1).max(64).optional(),
+    tenant: z.string().min(1).max(64).optional(),
+  })
+  .strict();
+const SHELL_PREF_BODY = z
+  .object({
+    product: z.string().min(1).max(64).optional(),
+    tenant: z.string().min(1).max(64).optional(),
+    pins: z.array(z.string().min(1).max(64)).max(24),
+    rightPins: z.array(z.string().min(1).max(64)).max(24).optional(),
+    theme: z.enum(["light", "dark", "halloween"]).optional(),
+    locale: z.string().min(2).max(16).optional(),
+    density: z.enum(["compact", "comfortable"]).optional(),
+  })
+  .strict()
+  .refine((b) => new Set(b.pins).size === b.pins.length, { message: "duplicate pins rejected" });
 
 function parseBody<T extends z.ZodType>(schema: T, body: unknown): z.output<T> {
   const parsed = schema.safeParse(body);
@@ -173,6 +192,48 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
     return reply
       .header("cache-control", "no-store")
       .send({ accountId: session.accountId, displayName: session.displayName, csrfToken: session.csrfToken });
+  });
+
+  app.get("/auth/shell-preferences", async (request, reply) => {
+    const session = requireSession(principalOf(database, request));
+    const parsedQuery = SHELL_PREF_QUERY.safeParse(request.query ?? {});
+    if (!parsedQuery.success) throw new RouteFailure(400, "INVALID_REQUEST");
+    const tenant = parsedQuery.data.tenant ?? "default";
+    const product = parsedQuery.data.product ?? "voxward";
+    const state = readShellPreferences(database, { accountId: session.accountId, tenant, product });
+    return reply.header("cache-control", "no-store").send({
+      accountId: session.accountId,
+      tenant,
+      product,
+      ...state,
+    });
+  });
+
+  app.put("/auth/shell-preferences", async (request, reply) => {
+    const session = requireSession(principalOf(database, request));
+    const body = parseBody(SHELL_PREF_BODY, request.body);
+    const tenant = body.tenant ?? "default";
+    const product = body.product ?? "voxward";
+    const current = readShellPreferences(database, { accountId: session.accountId, tenant, product });
+    const saved = writeShellPreferences(database, {
+      accountId: session.accountId,
+      tenant,
+      product,
+      state: {
+        pins: body.pins,
+        rightPins: body.rightPins ?? current.rightPins,
+        theme: body.theme ?? current.theme,
+        locale: body.locale ?? current.locale,
+        density: body.density ?? current.density,
+      },
+      now: new Date(),
+    });
+    return reply.header("cache-control", "no-store").send({
+      accountId: session.accountId,
+      tenant,
+      product,
+      ...saved,
+    });
   });
 
   app.get<{ Params: { channelId: string } }>("/channels/:channelId/members", async (request) => {

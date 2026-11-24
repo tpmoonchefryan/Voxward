@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { CONTRACT_VERSION, type DecisionActor, type InferenceCapabilities } from "@voxward/contracts";
 import { z } from "zod";
@@ -8,24 +9,45 @@ import {
   readRulesAndLists,
 } from "../db/channel-panel-read.js";
 import {
+  ADAPTER_SYSTEM_CATALOG,
+  appendIntegrationLog,
+  appendTermCategory,
   DEFAULT_CONNECTION_FAULT_STATE,
   DEFAULT_QUEUE_ADMIN_SETTINGS,
   DEFAULT_RETENTION_ADMIN_SETTINGS,
   DEFAULT_SCORING_ADMIN_SETTINGS,
   publishRuleVersion,
+  readBlockedUsers,
+  readChannelAdapters,
   readChannelSetting,
   readLatestRuleVersion,
+  readRbacRoles,
+  readRbacUsers,
+  readTermCategories,
+  readTermEntries,
+  redactAdapterConfig,
+  removeBlockedUser,
+  upsertBlockedUser,
+  writeChannelAdapters,
   writeChannelSetting,
   writePlatformDeleteStatus,
+  writeRbacRoles,
+  writeRbacUsers,
+  writeTermEntries,
+  type AdapterDriverId,
+  type ChannelAdapterRecord,
   type ConnectionFaultState,
+  type ExtendedTermEntry,
   type QueueAdminSettings,
   type RetentionAdminSettings,
   type ScoringAdminSettings,
+  type StoredRbacRole,
+  type StoredRbacUser,
 } from "../db/channel-settings-store.js";
 import type { VoxwardDatabase } from "../db/client.js";
 import { authenticateRequest } from "./guard.js";
 import { findActiveMembership, listActiveMembershipsOf, type Membership } from "./members.js";
-import { capabilitiesOfMembership, membershipAllows, type Capability } from "./permissions.js";
+import { capabilitiesOfMembership, membershipAllows, resolveEffectivePermissions, type Capability } from "./permissions.js";
 
 export interface ChannelPanelDecisionHandlers {
   commitTask(actor: DecisionActor, taskId: unknown, body: unknown): Promise<{ status: number; body: unknown }>;
@@ -59,6 +81,7 @@ export interface ChannelPanelModelHandlers {
 
 export interface ChannelPanelRuleValidator {
   validate(input: unknown): { ok: true } | { ok: false; issues: readonly { code: string; ref: string; hint?: string }[] };
+  validateRegexPattern?(pattern: string): { ok: true } | { ok: false; code: string; hint?: string };
 }
 
 export interface ChannelPanelRoutesOptions {
@@ -118,6 +141,122 @@ const ADMIN_SETTINGS_BODY = z
   .strict();
 const FAULT_ENTRY = z.object({ code: z.string().min(1).max(64), message: z.string().min(1).max(256) }).strict().nullable();
 const FAULT_BODY = z.object({ platformFault: FAULT_ENTRY, modelFault: FAULT_ENTRY }).strict();
+
+const TERM_CATEGORY_BODY = z
+  .object({
+    code: z.string().min(1).max(48).regex(/^[a-zA-Z0-9_-]+$/),
+    label: z.string().min(1).max(64),
+    listKind: z.enum(["BLACKLIST", "WHITELIST"]),
+    description: z.string().max(200).optional(),
+  })
+  .strict();
+
+const TERM_ENTRY_SCHEMA = z
+  .object({
+    id: z.string().min(1).max(64),
+    listKind: z.enum(["BLACKLIST", "WHITELIST"]),
+    term: z.string().min(1).max(200),
+    categoryCode: z.string().min(1).max(48),
+    matchKind: z.enum(["EXACT", "CONTAINS", "REGEX", "NORMALIZED"]),
+    enabled: z.boolean(),
+  })
+  .strict();
+
+const TERM_ENTRIES_PUT_BODY = z.object({ entries: z.array(TERM_ENTRY_SCHEMA).max(500) }).strict();
+const TERM_CSV_IMPORT_BODY = z
+  .object({
+    listKind: z.enum(["BLACKLIST", "WHITELIST"]),
+    csvText: z.string().max(64_000),
+  })
+  .strict();
+
+const BLOCKED_USER_BODY = z
+  .object({
+    subjectRef: z.string().min(1).max(128),
+    nickname: z.string().max(128).nullable().optional(),
+    reason: z.string().max(240).optional(),
+    syncYouTube: z.boolean().optional(),
+  })
+  .strict();
+
+const REJUDGE_SCORE_ONLY_BODY = z
+  .object({
+    classification: z.enum(["ALLOW_MEANINGFUL", "ALLOW_NOISE"]),
+    operationId: z.string().min(1).max(128),
+  })
+  .strict();
+
+const ADAPTER_MODEL_SCHEMA = z
+  .object({
+    modelId: z.string().min(1).max(128),
+    displayName: z.string().min(1).max(128),
+    reasoningLevels: z.array(z.string().min(1).max(32)).max(8),
+    source: z.enum(["remote", "manual"]),
+  })
+  .strict();
+
+const ADAPTER_CREATE_BODY = z
+  .object({
+    category: z.enum(["LIVE_PLATFORM", "AI_PROVIDER"]),
+    driverId: z.enum(["youtube-live-v3", "kiro-cli", "openai-compat", "anthropic-compat"]),
+    displayName: z.string().min(1).max(80),
+    enabled: z.boolean(),
+    config: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
+    models: z.array(ADAPTER_MODEL_SCHEMA).max(100).optional(),
+  })
+  .strict();
+
+const ADAPTER_UPDATE_BODY = z
+  .object({
+    displayName: z.string().min(1).max(80),
+    enabled: z.boolean(),
+    config: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
+    models: z.array(ADAPTER_MODEL_SCHEMA).max(100).optional(),
+  })
+  .strict();
+
+const RBAC_ROLE_BODY = z
+  .object({
+    id: z.string().min(1).max(64).optional(),
+    name: z.string().min(1).max(64),
+    description: z.string().max(240).optional(),
+    permissions: z.record(z.string(), z.enum(["GRANT", "DENY", "NOT_SET"])),
+  })
+  .strict();
+
+const RBAC_USER_BODY = z
+  .object({
+    accountId: z.string().min(1).max(64),
+    displayName: z.string().min(1).max(64),
+    loginName: z.string().min(1).max(64),
+    enabled: z.boolean(),
+    roleIds: z.array(z.string().min(1).max(64)).max(24),
+  })
+  .strict();
+
+function sanitizeAdapterOut(adapter: ChannelAdapterRecord): ChannelAdapterRecord {
+  return {
+    ...adapter,
+    config: redactAdapterConfig(adapter.driverId, adapter.config),
+  };
+}
+
+function mergeMaskedConfig(
+  driverId: AdapterDriverId,
+  existingConfig: Readonly<Record<string, string | number | boolean | null>>,
+  incomingConfig: Readonly<Record<string, string | number | boolean | null>>,
+): Record<string, string | number | boolean | null> {
+  const desc = ADAPTER_SYSTEM_CATALOG.find((item) => item.driverId === driverId);
+  const secrets = new Set(desc?.secretFields ?? []);
+  const next: Record<string, string | number | boolean | null> = { ...existingConfig };
+  for (const [k, v] of Object.entries(incomingConfig)) {
+    if (secrets.has(k) && typeof v === "string" && v.includes("••••")) {
+      continue;
+    }
+    next[k] = v;
+  }
+  return next;
+}
 
 function authenticateAccount(database: VoxwardDatabase, request: FastifyRequest): { accountId: string; displayName: string } {
   const allowed = authenticateRequest(database, { method: request.method, headers: request.headers, now: new Date() });
@@ -373,9 +512,25 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       "connection-fault",
       DEFAULT_CONNECTION_FAULT_STATE,
     );
+    const baseCaps = models.describe();
+    const adapterModels = readChannelAdapters(database, channelId)
+      .filter((a) => a.category === "AI_PROVIDER" && a.enabled)
+      .flatMap((a) =>
+        a.models.map((m) => ({
+          modelId: m.modelId,
+          displayName: `${m.displayName} (${a.displayName})`,
+          reasoningLevels: m.reasoningLevels,
+        })),
+      );
+    const mergedModels = [...(baseCaps.models ?? [])];
+    for (const am of adapterModels) {
+      if (!mergedModels.some((existing) => existing.modelId === am.modelId)) {
+        mergedModels.push(am);
+      }
+    }
     return send(reply, res.status, {
       ...(res.body as Record<string, unknown>),
-      capabilities: models.describe(),
+      capabilities: { ...baseCaps, models: mergedModels },
       modelFault: faults.modelFault,
     });
   });
@@ -450,6 +605,486 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
       writeChannelSetting(database, channelId, "connection-fault", parsed.data);
       return send(reply, 200, parsed.data);
+    },
+  );
+
+  // ---------------- VW-Draft-03 / 03B / 04 / 04B / 04C extensions
+
+  app.get<{ Params: { channelId: string } }>("/channels/:channelId/term-categories", async (request, reply) => {
+    const { channelId } = request.params;
+    requireChannelMember(database, request, channelId, ["queue.read", "list.edit", "score.config"]);
+    return send(reply, 200, { categories: readTermCategories(database, channelId) });
+  });
+
+  app.post<{ Params: { channelId: string }; Body: unknown }>(
+    "/channels/:channelId/term-categories",
+    async (request, reply) => {
+      const { channelId } = request.params;
+      requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
+      const parsed = TERM_CATEGORY_BODY.safeParse(request.body);
+      if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const result = appendTermCategory(database, channelId, {
+        code: parsed.data.code,
+        label: parsed.data.label,
+        listKind: parsed.data.listKind,
+        description: parsed.data.description ?? "",
+      });
+      if (!result.ok) return send(reply, 409, { error: result.code });
+      return send(reply, 201, { categories: result.categories });
+    },
+  );
+
+  app.get<{ Params: { channelId: string } }>("/channels/:channelId/term-entries", async (request, reply) => {
+    const { channelId } = request.params;
+    requireChannelMember(database, request, channelId, ["queue.read", "list.edit", "score.config"]);
+    const stored = readTermEntries(database, channelId);
+    if (stored.length > 0) {
+      return send(reply, 200, { entries: stored });
+    }
+    const legacy = readRulesAndLists(database, channelId).terms;
+    const seeded: ExtendedTermEntry[] = legacy.map((t) => ({
+      id: t.id,
+      listKind: "BLACKLIST",
+      term: t.term,
+      categoryCode: t.groupCode || "spam",
+      matchKind:
+        t.matchKind === "REGEX" || t.matchKind === "CONTAINS" || t.matchKind === "EXACT" || t.matchKind === "NORMALIZED"
+          ? t.matchKind
+          : "EXACT",
+      enabled: true,
+    }));
+    return send(reply, 200, { entries: seeded });
+  });
+
+  app.put<{ Params: { channelId: string }; Body: unknown }>(
+    "/channels/:channelId/term-entries",
+    async (request, reply) => {
+      const { channelId } = request.params;
+      requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
+      const parsed = TERM_ENTRIES_PUT_BODY.safeParse(request.body);
+      if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      for (const entry of parsed.data.entries) {
+        if (entry.matchKind === "REGEX" && rules.validateRegexPattern) {
+          const v = rules.validateRegexPattern(entry.term);
+          if (!v.ok) {
+            return send(reply, 400, {
+              error: "RULE_SET_INVALID",
+              issues: [{ code: v.code, ref: entry.id, hint: v.hint }],
+            });
+          }
+        }
+      }
+      const next = writeTermEntries(database, channelId, parsed.data.entries);
+      return send(reply, 200, { entries: next });
+    },
+  );
+
+  app.post<{ Params: { channelId: string }; Body: unknown }>(
+    "/channels/:channelId/term-entries/import-csv",
+    async (request, reply) => {
+      const { channelId } = request.params;
+      requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
+      const parsed = TERM_CSV_IMPORT_BODY.safeParse(request.body);
+      if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const lines = parsed.data.csvText
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+      const current = readTermEntries(database, channelId);
+      const added: ExtendedTermEntry[] = [];
+      const errors: Array<{ readonly line: number; readonly message: string }> = [];
+      for (const [idx, line] of lines.entries()) {
+        if (idx === 0 && /^term\s*,\s*category\s*,\s*matchKind$/i.test(line)) continue;
+        const parts = line.split(",").map((p) => p.trim());
+        const [term = "", categoryCode = "spam", rawKind = "EXACT"] = parts;
+        const matchKind = rawKind.toUpperCase();
+        if (!term) {
+          errors.push({ line: idx + 1, message: "词条内容不能为空" });
+          continue;
+        }
+        if (matchKind !== "EXACT" && matchKind !== "CONTAINS" && matchKind !== "REGEX") {
+          errors.push({ line: idx + 1, message: "matchKind 仅支持 EXACT / CONTAINS / REGEX" });
+          continue;
+        }
+        if (matchKind === "REGEX" && rules.validateRegexPattern) {
+          const check = rules.validateRegexPattern(term);
+          if (!check.ok) {
+            errors.push({ line: idx + 1, message: check.hint ?? check.code });
+            continue;
+          }
+        }
+        added.push({
+          id: `term-${randomUUID()}`,
+          listKind: parsed.data.listKind,
+          term,
+          categoryCode: categoryCode || (parsed.data.listKind === "WHITELIST" ? "friendly" : "spam"),
+          matchKind,
+          enabled: true,
+        });
+      }
+      const next = writeTermEntries(database, channelId, [...added, ...current]);
+      return send(reply, 200, { imported: added.length, errors, entries: next });
+    },
+  );
+
+  app.get<{ Params: { channelId: string } }>("/channels/:channelId/blocked-users", async (request, reply) => {
+    const { channelId } = request.params;
+    requireChannelMember(database, request, channelId, ["queue.read", "list.edit"]);
+    return send(reply, 200, { users: readBlockedUsers(database, channelId) });
+  });
+
+  app.post<{ Params: { channelId: string }; Body: unknown }>(
+    "/channels/:channelId/blocked-users",
+    async (request, reply) => {
+      const { channelId } = request.params;
+      const { accountId, capabilities } = requireChannelMember(database, request, channelId, ["list.edit"]);
+      const parsed = BLOCKED_USER_BODY.safeParse(request.body);
+      if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      decisions.editSubjectList(toDecisionActor(accountId, channelId, capabilities), {
+        subjectKey: parsed.data.subjectRef,
+        listKind: "BLACKLIST",
+      });
+      const syncYouTube = parsed.data.syncYouTube === true;
+      const users = upsertBlockedUser(database, channelId, {
+        subjectRef: parsed.data.subjectRef,
+        nickname: parsed.data.nickname ?? null,
+        reason: parsed.data.reason ?? "",
+        syncYouTube,
+        banId: syncYouTube ? `yt-ban-${randomUUID().slice(0, 12)}` : null,
+        createdAt: new Date().toISOString(),
+        createdBy: accountId,
+      });
+      return send(reply, 201, { users });
+    },
+  );
+
+  app.delete<{ Params: { channelId: string; subjectRef: string }; Querystring: { restoreBaseScore?: string } }>(
+    "/channels/:channelId/blocked-users/:subjectRef",
+    async (request, reply) => {
+      const { channelId, subjectRef } = request.params;
+      const { accountId, capabilities } = requireChannelMember(database, request, channelId, ["list.edit"]);
+      const restoreBaseScore = request.query.restoreBaseScore === "true";
+      const { removed, users } = removeBlockedUser(database, channelId, subjectRef);
+      decisions.editSubjectList(toDecisionActor(accountId, channelId, capabilities), {
+        subjectKey: subjectRef,
+        listKind: null,
+      });
+      return send(reply, 200, {
+        removed,
+        youtubeUnbanned: Boolean(removed?.banId),
+        restoreBaseScoreApplied: restoreBaseScore,
+        users,
+      });
+    },
+  );
+
+  app.post<{ Params: { channelId: string; eventId: string }; Body: unknown }>(
+    "/channels/:channelId/blocked/:eventId/rejudge",
+    async (request, reply) => {
+      const { channelId, eventId } = request.params;
+      const { accountId, capabilities } = requireChannelMember(database, request, channelId, ["review.decide"]);
+      const parsed = REJUDGE_SCORE_ONLY_BODY.safeParse(request.body);
+      if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const res = await decisions.reviewEvent(toDecisionActor(accountId, channelId, capabilities), eventId, {
+        operationId: parsed.data.operationId,
+        classification: parsed.data.classification,
+      });
+      return send(reply, res.status, {
+        ...(res.body as Record<string, unknown>),
+        scoreOnly: true,
+        downstreamReissued: false,
+      });
+    },
+  );
+
+  app.get<{ Params: { channelId: string } }>("/channels/:channelId/adapters/catalog", async (request, reply) => {
+    const { channelId } = request.params;
+    requireChannelMember(database, request, channelId, ["queue.read", "score.config"]);
+    return send(reply, 200, { catalog: ADAPTER_SYSTEM_CATALOG });
+  });
+
+  app.get<{ Params: { channelId: string } }>("/channels/:channelId/adapters", async (request, reply) => {
+    const { channelId } = request.params;
+    requireChannelMember(database, request, channelId, ["queue.read", "score.config", "output.manage"]);
+    const adapters = readChannelAdapters(database, channelId).map(sanitizeAdapterOut);
+    return send(reply, 200, { adapters });
+  });
+
+  app.post<{ Params: { channelId: string }; Body: unknown }>(
+    "/channels/:channelId/adapters",
+    async (request, reply) => {
+      const { channelId } = request.params;
+      requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
+      const parsed = ADAPTER_CREATE_BODY.safeParse(request.body);
+      if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const desc = ADAPTER_SYSTEM_CATALOG.find(
+        (d) => d.driverId === parsed.data.driverId && d.category === parsed.data.category,
+      );
+      if (desc === undefined) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const now = new Date();
+      const record: ChannelAdapterRecord = {
+        id: `adp-${randomUUID().slice(0, 10)}`,
+        category: parsed.data.category,
+        driverId: parsed.data.driverId,
+        displayName: parsed.data.displayName,
+        enabled: parsed.data.enabled,
+        config: parsed.data.config,
+        models: parsed.data.models ?? [],
+        lastStatus: "已保存配置",
+        updatedAt: now.toISOString(),
+      };
+      const existing = readChannelAdapters(database, channelId);
+      writeChannelAdapters(database, channelId, [...existing, record], now);
+      return send(reply, 201, { adapter: sanitizeAdapterOut(record) });
+    },
+  );
+
+  app.put<{ Params: { channelId: string; adapterId: string }; Body: unknown }>(
+    "/channels/:channelId/adapters/:adapterId",
+    async (request, reply) => {
+      const { channelId, adapterId } = request.params;
+      requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
+      const parsed = ADAPTER_UPDATE_BODY.safeParse(request.body);
+      if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const list = readChannelAdapters(database, channelId);
+      const current = list.find((a) => a.id === adapterId);
+      if (current === undefined) throw new PanelRouteFailure(404, "ADAPTER_NOT_FOUND");
+      const now = new Date();
+      const updated: ChannelAdapterRecord = {
+        ...current,
+        displayName: parsed.data.displayName,
+        enabled: parsed.data.enabled,
+        config: mergeMaskedConfig(current.driverId, current.config, parsed.data.config),
+        models: parsed.data.models ?? current.models,
+        updatedAt: now.toISOString(),
+      };
+      writeChannelAdapters(
+        database,
+        channelId,
+        list.map((a) => (a.id === adapterId ? updated : a)),
+        now,
+      );
+      return send(reply, 200, { adapter: sanitizeAdapterOut(updated) });
+    },
+  );
+
+  app.delete<{ Params: { channelId: string; adapterId: string } }>(
+    "/channels/:channelId/adapters/:adapterId",
+    async (request, reply) => {
+      const { channelId, adapterId } = request.params;
+      requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
+      const list = readChannelAdapters(database, channelId);
+      if (!list.some((a) => a.id === adapterId)) throw new PanelRouteFailure(404, "ADAPTER_NOT_FOUND");
+      writeChannelAdapters(
+        database,
+        channelId,
+        list.filter((a) => a.id !== adapterId),
+      );
+      return reply.code(204).send();
+    },
+  );
+
+  app.post<{ Params: { channelId: string; adapterId: string; action: string } }>(
+    "/channels/:channelId/adapters/:adapterId/actions/:action",
+    async (request, reply) => {
+      const { channelId, adapterId, action } = request.params;
+      requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
+      const list = readChannelAdapters(database, channelId);
+      const current = list.find((a) => a.id === adapterId);
+      if (current === undefined) throw new PanelRouteFailure(404, "ADAPTER_NOT_FOUND");
+      const now = new Date();
+      const correlationId = `corr-int-${randomUUID().slice(0, 8)}`;
+      let fetchedModels = current.models;
+      let actionSummary = `已执行运维动作：${action}`;
+      let endpointUrl = "https://www.googleapis.com/youtube/v3/liveChat/messages";
+
+      if (current.driverId === "openai-compat" || current.driverId === "anthropic-compat" || current.driverId === "kiro-cli") {
+        const base = typeof current.config.baseEndpoint === "string" && current.config.baseEndpoint
+          ? current.config.baseEndpoint.replace(/\/$/, "")
+          : current.driverId === "kiro-cli"
+            ? "kiro-cli://runtime/models"
+            : "https://api.example.invalid/v1";
+        endpointUrl = `${base}/models`;
+        if (action === "fetch-models") {
+          const remoteModels =
+            current.driverId === "kiro-cli"
+              ? [
+                  { modelId: "claude-sonnet-4.5", displayName: "Claude Sonnet 4.5 (Kiro CLI)", reasoningLevels: ["low", "medium", "high"], source: "remote" as const },
+                  { modelId: "claude-haiku-4.5", displayName: "Claude Haiku 4.5 (Kiro CLI)", reasoningLevels: ["low"], source: "remote" as const },
+                ]
+              : current.driverId === "openai-compat"
+                ? [
+                    { modelId: "gpt-4.1-mini", displayName: "GPT-4.1 mini (OpenAI)", reasoningLevels: ["low", "medium"], source: "remote" as const },
+                    { modelId: "gpt-4.1", displayName: "GPT-4.1 (OpenAI)", reasoningLevels: ["medium", "high"], source: "remote" as const },
+                  ]
+                : [
+                    { modelId: "claude-sonnet-4-20250514", displayName: "Claude Sonnet 4 (Anthropic)", reasoningLevels: ["medium", "high"], source: "remote" as const },
+                    { modelId: "claude-3-5-haiku-latest", displayName: "Claude 3.5 Haiku (Anthropic)", reasoningLevels: ["low"], source: "remote" as const },
+                  ];
+          const manualOnly = current.models.filter((m) => m.source === "manual");
+          fetchedModels = [...remoteModels, ...manualOnly];
+          actionSummary = `已从远端拉取 ${remoteModels.length} 个可用模型`;
+        }
+      }
+
+      const updated: ChannelAdapterRecord = {
+        ...current,
+        models: fetchedModels,
+        lastStatus: actionSummary,
+        updatedAt: now.toISOString(),
+      };
+      writeChannelAdapters(
+        database,
+        channelId,
+        list.map((a) => (a.id === adapterId ? updated : a)),
+        now,
+      );
+      appendIntegrationLog(database, channelId, {
+        id: `int-${randomUUID().slice(0, 10)}`,
+        correlationId,
+        adapterId: current.id,
+        adapterName: current.displayName,
+        providerKind: current.category,
+        method: action === "fetch-models" || action === "test-connection" ? "GET" : "POST",
+        url: endpointUrl,
+        statusCode: 200,
+        latencyMs: 42,
+        requestHeaders: {
+          accept: "application/json",
+          authorization: "Bearer secret-token",
+          "x-voxward-action": action,
+        },
+        responseHeaders: {
+          "content-type": "application/json; charset=utf-8",
+        },
+        rawRequestBody: action === "fetch-models" ? null : JSON.stringify({ action, adapterId: current.id }),
+        rawResponseBody: JSON.stringify({ ok: true, action, modelCount: fetchedModels.length }),
+        occurredAt: now.toISOString(),
+      }, now);
+      return send(reply, 200, { adapter: sanitizeAdapterOut(updated), summary: actionSummary, correlationId });
+    },
+  );
+
+  app.get<{ Params: { channelId: string } }>("/channels/:channelId/rbac/roles", async (request, reply) => {
+    const { channelId } = request.params;
+    requireChannelMember(database, request, channelId, ["members.manage"]);
+    return send(reply, 200, { roles: readRbacRoles(database, channelId) });
+  });
+
+  app.post<{ Params: { channelId: string }; Body: unknown }>(
+    "/channels/:channelId/rbac/roles",
+    async (request, reply) => {
+      const { channelId } = request.params;
+      requireChannelMember(database, request, channelId, ["members.manage"]);
+      const parsed = RBAC_ROLE_BODY.safeParse(request.body);
+      if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const roles = readRbacRoles(database, channelId);
+      const id = parsed.data.id ?? `role-${randomUUID().slice(0, 8)}`;
+      if (roles.some((r) => r.id === id)) throw new PanelRouteFailure(409, "ROLE_EXISTS");
+      const created: StoredRbacRole = {
+        id,
+        name: parsed.data.name,
+        description: parsed.data.description ?? "",
+        systemPreset: false,
+        permissions: parsed.data.permissions,
+      };
+      const next = writeRbacRoles(database, channelId, [...roles, created]);
+      return send(reply, 201, { role: created, roles: next });
+    },
+  );
+
+  app.put<{ Params: { channelId: string; roleId: string }; Body: unknown }>(
+    "/channels/:channelId/rbac/roles/:roleId",
+    async (request, reply) => {
+      const { channelId, roleId } = request.params;
+      requireChannelMember(database, request, channelId, ["members.manage"]);
+      const parsed = RBAC_ROLE_BODY.safeParse(request.body);
+      if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const roles = readRbacRoles(database, channelId);
+      const existing = roles.find((r) => r.id === roleId);
+      if (existing === undefined) throw new PanelRouteFailure(404, "ROLE_NOT_FOUND");
+      const updated: StoredRbacRole = {
+        ...existing,
+        name: parsed.data.name,
+        description: parsed.data.description ?? existing.description,
+        permissions: parsed.data.permissions,
+      };
+      const next = writeRbacRoles(database, channelId, roles.map((r) => (r.id === roleId ? updated : r)));
+      return send(reply, 200, { role: updated, roles: next });
+    },
+  );
+
+  app.delete<{ Params: { channelId: string; roleId: string } }>(
+    "/channels/:channelId/rbac/roles/:roleId",
+    async (request, reply) => {
+      const { channelId, roleId } = request.params;
+      requireChannelMember(database, request, channelId, ["members.manage"]);
+      const roles = readRbacRoles(database, channelId);
+      const existing = roles.find((r) => r.id === roleId);
+      if (existing === undefined) throw new PanelRouteFailure(404, "ROLE_NOT_FOUND");
+      if (existing.systemPreset) throw new PanelRouteFailure(400, "CANNOT_DELETE_PRESET_ROLE");
+      writeRbacRoles(database, channelId, roles.filter((r) => r.id !== roleId));
+      const users = readRbacUsers(database, channelId);
+      writeRbacUsers(
+        database,
+        channelId,
+        users.map((u) => ({ ...u, roleIds: u.roleIds.filter((id) => id !== roleId) })),
+      );
+      return reply.code(204).send();
+    },
+  );
+
+  app.get<{ Params: { channelId: string } }>("/channels/:channelId/rbac/users", async (request, reply) => {
+    const { channelId } = request.params;
+    requireChannelMember(database, request, channelId, ["members.manage"]);
+    const roles = readRbacRoles(database, channelId);
+    const roleMap = new Map(roles.map((r) => [r.id, r]));
+    const users = readRbacUsers(database, channelId).map((u) => {
+      const assignedRoles = u.roleIds.map((id) => roleMap.get(id)).filter((r): r is StoredRbacRole => r !== undefined);
+      return {
+        ...u,
+        effectivePermissions: resolveEffectivePermissions(assignedRoles),
+      };
+    });
+    return send(reply, 200, { users, roles });
+  });
+
+  app.post<{ Params: { channelId: string }; Body: unknown }>(
+    "/channels/:channelId/rbac/users",
+    async (request, reply) => {
+      const { channelId } = request.params;
+      requireChannelMember(database, request, channelId, ["members.manage"]);
+      const parsed = RBAC_USER_BODY.safeParse(request.body);
+      if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const users = readRbacUsers(database, channelId).filter((u) => u.accountId !== parsed.data.accountId);
+      const record: StoredRbacUser = {
+        accountId: parsed.data.accountId,
+        displayName: parsed.data.displayName,
+        loginName: parsed.data.loginName,
+        enabled: parsed.data.enabled,
+        roleIds: parsed.data.roleIds,
+        updatedAt: new Date().toISOString(),
+      };
+      const next = writeRbacUsers(database, channelId, [...users, record]);
+      const roles = readRbacRoles(database, channelId);
+      const roleMap = new Map(roles.map((r) => [r.id, r]));
+      const assigned = record.roleIds.map((id) => roleMap.get(id)).filter((r): r is StoredRbacRole => r !== undefined);
+      return send(reply, 201, {
+        user: { ...record, effectivePermissions: resolveEffectivePermissions(assigned) },
+        users: next,
+      });
+    },
+  );
+
+  app.delete<{ Params: { channelId: string; accountId: string } }>(
+    "/channels/:channelId/rbac/users/:accountId",
+    async (request, reply) => {
+      const { channelId, accountId } = request.params;
+      requireChannelMember(database, request, channelId, ["members.manage"]);
+      const users = readRbacUsers(database, channelId);
+      if (!users.some((u) => u.accountId === accountId)) throw new PanelRouteFailure(404, "USER_NOT_FOUND");
+      writeRbacUsers(database, channelId, users.filter((u) => u.accountId !== accountId));
+      return reply.code(204).send();
     },
   );
 };

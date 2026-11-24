@@ -1,0 +1,300 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.1.0",
+      "@tcrn/ui-tokens": "4.1.0",
+      "@tcrn/ui-copy-state": "4.1.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "id": "component/IconButton",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/05-actions"
+  ],
+  "optional": [],
+  "content": {
+    "name": "IconButton",
+    "board": "05-actions",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/05-actions/index.dc.html",
+      "sha256": "c7498b7bf317ce36cca13b2508ff1016874b3984f3374b14dcd42df24933f6ff",
+      "line": 113
+    },
+    "normativeText": "IconButton ariaLabel（必填）· iconName | icon · 其余同 Button 一句话：只有图标的方形按钮，必须有可见名字以外的名字。 须提供 ： ariaLabel ； iconName 取名册；可选 children 作可见标签（则不再是方形）。 用 ：工具栏、表格行尾、关闭与折叠。 不用 ：唯一的主动作；含义不明的图标（info、settings 之外的隐喻）。",
+    "readerSummary": {
+      "en": "ariaLabel is required; use a roster icon. Without children it is square; optional visible children make it a labelled action. Avoid ambiguous or sole primary actions.",
+      "zh-CN": "ariaLabel 必填，图标取名册。无 children 时方形，带可见 children 时不再方形。不作含义不明或唯一主动作。",
+      "ja": "ariaLabel と名簿のアイコンを指定します。children なしは正方形、表示ラベル付きは可変幅です。不明瞭な主操作には使いません。",
+      "ko": "ariaLabel과 명단 아이콘을 제공합니다. children이 없으면 정사각형, 표시 레이블이 있으면 가변 너비입니다. 모호한 유일 주 동작에는 쓰지 않습니다.",
+      "fr": "ariaLabel requis et icône du catalogue. Carré sans children, largeur adaptée avec libellé visible. Éviter les actions ambiguës ou l’unique action principale."
+    },
+    "types": {
+      "name": "IconButton",
+      "kind": "function",
+      "props": [
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "disabledReason",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "icon",
+          "type": "ReactNode",
+          "required": false,
+          "slot": true
+        },
+        {
+          "name": "iconName",
+          "type": "IconName",
+          "required": false,
+          "enumValues": [
+            "x",
+            "alert-triangle",
+            "arrow-left",
+            "arrow-right",
+            "book-open",
+            "check",
+            "chevron-down",
+            "chevron-left",
+            "chevron-right",
+            "database",
+            "external-link",
+            "globe-2",
+            "history",
+            "home",
+            "info",
+            "layers",
+            "layout-grid",
+            "loader-circle",
+            "menu",
+            "moon",
+            "package",
+            "palette",
+            "panel-left-close",
+            "panel-left-open",
+            "search",
+            "settings",
+            "shield-check",
+            "sun",
+            "plus",
+            "minus",
+            "users",
+            "bell",
+            "copy",
+            "trash",
+            "calendar",
+            "more-horizontal",
+            "chevron-up",
+            "pin"
+          ]
+        },
+        {
+          "name": "loading",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "name": "size",
+          "type": "Size",
+          "required": false,
+          "enumValues": [
+            "sm",
+            "md",
+            "lg"
+          ]
+        },
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\" | \"quiet\" | \"danger\"",
+          "required": false,
+          "enumValues": [
+            "primary",
+            "secondary",
+            "quiet",
+            "danger"
+          ]
+        }
+      ],
+      "variants": {
+        "iconName": [
+          "x",
+          "alert-triangle",
+          "arrow-left",
+          "arrow-right",
+          "book-open",
+          "check",
+          "chevron-down",
+          "chevron-left",
+          "chevron-right",
+          "database",
+          "external-link",
+          "globe-2",
+          "history",
+          "home",
+          "info",
+          "layers",
+          "layout-grid",
+          "loader-circle",
+          "menu",
+          "moon",
+          "package",
+          "palette",
+          "panel-left-close",
+          "panel-left-open",
+          "search",
+          "settings",
+          "shield-check",
+          "sun",
+          "plus",
+          "minus",
+          "users",
+          "bell",
+          "copy",
+          "trash",
+          "calendar",
+          "more-horizontal",
+          "chevron-up",
+          "pin"
+        ],
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ],
+        "variant": [
+          "primary",
+          "secondary",
+          "quiet",
+          "danger"
+        ]
+      },
+      "slots": [
+        "icon"
+      ],
+      "source": {
+        "path": "packages/ui-react/src/components/Button/Button.tsx",
+        "line": 119
+      },
+      "propsType": "IconButtonProps",
+      "typeDefinitions": [
+        {
+          "name": "Size",
+          "path": "packages/ui-react/src/components/Button/Button.tsx",
+          "line": 6,
+          "declaration": "type Size = \"sm\" | \"md\" | \"lg\";"
+        },
+        {
+          "name": "IconButtonProps",
+          "path": "packages/ui-react/src/components/Button/Button.tsx",
+          "line": 113,
+          "declaration": "export interface IconButtonProps extends ButtonProps {\n  ariaLabel: string;\n  icon?: ReactNode;\n  iconName?: IconName;\n}"
+        },
+        {
+          "name": "TcrnIconPathName",
+          "path": "packages/ui-react/src/components/Icon/icon-paths.generated.ts",
+          "line": 6,
+          "declaration": "export type TcrnIconPathName=(typeof tcrnIconPathNames)[number];"
+        },
+        {
+          "name": "IconName",
+          "path": "packages/ui-react/src/components/Icon/Icon.tsx",
+          "line": 20,
+          "declaration": "export type IconName = TcrnIconPathName;"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "mixed",
+      "constraint": "An unlabelled button is a token-height square. A visible label uses content width and token insets; an accessible name alone does not widen the square.",
+      "implementation": "actions.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Button/Button.tsx",
+      "sha256": "0d2fb48da3065d13121ead9a9027fde1d811ba45f3079073c4a079e122f674c7"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 146,
+      "snippet": "case \"IconButton\": return state === \"sizes\" ? ([\"sm\", \"md\", \"lg\"] as const).map(size => <IconButton key={size} size={size} ariaLabel={c.settings} iconName=\"settings\" />) : <IconButton {...props} ariaLabel={c.settings} iconName=\"settings\" loading={state === \"loading\"} aria-pressed={state === \"selected\" || undefined} onClick={() => setFeedback(\"activated\")}>{state === \"labelled\" ? c.settings : undefined}</IconButton>;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { IconButton, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example() {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", justifyItems: \"start\", gap: \"var(--tcrn-space-2)\" }}>\n      <IconButton ariaLabel=\"Settings\" iconName=\"settings\">Settings</IconButton>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/actions.css.ts",
+          "sha256": "867422711e7934ae0a06d531808867a32216620e62130e77770e172887cde54a"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-iconbutton--default"
+      },
+      {
+        "state": "labelled",
+        "id": "components-iconbutton--labelled"
+      },
+      {
+        "state": "sizes",
+        "id": "components-iconbutton--sizes"
+      },
+      {
+        "state": "hover",
+        "id": "components-iconbutton--hover"
+      },
+      {
+        "state": "active",
+        "id": "components-iconbutton--active"
+      },
+      {
+        "state": "focus",
+        "id": "components-iconbutton--focus"
+      },
+      {
+        "state": "disabled",
+        "id": "components-iconbutton--disabled"
+      },
+      {
+        "state": "loading",
+        "id": "components-iconbutton--loading"
+      },
+      {
+        "state": "selected",
+        "id": "components-iconbutton--selected"
+      }
+    ]
+  }
+}

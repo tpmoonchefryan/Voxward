@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.1.0",
+      "@tcrn/ui-tokens": "4.1.0",
+      "@tcrn/ui-copy-state": "4.1.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "id": "component/DatePicker",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/06-inputs"
+  ],
+  "optional": [],
+  "content": {
+    "name": "DatePicker",
+    "board": "06-inputs",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/06-inputs/index.dc.html",
+      "sha256": "0a0cd521481292fc44a24250eb9137cec0e855f5bc7c5ee4b5bce3aa33fa07e8",
+      "line": 130
+    },
+    "normativeText": "DatePicker value ISO · min · max 一句话：原生 date，值永远是 YYYY-MM-DD，显示格式随读者的系统。 须提供 ：label；范围 min/max。 外形 ：右侧 calendar 图标 14 三级墨；原生指示器透明覆盖同一 30px 区域，点击打开系统日历。",
+    "readerSummary": {
+      "en": "Name the native date control; values stay YYYY-MM-DD and min/max constrain range. The 14px calendar shares the native clickable indicator area.",
+      "zh-CN": "命名原生日期控件；值为 YYYY-MM-DD，min/max 定范围。14px 日历与原生可点指示器共享区域。",
+      "ja": "ネイティブ日付欄に名前を付けます。値は YYYY-MM-DD、範囲は min/max。14px カレンダーはネイティブの操作領域に重なります。",
+      "ko": "원시 날짜 컨트롤에 이름을 붙입니다. 값은 YYYY-MM-DD이고 min/max로 범위를 정합니다. 14px 달력은 원시 표시기의 클릭 영역과 겹칩니다.",
+      "fr": "Nommer le champ date natif ; valeur YYYY-MM-DD, limites min/max. Le calendrier de 14px partage la zone cliquable de l’indicateur natif."
+    },
+    "types": {
+      "name": "DatePicker",
+      "kind": "function",
+      "props": [
+        {
+          "name": "max",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "min",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "variants": {},
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Form/Form.tsx",
+        "line": 941
+      },
+      "propsType": "DatePickerProps",
+      "typeDefinitions": [
+        {
+          "name": "DatePickerProps",
+          "path": "packages/ui-react/src/components/Form/Form.tsx",
+          "line": 924,
+          "declaration": "export interface DatePickerProps extends Omit<InputHTMLAttributes<HTMLInputElement>, \"type\"> {\n  /** ISO `YYYY-MM-DD`. The displayed format is the reader's, not this one. */\n  value?: string;\n  /** Earliest selectable date, ISO. */\n  min?: string;\n  /** Latest selectable date, ISO. */\n  max?: string;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "fill",
+      "parent": "host-form-column",
+      "constraint": "The field sets width; retain the native date segments and reserved picker area. Native locale rendering and very narrow fields need browser checks.",
+      "implementation": "inputs.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Form/Form.tsx",
+      "sha256": "f7aeb6ce3c9ec06052653851cdedda80f5f6dec9e86347b0b5e0208cc0746bfc"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 169,
+      "snippet": "case \"DatePicker\": return <DatePicker {...nativeProps} title={disabled ? c.unavailable : undefined} name=\"date\" aria-label={c.day} min=\"2026-01-01\" max=\"2027-12-31\" defaultValue=\"2026-10-20\" />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { DatePicker, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\n// Before using this template, inspect the target project's existing form-column\n// token, layout rule or container. Bind its class below and record its source in\n// declaration.fieldColumns. Do not copy the documentation-only 28rem context.\n// If no host rule exists, stop for the host layout decision; never invent a DS token.\nexport function Example({ formColumnClassName }: { formColumnClassName: string }) {\n  if (!formColumnClassName) throw new Error(\"HOST_FORM_COLUMN_DECISION_REQUIRED\");\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" className={formColumnClassName} data-tcrn-field-column=\"\" style={{ display: \"grid\", gap: \"var(--tcrn-space-2)\" }}>\n      <DatePicker aria-label=\"Date\" min=\"2026-01-01\" max=\"2026-12-31\"/>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/inputs.css.ts",
+          "sha256": "b4f0a5cf2a441d551e2a0946d6d20f3cc19ab7cb1c73a36394986598bc3b0623"
+        }
+      ],
+      "hostLayout": {
+        "required": true,
+        "owner": "target consumer project",
+        "inspectBeforeGeneration": "Read the target project's existing form-column token, layout rule or container component. Reuse it and record the source in declaration.fieldColumns; do not copy the documentation cap or invent a DS width token.",
+        "missing": "HOST_FORM_COLUMN_DECISION_REQUIRED: surface the missing host decision before generating the field layout.",
+        "templateInput": "formColumnClassName has no default. Bind it to the inspected host class; literal class/source bindings are checked statically, computed or indirect layouts also require the real browser check.",
+        "checks": [
+          {
+            "path": "scripts/consumer-contract-check.mjs",
+            "sha256": "66a7208354756ed244b984b1da122162b803da7f57715c93a7dd1b6815a69abe"
+          },
+          {
+            "path": "scripts/consumer-layout-check.mjs",
+            "sha256": "07f14db2e0c69eb9c1b468d6143eac0d244804a3ea1e5243dd921e5d1cf857ff"
+          }
+        ]
+      },
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-datepicker--default"
+      },
+      {
+        "state": "bounds",
+        "id": "components-datepicker--bounds"
+      },
+      {
+        "state": "readonly",
+        "id": "components-datepicker--readonly"
+      },
+      {
+        "state": "disabled",
+        "id": "components-datepicker--disabled"
+      },
+      {
+        "state": "error",
+        "id": "components-datepicker--error"
+      }
+    ]
+  }
+}

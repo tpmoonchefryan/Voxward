@@ -75,3 +75,40 @@ export function capabilitiesOfMembership(rights: MembershipRights): readonly Cap
 export function downstreamAllows(capability: Capability): boolean {
   return DOWNSTREAM_CAPABILITIES.has(capability);
 }
+
+export type RbacTriState = "GRANT" | "DENY" | "NOT_SET";
+
+export interface RbacRoleDefinition {
+  readonly id: string;
+  readonly name: string;
+  readonly permissions: Readonly<Record<string, RbacTriState>>;
+}
+
+export interface RbacEffectiveEntry {
+  readonly capability: Capability;
+  readonly effect: "ALLOW" | "DENY";
+  readonly decidedBy: "DENY_RULE" | "GRANT_RULE" | "DEFAULT_DENY";
+  readonly sourceRoleIds: readonly string[];
+}
+
+/**
+ * Resolves effective channel permissions across multiple assigned roles using strict Deny > Grant > Not Set precedence.
+ */
+export function resolveEffectivePermissions(roles: readonly RbacRoleDefinition[]): readonly RbacEffectiveEntry[] {
+  return CAPABILITIES.map((capability) => {
+    const denyRoles: string[] = [];
+    const grantRoles: string[] = [];
+    for (const role of roles) {
+      const state = role.permissions[capability] ?? "NOT_SET";
+      if (state === "DENY") denyRoles.push(role.id);
+      else if (state === "GRANT") grantRoles.push(role.id);
+    }
+    if (denyRoles.length > 0) {
+      return { capability, effect: "DENY", decidedBy: "DENY_RULE", sourceRoleIds: denyRoles };
+    }
+    if (grantRoles.length > 0) {
+      return { capability, effect: "ALLOW", decidedBy: "GRANT_RULE", sourceRoleIds: grantRoles };
+    }
+    return { capability, effect: "DENY", decidedBy: "DEFAULT_DENY", sourceRoleIds: [] };
+  });
+}

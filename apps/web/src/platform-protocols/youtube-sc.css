@@ -1,0 +1,210 @@
+.vw-sc-ticker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.vw-sc-ticker__pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.16);
+  white-space: nowrap;
+}
+
+.vw-sc-ticker__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  border: 0;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.vw-sc-ticker__progress::-webkit-progress-bar {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.vw-sc-ticker__progress::-webkit-progress-value {
+  background: rgba(255, 255, 255, 0.92);
+  transition: width 1s linear;
+}
+
+.vw-sc-ticker__progress::-moz-progress-bar {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.vw-sc-card {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.14);
+}
+
+.vw-sc-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.vw-sc-card__author {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vw-sc-card__amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vw-sc-card__body {
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vw-sc-card__tr {
+  font-size: 12px;
+  opacity: 0.9;
+  border-top: 1px dashed rgba(255, 255, 255, 0.28);
+  padding-top: 6px;
+}
+
+.vw-sc-card__tr--dark-ink {
+  border-top-color: rgba(17, 24, 39, 0.22);
+}
+
+/* Official YouTube 7 Super Chat Tiers */
+.vw-sc-tier--t1,
+.vw-sc-tier--t1 .vw-sc-card__header {
+  background: #1565c0;
+  color: #ffffff;
+}
+
+.vw-sc-tier--t2 .vw-sc-card__header,
+.vw-sc-tier--t2.vw-sc-sc-pill {
+  background: #00b8d4;
+  color: #0b1f24;
+}
+.vw-sc-tier--t2 .vw-sc-card__body {
+  background: #00e5ff;
+  color: #0b1f24;
+}
+
+.vw-sc-tier--t3 .vw-sc-card__header,
+.vw-sc-tier--t3.vw-sc-sc-pill {
+  background: #00bfa5;
+  color: #08201c;
+}
+.vw-sc-tier--t3 .vw-sc-card__body {
+  background: #1de9b6;
+  color: #08201c;
+}
+
+.vw-sc-tier--t4 .vw-sc-card__header,
+.vw-sc-tier--t4.vw-sc-sc-pill {
+  background: #ffb300;
+  color: #1f1600;
+}
+.vw-sc-tier--t4 .vw-sc-card__body {
+  background: #ffca28;
+  color: #1f1600;
+}
+
+.vw-sc-tier--t5 .vw-sc-card__header,
+.vw-sc-tier--t5.vw-sc-sc-pill {
+  background: #e65100;
+  color: #ffffff;
+}
+.vw-sc-tier--t5 .vw-sc-card__body {
+  background: #f57c00;
+  color: #ffffff;
+}
+
+.vw-sc-tier--t6 .vw-sc-card__header,
+.vw-sc-tier--t6.vw-sc-sc-pill {
+  background: #c2185b;
+  color: #ffffff;
+}
+.vw-sc-tier--t6 .vw-sc-card__body {
+  background: #e91e63;
+  color: #ffffff;
+}
+
+.vw-sc-tier--t7 .vw-sc-card__header,
+.vw-sc-tier--t7.vw-sc-sc-pill {
+  background: #d00000;
+  color: #ffffff;
+}
+.vw-sc-tier--t7 .vw-sc-card__body {
+  background: #e62117;
+  color: #ffffff;
+}
+
+/* OBS Transparent Stage Protocol Surface */
+.vw-obs-stage {
+  min-height: 100vh;
+  width: 100%;
+  background: transparent;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 12px;
+  font-family: "Plus Jakarta Sans", "Noto Sans SC", system-ui, sans-serif;
+}
+
+.vw-obs-stage--preview {
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.94));
+  border-radius: 12px;
+  min-height: 480px;
+}
+
+.vw-obs-chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vw-obs-chat-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.84);
+  color: #f8fafc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  max-width: 720px;
+}
+
+.vw-obs-chat-item__author {
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.vw-obs-chat-item__tr {
+  width: 100%;
+  font-size: 13px;
+  color: #cbd5e1;
+}

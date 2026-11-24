@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "tcrn.consumer-contract.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.1.0",
+      "@tcrn/ui-tokens": "4.1.0",
+      "@tcrn/ui-copy-state": "4.1.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "sourceRoots": [
+    "src/shell",
+    "src/styles",
+    "src/components",
+    "src/pages"
+  ],
+  "fieldColumns": [
+    {
+      "className": "vw-field-col",
+      "source": "src/styles/voxward.css"
+    },
+    {
+      "className": "vw-field-col--compact",
+      "source": "src/styles/voxward.css"
+    },
+    {
+      "className": "vw-field-col--wide",
+      "source": "src/styles/voxward.css"
+    }
+  ],
+  "adapterEvidence": "checks/shell-preferences.json",
+  "patterns": [
+    "component-layout",
+    "shell-preferences",
+    "seasonal-halloween-theme",
+    "batch3-components-and-shell"
+  ],
+  "components": [
+    "Badge",
+    "Button",
+    "Card",
+    "Checkbox",
+    "ClipboardCopyButton",
+    "CollapsibleRegion",
+    "ConfirmActionDialog",
+    "Dialog",
+    "EmptyState",
+    "EnvironmentBanner",
+    "Icon",
+    "InlineAlert",
+    "InlineConfirmBar",
+    "Input",
+    "KeyValueList",
+    "Menu",
+    "MultiSelect",
+    "NumberInput",
+    "ProductShell",
+    "RawPayloadBox",
+    "SearchInput",
+    "SegmentedNav",
+    "Select",
+    "SettingsLayout",
+    "SplitView",
+    "StagePipeline",
+    "StatCard",
+    "StatusBadge",
+    "Switch",
+    "TableShell",
+    "Textarea"
+  ]
+}

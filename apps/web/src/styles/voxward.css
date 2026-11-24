@@ -1,0 +1,324 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--tcrn-color-bg);
+  color: var(--tcrn-color-ink);
+  font-family: var(--tcrn-type-family-ui);
+  font-size: var(--tcrn-type-size-ui);
+  line-height: var(--tcrn-type-line-ui);
+}
+
+body.vw-stage-body {
+  background: transparent;
+}
+
+.vw-content-wrap {
+  width: 100%;
+  max-width: 82rem;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-4);
+}
+
+.vw-stack-sm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-2);
+}
+
+.vw-stack-md {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-3);
+}
+
+.vw-stack-lg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-4);
+}
+
+.vw-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tcrn-space-2);
+}
+
+.vw-row-between {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tcrn-space-3);
+}
+
+.vw-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--tcrn-space-4);
+  align-items: stretch;
+}
+
+.vw-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--tcrn-space-3);
+}
+
+.vw-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--tcrn-space-3);
+}
+
+.vw-field-col {
+  width: 100%;
+  max-inline-size: 28rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-1h);
+}
+
+.vw-field-col--compact {
+  width: 100%;
+  max-inline-size: 16rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-1h);
+}
+
+.vw-field-col--wide {
+  width: 100%;
+  max-inline-size: 42rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-1h);
+}
+
+.vw-banner-notice {
+  width: 100%;
+}
+
+.vw-top-banner {
+  background: var(--tcrn-color-panel);
+  border-bottom: 1px solid var(--tcrn-color-line-2);
+  padding: var(--tcrn-space-2) var(--tcrn-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-2);
+}
+
+.vw-ward-line {
+  width: 100%;
+  border: 1px solid var(--tcrn-color-line-2);
+  border-radius: var(--tcrn-radius-panel);
+  background: var(--tcrn-color-panel);
+  padding: var(--tcrn-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-2);
+  transition:
+    background-color var(--tcrn-motion-duration-fill) var(--tcrn-motion-ease),
+    border-color var(--tcrn-motion-duration-fill) var(--tcrn-motion-ease);
+}
+
+.vw-ward-line--selected {
+  border-color: var(--tcrn-color-acc);
+  background: var(--tcrn-color-acc-bg);
+}
+
+.vw-ward-line__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--tcrn-space-2);
+}
+
+.vw-ward-line__action-full {
+  grid-column: 1 / -1;
+}
+
+.vw-dock-shell {
+  min-height: 100vh;
+  background: var(--tcrn-color-bg);
+  color: var(--tcrn-color-ink);
+  padding: var(--tcrn-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-3);
+}
+
+.vw-dock-shell--embedded {
+  min-height: 36rem;
+  border-radius: var(--tcrn-radius-panel);
+  border: 1px solid var(--tcrn-color-line-2);
+}
+
+.vw-dock-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: var(--tcrn-space-3);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.vw-dock-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-2);
+  min-height: 0;
+}
+
+.vw-dock-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-2);
+  overflow-y: auto;
+  max-height: 44rem;
+}
+
+.vw-panel-card {
+  background: var(--tcrn-color-panel);
+  border: 1px solid var(--tcrn-color-line-2);
+  border-radius: var(--tcrn-radius-panel);
+  padding: var(--tcrn-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-3);
+  box-shadow: var(--tcrn-elevation-s1);
+}
+
+.vw-panel-card--quiet {
+  background: var(--tcrn-color-panel-2);
+}
+
+.vw-chat-row {
+  padding: var(--tcrn-space-2) var(--tcrn-space-3);
+  border-radius: var(--tcrn-radius-control);
+  background: var(--tcrn-color-panel-2);
+  border: 1px solid var(--tcrn-color-line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-1);
+}
+
+.vw-chat-row--flagged {
+  border-color: var(--tcrn-color-warn);
+  background: var(--tcrn-color-warn-bg);
+}
+
+.vw-mono {
+  font-family: var(--tcrn-type-family-mono);
+  font-size: var(--tcrn-type-size-meta);
+}
+
+.vw-muted {
+  color: var(--tcrn-color-ink-2);
+}
+
+.vw-caption {
+  font-size: var(--tcrn-type-size-caption);
+  color: var(--tcrn-color-ink-3);
+}
+
+.vw-settings-subitem {
+  padding-inline-start: 28px;
+}
+
+.vw-split-host {
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.vw-nav-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.vw-field-label {
+  font-size: var(--tcrn-type-size-meta);
+  font-weight: var(--tcrn-type-weight-medium);
+  color: var(--tcrn-color-ink-2);
+}
+
+.vw-settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-1);
+}
+
+.vw-settings-group-title {
+  margin: var(--tcrn-space-2) 0 var(--tcrn-space-1);
+  padding: 0 var(--tcrn-space-2);
+  font-size: var(--tcrn-type-size-caption);
+  font-weight: var(--tcrn-type-weight-strong);
+  color: var(--tcrn-color-ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vw-settings-nav-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--tcrn-color-ink);
+  border-radius: var(--tcrn-radius-control);
+  padding: var(--tcrn-space-2) var(--tcrn-space-3);
+  font-family: inherit;
+  font-size: var(--tcrn-type-size-ui);
+  font-weight: var(--tcrn-type-weight-medium);
+  cursor: pointer;
+}
+
+.vw-settings-nav-item:hover {
+  background: var(--tcrn-color-hover);
+}
+
+.vw-settings-nav-item--active {
+  background: var(--tcrn-color-wash);
+  font-weight: var(--tcrn-type-weight-strong);
+  border-color: var(--tcrn-color-line-2);
+}
+
+.vw-settings-nav-item--sub {
+  padding-inline-start: 28px;
+}
+
+.vw-table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--tcrn-space-1);
+}
+
+.vw-divider-rule {
+  border: 0;
+  border-top: 1px solid var(--tcrn-color-line);
+  margin: var(--tcrn-space-2) 0;
+}
+
+@media (max-width: 960px) {
+  .vw-grid-2,
+  .vw-grid-3,
+  .vw-grid-4,
+  .vw-dock-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .vw-ward-line__actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

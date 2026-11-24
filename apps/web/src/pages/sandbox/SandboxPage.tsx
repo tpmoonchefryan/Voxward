@@ -1,28 +1,45 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { UntrustedText } from "../../components/untrusted-text";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  EnvironmentBanner,
+  TableShell,
+} from "@tcrn/ui-react/approved";
+import { BannerNotice } from "../../components/banner-notice";
+import { SectionTabs } from "../../components/section-tabs";
+import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
+import { VoxWardShell, type VoxWardNavId } from "../../shell";
+import type { DataApi, SubjectPanel } from "../data/api";
+import { DataComplianceSurface } from "../data/DataPanel";
+import type { DockApi, DockSnapshot } from "../dock/api";
+import { PureDockSurface } from "../dock/DockPage";
+import type { ModerationApi } from "../moderation/api";
+import { ModerationWorkbench } from "../moderation/ModerationPage";
 import {
   createSandboxApi,
   type DemoRole,
+  type SandboxApi,
   type SandboxSnapshot,
   type ScenarioId,
 } from "./api";
 
 export const SANDBOX_BANNER_TEXT = "SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）";
 
-const ROLE_OPTIONS: readonly { readonly role: DemoRole; readonly label: string }[] = [
-  { role: "DEMO_STREAMER", label: "演示主播 (DEMO_STREAMER)" },
-  { role: "DEMO_MODERATOR", label: "演示房管 (DEMO_MODERATOR)" },
-  { role: "DEMO_PRIVACY_AUDITOR", label: "演示隐私审计 (DEMO_PRIVACY_AUDITOR)" },
-  { role: "DEMO_STAGE_VIEWER", label: "演示舞台观众 (DEMO_STAGE_VIEWER)" },
+const DEMO_ROLES: readonly { readonly id: DemoRole; readonly label: string }[] = [
+  { id: "DEMO_STREAMER", label: "主播视图" },
+  { id: "DEMO_MODERATOR", label: "房管视图" },
+  { id: "DEMO_PRIVACY_AUDITOR", label: "数据合规员" },
+  { id: "DEMO_STAGE_VIEWER", label: "无后台访客" },
 ];
 
-const SCENARIO_BUTTONS: readonly { readonly id: ScenarioId; readonly label: string }[] = [
-  { id: "normal-scoring", label: "正常聊天评分" },
-  { id: "spam-toxicity-block", label: "垃圾/毒性拦截" },
-  { id: "superchat-translation", label: "SuperChat 精翻" },
-  { id: "manual-review", label: "人工审核队列" },
-  { id: "privacy-delete", label: "隐私仅删除 (DELETE)" },
-  { id: "privacy-delete-and-except", label: "删除并加例外 (DELETE_AND_EXCEPT)" },
+const SANDBOX_SCENARIOS: readonly { readonly id: ScenarioId; readonly label: string }[] = [
+  { id: "normal-scoring", label: "1. 正常弹幕计分" },
+  { id: "spam-toxicity-block", label: "2. 恶意与垃圾拦截" },
+  { id: "superchat-translation", label: "3. SC 精翻与等级展示" },
+  { id: "manual-review", label: "4. 触发人工审核队列" },
+  { id: "privacy-delete", label: "5. 登记仅删数据请求" },
+  { id: "privacy-delete-and-except", label: "6. 删除并加入记分例外" },
 ];
 
 export interface SandboxViewProps {
@@ -31,217 +48,430 @@ export interface SandboxViewProps {
   readonly snapshot: SandboxSnapshot | null;
   readonly loading: boolean;
   readonly error: string | null;
+  readonly showInlineBanner?: boolean;
   readonly onSelectRole: (role: DemoRole) => void;
   readonly onTriggerScenario: (scenario: ScenarioId) => void;
   readonly onDecideReview: (taskId: string, classification: "ALLOW" | "BLOCK") => void;
   readonly onReset: () => void;
 }
 
-export function SandboxView(props: SandboxViewProps) {
-  const { role, capabilities, snapshot, loading, error, onSelectRole, onTriggerScenario, onDecideReview, onReset } = props;
-  const caps = new Set(capabilities);
-  const canScenario = caps.has("sandbox.scenario");
-  const canPrivacyDelete = caps.has("privacy.delete");
-  const canDecide = caps.has("review.decide");
-  const canReset = caps.has("sandbox.reset");
-  const canStage = caps.has("stage.read");
-  const canLogs = caps.has("logs.read");
-  const canInspectSubjects = canDecide || canLogs;
+function toDockSnapshot(snap: SandboxSnapshot | null): DockSnapshot {
+  const chId = snap?.channelId ?? "ch_sandbox_1";
+  const scItems = (snap?.approvedStage ?? [])
+    .filter((item) => item.translation !== null)
+    .map((item) => ({
+      eventId: item.eventId,
+      correlationId: item.correlationId,
+      subjectRef: item.subjectKey,
+      originalText: item.text,
+      translation: item.translation,
+      notes: "$20",
+      acknowledgement: "$20",
+      safeAlias: item.subjectKey,
+      decidedAt: item.decidedAt,
+      deliveryId: item.eventId,
+      deliveryStatus: "DELIVERED",
+    }));
+
+  const liveStream = [
+    ...(snap?.approvedStage ?? []).map((item) => ({
+      eventId: item.eventId,
+      correlationId: item.correlationId,
+      subjectRef: item.subjectKey,
+      localStatus: "ALLOW" as const,
+      classification: "ALLOW_MEANINGFUL",
+      platformDeleteStatus: "NOT_APPLICABLE" as const,
+      bodyFolded: false,
+      originalText: item.text,
+      decidedAt: item.decidedAt,
+      deliveryId: item.eventId,
+      deliveryStatus: "DELIVERED",
+    })),
+    ...(snap?.blockedItems ?? []).map((item) => ({
+      eventId: item.eventId,
+      correlationId: item.correlationId,
+      subjectRef: item.subjectRef,
+      localStatus: "BLOCK" as const,
+      classification: item.classification,
+      platformDeleteStatus: "NOT_APPLICABLE" as const,
+      bodyFolded: false,
+      originalText: item.originalText,
+      decidedAt: new Date().toISOString(),
+      deliveryId: null,
+      deliveryStatus: null,
+    })),
+  ];
+
+  return {
+    channel: { channelId: chId, displayName: "演练虚拟频道", platform: "youtube" },
+    capabilities: ["queue.read", "review.decide", "message.original"],
+    scTranslationEnabled: true,
+    modelIssues: [],
+    faults: { platformFault: null, modelFault: null },
+    feed: {
+      approvedSc: scItems,
+      reviewQueue: (snap?.reviewQueue ?? []).map((task) => ({
+        taskId: task.taskId,
+        eventId: task.eventId,
+        correlationId: task.correlationId,
+        subjectRef: task.subjectRef,
+        kind: task.kind,
+        status: task.status,
+        deadlineAt: new Date(Date.now() + 180_000).toISOString(),
+        originalText: task.originalText,
+      })),
+      blockedItems: liveStream.filter((m) => m.localStatus === "BLOCK"),
+      liveStream,
+    },
+  };
+}
+
+export function SandboxView({
+  role,
+  capabilities,
+  snapshot,
+  loading,
+  error,
+  showInlineBanner = true,
+  onSelectRole,
+  onTriggerScenario,
+  onDecideReview,
+  onReset,
+}: SandboxViewProps) {
+  const [tab, setTab] = useState<string>("moderation");
+  const caps = useMemo(() => new Set(capabilities), [capabilities]);
+  const canModerate = caps.has("review.decide") || caps.has("queue.read");
+  const canPrivacy = caps.has("privacy.delete");
+  const canStage = caps.has("stage.read") || role === "DEMO_STAGE_VIEWER";
+
+  const dockSnap = useMemo(() => toDockSnapshot(snapshot), [snapshot]);
+
+  const sandboxDockApi: DockApi = useMemo(
+    () => ({
+      getDock: async () => dockSnap,
+      toggleScTranslation: async () => ({ scTranslationEnabled: true }),
+      decideTask: async (_cid, taskId, classification) => {
+        onDecideReview(taskId, classification === "BLOCK" ? "BLOCK" : "ALLOW");
+        return { conflict: false, status: "DECIDED" };
+      },
+      reviewEvent: async () => ({ conflict: false, status: "DECIDED" }),
+      resendDelivery: async () => ({ conflict: false, status: "RESENT" }),
+    }),
+    [dockSnap, onDecideReview],
+  );
+
+  const sandboxModerationApi: ModerationApi = useMemo(
+    () => ({
+      getModeration: sandboxDockApi.getDock,
+      decideTask: async (_cid, taskId, input) => sandboxDockApi.decideTask(_cid, taskId, input.classification),
+      reviewEvent: sandboxDockApi.reviewEvent,
+      resendDelivery: sandboxDockApi.resendDelivery,
+      editSubjectList: async () => ({ status: "OK" }),
+      editTerm: async () => ({ status: "OK" }),
+      listCandidates: async () => [],
+      confirmCandidate: async () => {
+        throw new Error("SANDBOX_READONLY_CANDIDATE");
+      },
+      rejectCandidate: async () => {
+        throw new Error("SANDBOX_READONLY_CANDIDATE");
+      },
+      listTermCategories: async () => [
+        { code: "spam", label: "垃圾刷屏", listKind: "BLACKLIST", description: "", createdAt: "" },
+      ],
+      appendBlacklistTerm: async () => {},
+    }),
+    [sandboxDockApi],
+  );
+
+  const sandboxDataApi: DataApi = useMemo(
+    () => ({
+      capabilities: async () => ({ dataHandle: canPrivacy }),
+      subject: async (_cid, subjectRef): Promise<SubjectPanel> => {
+        const sub =
+          snapshot?.subjects.find((s) => s.subjectKey === subjectRef || s.subjectId === subjectRef) ??
+          snapshot?.subjects[0];
+        return {
+          subjectRef: sub?.subjectKey ?? subjectRef,
+          currentScore: sub?.currentScore ?? 100,
+          identity: { kind: "SYNTHETIC", effectiveFrom: new Date().toISOString() },
+          list: null,
+          exception: sub?.hasException
+            ? { active: true, createdAt: new Date().toISOString() }
+            : null,
+          ledgerEntryCount: 1,
+          retention: [{ category: "沙盒合成积分流水", count: 1, retentionDays: 30 }],
+          requests: (snapshot?.dataRequests ?? []).map((r) => {
+            const nowStr = new Date().toISOString();
+            return {
+              requestId: r.id,
+              subjectRef: r.subjectId,
+              kind: "DELETE" as const,
+              mode:
+                r.mode === "DELETE_AND_EXCEPT"
+                  ? ("DELETE_AND_EXCEPT" as const)
+                  : ("DELETE_DATA_ONLY" as const),
+              requestSource: "OPERATOR_INITIATED" as const,
+              verification: { state: "PENDING" as const, method: null, decidedAt: null },
+              execution: r.executionState,
+              stage: r.executionState,
+              targets: [],
+              counts: {
+                done: 0,
+                failed: 0,
+                pending: r.executionState === "AWAITING_EXECUTION" ? 1 : 0,
+              },
+              createdAt: nowStr,
+              updatedAt: nowStr,
+            };
+          }),
+          notices: ["PROVIDER_COPY_NOT_CONTROLLED"],
+        };
+      },
+      register: async (_cid, input) => {
+        onTriggerScenario(
+          input.mode === "DELETE_AND_EXCEPT" ? "privacy-delete-and-except" : "privacy-delete",
+        );
+        const nowStr = new Date().toISOString();
+        return {
+          requestId: `req-sb-${Date.now()}`,
+          subjectRef: input.subjectRef,
+          kind: input.kind,
+          mode: input.mode ?? "DELETE_DATA_ONLY",
+          requestSource: input.requestSource,
+          verification: { state: "PENDING", method: null, decidedAt: null },
+          execution: "PENDING",
+          stage: "AWAITING_VERIFICATION",
+          targets: [],
+          counts: { done: 0, failed: 0, pending: 0 },
+          createdAt: nowStr,
+          updatedAt: nowStr,
+        };
+      },
+      decideVerification: async (_cid, requestId) => {
+        const nowStr = new Date().toISOString();
+        return {
+          requestId,
+          subjectRef: snapshot?.subjects[0]?.subjectKey ?? "sb_user_1",
+          kind: "DELETE",
+          mode: "DELETE_DATA_ONLY",
+          requestSource: "OPERATOR_INITIATED",
+          verification: {
+            state: "VERIFIED",
+            method: "ACCOUNT_OWNERSHIP",
+            decidedAt: nowStr,
+          },
+          execution: "QUEUED",
+          stage: "AWAITING_EXECUTION",
+          targets: [],
+          counts: { done: 0, failed: 0, pending: 1 },
+          createdAt: nowStr,
+          updatedAt: nowStr,
+        };
+      },
+    }),
+    [canPrivacy, onTriggerScenario, snapshot],
+  );
 
   return (
-    <main>
-      <div
-        role="banner"
-        data-testid="sandbox-banner"
-        style={{ background: "#fff3cd", color: "#664d03", padding: "12px 16px", fontWeight: 700 }}
-      >
-        {snapshot?.banner ?? SANDBOX_BANNER_TEXT}
-      </div>
+    <main className="vw-stack-lg" aria-label="演示沙盒工作区">
+      {showInlineBanner ? (
+        <EnvironmentBanner
+          label={SANDBOX_BANNER_TEXT}
+          state={{ state: "local_only", label: "合成环境" }}
+          tone="warning"
+          locale="zh-CN"
+        />
+      ) : null}
+      {error ? <BannerNotice tone="danger">{error}</BannerNotice> : null}
 
-      <h1>VoxWard 隔离合成演示沙盒</h1>
+      <section className="vw-panel-card" aria-label="沙盒演示控制台">
+        <div className="vw-row-between">
+          <strong>当前角色与合成情景控制台</strong>
+          <div className="vw-row-wrap">
+            <Badge tone="accent">{DEMO_ROLES.find((r) => r.id === role)?.label ?? role}</Badge>
+            <Button size="sm" variant="secondary" disabled={loading} onClick={onReset}>
+              一键重置沙盒状态
+            </Button>
+          </div>
+        </div>
 
-      <section aria-label="有限演示角色切换">
-        <h2>有限演示角色（严禁生产管理员）</h2>
-        <label>
-          当前角色：
-          <select
-            aria-label="演示角色选择"
-            value={role}
-            onChange={(e) => onSelectRole(e.target.value as DemoRole)}
-          >
-            {ROLE_OPTIONS.map((opt) => (
-              <option key={opt.role} value={opt.role}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <p data-testid="sandbox-capabilities">权限：{capabilities.join(", ") || "无"}</p>
-      </section>
+        <div className="vw-row-wrap" role="group" aria-label="演示角色切换">
+          {DEMO_ROLES.map((item) => (
+            <Button
+              key={item.id}
+              size="sm"
+              variant={role === item.id ? "primary" : "secondary"}
+              disabled={loading}
+              onClick={() => onSelectRole(item.id)}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </div>
 
-      <section aria-label="预设场景与重置">
-        <h2>预设演示场景</h2>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {SCENARIO_BUTTONS.map((btn) => {
-            const isPrivacyBtn = btn.id === "privacy-delete" || btn.id === "privacy-delete-and-except";
-            const allowed = canScenario && (!isPrivacyBtn || canPrivacyDelete);
+        <div className="vw-row-wrap" role="group" aria-label="预设业务演示场景">
+          {SANDBOX_SCENARIOS.map((sc) => {
+            const isPrivacyScenario =
+              sc.id === "privacy-delete" || sc.id === "privacy-delete-and-except";
+            const scenarioDisabled =
+              loading || role === "DEMO_STAGE_VIEWER" || (isPrivacyScenario && !canPrivacy);
             return (
-              <button
-                key={btn.id}
-                type="button"
-                disabled={!allowed || loading}
-                onClick={() => onTriggerScenario(btn.id)}
+              <Button
+                key={sc.id}
+                size="sm"
+                variant="quiet"
+                disabled={scenarioDisabled}
+                disabledReason={
+                  role === "DEMO_STAGE_VIEWER"
+                    ? "仅舞台访客角色无权触发后台剧情"
+                    : isPrivacyScenario && !canPrivacy
+                      ? "当前演练角色缺少数据合规处理权限"
+                      : undefined
+                }
+                onClick={() => onTriggerScenario(sc.id)}
               >
-                {btn.label}
-              </button>
+                {sc.label}
+              </Button>
             );
           })}
-          <button type="button" disabled={!canReset || loading} onClick={onReset}>
-            一键重置沙盒
-          </button>
         </div>
       </section>
 
-      {error !== null ? (
-        <p role="alert" data-testid="sandbox-error">
-          错误：{error}
-        </p>
-      ) : null}
-
-      {snapshot !== null ? (
-        <>
-          {canInspectSubjects ? (
-            <section aria-label="评分与隐私状态">
-              <h2>观众评分与隐私例外状态（内存缓存条数：{snapshot.cacheEntryCount}）</h2>
-              <ul>
-                {snapshot.subjects.map((sub) => (
-                  <li key={sub.subjectId}>
-                    <UntrustedText text={sub.subjectKey} /> — 分数：{sub.currentScore} ｜ 代次：
-                    {sub.processingGeneration} ｜ 记分例外：{sub.hasException ? "是" : "否"}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {canDecide ? (
-            <section aria-label="人工审核队列">
-              <h2>人工审核队列（{snapshot.reviewQueue.length}）</h2>
-              <ul>
-                {snapshot.reviewQueue.map((item) => (
-                  <li key={item.taskId}>
-                    <UntrustedText text={item.subjectRef} />：<UntrustedText text={item.originalText ?? ""} />{" "}
-                    <button type="button" onClick={() => onDecideReview(item.taskId, "ALLOW")}>
-                      放行
-                    </button>
-                    <button type="button" onClick={() => onDecideReview(item.taskId, "BLOCK")}>
-                      拦截
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
+      {role === "DEMO_STAGE_VIEWER" ? (
+        <div className="vw-stack-md">
+          <section className="vw-panel-card">
+            <EmptyState
+              tone="warning"
+              title="后台功能已按当前角色策略拒止"
+              description="「无后台访客」仅拥有公开舞台只读视角；审阅裁决、数据导出及情景触发能力均已禁用。如需体验正式管理员或房管界面，请在顶部横幅切换示范角色。"
+            />
+          </section>
           {canStage ? (
-            <section aria-label="舞台已批准输出">
-              <h2>舞台 / 叠加层已批准输出（{snapshot.approvedStage.length}）</h2>
-              <ul>
-                {snapshot.approvedStage.map((item) => (
-                  <li key={item.eventId}>
-                    <strong>
-                      <UntrustedText text={item.subjectKey} />
-                    </strong>
-                    ：原文「<UntrustedText text={item.text} />」
-                    {item.translation !== null ? (
-                      <>
-                        {" "}
-                        ｜ 译文「<UntrustedText text={item.translation} />」
-                      </>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <PureDockSurface
+              channelId={dockSnap.channel.channelId}
+              api={sandboxDockApi}
+              initialSnapshot={dockSnap}
+              pollIntervalMs={30000}
+            />
           ) : null}
-
-          {canInspectSubjects ? (
-            <section aria-label="已拦截内容">
-              <h2>已拦截内容（{snapshot.blockedItems.length}）</h2>
-              <ul>
-                {snapshot.blockedItems.map((item) => (
-                  <li key={item.eventId}>
-                    <UntrustedText text={item.subjectRef} /> [{item.classification}]：
-                    <UntrustedText text={canDecide ? (item.originalText ?? "（已折叠）") : "（已折叠）"} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {canLogs ? (
-            <section aria-label="日志与数据请求监视">
-              <h2>变更日志（{snapshot.changeLogs.length}）与技术日志（{snapshot.technicalLogs.length}）</h2>
-              <ul>
-                {snapshot.changeLogs.slice(0, 8).map((log) => (
-                  <li key={log.id}>
-                    [{log.changeKind}] <UntrustedText text={log.summary ?? ""} />
-                  </li>
-                ))}
-              </ul>
-              <h3>隐私数据请求（{snapshot.dataRequests.length}）</h3>
-              <ul>
-                {snapshot.dataRequests.map((req) => (
-                  <li key={req.id}>
-                    {req.kind} ({req.mode ?? "N/A"}) — {req.executionState}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-        </>
-      ) : null}
+        </div>
+      ) : (
+        <SectionTabs
+          label="沙盒复用的正式业务工作台"
+          selectedId={tab}
+          onSelect={setTab}
+          items={[
+            { id: "moderation", label: "正式审核工作台视图" },
+            { id: "dock", label: "主播纯享侧边栏预览" },
+            { id: "data", label: "数据合规工作台视图" },
+            { id: "subjects", label: "沙盒积分与日志快照" },
+          ]}
+        >
+          {tab === "moderation" ? (
+            canModerate ? (
+              <ModerationWorkbench
+                channelId={dockSnap.channel.channelId}
+                api={sandboxModerationApi}
+                initialSnapshot={dockSnap}
+                pollIntervalMs={30000}
+              />
+            ) : (
+              <div className="vw-panel-card">
+                <EmptyState
+                  tone="warning"
+                  title="当前演练角色不具备审核裁决权限"
+                  description="当前选择的是数据合规员角色；请切回「主播视图」或「房管视图」体验审核工作台。"
+                />
+              </div>
+            )
+          ) : tab === "dock" ? (
+            <PureDockSurface
+              channelId={dockSnap.channel.channelId}
+              api={sandboxDockApi}
+              initialSnapshot={dockSnap}
+              pollIntervalMs={30000}
+            />
+          ) : tab === "data" ? (
+            <DataComplianceSurface
+              channelId={dockSnap.channel.channelId}
+              api={sandboxDataApi}
+              forceDataHandle={canPrivacy}
+            />
+          ) : (
+            <div className="vw-stack-md">
+              <section className="vw-panel-card">
+                <strong>演练观众当前信任分（合成内存态）</strong>
+                <TableShell
+                  label="演练观众积分表"
+                  columns={[
+                    { key: "subject", label: "观众标识" },
+                    { key: "score", label: "信任分" },
+                    { key: "gen", label: "状态代数" },
+                    { key: "exception", label: "例外状态" },
+                  ]}
+                  rows={(snapshot?.subjects ?? []).map((s) => ({
+                    subject: <UntrustedText text={s.subjectKey} />,
+                    score: s.currentScore,
+                    gen: s.processingGeneration,
+                    exception: s.hasException ? "加入记分例外" : "正常计分",
+                  }))}
+                  emptyState={<EmptyState title="暂无演示观众数据" />}
+                />
+              </section>
+            </div>
+          )}
+        </SectionTabs>
+      )}
     </main>
   );
 }
 
-export function SandboxPage() {
-  const api = useMemo(() => createSandboxApi(), []);
+export function SandboxPage({ api }: { readonly api?: SandboxApi }) {
+  const client = useMemo(() => api ?? createSandboxApi(), [api]);
   const [role, setRole] = useState<DemoRole>("DEMO_STREAMER");
-  const [capabilities, setCapabilities] = useState<readonly string[]>([]);
+  const [capabilities, setCapabilities] = useState<readonly string[]>([
+    "sandbox.scenario",
+    "review.decide",
+    "stage.read",
+  ]);
   const [snapshot, setSnapshot] = useState<SandboxSnapshot | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadState = useCallback(
     async (targetRole: DemoRole) => {
       setLoading(true);
-      setError(null);
       try {
-        const res = await api.getState(targetRole);
-        setCapabilities(res.capabilities);
-        setSnapshot(res.snapshot);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "LOAD_FAILED");
+        const next = await client.getState(targetRole);
+        setRole(next.role);
+        setCapabilities(next.capabilities);
+        setSnapshot(next.snapshot);
+        setError(null);
+      } catch {
+        setError("无法连接本地演示沙盒引擎，请确认沙盒服务已运行。");
       } finally {
         setLoading(false);
       }
     },
-    [api],
+    [client],
   );
 
   useEffect(() => {
-    void loadState(role);
-  }, [loadState, role]);
+    void loadState("DEMO_STREAMER");
+  }, [loadState]);
+
+  const handleSelectRole = async (nextRole: DemoRole) => {
+    await loadState(nextRole);
+  };
 
   const handleTriggerScenario = async (scenario: ScenarioId) => {
     setLoading(true);
-    setError(null);
     try {
-      const next = await api.runScenario(role, scenario);
-      setSnapshot(next);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "SCENARIO_FAILED");
+      const nextSnap = await client.runScenario(role, scenario);
+      setSnapshot(nextSnap);
+      setError(null);
+    } catch {
+      setError("触发演示场景失败。");
     } finally {
       setLoading(false);
     }
@@ -249,12 +479,12 @@ export function SandboxPage() {
 
   const handleDecideReview = async (taskId: string, classification: "ALLOW" | "BLOCK") => {
     setLoading(true);
-    setError(null);
     try {
-      const next = await api.decideReview(role, taskId, classification);
-      setSnapshot(next);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "DECIDE_FAILED");
+      const nextSnap = await client.decideReview(role, taskId, classification);
+      setSnapshot(nextSnap);
+      setError(null);
+    } catch {
+      setError("演示审阅提交失败。");
     } finally {
       setLoading(false);
     }
@@ -262,28 +492,58 @@ export function SandboxPage() {
 
   const handleReset = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const next = await api.reset(role);
-      setSnapshot(next);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "RESET_FAILED");
+      const nextSnap = await client.reset(role);
+      setSnapshot(nextSnap);
+      setError(null);
+    } catch {
+      setError("重置沙盒失败。");
     } finally {
       setLoading(false);
     }
   };
 
+  const overrideDisabledIds: Partial<Record<VoxWardNavId, string>> =
+    role === "DEMO_STAGE_VIEWER"
+      ? {
+          moderation: "仅舞台访客角色无后台审核权限",
+          blocked: "仅舞台访客角色无拦截管理权限",
+          data: "仅舞台访客角色无数据合规权限",
+          logs: "仅舞台访客角色无审计日志权限",
+          integrations: "仅舞台访客角色无集成管理权限",
+          users: "仅舞台访客角色无成员管理权限",
+          settings: "仅舞台访客角色无系统设置权限",
+        }
+      : {};
+
   return (
-    <SandboxView
-      role={role}
-      capabilities={capabilities}
-      snapshot={snapshot}
-      loading={loading}
-      error={error}
-      onSelectRole={(nextRole) => setRole(nextRole)}
-      onTriggerScenario={(scenario) => void handleTriggerScenario(scenario)}
-      onDecideReview={(taskId, classification) => void handleDecideReview(taskId, classification)}
-      onReset={() => void handleReset()}
-    />
+    <VoxWardShell
+      activeNavId="sandbox"
+      showChannelSelector={false}
+      overrideDisabledIds={overrideDisabledIds}
+      topBanner={
+        <EnvironmentBanner
+          label={SANDBOX_BANNER_TEXT}
+          state={{ state: "local_only", label: "合成环境" }}
+          tone="warning"
+          locale="zh-CN"
+        />
+      }
+      pageTitle="交互演练沙盒"
+      pageDescription="直接复用 VoxWard 正式工作台页面演练审核、SC 精翻、评分重判、数据清理及四角色权限收敛。"
+    >
+      <SandboxView
+        role={role}
+        capabilities={capabilities}
+        snapshot={snapshot}
+        loading={loading}
+        error={error}
+        showInlineBanner={false}
+        onSelectRole={(r) => void handleSelectRole(r)}
+        onTriggerScenario={(s) => void handleTriggerScenario(s)}
+        onDecideReview={(id, cls) => void handleDecideReview(id, cls)}
+        onReset={() => void handleReset()}
+      />
+    </VoxWardShell>
   );
 }

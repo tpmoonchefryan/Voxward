@@ -211,3 +211,452 @@ export function publishConfirmedCandidateTerm(
     return nextVersion;
   });
 }
+
+// ---------------------------------------------------------------- VW-Draft-04..08 KV extensions
+
+export interface ShellPreferencesState {
+  readonly pins: readonly string[];
+  readonly rightPins?: readonly string[];
+  readonly theme?: "light" | "dark" | "halloween";
+  readonly locale?: string;
+  readonly density?: "compact" | "comfortable";
+}
+
+const DEFAULT_SHELL_PREFERENCES: ShellPreferencesState = {
+  pins: ["moderation", "blocked", "data"],
+  rightPins: ["logs", "integrations", "users", "settings"],
+  theme: "light",
+  locale: "zh-CN",
+  density: "comfortable",
+};
+
+function shellPrefKey(accountId: string, tenant: string, product: string): string {
+  return `shell-pref:${accountId}:${tenant}:${product}`;
+}
+
+export function readShellPreferences(
+  database: VoxwardDatabase,
+  input: { readonly accountId: string; readonly tenant: string; readonly product: string },
+): ShellPreferencesState {
+  const row = database.orm
+    .select({ valueJson: deploymentSettings.valueJson })
+    .from(deploymentSettings)
+    .where(eq(deploymentSettings.key, shellPrefKey(input.accountId, input.tenant, input.product)))
+    .get();
+  if (row === undefined) return DEFAULT_SHELL_PREFERENCES;
+  try {
+    const parsed = JSON.parse(row.valueJson) as Partial<ShellPreferencesState>;
+    return {
+      pins: Array.isArray(parsed.pins) ? parsed.pins : DEFAULT_SHELL_PREFERENCES.pins,
+      rightPins: Array.isArray(parsed.rightPins) ? parsed.rightPins : DEFAULT_SHELL_PREFERENCES.rightPins,
+      theme: parsed.theme === "dark" || parsed.theme === "halloween" || parsed.theme === "light" ? parsed.theme : "light",
+      locale: typeof parsed.locale === "string" && parsed.locale ? parsed.locale : "zh-CN",
+      density: parsed.density === "compact" ? "compact" : "comfortable",
+    };
+  } catch {
+    return DEFAULT_SHELL_PREFERENCES;
+  }
+}
+
+export function writeShellPreferences(
+  database: VoxwardDatabase,
+  input: {
+    readonly accountId: string;
+    readonly tenant: string;
+    readonly product: string;
+    readonly state: ShellPreferencesState;
+    readonly now?: Date;
+  },
+): ShellPreferencesState {
+  const key = shellPrefKey(input.accountId, input.tenant, input.product);
+  const valueJson = JSON.stringify(input.state);
+  const updatedAt = (input.now ?? new Date()).toISOString();
+  runShortTransaction(database, (tx) => {
+    tx.insert(deploymentSettings)
+      .values({ key, valueJson, updatedAt })
+      .onConflictDoUpdate({
+        target: deploymentSettings.key,
+        set: { valueJson, updatedAt },
+      })
+      .run();
+  });
+  return input.state;
+}
+
+export interface TermCategoryItem {
+  readonly code: string;
+  readonly label: string;
+  readonly listKind: "BLACKLIST" | "WHITELIST";
+  readonly description: string;
+  readonly createdAt: string;
+}
+
+const DEFAULT_TERM_CATEGORIES: readonly TermCategoryItem[] = [
+  { code: "spam", label: "垃圾刷屏", listKind: "BLACKLIST", description: "高频重复、外链导流或广告垃圾信息", createdAt: "2026-11-18T00:00:00.000Z" },
+  { code: "abuse", label: "人身攻击", listKind: "BLACKLIST", description: "辱骂、恶意骚扰与仇恨言论", createdAt: "2026-11-18T00:00:00.000Z" },
+  { code: "sensitive", label: "高敏禁词", listKind: "BLACKLIST", description: "违禁词与规避变形表达", createdAt: "2026-11-18T00:00:00.000Z" },
+  { code: "friendly", label: "常用热梗", listKind: "WHITELIST", description: "已确认安全的社区友好高频词", createdAt: "2026-11-18T00:00:00.000Z" },
+];
+
+export function readTermCategories(database: VoxwardDatabase, channelId: string): TermCategoryItem[] {
+  const saved = readChannelSetting<TermCategoryItem[] | null>(database, channelId, "term-categories", null);
+  return saved ?? [...DEFAULT_TERM_CATEGORIES];
+}
+
+export function appendTermCategory(
+  database: VoxwardDatabase,
+  channelId: string,
+  item: Omit<TermCategoryItem, "createdAt">,
+  now: Date = new Date(),
+): { readonly ok: true; readonly categories: TermCategoryItem[] } | { readonly ok: false; readonly code: "CATEGORY_EXISTS" } {
+  const existing = readTermCategories(database, channelId);
+  if (existing.some((c) => c.code === item.code)) {
+    return { ok: false, code: "CATEGORY_EXISTS" };
+  }
+  const next: TermCategoryItem[] = [...existing, { ...item, createdAt: now.toISOString() }];
+  writeChannelSetting(database, channelId, "term-categories", next, now);
+  return { ok: true, categories: next };
+}
+
+export interface ExtendedTermEntry {
+  readonly id: string;
+  readonly listKind: "BLACKLIST" | "WHITELIST";
+  readonly term: string;
+  readonly categoryCode: string;
+  readonly matchKind: "EXACT" | "CONTAINS" | "REGEX" | "NORMALIZED";
+  readonly enabled: boolean;
+}
+
+export function readTermEntries(database: VoxwardDatabase, channelId: string): ExtendedTermEntry[] {
+  const saved = readChannelSetting<ExtendedTermEntry[] | null>(database, channelId, "term-entries", null);
+  return saved ?? [];
+}
+
+export function writeTermEntries(
+  database: VoxwardDatabase,
+  channelId: string,
+  entries: readonly ExtendedTermEntry[],
+  now: Date = new Date(),
+): ExtendedTermEntry[] {
+  writeChannelSetting(database, channelId, "term-entries", entries, now);
+  return [...entries];
+}
+
+export interface ManualBlockedUserRecord {
+  readonly subjectRef: string;
+  readonly nickname: string | null;
+  readonly reason: string;
+  readonly syncYouTube: boolean;
+  readonly banId: string | null;
+  readonly createdAt: string;
+  readonly createdBy: string;
+}
+
+export function readBlockedUsers(database: VoxwardDatabase, channelId: string): ManualBlockedUserRecord[] {
+  return readChannelSetting<ManualBlockedUserRecord[]>(database, channelId, "blocked-users", []);
+}
+
+export function upsertBlockedUser(
+  database: VoxwardDatabase,
+  channelId: string,
+  record: ManualBlockedUserRecord,
+  now: Date = new Date(),
+): ManualBlockedUserRecord[] {
+  const current = readBlockedUsers(database, channelId).filter((u) => u.subjectRef !== record.subjectRef);
+  const next = [record, ...current];
+  writeChannelSetting(database, channelId, "blocked-users", next, now);
+  return next;
+}
+
+export function removeBlockedUser(
+  database: VoxwardDatabase,
+  channelId: string,
+  subjectRef: string,
+  now: Date = new Date(),
+): { readonly removed: ManualBlockedUserRecord | null; readonly users: ManualBlockedUserRecord[] } {
+  const current = readBlockedUsers(database, channelId);
+  const removed = current.find((u) => u.subjectRef === subjectRef) ?? null;
+  const next = current.filter((u) => u.subjectRef !== subjectRef);
+  writeChannelSetting(database, channelId, "blocked-users", next, now);
+  return { removed, users: next };
+}
+
+export type AdapterCategory = "LIVE_PLATFORM" | "AI_PROVIDER";
+export type AdapterDriverId = "youtube-live-v3" | "kiro-cli" | "openai-compat" | "anthropic-compat";
+
+export interface AdapterSystemDescriptor {
+  readonly driverId: AdapterDriverId;
+  readonly category: AdapterCategory;
+  readonly displayName: string;
+  readonly summary: string;
+  readonly secretFields: readonly string[];
+  readonly controlActions: readonly { readonly action: string; readonly label: string }[];
+}
+
+export const ADAPTER_SYSTEM_CATALOG: readonly AdapterSystemDescriptor[] = [
+  {
+    driverId: "youtube-live-v3",
+    category: "LIVE_PLATFORM",
+    displayName: "YouTube Live Data API v3",
+    summary: "官方直播聊天 streamList 拉流、Super Chat / 会员身份映射与可选平台删消息/封禁联动。",
+    secretFields: ["clientSecret", "refreshToken"],
+    controlActions: [
+      { action: "test-connection", label: "检测连接与配额" },
+      { action: "reauthorize", label: "发起 OAuth 重授权" },
+      { action: "restart-ingest", label: "重启直播拉流" },
+    ],
+  },
+  {
+    driverId: "kiro-cli",
+    category: "AI_PROVIDER",
+    displayName: "Kiro CLI 本地运行时适配器",
+    summary: "一次性受限会话调用 Kiro CLI / Crew 执行内容审核与 SC 精翻，并在终态自动清理运行目录。",
+    secretFields: ["kiroApiKey"],
+    controlActions: [
+      { action: "cli-self-check", label: "执行 CLI 自检" },
+      { action: "cleanup-orphans", label: "清理孤儿运行目录" },
+      { action: "fetch-models", label: "获取远端可用模型列表" },
+    ],
+  },
+  {
+    driverId: "openai-compat",
+    category: "AI_PROVIDER",
+    displayName: "OpenAI 基础格式适配器",
+    summary: "兼容 OpenAI Chat/Responses 基础协议与自定义 Base Endpoint，支持从 /models 拉取可用模型。",
+    secretFields: ["apiKey"],
+    controlActions: [
+      { action: "test-connection", label: "检测端点连通性" },
+      { action: "fetch-models", label: "获取远端可用模型列表" },
+    ],
+  },
+  {
+    driverId: "anthropic-compat",
+    category: "AI_PROVIDER",
+    displayName: "Anthropic 基础格式适配器",
+    summary: "兼容 Anthropic Messages 基础协议、自定义 Endpoint 与版本请求头。",
+    secretFields: ["apiKey"],
+    controlActions: [
+      { action: "test-connection", label: "检测端点连通性" },
+      { action: "fetch-models", label: "获取远端可用模型列表" },
+    ],
+  },
+];
+
+export interface AdapterModelPoolItem {
+  readonly modelId: string;
+  readonly displayName: string;
+  readonly reasoningLevels: readonly string[];
+  readonly source: "remote" | "manual";
+}
+
+export interface ChannelAdapterRecord {
+  readonly id: string;
+  readonly category: AdapterCategory;
+  readonly driverId: AdapterDriverId;
+  readonly displayName: string;
+  readonly enabled: boolean;
+  readonly config: Readonly<Record<string, string | number | boolean | null>>;
+  readonly models: readonly AdapterModelPoolItem[];
+  readonly lastStatus: string;
+  readonly updatedAt: string;
+}
+
+export function redactAdapterConfig(
+  driverId: AdapterDriverId,
+  config: Readonly<Record<string, string | number | boolean | null>>,
+): Record<string, string | number | boolean | null> {
+  const desc = ADAPTER_SYSTEM_CATALOG.find((d) => d.driverId === driverId);
+  const secrets = new Set(desc?.secretFields ?? []);
+  const out: Record<string, string | number | boolean | null> = {};
+  for (const [k, v] of Object.entries(config)) {
+    if (secrets.has(k) && typeof v === "string" && v.length > 0) {
+      out[k] = v.length > 6 ? `${v.slice(0, 3)}••••${v.slice(-2)}` : "••••••";
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+export function readChannelAdapters(database: VoxwardDatabase, channelId: string): ChannelAdapterRecord[] {
+  return readChannelSetting<ChannelAdapterRecord[]>(database, channelId, "adapters", []);
+}
+
+export function writeChannelAdapters(
+  database: VoxwardDatabase,
+  channelId: string,
+  adapters: readonly ChannelAdapterRecord[],
+  now: Date = new Date(),
+): ChannelAdapterRecord[] {
+  writeChannelSetting(database, channelId, "adapters", adapters, now);
+  return [...adapters];
+}
+
+export interface IntegrationLogRecord {
+  readonly id: string;
+  readonly correlationId: string;
+  readonly adapterId: string;
+  readonly adapterName: string;
+  readonly providerKind: "LIVE_PLATFORM" | "AI_PROVIDER";
+  readonly method: string;
+  readonly url: string;
+  readonly statusCode: number;
+  readonly latencyMs: number;
+  readonly requestHeaders: Readonly<Record<string, string>>;
+  readonly responseHeaders: Readonly<Record<string, string>>;
+  readonly rawRequestBody: string | null;
+  readonly rawResponseBody: string | null;
+  readonly occurredAt: string;
+}
+
+const SENSITIVE_HTTP_HEADERS = new Set([
+  "authorization",
+  "proxy-authorization",
+  "x-api-key",
+  "api-key",
+  "cookie",
+  "set-cookie",
+  "x-csrf-token",
+]);
+
+export function redactHttpHeaders(headers: Readonly<Record<string, string>>): Record<string, string> {
+  const sanitized: Record<string, string> = {};
+  for (const [key, val] of Object.entries(headers)) {
+    sanitized[key] = SENSITIVE_HTTP_HEADERS.has(key.toLowerCase()) ? "[REDACTED]" : val;
+  }
+  return sanitized;
+}
+
+export function readIntegrationLogs(database: VoxwardDatabase, channelId: string): IntegrationLogRecord[] {
+  return readChannelSetting<IntegrationLogRecord[]>(database, channelId, "integration-logs", []);
+}
+
+export function appendIntegrationLog(
+  database: VoxwardDatabase,
+  channelId: string,
+  entry: IntegrationLogRecord,
+  now: Date = new Date(),
+): void {
+  const existing = readIntegrationLogs(database, channelId);
+  const redacted: IntegrationLogRecord = {
+    ...entry,
+    requestHeaders: redactHttpHeaders(entry.requestHeaders),
+    responseHeaders: redactHttpHeaders(entry.responseHeaders),
+  };
+  const next = [redacted, ...existing].slice(0, 200);
+  writeChannelSetting(database, channelId, "integration-logs", next, now);
+}
+
+export interface StoredRbacRole {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly systemPreset: boolean;
+  readonly permissions: Readonly<Record<string, "GRANT" | "DENY" | "NOT_SET">>;
+}
+
+export interface StoredRbacUser {
+  readonly accountId: string;
+  readonly displayName: string;
+  readonly loginName: string;
+  readonly enabled: boolean;
+  readonly roleIds: readonly string[];
+  readonly updatedAt: string;
+}
+
+const DEFAULT_RBAC_ROLES: readonly StoredRbacRole[] = [
+  {
+    id: "role-owner",
+    name: "频道所有者",
+    description: "拥有审核、配置、集成与成员完全管理权。",
+    systemPreset: true,
+    permissions: {
+      "queue.read": "GRANT",
+      "review.decide": "GRANT",
+      "list.edit": "GRANT",
+      "score.config": "GRANT",
+      "output.manage": "GRANT",
+      "members.manage": "GRANT",
+      "tokens.manage": "GRANT",
+      "message.original": "GRANT",
+      "subject.evidence": "GRANT",
+      "data.handle": "GRANT",
+      "logs.view": "GRANT",
+    },
+  },
+  {
+    id: "role-moderator",
+    name: "房管",
+    description: "负责实时审核队列、拦截重判、词条与手动黑名单管理。",
+    systemPreset: true,
+    permissions: {
+      "queue.read": "GRANT",
+      "review.decide": "GRANT",
+      "list.edit": "GRANT",
+      "message.original": "GRANT",
+      "score.config": "NOT_SET",
+      "output.manage": "NOT_SET",
+      "members.manage": "NOT_SET",
+      "tokens.manage": "NOT_SET",
+      "subject.evidence": "NOT_SET",
+      "data.handle": "NOT_SET",
+      "logs.view": "NOT_SET",
+    },
+  },
+  {
+    id: "role-data-admin",
+    name: "隐私与数据管理员",
+    description: "专责处理观众数据查询、核验与两阶段删除请求。",
+    systemPreset: true,
+    permissions: {
+      "queue.read": "NOT_SET",
+      "review.decide": "DENY",
+      "list.edit": "DENY",
+      "message.original": "NOT_SET",
+      "subject.evidence": "GRANT",
+      "data.handle": "GRANT",
+      "logs.view": "NOT_SET",
+    },
+  },
+  {
+    id: "role-auditor",
+    name: "只读日志审计员",
+    description: "仅查看技术日志、变更日志与外部集成日志，禁止改判与修改配置。",
+    systemPreset: false,
+    permissions: {
+      "queue.read": "GRANT",
+      "logs.view": "GRANT",
+      "review.decide": "DENY",
+      "list.edit": "DENY",
+      "data.handle": "DENY",
+    },
+  },
+];
+
+export function readRbacRoles(database: VoxwardDatabase, channelId: string): StoredRbacRole[] {
+  return readChannelSetting<StoredRbacRole[]>(database, channelId, "rbac-roles", [...DEFAULT_RBAC_ROLES]);
+}
+
+export function writeRbacRoles(
+  database: VoxwardDatabase,
+  channelId: string,
+  roles: readonly StoredRbacRole[],
+  now: Date = new Date(),
+): StoredRbacRole[] {
+  writeChannelSetting(database, channelId, "rbac-roles", roles, now);
+  return [...roles];
+}
+
+export function readRbacUsers(database: VoxwardDatabase, channelId: string): StoredRbacUser[] {
+  return readChannelSetting<StoredRbacUser[]>(database, channelId, "rbac-users", []);
+}
+
+export function writeRbacUsers(
+  database: VoxwardDatabase,
+  channelId: string,
+  users: readonly StoredRbacUser[],
+  now: Date = new Date(),
+): StoredRbacUser[] {
+  writeChannelSetting(database, channelId, "rbac-users", users, now);
+  return [...users];
+}

@@ -50,6 +50,7 @@ import {
   createCandidateStore,
   type CandidateStore,
 } from "./modules/moderation-engine/index.js";
+import { admitRegex } from "./modules/moderation-engine/rules/bounded-regex.js";
 import { compileRuleSet, type RuleSetInput } from "./modules/moderation-engine/rules/groups.js";
 import { BLIVECHAT_OUTPUT_PATH, BLIVECHAT_PROTOCOL_VERSION, createBlivechatAdapter } from "./modules/output/index.js";
 import { createDeliveryPump } from "./modules/output-adapter/delivery.js";
@@ -357,6 +358,17 @@ function channelPanelOptionsFor(
         }
         const compiled = compileRuleSet(input as RuleSetInput);
         return compiled.ok ? { ok: true as const } : { ok: false as const, issues: compiled.issues };
+      },
+      validateRegexPattern: (pattern: string) => {
+        const res = admitRegex(pattern);
+        if (res.ok) return { ok: true as const };
+        const hint =
+          res.rejection === "GROUP_ALTERNATION"
+            ? "write the alternatives as top-level branches, such as a|b, or split them into several rules"
+            : res.rejection === "UNBOUNDED_WITH_VARIABLE_REPEAT"
+              ? "split the pattern into several rules, or give one of the quantifiers a fixed count"
+              : undefined;
+        return { ok: false as const, code: `REGEX_${res.rejection}`, hint };
       },
     },
   };

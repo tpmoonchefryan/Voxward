@@ -103,7 +103,7 @@ describe("data panel with data.handle", () => {
         ],
       },
     });
-    expect(html.match(/核验通过：确认账号归属/g)?.length).toBe(1);
+    expect(html.match(/<button[^>]*>[\s\S]*?核验通过：确认账号归属/g)?.length).toBe(1);
     expect(html).toContain(STAGE_TEXT.AWAITING_EXECUTION);
     expect(html).not.toMatch(/nickname/i);
   });

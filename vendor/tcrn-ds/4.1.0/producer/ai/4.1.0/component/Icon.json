@@ -1,0 +1,239 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.1.0",
+      "@tcrn/ui-tokens": "4.1.0",
+      "@tcrn/ui-copy-state": "4.1.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "id": "component/Icon",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/03-icons",
+    "assets/icons"
+  ],
+  "optional": [],
+  "content": {
+    "name": "Icon",
+    "board": "03-icons",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/03-icons/index.dc.html",
+      "sha256": "97d50b6c9c309db9ce139a9642d0c28c62d884e4fd0e98d63ffceb981bb26674",
+      "line": 131
+    },
+    "normativeText": "Icon name · size sm|md|lg|number · decorative · title 一句话：按名册名字取一枚 20 格 1.25px 描边的线性图标，颜色继承文字色，默认装饰性（aria-hidden）。 须提供 ： name （tcrnIconNames 之一）；独立表意时给 title 或 aria-label ，组件自动改为 role=\"img\"。 尺寸 ：sm 14、md 16、lg 20 或数字；描边恒 1.25px，不随尺寸变。 strokeWidth 覆盖建议移除（现包允许），否则名册规则失效。 容器 ：由按钮、导航项、输入框、说明文字提供对齐（inline-flex 居中）。 用 ：导航、按钮、工具栏、状态提示、空状态标题前。 不用 ：当状态色块（状态用 6px 点加文字）；当品牌标；当插画。",
+    "readerSummary": {
+      "en": "Choose a roster name; 14/16/20 sizes keep a 1.25 stroke. Decorative by default; meaningful icons need a name. Never substitute a brand or illustration.",
+      "zh-CN": "取名册 name，14/16/20 档描边恒 1.25。默认装饰；独立表意须命名。不作品牌或插画。",
+      "ja": "名簿の name を使い、14/16/20 でも線幅は 1.25 です。意味を持つ場合は名前を付け、ブランドや挿絵には使いません。",
+      "ko": "명단의 name을 사용하며 14/16/20 크기에서도 선은 1.25입니다. 의미를 전달하면 이름을 제공하고 브랜드·삽화로 쓰지 않습니다.",
+      "fr": "Choisir un nom du catalogue ; 14/16/20 gardent un trait de 1,25. Décoratif par défaut, sinon le nommer. Jamais comme marque ou illustration."
+    },
+    "types": {
+      "name": "Icon",
+      "kind": "function",
+      "props": [
+        {
+          "name": "decorative",
+          "type": "boolean",
+          "required": false,
+          "default": "true"
+        },
+        {
+          "name": "name",
+          "type": "IconName",
+          "required": true,
+          "enumValues": [
+            "x",
+            "alert-triangle",
+            "arrow-left",
+            "arrow-right",
+            "book-open",
+            "check",
+            "chevron-down",
+            "chevron-left",
+            "chevron-right",
+            "database",
+            "external-link",
+            "globe-2",
+            "history",
+            "home",
+            "info",
+            "layers",
+            "layout-grid",
+            "loader-circle",
+            "menu",
+            "moon",
+            "package",
+            "palette",
+            "panel-left-close",
+            "panel-left-open",
+            "search",
+            "settings",
+            "shield-check",
+            "sun",
+            "plus",
+            "minus",
+            "users",
+            "bell",
+            "copy",
+            "trash",
+            "calendar",
+            "more-horizontal",
+            "chevron-up",
+            "pin"
+          ]
+        },
+        {
+          "name": "size",
+          "type": "IconSize",
+          "required": false,
+          "default": "\"md\""
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "variants": {
+        "name": [
+          "x",
+          "alert-triangle",
+          "arrow-left",
+          "arrow-right",
+          "book-open",
+          "check",
+          "chevron-down",
+          "chevron-left",
+          "chevron-right",
+          "database",
+          "external-link",
+          "globe-2",
+          "history",
+          "home",
+          "info",
+          "layers",
+          "layout-grid",
+          "loader-circle",
+          "menu",
+          "moon",
+          "package",
+          "palette",
+          "panel-left-close",
+          "panel-left-open",
+          "search",
+          "settings",
+          "shield-check",
+          "sun",
+          "plus",
+          "minus",
+          "users",
+          "bell",
+          "copy",
+          "trash",
+          "calendar",
+          "more-horizontal",
+          "chevron-up",
+          "pin"
+        ]
+      },
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Icon/Icon.tsx",
+        "line": 100
+      },
+      "propsType": "IconProps",
+      "typeDefinitions": [
+        {
+          "name": "TcrnIconPathName",
+          "path": "packages/ui-react/src/components/Icon/icon-paths.generated.ts",
+          "line": 6,
+          "declaration": "export type TcrnIconPathName=(typeof tcrnIconPathNames)[number];"
+        },
+        {
+          "name": "IconName",
+          "path": "packages/ui-react/src/components/Icon/Icon.tsx",
+          "line": 20,
+          "declaration": "export type IconName = TcrnIconPathName;"
+        },
+        {
+          "name": "IconSize",
+          "path": "packages/ui-react/src/components/Icon/Icon.tsx",
+          "line": 21,
+          "declaration": "type IconSize = \"sm\" | \"md\" | \"lg\" | number;"
+        },
+        {
+          "name": "IconProps",
+          "path": "packages/ui-react/src/components/Icon/Icon.tsx",
+          "line": 93,
+          "declaration": "export interface IconProps extends Omit<SVGProps<SVGSVGElement>, \"name\" | \"strokeWidth\"> {\n  name: IconName;\n  decorative?: boolean;\n  size?: IconSize;\n  title?: string;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "fixed",
+      "constraint": "The icon size token fixes the square. A meaningful icon needs a name; it is not a fill-width control.",
+      "implementation": "icon.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Icon/Icon.tsx",
+      "sha256": "dbfa8e173f45308ddbedbb80ca18040342a250f979d22d9a341dd5bfa10e6afc"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 133,
+      "snippet": "case \"Icon\": return state === \"sizes\" ? ([\"sm\", \"md\", \"lg\"] as const).map(size => <Icon key={size} name=\"settings\" size={size} />)\n        : <Icon name=\"settings\" title={state === \"meaningful\" ? c.settings : undefined} />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { Icon, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example() {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", gap: \"var(--tcrn-space-2)\" }}>\n      <Icon name=\"settings\" size=\"md\" title=\"Settings\"/>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/icon.css.ts",
+          "sha256": "d6bf15a25d1b71e47a851f4dea2c40cd97b66a56b5f20b6209c1f3a3d4bdd7d8"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-icon--default"
+      },
+      {
+        "state": "sizes",
+        "id": "components-icon--sizes"
+      },
+      {
+        "state": "meaningful",
+        "id": "components-icon--meaningful"
+      }
+    ]
+  }
+}

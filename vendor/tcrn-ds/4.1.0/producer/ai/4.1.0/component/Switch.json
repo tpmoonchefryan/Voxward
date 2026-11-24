@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.1.0",
+      "@tcrn/ui-tokens": "4.1.0",
+      "@tcrn/ui-copy-state": "4.1.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "id": "component/Switch",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/06-inputs"
+  ],
+  "optional": [],
+  "content": {
+    "name": "Switch",
+    "board": "06-inputs",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/06-inputs/index.dc.html",
+      "sha256": "0a0cd521481292fc44a24250eb9137cec0e855f5bc7c5ee4b5bce3aa33fa07e8",
+      "line": 133
+    },
+    "normativeText": "Switch label（必填）· description · controlClassName 一句话：立即生效的二值设置；轨 34 × 20，钮行程 14。 须提供 ： label ；需要说明时 description （自动 aria-describedby）。 不用 ：需要「保存」才生效的选项（用 Checkbox）；多于二值（用 RadioGroup / Select）。",
+    "readerSummary": {
+      "en": "Provide a label and optional associated description. Immediate binary settings use a 34×20 track/14 travel, small 28×16/12. Saved options use Checkbox.",
+      "zh-CN": "提供 label 与可选关联描述。即时二值设置用 34×20/14 行程，小档 28×16/12；需保存的选项用 Checkbox。",
+      "ja": "label と任意の関連説明を指定します。即時二値設定は34×20・移動14、小型は28×16・12です。保存が必要なら Checkbox を使います。",
+      "ko": "label과 선택 설명을 연결합니다. 즉시 이진 설정은 34×20·이동14, 소형은 28×16·12입니다. 저장이 필요한 옵션은 Checkbox를 씁니다.",
+      "fr": "Fournir label et description associée éventuelle. Réglage binaire immédiat : 34×20/déplacement14, petit 28×16/12. Si sauvegarde requise, utiliser Checkbox."
+    },
+    "types": {
+      "name": "Switch",
+      "kind": "function",
+      "props": [
+        {
+          "name": "controlClassName",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "description",
+          "type": "ReactNode",
+          "required": false,
+          "slot": true
+        },
+        {
+          "name": "label",
+          "type": "ReactNode",
+          "required": true,
+          "slot": true
+        }
+      ],
+      "variants": {},
+      "slots": [
+        "description",
+        "label"
+      ],
+      "source": {
+        "path": "packages/ui-react/src/components/Form/Form.tsx",
+        "line": 578
+      },
+      "propsType": "SwitchProps",
+      "typeDefinitions": [
+        {
+          "name": "SwitchProps",
+          "path": "packages/ui-react/src/components/Form/Form.tsx",
+          "line": 572,
+          "declaration": "export interface SwitchProps extends Omit<InputHTMLAttributes<HTMLInputElement>, \"type\"> {\n  label: ReactNode;\n  description?: ReactNode;\n  controlClassName?: string;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "mixed",
+      "constraint": "Track stays 34×20, or 28×16 in small; label and description use the parent space. Immediate settings do not require a Save action.",
+      "implementation": "inputs.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Form/Form.tsx",
+      "sha256": "f7aeb6ce3c9ec06052653851cdedda80f5f6dec9e86347b0b5e0208cc0746bfc"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 175,
+      "snippet": "case \"Switch\": return <Switch title={disabled ? c.unavailable : undefined} name=\"notify\" label={c.notify} disabled={disabled} defaultChecked={state === \"checked\"} className={state === \"small\" ? \"tcrn-switch--sm\" : undefined} />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { Switch, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example() {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", gap: \"var(--tcrn-space-2)\" }}>\n      <Switch label=\"Notify now\" description=\"Applies immediately\"/>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/inputs.css.ts",
+          "sha256": "b4f0a5cf2a441d551e2a0946d6d20f3cc19ab7cb1c73a36394986598bc3b0623"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-switch--default"
+      },
+      {
+        "state": "checked",
+        "id": "components-switch--checked"
+      },
+      {
+        "state": "small",
+        "id": "components-switch--small"
+      },
+      {
+        "state": "disabled",
+        "id": "components-switch--disabled"
+      }
+    ]
+  }
+}

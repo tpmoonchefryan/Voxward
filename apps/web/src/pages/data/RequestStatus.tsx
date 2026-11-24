@@ -1,4 +1,6 @@
-import { UntrustedText } from "../../components/untrusted-text";
+import { Badge, Button, Card, EmptyState, KeyValueList } from "@tcrn/ui-react/approved";
+import { BannerNotice } from "../../components/banner-notice";
+import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
 import type { RequestView, VerificationInput } from "./api";
 
 export const KIND_LABEL: Readonly<Record<string, string>> = {
@@ -41,60 +43,146 @@ export interface RequestStatusProps {
   readonly onVerify: (requestId: string, input: VerificationInput) => void;
 }
 
-/** One request per list item. Identifiers are shown as untrusted text, isolated for bidirectional text. */
+function verificationStateLabel(state: string): string {
+  switch (state) {
+    case "VERIFIED":
+      return "已核验通过";
+    case "REJECTED":
+      return "核验未通过";
+    default:
+      return "待核验";
+  }
+}
+
 export function RequestStatus({ requests, canVerify, onVerify }: RequestStatusProps) {
-  if (requests.length === 0) return <p>这个主体还没有请求。</p>;
+  if (requests.length === 0) {
+    return (
+      <section aria-label="请求状态">
+        <EmptyState title="这个主体还没有请求。" />
+      </section>
+    );
+  }
+
   return (
-    <section aria-label="请求状态">
+    <section aria-label="请求状态" className="vw-stack-md">
       <h2>请求状态</h2>
-      <ul>
+      <div className="vw-stack-sm">
         {requests.map((request) => (
-          <li key={request.requestId}>
-            <p>
-              {KIND_LABEL[request.kind] ?? "请求"}
-              {request.mode !== null ? `：${MODE_LABEL[request.mode] ?? ""}` : null}
-            </p>
-            <p>
-              编号 <bdi>
-                <UntrustedText text={request.requestId} />
-              </bdi>
-            </p>
-            <p>核验：{request.verification.method !== null ? METHOD_LABEL[request.verification.method] : "尚未核验"}</p>
-            <p>{STAGE_TEXT[request.stage] ?? "状态未知。"}</p>
-            {request.counts.done + request.counts.failed + request.counts.pending > 0 ? (
-              <p>
-                范围：完成 {request.counts.done}，失败 {request.counts.failed}，待处理 {request.counts.pending}
-              </p>
-            ) : null}
-            {request.targets
-              .filter((target) => target.state === "FAILED")
-              .map((target, index) => (
-                <p key={index}>
-                  失败条目：{target.targetKind}（{target.errorCode ?? "未知原因"}）
-                </p>
-              ))}
-            {canVerify && request.stage === "AWAITING_VERIFICATION" ? (
-              <div role="group" aria-label="核验">
-                <button
-                  type="button"
-                  onClick={() => onVerify(request.requestId, { verdict: "VERIFIED", method: "ACCOUNT_OWNERSHIP" })}
+          <Card key={request.requestId}>
+            <div className="vw-stack-sm">
+              <div className="vw-row-between">
+                <strong>
+                  {KIND_LABEL[request.kind] ?? "请求"}
+                  {request.mode !== null ? `：${MODE_LABEL[request.mode] ?? ""}` : null}
+                </strong>
+                <Badge
+                  tone={
+                    request.verification.state === "VERIFIED"
+                      ? "positive"
+                      : request.verification.state === "REJECTED"
+                        ? "danger"
+                        : "warning"
+                  }
                 >
-                  核验通过：确认账号归属
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onVerify(request.requestId, { verdict: "VERIFIED", method: "REQUEST_AUTHORIZATION" })}
-                >
-                  核验通过：确认请求授权
-                </button>
-                <button type="button" onClick={() => onVerify(request.requestId, { verdict: "REJECTED", method: null })}>
-                  拒绝核验
-                </button>
+                  {verificationStateLabel(request.verification.state)}
+                </Badge>
               </div>
-            ) : null}
-          </li>
+
+              <KeyValueList
+                items={[
+                  {
+                    key: "id",
+                    label: "编号",
+                    value: (
+                      <bdi>
+                        <UntrustedText text={request.requestId} />
+                      </bdi>
+                    ),
+                  },
+                  {
+                    key: "stage",
+                    label: "当前阶段",
+                    value: STAGE_TEXT[request.stage] ?? request.stage,
+                  },
+                  ...(request.verification.method
+                    ? [
+                        {
+                          key: "method",
+                          label: "核验方式",
+                          value: METHOD_LABEL[request.verification.method] ?? request.verification.method,
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+
+              {request.targets.length > 0 ? (
+                <div className="vw-stack-sm">
+                  {request.targets.map((target, idx) => (
+                    <div key={`${target.targetKind}-${idx}`} className="vw-row-between">
+                      <span>{target.targetKind}</span>
+                      <Badge tone={target.state === "FAILED" ? "danger" : "neutral"}>
+                        {target.state === "DONE"
+                          ? "处理完毕"
+                          : target.state === "FAILED"
+                            ? "部分失败"
+                            : "队列处理中"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              {request.counts.pending > 0 ? (
+                <BannerNotice tone="warning">
+                  尚有 {request.counts.pending} 项后台处理任务处于队列中，尚未全部完成清理。
+                </BannerNotice>
+              ) : null}
+
+              {canVerify && request.verification.state === "PENDING" ? (
+                <div className="vw-row-wrap">
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() =>
+                      onVerify(request.requestId, {
+                        verdict: "VERIFIED",
+                        method: "ACCOUNT_OWNERSHIP",
+                      })
+                    }
+                  >
+                    核验通过：确认账号归属
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() =>
+                      onVerify(request.requestId, {
+                        verdict: "VERIFIED",
+                        method: "REQUEST_AUTHORIZATION",
+                      })
+                    }
+                  >
+                    核验通过：确认请求授权
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() =>
+                      onVerify(request.requestId, {
+                        verdict: "REJECTED",
+                        method: "ACCOUNT_OWNERSHIP",
+                      })
+                    }
+                  >
+                    拒绝核验
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </Card>
         ))}
-      </ul>
+      </div>
     </section>
   );
 }

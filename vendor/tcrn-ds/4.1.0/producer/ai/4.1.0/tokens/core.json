@@ -1,0 +1,883 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.1.0",
+      "@tcrn/ui-tokens": "4.1.0",
+      "@tcrn/ui-copy-state": "4.1.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "id": "tokens/core",
+  "kind": "tokens",
+  "required": [],
+  "optional": [],
+  "content": [
+    {
+      "name": "bg",
+      "variable": "--tcrn-color-bg",
+      "value": "#efeeea",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--bg",
+      "scope": "theme"
+    },
+    {
+      "name": "bg-2",
+      "variable": "--tcrn-color-bg-2",
+      "value": "#e7e5df",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--bg-2",
+      "scope": "theme"
+    },
+    {
+      "name": "panel",
+      "variable": "--tcrn-color-panel",
+      "value": "#ffffff",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--panel",
+      "scope": "theme"
+    },
+    {
+      "name": "panel-2",
+      "variable": "--tcrn-color-panel-2",
+      "value": "#f8f7f3",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--panel-2",
+      "scope": "theme"
+    },
+    {
+      "name": "line",
+      "variable": "--tcrn-color-line",
+      "value": "rgba(22,21,15,.09)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--line",
+      "scope": "theme"
+    },
+    {
+      "name": "line-2",
+      "variable": "--tcrn-color-line-2",
+      "value": "rgba(22,21,15,.16)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--line-2",
+      "scope": "theme"
+    },
+    {
+      "name": "line-3",
+      "variable": "--tcrn-color-line-3",
+      "value": "rgba(22,21,15,.30)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--line-3",
+      "scope": "theme"
+    },
+    {
+      "name": "line-ctl",
+      "variable": "--tcrn-color-line-ctl",
+      "value": "rgba(22,21,15,.47)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--line-ctl",
+      "scope": "theme"
+    },
+    {
+      "name": "rule",
+      "variable": "--tcrn-color-rule",
+      "value": "#16150f",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--rule",
+      "scope": "theme"
+    },
+    {
+      "name": "ink",
+      "variable": "--tcrn-color-ink",
+      "value": "#16150f",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--ink",
+      "scope": "theme"
+    },
+    {
+      "name": "ink-2",
+      "variable": "--tcrn-color-ink-2",
+      "value": "#4f4c43",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--ink-2",
+      "scope": "theme"
+    },
+    {
+      "name": "ink-3",
+      "variable": "--tcrn-color-ink-3",
+      "value": "#6b675d",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--ink-3",
+      "scope": "theme"
+    },
+    {
+      "name": "acc",
+      "variable": "--tcrn-color-acc",
+      "value": "#0b6b65",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--acc",
+      "scope": "theme"
+    },
+    {
+      "name": "acc-2",
+      "variable": "--tcrn-color-acc-2",
+      "value": "#0a5f5a",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--acc-2",
+      "scope": "theme"
+    },
+    {
+      "name": "acc-3",
+      "variable": "--tcrn-color-acc-3",
+      "value": "#084f4a",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--acc-3",
+      "scope": "theme"
+    },
+    {
+      "name": "acc-bg",
+      "variable": "--tcrn-color-acc-bg",
+      "value": "rgba(11,107,101,.08)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--acc-bg",
+      "scope": "theme"
+    },
+    {
+      "name": "acc-ul",
+      "variable": "--tcrn-color-acc-ul",
+      "value": "rgba(11,107,101,.7)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--acc-ul",
+      "scope": "theme"
+    },
+    {
+      "name": "on-acc",
+      "variable": "--tcrn-color-on-acc",
+      "value": "#ffffff",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--on-acc",
+      "scope": "theme"
+    },
+    {
+      "name": "red",
+      "variable": "--tcrn-color-red",
+      "value": "#8e2d24",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--red",
+      "scope": "theme"
+    },
+    {
+      "name": "red-bg",
+      "variable": "--tcrn-color-red-bg",
+      "value": "rgba(142,45,36,.06)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--red-bg",
+      "scope": "theme"
+    },
+    {
+      "name": "red-bg-2",
+      "variable": "--tcrn-color-red-bg-2",
+      "value": "rgba(142,45,36,.11)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--red-bg-2",
+      "scope": "theme"
+    },
+    {
+      "name": "ok",
+      "variable": "--tcrn-color-ok",
+      "value": "#2f6b3a",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--ok",
+      "scope": "theme"
+    },
+    {
+      "name": "warn",
+      "variable": "--tcrn-color-warn",
+      "value": "#8a5a08",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--warn",
+      "scope": "theme"
+    },
+    {
+      "name": "bad",
+      "variable": "--tcrn-color-bad",
+      "value": "#a8321f",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--bad",
+      "scope": "theme"
+    },
+    {
+      "name": "bad-bg",
+      "variable": "--tcrn-color-bad-bg",
+      "value": "rgba(168,50,31,.08)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--bad-bg",
+      "scope": "theme"
+    },
+    {
+      "name": "wash",
+      "variable": "--tcrn-color-wash",
+      "value": "rgba(22,21,15,.06)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--wash",
+      "scope": "theme"
+    },
+    {
+      "name": "hover",
+      "variable": "--tcrn-color-hover",
+      "value": "rgba(22,21,15,.035)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--hover",
+      "scope": "theme"
+    },
+    {
+      "name": "dis",
+      "variable": "--tcrn-color-dis",
+      "value": "rgba(22,21,15,.05)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--dis",
+      "scope": "theme"
+    },
+    {
+      "name": "s1",
+      "variable": "--tcrn-elevation-s1",
+      "value": "0 1px 1px rgba(22,21,15,.04),0 0 0 1px rgba(22,21,15,.07)",
+      "group": "elevation",
+      "description": "01-tokens/board.css#.gp:--s1",
+      "scope": "theme"
+    },
+    {
+      "name": "s2",
+      "variable": "--tcrn-elevation-s2",
+      "value": "0 1px 2px rgba(22,21,15,.05),0 2px 3px rgba(22,21,15,.04),0 0 0 1px rgba(22,21,15,.08)",
+      "group": "elevation",
+      "description": "01-tokens/board.css#.gp:--s2",
+      "scope": "theme"
+    },
+    {
+      "name": "s3",
+      "variable": "--tcrn-elevation-s3",
+      "value": "0 2px 3px rgba(22,21,15,.06),0 3px 3px rgba(22,21,15,.06),0 0 0 1px rgba(22,21,15,.10)",
+      "group": "elevation",
+      "description": "01-tokens/board.css#.gp:--s3",
+      "scope": "theme"
+    },
+    {
+      "name": "glass",
+      "variable": "--tcrn-color-glass",
+      "value": "rgba(255,255,255,.78)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--glass",
+      "scope": "theme"
+    },
+    {
+      "name": "edge",
+      "variable": "--tcrn-elevation-glass-edge",
+      "value": "inset 0 0 0 1px rgba(255,255,255,.8)",
+      "group": "elevation",
+      "description": "01-tokens/board.css#.gp:--edge",
+      "scope": "theme"
+    },
+    {
+      "name": "grain",
+      "variable": "--tcrn-texture-grain-opacity",
+      "value": ".035",
+      "group": "texture",
+      "description": "01-tokens/board.css#.gp:--grain",
+      "scope": "theme"
+    },
+    {
+      "name": "blend",
+      "variable": "--tcrn-texture-grain-blend",
+      "value": "multiply",
+      "group": "texture",
+      "description": "01-tokens/board.css#.gp:--blend",
+      "scope": "theme"
+    },
+    {
+      "name": "av-bg",
+      "variable": "--tcrn-color-av-bg",
+      "value": "#e7e5df",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--av-bg",
+      "scope": "theme"
+    },
+    {
+      "name": "av-ink",
+      "variable": "--tcrn-color-av-ink",
+      "value": "#16150f",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--av-ink",
+      "scope": "theme"
+    },
+    {
+      "name": "knob",
+      "variable": "--tcrn-color-knob",
+      "value": "#ffffff",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--knob",
+      "scope": "theme"
+    },
+    {
+      "name": "chrome",
+      "variable": "--tcrn-color-chrome",
+      "value": "rgba(239,238,234,.82)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--chrome",
+      "scope": "theme"
+    },
+    {
+      "name": "warn-bg",
+      "variable": "--tcrn-color-warn-bg",
+      "value": "rgba(138,90,8,.08)",
+      "group": "color",
+      "description": "Adopted Batch 3 token table",
+      "scope": "theme"
+    },
+    {
+      "name": "ok-bg",
+      "variable": "--tcrn-color-ok-bg",
+      "value": "rgba(47,107,58,.08)",
+      "group": "color",
+      "description": "Adopted Batch 3 token table",
+      "scope": "theme"
+    },
+    {
+      "name": "surface",
+      "variable": "--tcrn-color-surface",
+      "value": "var(--tcrn-color-bg)",
+      "group": "color",
+      "description": "01-tokens/board.css#.gp:--surface",
+      "scope": "theme"
+    },
+    {
+      "name": "focus",
+      "variable": "--tcrn-focus-ring",
+      "value": "0 0 0 2px var(--tcrn-color-surface),0 0 0 4px var(--tcrn-color-acc)",
+      "group": "elevation",
+      "description": "01-tokens/board.css#.gp:--focus",
+      "scope": "theme"
+    },
+    {
+      "name": "serif",
+      "variable": "--tcrn-type-family-heading",
+      "value": "\"Source Serif 4\",\"Noto Serif SC\",Georgia,serif",
+      "group": "typography",
+      "description": "01-tokens/board.css#.gp:--serif",
+      "scope": "fixed"
+    },
+    {
+      "name": "sans",
+      "variable": "--tcrn-type-family-ui",
+      "value": "\"Hanken Grotesk\",\"Noto Sans SC\",system-ui,sans-serif",
+      "group": "typography",
+      "description": "01-tokens/board.css#.gp:--sans",
+      "scope": "fixed"
+    },
+    {
+      "name": "mono",
+      "variable": "--tcrn-type-family-mono",
+      "value": "\"IBM Plex Mono\",ui-monospace,Menlo,monospace",
+      "group": "typography",
+      "description": "01-tokens/board.css#.gp:--mono",
+      "scope": "fixed"
+    },
+    {
+      "name": "r-ctl",
+      "variable": "--tcrn-radius-control",
+      "value": "8px",
+      "group": "radius",
+      "description": "01-tokens/board.css#.gp:--r-ctl",
+      "scope": "fixed"
+    },
+    {
+      "name": "r-sm",
+      "variable": "--tcrn-radius-sm",
+      "value": "6px",
+      "group": "radius",
+      "description": "01-tokens/board.css#.gp:--r-sm",
+      "scope": "fixed"
+    },
+    {
+      "name": "r-panel",
+      "variable": "--tcrn-radius-panel",
+      "value": "12px",
+      "group": "radius",
+      "description": "01-tokens/board.css#.gp:--r-panel",
+      "scope": "fixed"
+    },
+    {
+      "name": "r-check",
+      "variable": "--tcrn-radius-check",
+      "value": "4px",
+      "group": "radius",
+      "description": "01-tokens/board.css#.gp:--r-check",
+      "scope": "fixed"
+    },
+    {
+      "name": "r-stamp",
+      "variable": "--tcrn-radius-stamp",
+      "value": "3px",
+      "group": "radius",
+      "description": "01-tokens/board.css#.gp:--r-stamp",
+      "scope": "fixed"
+    },
+    {
+      "name": "h-sm",
+      "variable": "--tcrn-control-height-sm",
+      "value": "28px",
+      "group": "control",
+      "description": "01-tokens/board.css#.gp:--h-sm",
+      "scope": "fixed"
+    },
+    {
+      "name": "h-md",
+      "variable": "--tcrn-control-height-md",
+      "value": "32px",
+      "group": "control",
+      "description": "01-tokens/board.css#.gp:--h-md",
+      "scope": "fixed"
+    },
+    {
+      "name": "h-lg",
+      "variable": "--tcrn-control-height-lg",
+      "value": "40px",
+      "group": "control",
+      "description": "01-tokens/board.css#.gp:--h-lg",
+      "scope": "fixed"
+    },
+    {
+      "name": "pad-sm",
+      "variable": "--tcrn-control-padding-sm",
+      "value": "10px",
+      "group": "control",
+      "description": "01-tokens/board.css#.gp:--pad-sm",
+      "scope": "fixed"
+    },
+    {
+      "name": "pad-md",
+      "variable": "--tcrn-control-padding-md",
+      "value": "12px",
+      "group": "control",
+      "description": "01-tokens/board.css#.gp:--pad-md",
+      "scope": "fixed"
+    },
+    {
+      "name": "pad-lg",
+      "variable": "--tcrn-control-padding-lg",
+      "value": "16px",
+      "group": "control",
+      "description": "01-tokens/board.css#.gp:--pad-lg",
+      "scope": "fixed"
+    },
+    {
+      "name": "fs-sm",
+      "variable": "--tcrn-type-size-control-sm",
+      "value": "12px",
+      "group": "typography",
+      "description": "01-tokens/board.css#.gp:--fs-sm",
+      "scope": "fixed"
+    },
+    {
+      "name": "fs-md",
+      "variable": "--tcrn-type-size-control",
+      "value": "13px",
+      "group": "typography",
+      "description": "01-tokens/board.css#.gp:--fs-md",
+      "scope": "fixed"
+    },
+    {
+      "name": "fs-lg",
+      "variable": "--tcrn-type-size-control-lg",
+      "value": "14px",
+      "group": "typography",
+      "description": "01-tokens/board.css#.gp:--fs-lg",
+      "scope": "fixed"
+    },
+    {
+      "name": "ico-sm",
+      "variable": "--tcrn-icon-size-sm",
+      "value": "14px",
+      "group": "icon",
+      "description": "01-tokens/board.css#.gp:--ico-sm",
+      "scope": "fixed"
+    },
+    {
+      "name": "ico-md",
+      "variable": "--tcrn-icon-size-md",
+      "value": "16px",
+      "group": "icon",
+      "description": "01-tokens/board.css#.gp:--ico-md",
+      "scope": "fixed"
+    },
+    {
+      "name": "ico-lg",
+      "variable": "--tcrn-icon-size-lg",
+      "value": "20px",
+      "group": "icon",
+      "description": "01-tokens/board.css#.gp:--ico-lg",
+      "scope": "fixed"
+    },
+    {
+      "name": "ease",
+      "variable": "--tcrn-motion-ease",
+      "value": "cubic-bezier(.22,1,.36,1)",
+      "group": "motion",
+      "description": "01-tokens/board.css#.gp:--ease",
+      "scope": "fixed"
+    },
+    {
+      "name": "t-fill",
+      "variable": "--tcrn-motion-duration-fill",
+      "value": "120ms",
+      "group": "motion",
+      "description": "01-tokens/board.css#.gp:--t-fill",
+      "scope": "fixed"
+    },
+    {
+      "name": "t-press",
+      "variable": "--tcrn-motion-duration-press",
+      "value": "80ms",
+      "group": "motion",
+      "description": "01-tokens/board.css#.gp:--t-press",
+      "scope": "fixed"
+    },
+    {
+      "name": "t-move",
+      "variable": "--tcrn-motion-duration-move",
+      "value": "240ms",
+      "group": "motion",
+      "description": "01-tokens/board.css#.gp:--t-move",
+      "scope": "fixed"
+    },
+    {
+      "name": "t-loop",
+      "variable": "--tcrn-motion-duration-loop",
+      "value": "900ms",
+      "group": "motion",
+      "description": "01-tokens/board.css#.gp:--t-loop",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-size-page",
+      "variable": "--tcrn-type-size-page",
+      "value": "36px",
+      "group": "typography",
+      "description": "02-typography/board.css#.h1:font-size",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-size-heading-2",
+      "variable": "--tcrn-type-size-heading-2",
+      "value": "26px",
+      "group": "typography",
+      "description": "02-typography/board.css#.h2:font-size",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-size-heading-3",
+      "variable": "--tcrn-type-size-heading-3",
+      "value": "20px",
+      "group": "typography",
+      "description": "02-typography/board.css#.h3:font-size",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-size-ui",
+      "variable": "--tcrn-type-size-ui",
+      "value": "13px",
+      "group": "typography",
+      "description": "02-typography/board.css#.tx:font-size",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-size-reading",
+      "variable": "--tcrn-type-size-reading",
+      "value": "14px",
+      "group": "typography",
+      "description": "02-typography/board.css#.tx.read:font-size",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-size-meta",
+      "variable": "--tcrn-type-size-meta",
+      "value": "12px",
+      "group": "typography",
+      "description": "02-typography/board.css#.tx.meta:font-size",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-size-caption",
+      "variable": "--tcrn-type-size-caption",
+      "value": "11px",
+      "group": "typography",
+      "description": "02-typography/board.css#.tx.cap:font-size",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-line-ui",
+      "variable": "--tcrn-type-line-ui",
+      "value": "20px",
+      "group": "typography",
+      "description": "02-typography/board.css#.tx:line-height",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-line-control",
+      "variable": "--tcrn-type-line-control",
+      "value": "20px",
+      "group": "typography",
+      "description": "02-typography/board.css#.tx:line-height",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-line-reading",
+      "variable": "--tcrn-type-line-reading",
+      "value": "22px",
+      "group": "typography",
+      "description": "02-typography/board.css#.tx.read:line-height",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-line-caption",
+      "variable": "--tcrn-type-line-caption",
+      "value": "16px",
+      "group": "typography",
+      "description": "02-typography/board.css#.tx.cap:line-height",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-line-heading-1",
+      "variable": "--tcrn-type-line-heading-1",
+      "value": "40px",
+      "group": "typography",
+      "description": "02-typography/board.css#.h1:line-height",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-line-heading-2",
+      "variable": "--tcrn-type-line-heading-2",
+      "value": "30px",
+      "group": "typography",
+      "description": "02-typography/board.css#.h2:line-height",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-line-heading-3",
+      "variable": "--tcrn-type-line-heading-3",
+      "value": "26px",
+      "group": "typography",
+      "description": "02-typography/board.css#.h3:line-height",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-weight-regular",
+      "variable": "--tcrn-type-weight-regular",
+      "value": "400",
+      "group": "typography",
+      "description": "02-typography/board.css#.h1,.h2,.h3:font-weight",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-weight-medium",
+      "variable": "--tcrn-type-weight-medium",
+      "value": "500",
+      "group": "typography",
+      "description": "02-typography/board.css#.caps:font-weight",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-weight-strong",
+      "variable": "--tcrn-type-weight-strong",
+      "value": "600",
+      "group": "typography",
+      "description": "02-typography/board.css#.tx.strong:font-weight",
+      "scope": "fixed"
+    },
+    {
+      "name": "type-tracking-caps",
+      "variable": "--tcrn-type-tracking-caps",
+      "value": ".14em",
+      "group": "typography",
+      "description": "02-typography/board.css#.caps:letter-spacing",
+      "scope": "fixed"
+    },
+    {
+      "name": "space-0h",
+      "variable": "--tcrn-space-0h",
+      "value": "2px",
+      "group": "space",
+      "description": "07b-shell-lower/board.css#.lk .w:gap",
+      "scope": "fixed"
+    },
+    {
+      "name": "space-1",
+      "variable": "--tcrn-space-1",
+      "value": "4px",
+      "group": "space",
+      "description": "07b-shell-lower/board.css#.ts-drop2:left",
+      "scope": "fixed"
+    },
+    {
+      "name": "space-1h",
+      "variable": "--tcrn-space-1h",
+      "value": "6px",
+      "group": "space",
+      "description": "07b-shell-lower/board.css#.ts-pin-it:gap",
+      "scope": "fixed"
+    },
+    {
+      "name": "space-2",
+      "variable": "--tcrn-space-2",
+      "value": "8px",
+      "group": "space",
+      "description": "07b-shell-lower/board.css#.ts-pins:gap",
+      "scope": "fixed"
+    },
+    {
+      "name": "space-2h",
+      "variable": "--tcrn-space-2h",
+      "value": "10px",
+      "group": "space",
+      "description": "07b-shell-lower/board.css#.ts-brand:column-gap",
+      "scope": "fixed"
+    },
+    {
+      "name": "space-3",
+      "variable": "--tcrn-space-3",
+      "value": "12px",
+      "group": "space",
+      "description": "07b-shell-lower/board.css#.ts-strip:padding",
+      "scope": "fixed"
+    },
+    {
+      "name": "space-3h",
+      "variable": "--tcrn-space-3h",
+      "value": "14px",
+      "group": "space",
+      "description": "07b-shell-lower/board.css#.lk:column-gap",
+      "scope": "fixed"
+    },
+    {
+      "name": "space-4",
+      "variable": "--tcrn-space-4",
+      "value": "16px",
+      "group": "space",
+      "description": "07b-shell-lower/board.css#.ts-cols:column-gap",
+      "scope": "fixed"
+    },
+    {
+      "name": "motion-intro-duration",
+      "variable": "--tcrn-motion-intro-duration",
+      "value": "460ms",
+      "group": "motion",
+      "description": "07a-shell-upper/index.dc.html:总时长460ms",
+      "scope": "fixed"
+    },
+    {
+      "name": "radius-paper",
+      "variable": "--tcrn-radius-paper",
+      "value": "14px",
+      "group": "radius",
+      "description": "07b-shell-lower/board.css#.ts-paper:border-radius via .scr.ts",
+      "scope": "fixed"
+    },
+    {
+      "name": "z-overlay",
+      "variable": "--tcrn-z-overlay",
+      "value": "3",
+      "group": "zIndex",
+      "description": "07b-shell-lower/board.css#.ts-panel:z-index",
+      "scope": "fixed"
+    },
+    {
+      "name": "z-popover",
+      "variable": "--tcrn-z-popover",
+      "value": "3",
+      "group": "zIndex",
+      "description": "07b-shell-lower/board.css#.ts-drop:z-index",
+      "scope": "fixed"
+    },
+    {
+      "name": "radius-pill",
+      "variable": "--tcrn-radius-pill",
+      "value": "999px",
+      "group": "radius",
+      "description": "06-inputs/board.css#.tg>input:border-radius",
+      "scope": "fixed"
+    },
+    {
+      "name": "motion-loading-loop",
+      "variable": "--tcrn-motion-loading-loop",
+      "value": "var(--tcrn-motion-duration-loop) linear",
+      "group": "motion",
+      "description": "01-tokens/board.css#.spin:animation",
+      "scope": "fixed"
+    },
+    {
+      "name": "motion-intro-fade",
+      "variable": "--tcrn-motion-intro-fade",
+      "value": "120ms",
+      "group": "motion",
+      "description": "01-tokens/board.css#.gp:--t-fill",
+      "scope": "fixed"
+    },
+    {
+      "name": "motion-intro-move",
+      "variable": "--tcrn-motion-intro-move",
+      "value": "240ms",
+      "group": "motion",
+      "description": "01-tokens/board.css#.gp:--t-move",
+      "scope": "fixed"
+    },
+    {
+      "name": "motion-intro-rise",
+      "variable": "--tcrn-motion-intro-rise",
+      "value": "100ms",
+      "group": "motion",
+      "description": "07a-shell-upper/index.dc.html:100纸升起与字标淡入",
+      "scope": "fixed"
+    },
+    {
+      "name": "motion-intro-max",
+      "variable": "--tcrn-motion-intro-max",
+      "value": "700ms",
+      "group": "motion",
+      "description": "07a-shell-upper/index.dc.html:上限700",
+      "scope": "fixed"
+    },
+    {
+      "name": "brand-suffix-tms",
+      "variable": "--tcrn-brand-suffix-tms",
+      "value": "#2c63c8",
+      "group": "brand",
+      "description": "04-brand/index.dc.html:35,43",
+      "scope": "theme"
+    },
+    {
+      "name": "brand-suffix-design-system",
+      "variable": "--tcrn-brand-suffix-design-system",
+      "value": "#4b59be",
+      "group": "brand",
+      "description": "04-brand/index.dc.html:35,43",
+      "scope": "theme"
+    },
+    {
+      "name": "brand-suffix-voxward",
+      "variable": "--tcrn-brand-suffix-voxward",
+      "value": "#0b6b65",
+      "group": "brand",
+      "description": "Adopted Batch 3 token table",
+      "scope": "theme"
+    }
+  ]
+}

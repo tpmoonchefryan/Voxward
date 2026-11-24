@@ -8,6 +8,8 @@ import {
   TECHNICAL_LEVELS,
   TECHNICAL_STAGES,
   TECHNICAL_STATUSES,
+  type ChangeKind,
+  type ChangeOutcome,
   type LogPage,
   type LogViewerChangeItem,
   type LogViewerEvidence,
@@ -15,6 +17,32 @@ import {
   type LogViewerTechnicalItem,
   type TechnicalData,
 } from "@voxward/contracts";
+
+export type {
+  LogPage,
+  LogViewerChangeItem,
+  LogViewerEvidence,
+  LogViewerTechnicalDetail,
+  LogViewerTechnicalItem,
+  TechnicalData,
+};
+
+export interface IntegrationLogItem {
+  readonly id: string;
+  readonly correlationId: string;
+  readonly adapterId: string;
+  readonly adapterName: string;
+  readonly providerKind: "LIVE_PLATFORM" | "AI_PROVIDER";
+  readonly method: string;
+  readonly url: string;
+  readonly statusCode: number;
+  readonly latencyMs: number;
+  readonly requestHeaders: Readonly<Record<string, string>>;
+  readonly responseHeaders: Readonly<Record<string, string>>;
+  readonly rawRequestBody: string | null;
+  readonly rawResponseBody: string | null;
+  readonly occurredAt: string;
+}
 
 /** A failed read. `code` is the server's fixed code, or `NETWORK` or `INVALID_RESPONSE` when the client raised it. */
 export class LogApiError extends Error {
@@ -52,7 +80,7 @@ function logsPath(channelId: string): string {
 function withQuery(path: string, query: Readonly<Record<string, string | number | null | undefined>>): string {
   const params = new URLSearchParams();
   for (const [name, value] of Object.entries(query)) {
-    if (value !== null && value !== undefined) params.set(name, String(value));
+    if (value !== null && value !== undefined && value !== "") params.set(name, String(value));
   }
   const text = params.toString();
   return text === "" ? path : `${path}?${text}`;
@@ -123,6 +151,48 @@ export async function fetchChain(
     cursor = page.nextCursor;
   } while (cursor !== null);
   return items;
+}
+
+export async function fetchIntegrationPage(
+  channelId: string,
+  query: PageQuery = {},
+  options: ApiOptions = {},
+): Promise<LogPage<IntegrationLogItem>> {
+  const url = withQuery(`${logsPath(channelId)}/integration`, {
+    cursor: query.cursor,
+    limit: query.limit,
+    correlationId: query.correlationId,
+  });
+  return parsePage(await requestJson(url, options), parseIntegrationItem);
+}
+
+const CHANGE_KIND_LABELS: Readonly<Record<ChangeKind, string>> = {
+  CONFIG_CHANGED: "系统与策略配置变更",
+  MEMBER_GRANTED: "成员授权变更",
+  MEMBER_REVOKED: "成员权限收回",
+  CREDENTIAL_CHANGED: "输出令牌与凭据变更",
+  OUTPUT_GRANT_CHANGED: "桌面输出授权变更",
+  LIST_CHANGED: "观众名单调整",
+  TERM_CHANGED: "审核词库维护",
+  RULE_VERSION_PUBLISHED: "规则版本发布",
+  MANUAL_VERDICT: "人工审核裁决",
+  SCORE_CHANGED: "观众信任分调整",
+  SCORE_EXCEPTION_CHANGED: "计分例外状态变更",
+  DATA_REQUEST_CHANGED: "数据合规请求变更",
+};
+
+const OUTCOME_LABELS: Readonly<Record<ChangeOutcome, string>> = {
+  SUCCEEDED: "成功",
+  FAILED: "失败",
+  PARTIAL: "部分成功",
+};
+
+export function labelForChangeKind(kind: ChangeKind): string {
+  return CHANGE_KIND_LABELS[kind] ?? kind;
+}
+
+export function labelForChangeOutcome(outcome: ChangeOutcome): string {
+  return OUTCOME_LABELS[outcome] ?? outcome;
 }
 
 /** A short Chinese message for the reader. The message depends only on the fixed code. */
@@ -263,7 +333,6 @@ function parseTechnicalItem(value: unknown): LogViewerTechnicalItem | undefined 
   if (value.contractVersion !== CONTRACT_VERSION) return undefined;
   const missing = Object.values(fields).some((field) => field === undefined);
   if (missing) return undefined;
-  // Every field was checked above, so the narrowing below is safe.
   return { ...fields, contractVersion: CONTRACT_VERSION } as LogViewerTechnicalItem;
 }
 
@@ -292,4 +361,54 @@ function parseEvidence(value: unknown): LogViewerEvidence[] | undefined {
     evidence.push({ kind, state, payload });
   }
   return evidence;
+}
+
+function parseStringMap(value: unknown): Record<string, string> | undefined {
+  if (!isRecord(value)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (typeof v === "string") out[k] = v;
+  }
+  return out;
+}
+
+function parseIntegrationItem(value: unknown): IntegrationLogItem | undefined {
+  if (!isRecord(value)) return undefined;
+  const requestHeaders = parseStringMap(value.requestHeaders);
+  const responseHeaders = parseStringMap(value.responseHeaders);
+  if (
+    typeof value.id !== "string" ||
+    typeof value.correlationId !== "string" ||
+    typeof value.adapterId !== "string" ||
+    typeof value.adapterName !== "string" ||
+    (value.providerKind !== "LIVE_PLATFORM" && value.providerKind !== "AI_PROVIDER") ||
+    typeof value.method !== "string" ||
+    typeof value.url !== "string" ||
+    typeof value.statusCode !== "number" ||
+    typeof value.latencyMs !== "number" ||
+    requestHeaders === undefined ||
+    responseHeaders === undefined ||
+    typeof value.occurredAt !== "string"
+  ) {
+    return undefined;
+  }
+  const rawRequestBody = nullableString(value.rawRequestBody);
+  const rawResponseBody = nullableString(value.rawResponseBody);
+  if (rawRequestBody === undefined || rawResponseBody === undefined) return undefined;
+  return {
+    id: value.id,
+    correlationId: value.correlationId,
+    adapterId: value.adapterId,
+    adapterName: value.adapterName,
+    providerKind: value.providerKind,
+    method: value.method,
+    url: value.url,
+    statusCode: value.statusCode,
+    latencyMs: value.latencyMs,
+    requestHeaders,
+    responseHeaders,
+    rawRequestBody,
+    rawResponseBody,
+    occurredAt: value.occurredAt,
+  };
 }

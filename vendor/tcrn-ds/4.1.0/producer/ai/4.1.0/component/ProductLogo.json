@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "tcrn.ai-rule.v1",
+  "identity": {
+    "packageVersions": {
+      "@tcrn/ui-react": "4.1.0",
+      "@tcrn/ui-tokens": "4.1.0",
+      "@tcrn/ui-copy-state": "4.1.0"
+    },
+    "standardSource": {
+      "projectId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34",
+      "versionNumber": 2,
+      "versionId": "appgprj_6ad4ec31ec7c8191aa3b577750b37a34~appgver_d2ede1fba6088191ab19e40407436d67",
+      "deploymentId": "appgdep_6af139e94a488191b76843d9bd904deb",
+      "deploymentStatus": "succeeded",
+      "url": "https://tcrn-ds-visual-standards.zbnubhmldz3270.chatgpt.site",
+      "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
+      "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
+    },
+    "sourceDigest": "0585cb69ca3ac1e6e5549443a1e16d4db80968a15e4b4ea660110f68588f3bf1"
+  },
+  "id": "component/ProductLogo",
+  "kind": "component",
+  "required": [
+    "global",
+    "standard/04-brand",
+    "assets/brand"
+  ],
+  "optional": [],
+  "content": {
+    "name": "ProductLogo",
+    "board": "04-brand",
+    "source": {
+      "path": "docs/design/approved-site-v2/src/boards/04-brand/index.dc.html",
+      "sha256": "40b6b30f8709d8f13cb5f1909911fdf8783d42d99aac1dd05435101b5d52f2af",
+      "line": 22
+    },
+    "normativeText": "品牌家族的资产是这四枚产品标：标（A 段）给 ProductLogo，锁定块与侧栏写法（E 段）给 ProductLockup，壳层的标按钮取侧栏写法的首行。TCRN 母标另行重设计，重设计前不进标准。Owner 2026-10-11 通过本稿（两处修订：TCRN 产品后缀用产品色；Mana Orchestrate 的名称与标语不提宿主）。实心的几何形，每枚两种平涂色，颜色从 TCRN 母标现有的蓝、藏青、黄绿与四色里取，没有渐变、描边与投影。TCRN TMS 是双臂高举的艺人，Einzbern 是接住一点光的盃，Mana Orchestrate 是两结点之间的一道流，TCRN Design System 是一张四色版面。一个形从 128 到 16 不换切法；应用图标与产品切换菜单用淡底贴片，favicon 用深底贴片，禁色场合用单色版。",
+    "readerSummary": {
+      "zh-CN": "用已注册产品键选择图形，可用彩色标、单色标、淡底贴片和深底贴片。",
+      "en": "Pass one registered product key. Choose a color mark, mono mark, tint tile or deep tile.",
+      "ja": "登録済みの製品キーを指定し、カラーマーク、単色マーク、淡色タイル、濃色タイルから選びます。",
+      "ko": "등록 제품 키를 지정하고 컬러 마크, 단색 마크, 밝은 타일, 짙은 타일 중에서 선택합니다.",
+      "fr": "Fournir une clé produit enregistrée. Choisir le symbole couleur, le monochrome, la tuile claire ou la tuile foncée."
+    },
+    "types": {
+      "name": "ProductLogo",
+      "kind": "function",
+      "props": [
+        {
+          "name": "locale",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "markVariant",
+          "type": "TcrnProductMarkVariant",
+          "required": false,
+          "default": "\"color\"",
+          "enumValues": [
+            "color",
+            "mono",
+            "tile-tint",
+            "tile-deep"
+          ]
+        },
+        {
+          "name": "productId",
+          "type": "TcrnProductLogoId",
+          "required": true,
+          "enumValues": [
+            "design-system",
+            "tms",
+            "einzbern",
+            "mana-orchestrate",
+            "voxward"
+          ]
+        }
+      ],
+      "variants": {
+        "markVariant": [
+          "color",
+          "mono",
+          "tile-tint",
+          "tile-deep"
+        ],
+        "productId": [
+          "design-system",
+          "tms",
+          "einzbern",
+          "mana-orchestrate",
+          "voxward"
+        ]
+      },
+      "slots": [],
+      "source": {
+        "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+        "line": 439
+      },
+      "propsType": "ProductLogoProps",
+      "typeDefinitions": [
+        {
+          "name": "TcrnProductMarkVariant",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 266,
+          "declaration": "export type TcrnProductMarkVariant = (typeof tcrnProductMarkVariants)[number];"
+        },
+        {
+          "name": "TcrnProductLogoId",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 421,
+          "declaration": "export type TcrnProductLogoId = keyof typeof tcrnProductLogoRegistry;"
+        },
+        {
+          "name": "ProductLogoProps",
+          "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+          "line": 433,
+          "declaration": "export interface ProductLogoProps extends HTMLAttributes<HTMLDivElement> {\n  productId:TcrnProductLogoId;\n  markVariant?:TcrnProductMarkVariant;\n  locale?:string;\n}"
+        }
+      ]
+    },
+    "layout": {
+      "sizing": "mixed",
+      "constraint": "The registered graphic stays a fixed square inside its inline wrapper. The parent aligns that wrapper when a content footprint is needed; do not stretch the SVG.",
+      "implementation": "brand.css.ts"
+    },
+    "implementationSource": {
+      "path": "packages/ui-react/src/components/Navigation/Navigation.tsx",
+      "sha256": "bb7ceeacae5fc6cbecc1b4d56e7f38bb53322c56481f20dc0377f0899d45f3ce"
+    },
+    "example": {
+      "path": "apps/storybook/src/component-examples.tsx",
+      "line": 136,
+      "snippet": "case \"ProductLogo\": return state === \"products\" ? tcrnProductMarkIds.map(productId => <ProductLogo key={productId} productId={productId} locale={locale} />)\n        : state === \"variants\" ? ([\"color\", \"mono\", \"tile-tint\", \"tile-deep\"] as const).map(markVariant => <ProductLogo key={markVariant} productId=\"tms\" markVariant={markVariant} />) : <ProductLogo productId=\"tms\" locale={locale} />;",
+      "sha256": "1a05a39101aa8dcba5263db42932bf5a118d6e23d5d6180e6bee5033799c3f90",
+      "snippetKind": "producer scenario excerpt; helpers and imports are in the source module",
+      "usage": "import { ProductLogo, tcrnComponentCss } from \"@tcrn/ui-react/approved\";\nimport { tcrnTokenCss } from \"@tcrn/ui-tokens\";\nimport \"@tcrn/ui-tokens/fonts.css\";\n\nexport function Example() {\n  return <>\n    <style>{tcrnTokenCss + \"\\n\" + tcrnComponentCss}</style>\n    <div data-tcrn-root data-tcrn-theme=\"light\" style={{ display: \"grid\", justifyItems: \"start\", gap: \"var(--tcrn-space-2)\" }}>\n      <ProductLogo productId=\"tms\"/>\n    </div>\n  </>;\n}\n",
+      "usageSource": {
+        "path": "apps/storybook/src/component-usage.ts",
+        "sha256": "1822682bc751116df67db90bce4d8936b11ce70227bddf51681b47240d52afc2"
+      },
+      "contextSources": [
+        {
+          "path": "apps/storybook/src/docs.css",
+          "sha256": "660612d6c3479bf72928619e88d018f277e8ad0c469af7a686f2b1537fe3d3cd"
+        },
+        {
+          "path": "apps/storybook/src/component-layout.ts",
+          "sha256": "4b6d48fb602cbd59d43c99f67599a2ecbd19570f12212ea01c4a22843430e949"
+        },
+        {
+          "path": "packages/ui-react/src/styles/brand.css.ts",
+          "sha256": "2f9ad88be35874416d21f853ea3a6474889a5a1bfecc82e78e28f11f3829af79"
+        }
+      ],
+      "hostLayout": null,
+      "productInputs": null
+    },
+    "stories": [
+      {
+        "state": "default",
+        "id": "components-productlogo--default"
+      },
+      {
+        "state": "products",
+        "id": "components-productlogo--products"
+      },
+      {
+        "state": "variants",
+        "id": "components-productlogo--variants"
+      }
+    ]
+  }
+}

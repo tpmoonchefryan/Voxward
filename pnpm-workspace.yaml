@@ -3,3 +3,8 @@ packages:
   - packages/*
 allowBuilds:
   esbuild: true
+overrides:
+  "@tcrn/ui-tokens@4.1.0": file:./vendor/tcrn-ds/4.1.0/tcrn-ui-tokens-4.1.0.tgz
+  "@tcrn/ui-copy-state@4.1.0": file:./vendor/tcrn-ds/4.1.0/tcrn-ui-copy-state-4.1.0.tgz
+  "@tcrn/ui-react@4.1.0": file:./vendor/tcrn-ds/4.1.0/tcrn-ui-react-4.1.0.tgz
+  "@tcrn/ds-consumer-tools@4.1.0": file:./vendor/tcrn-ds/4.1.0/tcrn-ds-consumer-tools-4.1.0.tgz
