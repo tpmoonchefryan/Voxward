@@ -16,16 +16,16 @@
       "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
       "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
     },
-    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+    "sourceDigest": "530772cfcd2d1213db4b65dd0414066255226a947377412e4d7221533315cade"
   },
   "candidate": {
     "version": "4.2.0",
-    "commit": "22118fe029ba058cda02ba4fd65d28ab4cc33630",
+    "commit": "c114e5e324ca30fe6bc52cadf16c7f039b5953a3",
     "dirty": false
   },
   "sourceManifest": {
     "path": "ai/4.2.0/sources.json",
-    "sha256": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+    "sha256": "530772cfcd2d1213db4b65dd0414066255226a947377412e4d7221533315cade"
   },
   "publication": "local-candidate-only",
   "globalRequired": [
@@ -36,7 +36,7 @@
       "id": "global",
       "kind": "global",
       "path": "ai/4.2.0/global.json",
-      "sha256": "bcff3be9d799399ad311f309e6caf20011746bcbcf98ae4b66a66459621575a9",
+      "sha256": "a98ab190944f910265b32970848eb731dc1d3cae1f22cb6599b73c181a378413",
       "required": [
         "tokens/core",
         "assets/fonts",
@@ -53,7 +53,7 @@
       "id": "standard/01-tokens",
       "kind": "standard",
       "path": "ai/4.2.0/standard/01-tokens.json",
-      "sha256": "99f535cd9f7fa3afdb2f7dee509a79d59b6034388d93a9a18eef149c6d677cc7",
+      "sha256": "2e267c266e2e6953bbf6270964e51cea40a593b71b125a0a3f426bc43eae5fa5",
       "required": [],
       "optional": []
     },
@@ -61,7 +61,7 @@
       "id": "standard/02-typography",
       "kind": "standard",
       "path": "ai/4.2.0/standard/02-typography.json",
-      "sha256": "66803b9ab22e77915a2b96b7a942c02dfbed8f9b471c2f50b5c2557730cf1532",
+      "sha256": "85aeada2ef8d881c7e86cc8b019a66a9df120f7c9626b6350d0dac0ef499d8b3",
       "required": [],
       "optional": []
     },
@@ -69,7 +69,7 @@
       "id": "standard/03-icons",
       "kind": "standard",
       "path": "ai/4.2.0/standard/03-icons.json",
-      "sha256": "9ef168f298b8e094dfcf9df32095d2ded7159de0c57e02bc21b26287c9bd6127",
+      "sha256": "5becfcce09c00dc7ccd61696e936edbb4cdf69e65bf40596173ad449eaad8a04",
       "required": [],
       "optional": []
     },
@@ -77,7 +77,7 @@
       "id": "standard/04-brand",
       "kind": "standard",
       "path": "ai/4.2.0/standard/04-brand.json",
-      "sha256": "cb41123f79eafb246b02d95cddbc8c2a8e541671e5d62719094e3871eebe2aae",
+      "sha256": "dcfb7f88fd01a18ac49fc51619877453b647cdf82a697247ff0f5be6b7433e59",
       "required": [],
       "optional": []
     },
@@ -85,7 +85,7 @@
       "id": "standard/05-actions",
       "kind": "standard",
       "path": "ai/4.2.0/standard/05-actions.json",
-      "sha256": "d78084b1681b5ab04281db549e75767350df19da281642872a154bb3e445a2ac",
+      "sha256": "8eff13a329d8e0fd8ad6f7054a603bb18f4f2dc9be50793056ddf0942f8a7663",
       "required": [],
       "optional": []
     },
@@ -93,7 +93,7 @@
       "id": "standard/06-inputs",
       "kind": "standard",
       "path": "ai/4.2.0/standard/06-inputs.json",
-      "sha256": "056266730f95ec717806241679e1ce318623c60e770c1012b1fc9c4f454c5b80",
+      "sha256": "cc75f87eab96e85ccaedcf45c329c9545ae545dd604a3a7620dc25c06b5d58a6",
       "required": [],
       "optional": []
     },
@@ -101,7 +101,7 @@
       "id": "standard/07a-shell-upper",
       "kind": "standard",
       "path": "ai/4.2.0/standard/07a-shell-upper.json",
-      "sha256": "7e62a301d40d7d0cf9d8355bb9fb5bc589347460bc06c0ce0be14ab7bab5167b",
+      "sha256": "84722dd98f08b24cc80ff4ae45339acc2356a9c604dc0ec2461fa7c92bf76a9d",
       "required": [
         "standard/07b-shell-lower"
       ],
@@ -111,7 +111,7 @@
       "id": "standard/07b-shell-lower",
       "kind": "standard",
       "path": "ai/4.2.0/standard/07b-shell-lower.json",
-      "sha256": "79dc4ea73919a912c0d4b540486e10c8d8fe735ae7d7dbc73bfb540a3db6c3d1",
+      "sha256": "b195ef0926f49b9687ebd45055b4f8291d3dbe243f7f566959d135b04599aa69",
       "required": [],
       "optional": []
     },
@@ -119,7 +119,7 @@
       "id": "tokens/core",
       "kind": "tokens",
       "path": "ai/4.2.0/tokens/core.json",
-      "sha256": "66d46d8b52285dbd230349eb627c23013370c9f14f2c6fda057a726b380e25d8",
+      "sha256": "d1366560cd49dbdfb8423a1cd1734f63680e2f14641f39826eb984bc04397a0d",
       "required": [],
       "optional": []
     },
@@ -127,7 +127,7 @@
       "id": "tokens/shell",
       "kind": "tokens",
       "path": "ai/4.2.0/tokens/shell.json",
-      "sha256": "fec5e83cb887534a56a32ae7c5a78fc20fb38aed52e1f4c68f228d21dd2121a7",
+      "sha256": "85a702dd7967af2ba0764911573c066c0843a95ad2ee7eb0ec21a546833ca625",
       "required": [],
       "optional": []
     },
@@ -135,7 +135,7 @@
       "id": "assets/fonts",
       "kind": "assets",
       "path": "ai/4.2.0/assets/fonts.json",
-      "sha256": "eded33f31de9ce8ed443972cef5b88a8f206a1d6b17f727c9096805a615522e0",
+      "sha256": "d162d0a41a43ec96a9a420222f5c66f091492389e2358ea19d2d22d6a81a2970",
       "required": [
         "standard/02-typography"
       ],
@@ -145,7 +145,7 @@
       "id": "assets/icons",
       "kind": "assets",
       "path": "ai/4.2.0/assets/icons.json",
-      "sha256": "601a68b4635ff12f06b4152b1d4372d00dece9990aedb8324942ea186a683f5e",
+      "sha256": "8222d4a06d9fb3cb0104023cbdf32a68db6ce882791d8114de56d2088372e17f",
       "required": [
         "standard/03-icons"
       ],
@@ -155,7 +155,7 @@
       "id": "assets/brand",
       "kind": "assets",
       "path": "ai/4.2.0/assets/brand.json",
-      "sha256": "e8b2149ecbe7f037734116070caa06f298104f4ec435b2833f37db2532350e15",
+      "sha256": "90a1ed0546a1dc61e649dc5ca5bce2dfc56512e0029a5f823ba89f55e6266275",
       "required": [
         "standard/04-brand"
       ],
@@ -165,7 +165,7 @@
       "id": "pattern/component-layout",
       "kind": "pattern",
       "path": "ai/4.2.0/pattern/component-layout.json",
-      "sha256": "52125419f02207ea874256fd0a285ddc1d1863f4eb8badaf2a4d8e6d1a95b357",
+      "sha256": "377daf5d0af69c65b6514069fe0cdff05c3dc4a91d7e69de3fe8a187832fb1f8",
       "required": [],
       "optional": []
     },
@@ -173,7 +173,7 @@
       "id": "pattern/shell-preferences",
       "kind": "pattern",
       "path": "ai/4.2.0/pattern/shell-preferences.json",
-      "sha256": "e81912f396fc2e4cc9e8700537276c970f89764cc61b567f4f372a1eccca3560",
+      "sha256": "70eb5e14cbbccee94a7578993dbbd4142c3723b950ac13aeafe9be5d85ae17a5",
       "required": [
         "tokens/shell",
         "assets/brand",
@@ -186,7 +186,7 @@
       "id": "pattern/product-locales",
       "kind": "pattern",
       "path": "ai/4.2.0/pattern/product-locales.json",
-      "sha256": "9d80072e1d1ea71198aa5e2ad38fcf51c3bb7a2e19f1a66fa5974464dd826b7e",
+      "sha256": "622cddd124f1c983d051fd3c2d3e3752a224d528c698fe4c7b086ce881b1e4d7",
       "required": [],
       "optional": []
     },
@@ -194,7 +194,7 @@
       "id": "pattern/customer-list-boundary",
       "kind": "pattern",
       "path": "ai/4.2.0/pattern/customer-list-boundary.json",
-      "sha256": "c5bc7bad248e3e6a5f828f791b8d3fc77eb946ad890626775c0b654e2cbd2313",
+      "sha256": "88dffda634d510ef47bcd77ddeeab8dc525e0eeda5a1f4380d6ab5485e5d260d",
       "required": [
         "pattern/product-locales"
       ],
@@ -204,7 +204,7 @@
       "id": "pattern/seasonal-halloween-theme",
       "kind": "pattern",
       "path": "ai/4.2.0/pattern/seasonal-halloween-theme.json",
-      "sha256": "008e07b83e931fe3a5dcb8d5dba6011ce8dc27f1027423927918a3b66543a3cf",
+      "sha256": "cdb821158b1a6b8f4a7544b372a8d9188d638f45fec1412f30e1ba31412b792f",
       "required": [
         "tokens/core",
         "tokens/shell",
@@ -216,7 +216,7 @@
       "id": "pattern/batch3-components-and-shell",
       "kind": "pattern",
       "path": "ai/4.2.0/pattern/batch3-components-and-shell.json",
-      "sha256": "4e79c326806285d33f17fc31bc650b443287bf7d93055d5c436278ad6f85c943",
+      "sha256": "c1abb7ac62996e344326a0424f9e7f03f63b47bf4d184e41a04a2f21d5cd75bb",
       "required": [
         "tokens/core",
         "tokens/shell",
@@ -230,7 +230,7 @@
       "id": "component/Heading",
       "kind": "component",
       "path": "ai/4.2.0/component/Heading.json",
-      "sha256": "c14be28a2111113ceab8af8a7f0a3811e6d203975410feb6853063df99f242f7",
+      "sha256": "276fa049e4a35320aa9251a9ee4d3d9d92fba436419cd7fbfa1005447bd82890",
       "required": [
         "global",
         "standard/02-typography"
@@ -241,7 +241,7 @@
       "id": "component/Text",
       "kind": "component",
       "path": "ai/4.2.0/component/Text.json",
-      "sha256": "2801e932c4188ee8133b81c840dfef846d4491c11f9ad0783eea94e5ceb231da",
+      "sha256": "7e32097649a7e49d6052f9a06bb5a65df9ce63d82ea5dbcef955e1d5467d9196",
       "required": [
         "global",
         "standard/02-typography"
@@ -252,7 +252,7 @@
       "id": "component/Highlight",
       "kind": "component",
       "path": "ai/4.2.0/component/Highlight.json",
-      "sha256": "ae08e591a8c40546c6116f24841cead91fc39272d2fca0b24b0918dc03a98645",
+      "sha256": "12291da70dfdb4d7ed0678dbd91c11fbf6cd869688680a5082a3f345ce29b5a0",
       "required": [
         "global",
         "standard/02-typography"
@@ -263,7 +263,7 @@
       "id": "component/Icon",
       "kind": "component",
       "path": "ai/4.2.0/component/Icon.json",
-      "sha256": "fdddf83ee3bb595b7904f544e5594597ec9c77689f3eb1acd068236e406710df",
+      "sha256": "b5c57e67ffc53b6ade81ef513142eb23dd7e62907d419fa53c419de0449237a9",
       "required": [
         "global",
         "standard/03-icons",
@@ -275,7 +275,7 @@
       "id": "component/ProductLogo",
       "kind": "component",
       "path": "ai/4.2.0/component/ProductLogo.json",
-      "sha256": "7e0f97bc12f046b0c23e0dc571783bd6fd1e8974b4d982c945b0963c18058ab9",
+      "sha256": "425de3a5ab57c1e9ad95f88402e5e75a44c65b88820c65080669b48b25d905db",
       "required": [
         "global",
         "standard/04-brand",
@@ -287,7 +287,7 @@
       "id": "component/ProductLockup",
       "kind": "component",
       "path": "ai/4.2.0/component/ProductLockup.json",
-      "sha256": "17268f6a5bdbe03d6ad8fb220bdd2b05d4fe1d3ede05c7bb87a8f35270cba942",
+      "sha256": "6bcd7bc499f1d17fb5d744bf857241b24ba366a6f2215c064ac73b254185930d",
       "required": [
         "global",
         "standard/04-brand",
@@ -299,7 +299,7 @@
       "id": "component/Button",
       "kind": "component",
       "path": "ai/4.2.0/component/Button.json",
-      "sha256": "29d9a25cccf7cafeda76d10e6d9669329f7d5d02323c9a68afd11a91d8b721da",
+      "sha256": "60a9763bab11ffbd5dda4a112126377f885ea32e6f009e5a98a9a8b43a7fd457",
       "required": [
         "global",
         "standard/05-actions"
@@ -310,7 +310,7 @@
       "id": "component/IconButton",
       "kind": "component",
       "path": "ai/4.2.0/component/IconButton.json",
-      "sha256": "7e260a5e57ce03cec7de0dc06715f2082e8db535982ce7c515f0c7a0528764c8",
+      "sha256": "70273032093c2c2150b4d054aea39d7361ded27566e41468fa5f138d40eb54f9",
       "required": [
         "global",
         "standard/05-actions"
@@ -321,7 +321,7 @@
       "id": "component/LinkButton",
       "kind": "component",
       "path": "ai/4.2.0/component/LinkButton.json",
-      "sha256": "f8d554d7755700bf04ba1d69da3eea160a311ac2e4a4a4c5f8e32e75a2780f84",
+      "sha256": "b6a0fc7a830649970065940e5e5933a221a1a0f7e41250dcd7780ace56983dad",
       "required": [
         "global",
         "standard/05-actions"
@@ -332,7 +332,7 @@
       "id": "component/ClipboardCopyButton",
       "kind": "component",
       "path": "ai/4.2.0/component/ClipboardCopyButton.json",
-      "sha256": "8c0b12b7fb1fd9cc8a42927b9b571eb3a03c8df0e3308f4e6df13618c363822a",
+      "sha256": "2e9d388bfad3854c3e02ab8088f97dc7d23a8bf451cb38af639c02a64310d4ad",
       "required": [
         "global",
         "standard/05-actions"
@@ -343,7 +343,7 @@
       "id": "component/ButtonGroup",
       "kind": "component",
       "path": "ai/4.2.0/component/ButtonGroup.json",
-      "sha256": "e1dea57721d0ce613c9e3e56c82b6a2c57a77b64ab2476fd127da0a24365eac8",
+      "sha256": "04b87a25588aa5f6d64262391785137f64324951ba17f5eb7fb45a3c013dcbeb",
       "required": [
         "global",
         "standard/05-actions"
@@ -354,7 +354,7 @@
       "id": "component/Input",
       "kind": "component",
       "path": "ai/4.2.0/component/Input.json",
-      "sha256": "6211de0ff6a313f2233fb59dea8b7e46111117f74e35549adad468e86ce7b43c",
+      "sha256": "c5513ecb9baf77b224cec0bf5d4704a58f8f18a4bdf7e0f5983a0a5102b5cbe4",
       "required": [
         "global",
         "standard/06-inputs"
@@ -365,7 +365,7 @@
       "id": "component/Textarea",
       "kind": "component",
       "path": "ai/4.2.0/component/Textarea.json",
-      "sha256": "13c6e67d3129dad624dce028e36f77b7285cde28959b2459f606f19a4019e4d7",
+      "sha256": "ec9ac288e81e7923ac0ea3b993c680a31ae8e709494af913b68b5698ac2c66d9",
       "required": [
         "global",
         "standard/06-inputs"
@@ -376,7 +376,7 @@
       "id": "component/SearchInput",
       "kind": "component",
       "path": "ai/4.2.0/component/SearchInput.json",
-      "sha256": "c88d564a3ed145984797e721b227bfdbe9c950fc799af7c7908d40f3c4d83cb0",
+      "sha256": "e1cb9d978f622ce6411ba9d22cb36280806eb62fc1e42f909cf5e9ecda260a37",
       "required": [
         "global",
         "standard/06-inputs"
@@ -387,7 +387,7 @@
       "id": "component/SuggestInput",
       "kind": "component",
       "path": "ai/4.2.0/component/SuggestInput.json",
-      "sha256": "267ea2486346b76669e6b2f8c348472b4c708a4c34b54de7620d444d7cfa20ed",
+      "sha256": "99a0d5a2463fd703c42ab58b7e09de45634162fdeaf72354f886b2cf605bc8b9",
       "required": [
         "global",
         "standard/06-inputs"
@@ -398,7 +398,7 @@
       "id": "component/Select",
       "kind": "component",
       "path": "ai/4.2.0/component/Select.json",
-      "sha256": "7fc392e30c83ef6e53793aa0b68621fc06c2aa62aad4e5738e3037308bfea51b",
+      "sha256": "757dc9ebf87671ec1d97b1d0e6e3731d6e66c52cc562d338ce6ebd07ae370104",
       "required": [
         "global",
         "standard/06-inputs"
@@ -409,7 +409,7 @@
       "id": "component/MultiSelect",
       "kind": "component",
       "path": "ai/4.2.0/component/MultiSelect.json",
-      "sha256": "65019e5000a089c20840b819f6918d85019b86d183772b36234218cde50088cb",
+      "sha256": "38f89f0ca37a1764555b08c174b17973f25cdb6acd529d54a4d9ce363903d9f7",
       "required": [
         "global",
         "standard/06-inputs"
@@ -420,7 +420,7 @@
       "id": "component/NumberInput",
       "kind": "component",
       "path": "ai/4.2.0/component/NumberInput.json",
-      "sha256": "4e30eb9341cef36042f481f53c4f0b337bc9d9d2581e417a05641cc4f3d8cd53",
+      "sha256": "12404bbd4e67bd2366ef75b0a29789442324488ae5de93379b670e989928c0a7",
       "required": [
         "global",
         "standard/06-inputs"
@@ -431,7 +431,7 @@
       "id": "component/DatePicker",
       "kind": "component",
       "path": "ai/4.2.0/component/DatePicker.json",
-      "sha256": "b0276e3b0335a928590895d2321ab11079ca22323132ba130f97fc3d85d02e01",
+      "sha256": "f0bc8cd954b450e6bd141dac9217b215277461d3ff0d070d049098a26e9143e3",
       "required": [
         "global",
         "standard/06-inputs"
@@ -442,7 +442,7 @@
       "id": "component/Checkbox",
       "kind": "component",
       "path": "ai/4.2.0/component/Checkbox.json",
-      "sha256": "ff36d36035279ced7af2b0cf47cc4a9500073092f3031c2ce62b4b5a847a828a",
+      "sha256": "253f15490e5dc6616e6754b0dc7b602c13cc9d348bf6f95f8a12881a6287736b",
       "required": [
         "global",
         "standard/06-inputs"
@@ -453,7 +453,7 @@
       "id": "component/RadioGroup",
       "kind": "component",
       "path": "ai/4.2.0/component/RadioGroup.json",
-      "sha256": "1ee003574f189fd12746508f20d369ff5deb5fd3760688cd1bb3f86e84451f4e",
+      "sha256": "d1e2d4a982b1e67019e7010883cba1a33387f6f633bbaba22fe0011eb94dbe1b",
       "required": [
         "global",
         "standard/06-inputs"
@@ -464,7 +464,7 @@
       "id": "component/Switch",
       "kind": "component",
       "path": "ai/4.2.0/component/Switch.json",
-      "sha256": "4468d21dc18acb3b5edcc44de6e29498dd990ecb54dad10f9acd2317d8751a84",
+      "sha256": "ee2f7a5f4491c840185c33072e20562c26609105c59e8892c41ed40c0c8ae055",
       "required": [
         "global",
         "standard/06-inputs"
@@ -475,7 +475,7 @@
       "id": "component/ProductShell",
       "kind": "component",
       "path": "ai/4.2.0/component/ProductShell.json",
-      "sha256": "d625b16b538a096b953405c176b2d9322ec3da98dd58cba56d80c8cfbd042752",
+      "sha256": "5de7ff362954be31651252882945bc53f801e78544d8a84220bd0e51de304078",
       "required": [
         "global",
         "standard/07b-shell-lower",
@@ -490,7 +490,7 @@
       "id": "component/ShellBrandButton",
       "kind": "component",
       "path": "ai/4.2.0/component/ShellBrandButton.json",
-      "sha256": "d3df9c99fdda674f081b3ec509d49673136254cc131ac6dbfcdb5111dc72abff",
+      "sha256": "733f4dad75c08e4f3c36250ca954b5c52524f35908473cf453617d657d3bf7ab",
       "required": [
         "global",
         "standard/07a-shell-upper",
@@ -505,7 +505,7 @@
       "id": "component/ShellMenu",
       "kind": "component",
       "path": "ai/4.2.0/component/ShellMenu.json",
-      "sha256": "63c237a3768d8fdd631a3f2c42826675ae4121e63eb8f1ca715ba493ad61700f",
+      "sha256": "0ddd36f09f4b069c0f1f2bf6b3e6771606a1a8fbce122625b7aff37b0e598004",
       "required": [
         "global",
         "standard/07b-shell-lower",
@@ -520,7 +520,7 @@
       "id": "component/ShellPins",
       "kind": "component",
       "path": "ai/4.2.0/component/ShellPins.json",
-      "sha256": "8b97f045db1b148f86da07f853e68214bbdbc77a3a6493b14c3bb6042022fc2d",
+      "sha256": "d3e5b86ff8ee39d22b80996f903777a2f5c35657c32801da2f5f300ad7ac405b",
       "required": [
         "global",
         "standard/07b-shell-lower",
@@ -535,7 +535,7 @@
       "id": "component/ShellDropdown",
       "kind": "component",
       "path": "ai/4.2.0/component/ShellDropdown.json",
-      "sha256": "83c4da9d0fd609b3baaff292a85c19524d59a544e7a89c658dbcd3c4991cc90a",
+      "sha256": "662983a1c4c361b66d4a764546a7562e3bfe5a1d524c640eda873a90c81a0873",
       "required": [
         "global",
         "standard/07b-shell-lower",
@@ -550,7 +550,7 @@
       "id": "component/ShellIntro",
       "kind": "component",
       "path": "ai/4.2.0/component/ShellIntro.json",
-      "sha256": "00ef58eb0443ded7c82cc6cfde6fe5e3cba1f7cfbeb9d3e22505d5fd6f85874f",
+      "sha256": "97ee6cff5f839699446aeed1135f8a5d60dabfb629ba560060b896d28c0b48a5",
       "required": [
         "global",
         "standard/07a-shell-upper",
@@ -565,7 +565,7 @@
       "id": "component/Avatar",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/Avatar.json",
-      "sha256": "f2b2d4bd92bc7402f07984c37dbad397e5488b2e6bf8efddb45f10afef1155e8",
+      "sha256": "05f7951b22acba89afea6040725dc94fb0ea02473b09fd363613dd2f042bae34",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -578,7 +578,7 @@
       "id": "component/Badge",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/Badge.json",
-      "sha256": "3ba9d096a1c0eca7b7b2a69497669ecfac35021a79d420434c07d99841ae6e75",
+      "sha256": "459262bbc48bfcd1fc34e2f19d41260c4a804fd53e82ff7ae33480733d5e1d26",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -591,7 +591,7 @@
       "id": "component/Card",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/Card.json",
-      "sha256": "7142a9e7aefd1038a8e46294bb343a708e65856be6eb99c48c1a9aff5fc3c875",
+      "sha256": "8e9ab9dae1f436354d7505cf65fb88b2a00facaa1a5668e90335b399201e1914",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -604,7 +604,7 @@
       "id": "component/CollapsibleRegion",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/CollapsibleRegion.json",
-      "sha256": "3d7acb71a88995e4f3a6261c1e4ce29a1bda1005b1fbda26fe2c66cdf3fb559a",
+      "sha256": "7f17805e71ac71429a8132cda49e474165f0fe778d8f745c0abd1a2dc2a5529d",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -617,7 +617,7 @@
       "id": "component/ConfirmActionDialog",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/ConfirmActionDialog.json",
-      "sha256": "09d3b7d4826097ce39e479b81d576ebe170aa171541e777f21cb38f2f435c9b0",
+      "sha256": "aa046db11e397bb42c6c0f8bf5ebe605c9fccdef6ca4eac5a04d355a03506ef3",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -630,7 +630,7 @@
       "id": "component/Dialog",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/Dialog.json",
-      "sha256": "1771fae14fe98a5c46cc278c695b60e14e7f55191eab56cfd2415b62fc998182",
+      "sha256": "2a9c6b99f1066490f74c2b46b3f3f0b47f8a6a6663670057f9472fd63b021e0c",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -643,7 +643,7 @@
       "id": "component/Divider",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/Divider.json",
-      "sha256": "c6d448015d5eb61ff4f8db9336722d4f04e537f6e99a5b236a65bdfde6d055ea",
+      "sha256": "22ad6216e2bca5b4e774681f2818240c01d8080fc04abc17e671a609f3120a04",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -656,7 +656,7 @@
       "id": "component/EmptyState",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/EmptyState.json",
-      "sha256": "b9d1c03e11b45b57230defe2e2a7cfddbb880055873b9ef40963ddba96d6cad0",
+      "sha256": "2eb34d8a024bb077d5b56878bd509ba89b36dcfa00c6719d1a47f08b7acc72f0",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -669,7 +669,7 @@
       "id": "component/EnvironmentBanner",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/EnvironmentBanner.json",
-      "sha256": "7bd9569c1374aebe766466d74e457004a9615d84ac129d336f56b38f041e8527",
+      "sha256": "9428b5e939acfdb6f8c060828e5321f74abbb3668d51a503b18e68cf1a5ba5fb",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -682,7 +682,7 @@
       "id": "component/ErrorState",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/ErrorState.json",
-      "sha256": "6ae8b120c00d6bbe86be367535ab5add2a390a6ae1b53999123a687aafd070a2",
+      "sha256": "83921162f0d16621626a875fa1a663d79d2aee9c2649f9c88ffcd8a510cf837b",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -695,7 +695,7 @@
       "id": "component/InlineAlert",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/InlineAlert.json",
-      "sha256": "4c0d66a97e7f5d5f85575d6b880d5640552b42f377b5508232a06b706f3424fd",
+      "sha256": "05a08c226aa395a4e35f7749ef5eb307e391e07ac8c0469639f8e5dcced144eb",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -708,7 +708,7 @@
       "id": "component/InlineConfirmBar",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/InlineConfirmBar.json",
-      "sha256": "4d5fe7e06a2e200488418818318fcb8eb54e9361cd0dd5ebb290a8a0c46067e7",
+      "sha256": "9b764e47ab7229aa5100f046203f141b79cacee3f7f6c74b1f215d5d971e9e46",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -721,7 +721,7 @@
       "id": "component/KeyValueList",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/KeyValueList.json",
-      "sha256": "bb20cb6cad8de2892b08ce05c4694225c51b369f46b1d0bfab0d05d6f96b833b",
+      "sha256": "fe51c095bb8887bb622e20efec6de2ea02fd5801d71772b57b555db4b15fa6db",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -734,7 +734,7 @@
       "id": "component/Menu",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/Menu.json",
-      "sha256": "e6153875dda841679a93845504c32800f6426a0c055d05ab3383c3568b0cfd70",
+      "sha256": "901df125c39beb0a773eabe752ea508ab3fbb7b001be6d843e2f548aaeb4dcd7",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -747,7 +747,7 @@
       "id": "component/Popover",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/Popover.json",
-      "sha256": "9b23f535d97d179a921e120f9be79f3e303275d580639cefcf40bc90dedd11e2",
+      "sha256": "126396b879d752a5d4188925f5cd85b9655cb6f1d52d5d54f9244356f5fc118c",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -760,7 +760,7 @@
       "id": "component/RawPayloadBox",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/RawPayloadBox.json",
-      "sha256": "7a892f2f091dfc31b3a993c07f9330770fa927679403785689de18de5a159e49",
+      "sha256": "8daebf63fa41a2273bd6c1df31e54d06dd0bc77af34ab4fbe1ce7a066b79a02e",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -773,7 +773,7 @@
       "id": "component/RecordTable",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/RecordTable.json",
-      "sha256": "96efbd02914089db8996eee2f3b2e8b38ed95ff40d83be6a5ab328383f5047e2",
+      "sha256": "31122250ded0d13dfcd76a32a3d34be2ace480dd04877c4c6985e47c376ab8dc",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -786,7 +786,7 @@
       "id": "component/SegmentedNav",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/SegmentedNav.json",
-      "sha256": "430e0f4b48dfd24d94ef6e994c15eb87aa80d47a8b8242c64fbbf008c59cfe1c",
+      "sha256": "e38cea678aaf67a7fac23eec7e78bf2f88d00e53fc97143c25efd4fbb7dd833b",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -799,7 +799,7 @@
       "id": "component/SettingsLayout",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/SettingsLayout.json",
-      "sha256": "42cbcfc143c15c0ef6c90c855e35e0ee45637145874ac89c8d4ea9e42647d79a",
+      "sha256": "d63ea34865c1865a0239a343f831af9ae89b72670756b520eb8d639a6e097afa",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -812,7 +812,7 @@
       "id": "component/SplitView",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/SplitView.json",
-      "sha256": "f01a802d8cb424cbf4f3f5caaf2ff1145ad69789b297b67a29a642e83f789a1a",
+      "sha256": "195528956ad032d2a1d2298275c8fccec24a9ae67914ad8e1037e7197d4b7724",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -825,7 +825,7 @@
       "id": "component/StagePipeline",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/StagePipeline.json",
-      "sha256": "c12d5ff2ac8ac2a3217e94a0b8b8febcde1093f55b3883c7d4b378852b92b1a1",
+      "sha256": "4588f2fdb3fd5cd7d64f936cc7e929fbf46cc9e42991f7eb1f2ea613757cdd32",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -838,7 +838,7 @@
       "id": "component/StatCard",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/StatCard.json",
-      "sha256": "6b7a03fd8cd195978b4c794a7e78f262533da0b0dcf25e8ff8555fb85670e18c",
+      "sha256": "63af06215f2c9123af09e21679872cd36fe2e7ad95ba72823cf7ffbd7f430ce9",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -851,7 +851,7 @@
       "id": "component/StateSurface",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/StateSurface.json",
-      "sha256": "e6e8c24e39a8d176b0800d4641fc56a782ebcaf207ec6a53a79ecdf3f53be18f",
+      "sha256": "3668ede8602371abff30c62aa212f6c3aa489e6c8d5c33fa9928fd4d927204ae",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -864,7 +864,7 @@
       "id": "component/StatusBadge",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/StatusBadge.json",
-      "sha256": "8bd47a34574e6efe10b1ed7e18ec723a8a62a8a81b20111085fa58a956dd8573",
+      "sha256": "6c4289ed74ea1b1061e21fcf2dc3fda362db6c5d0f62cbd34fd4a23dabd4c002",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -877,7 +877,7 @@
       "id": "component/StatusDot",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/StatusDot.json",
-      "sha256": "d196a7d9f5979b07d4aa0c31c45443c213b85e330b509b6d7ad3e05bc30b8bc2",
+      "sha256": "01746822f7b3c8e165d22f3af3ee4ea8f59e4eeea4f80d35fd899b664ef0e00b",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -890,7 +890,7 @@
       "id": "component/Surface",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/Surface.json",
-      "sha256": "dfffc212743e9acb579b35bd1cc8057c9253ccd4fed65c988db1c3bde8c5ae4d",
+      "sha256": "7e49629c41df149d986cc32fd937ef46a043ccb37c29300baf69bd7ed1eb83a5",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -903,7 +903,7 @@
       "id": "component/TableShell",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/TableShell.json",
-      "sha256": "26343192e0b2d4ded98c0185489efb1dda07a61606e275d6d497f188e2528aca",
+      "sha256": "d41a40534ff15d8878dec6616e947f1c9083fc194ea6b81838d008baa78093a2",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -916,7 +916,7 @@
       "id": "component/TableToolbar",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/TableToolbar.json",
-      "sha256": "ae51a858c2f374ea235779cdcc480d0365c92cc110db4fdcc95d712e11475c72",
+      "sha256": "1dc1b31fd92e2f773f3e9433f45177ab9c8846d23eb8b494356b20bf94698faa",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"
@@ -929,7 +929,7 @@
       "id": "component/Tooltip",
       "kind": "adopted-component",
       "path": "ai/4.2.0/component/Tooltip.json",
-      "sha256": "35d96f2e3053610d8eb6abf6821181d2266755187d70e62f7e18cce825dd8ff6",
+      "sha256": "a4c617f4340d71ab396efd0d04ddcbb2dfae9ec8163b3a0c372bd928ea16e361",
       "required": [
         "global",
         "pattern/batch3-components-and-shell"

@@ -1255,7 +1255,7 @@ packages:
     os: [win32]
 
   '@tcrn/ds-consumer-tools@file:vendor/tcrn-ds/4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz':
-    resolution: {integrity: sha512-uRT0TJz+SB3LEYWDGzHprTNgZVulExNMJcvaqbnAtbdkzbiBZiIaTSLzeOF6L1Z4huSI++hp+z1c0SKKXkwSfQ==, tarball: file:vendor/tcrn-ds/4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz}
+    resolution: {integrity: sha512-f+atiAWSzvLJWJUAOzUzznNNt25XttvEa8arRenarI3KjK3NIknnKIa7Oa3XZHCEJU12JJbycURcxgC/kMFBng==, tarball: file:vendor/tcrn-ds/4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz}
     version: 4.2.0
     engines: {node: '>=22'}
     hasBin: true
@@ -1265,7 +1265,7 @@ packages:
     version: 4.2.0
 
   '@tcrn/ui-react@file:vendor/tcrn-ds/4.2.0/tcrn-ui-react-4.2.0.tgz':
-    resolution: {integrity: sha512-3atFsgkM5FdwMWc8kkVD2qATzumHocOyB72oniPK0hO6VRCer8kQuT31WSK3NUtJ74kskznqbJC3RX1Z3aMDiQ==, tarball: file:vendor/tcrn-ds/4.2.0/tcrn-ui-react-4.2.0.tgz}
+    resolution: {integrity: sha512-txn1i0XT+Yb7lWtiXjqHh1sB9r+ghI1+IuLJbolVRyQGtoK55nAyAVaukrrvLUJh+4RgwiMo+oFNciffQB/ttw==, tarball: file:vendor/tcrn-ds/4.2.0/tcrn-ui-react-4.2.0.tgz}
     version: 4.2.0
     peerDependencies:
       react: ^18.3.0 || ^19.0.0

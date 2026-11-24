@@ -5,7 +5,7 @@
   "plannedTag": "v4.2.0",
   "candidate": {
     "version": "4.2.0",
-    "commit": "22118fe029ba058cda02ba4fd65d28ab4cc33630",
+    "commit": "c114e5e324ca30fe6bc52cadf16c7f039b5953a3",
     "dirty": false
   },
   "identity": {
@@ -24,9 +24,9 @@
       "sourceCommit": "e76b7272d98c0359a57c42d49bf70d64e5b4c2ad",
       "originalDocumentSha256": "6c8a9f442a59632744f4af97ae9ae66223197098e3b87f5506381a771211731d"
     },
-    "sourceDigest": "c5252cffae5aacfe88041a77fe18e2ab6f6108fadadd741bb72ba32d2f5a5cb9"
+    "sourceDigest": "530772cfcd2d1213db4b65dd0414066255226a947377412e4d7221533315cade"
   },
-  "docsManifestSha256": "5d5019e191ad1bd9dd114f232b4f699b9a873679a210877eb8b4c524d41c2951",
+  "docsManifestSha256": "2c7179bf38d1b9cf444c0788425c163ebde26dabe943ceb645180f7fa534b1ba",
   "plannedUrlsReachability": "not-verified; no release created by this command",
   "packages": [
     {
@@ -49,16 +49,16 @@
       "name": "@tcrn/ui-react",
       "version": "4.2.0",
       "archive": "tcrn-ui-react-4.2.0.tgz",
-      "bytes": 322226,
-      "sha256": "da5b5a0e6c7244b33ccc7c94b21c53da72a70b39a89363fcee3813e03be6f64f",
+      "bytes": 322181,
+      "sha256": "19e62470d6c9686cdff3d6622389713899b2d1fef24df20095c552a88f0859e4",
       "plannedUrl": "https://github.com/tpmoonchefryan/TCRN-Design-System/releases/download/v4.2.0/tcrn-ui-react-4.2.0.tgz"
     },
     {
       "name": "@tcrn/ds-consumer-tools",
       "version": "4.2.0",
       "archive": "tcrn-ds-consumer-tools-4.2.0.tgz",
-      "bytes": 21100,
-      "sha256": "94b5fc4dd93b2a37f793e75fd601f110708aca1932aebf8181c20b77b42d2298",
+      "bytes": 21099,
+      "sha256": "51168ce6d21b8009c4944bdb4f1a5e922fc0dbb711c4278071cf3c03956bc008",
       "plannedUrl": "https://github.com/tpmoonchefryan/TCRN-Design-System/releases/download/v4.2.0/tcrn-ds-consumer-tools-4.2.0.tgz"
     }
   ]

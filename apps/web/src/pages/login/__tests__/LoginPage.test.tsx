@@ -15,7 +15,7 @@ describe("Standalone LoginPage (/login)", () => {
     expect(sanitizeLoginNext("/integrations/ch_demo_1")).toBe("/integrations/ch_demo_1");
   });
 
-  it("renders standalone login form controls", () => {
+  it("renders focused single-card DS sign-in form with registered VoxWard lockup and clean copy", () => {
     const stubClient: ShellPreferencesClient = {
       getSession: async () => null,
       login: async () => {
@@ -35,9 +35,12 @@ describe("Standalone LoginPage (/login)", () => {
       </MemoryRouter>,
     );
 
-    expect(html).toContain("登录 VoxWard 工作台");
+    expect(html).toContain('data-product-id="voxward"');
+    expect(html).toContain("直播互动审核系统");
     expect(html).toContain("登录账号");
+    expect(html).toContain("显示");
     expect(html).toContain("确认登录");
+    expect(html).not.toContain("结界");
     expect(html).not.toContain("tcrn-product-shell");
   });
 });

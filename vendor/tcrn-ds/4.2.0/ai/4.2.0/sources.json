@@ -473,7 +473,7 @@
   },
   {
     "path": "packages/ui-react/src/components/Navigation/adopted-product-marks.ts",
-    "sha256": "86409111fca7eaf69f84a85c05d465e3b5849b61cef9241a9f1fc17938f94363"
+    "sha256": "6840c8c905a063b5b52f89dd0019c5e387eb7c90d00cf50a4fc185a9b2277696"
   },
   {
     "path": "packages/ui-react/src/components/Navigation/index.ts",
@@ -705,7 +705,7 @@
   },
   {
     "path": "scripts/lib/published-standard-proof.mjs",
-    "sha256": "df8940a99e64c4e2f9ff19a8a9499ca04634f6ba5d879c1f77768256bab5acbe"
+    "sha256": "7946b59c1d5a9bab1e612c446476efd6893ff6a1b30c6fb7bb16e0b8027b9eeb"
   },
   {
     "path": "scripts/lib/published-style-closure.mjs",

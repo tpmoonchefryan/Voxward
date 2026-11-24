@@ -250,10 +250,16 @@ export function VoxWardShell({
   }, [reloadSession]);
 
   useEffect(() => {
-    if (requireAuth && !sessionLoading && session === null && typeof window !== "undefined") {
+    if (
+      requireAuth &&
+      !sessionLoading &&
+      session === null &&
+      !location.pathname.startsWith("/login") &&
+      typeof window !== "undefined"
+    ) {
       void navigate(loginHref, { replace: true });
     }
-  }, [requireAuth, sessionLoading, session, navigate, loginHref]);
+  }, [requireAuth, sessionLoading, session, location.pathname, navigate, loginHref]);
 
   const resolvedChannelId = channelId ?? channels[0]?.channelId ?? "ch_demo_1";
   const activeChannel =
@@ -320,9 +326,6 @@ export function VoxWardShell({
         applyThemeAttribute("light");
       } finally {
         hydratingRef.current = false;
-      }
-      if (requireAuth) {
-        void navigate(loginHref, { replace: true });
       }
     }
   };

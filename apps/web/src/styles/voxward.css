@@ -365,16 +365,81 @@ body.vw-stage-body {
 }
 
 .vw-login-page {
-  min-height: 100vh;
+  position: relative;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: var(--tcrn-space-4);
   background: var(--tcrn-color-bg);
   color: var(--tcrn-color-ink);
+  overflow-x: clip;
+}
+
+.vw-login-grain {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: var(--tcrn-texture-grain-opacity);
+  mix-blend-mode: var(--tcrn-texture-grain-blend);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vw-login-shell {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-3);
 }
 
 .vw-login-card {
-  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--tcrn-space-4);
+  padding: calc(2 * var(--tcrn-space-4));
+  background: var(--tcrn-color-panel);
+  border-radius: var(--tcrn-radius-paper);
+  box-shadow: var(--tcrn-elevation-s2);
+}
+
+.vw-login-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tcrn-space-3);
+  padding-top: var(--tcrn-space-1);
+}
+
+.vw-login-link {
+  color: var(--tcrn-color-ink-2);
+  font-size: var(--tcrn-type-size-meta);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--tcrn-color-line-2);
+}
+
+.vw-login-link:hover {
+  color: var(--tcrn-color-acc);
+  text-decoration-color: var(--tcrn-color-acc);
+}
+
+.vw-login-sublinks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--tcrn-space-2);
+  color: var(--tcrn-color-ink-3);
+  font-size: var(--tcrn-type-size-caption);
+}
+
+@media (max-width: 600px) {
+  .vw-login-card {
+    padding: var(--tcrn-space-4);
+  }
 }
 
 .vw-yt-stream-panel {
