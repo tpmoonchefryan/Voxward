@@ -69,6 +69,19 @@ describe("Pure Streamer Dock (VW-Draft-02)", () => {
                 deliveryId: "del-early",
                 deliveryStatus: "DELIVERED",
               },
+              {
+                eventId: "ev-chat-blocked",
+                correlationId: "corr-blocked",
+                subjectRef: "BlockedSpammer",
+                localStatus: "BLOCK",
+                classification: "BLOCK",
+                platformDeleteStatus: "PENDING",
+                bodyFolded: true,
+                originalText: "Hidden spam message",
+                decidedAt: lateIso,
+                deliveryId: null,
+                deliveryStatus: null,
+              },
             ],
           },
         }}
@@ -87,6 +100,15 @@ describe("Pure Streamer Dock (VW-Draft-02)", () => {
     expect(html).toContain("<bdi>&lt;b&gt;Nice stream&lt;/b&gt;</bdi>");
     expect(html.indexOf("Oldest top chat")).toBeLessThan(html.indexOf("Nice stream"));
     expect(html.indexOf("Nice stream")).toBeLessThan(html.indexOf("Newest bottom chat"));
+    expect(html).not.toContain("Hidden spam message");
+    expect(html).not.toContain("恢复积分放行");
+    expect(html).not.toContain("不加分放行");
+    expect(html).not.toContain("已确认拦截");
+    expect(html).not.toContain("ALLOW_MEANINGFUL");
+    expect(html).not.toContain("ALLOW_NOISE");
+    expect(html).not.toContain("DELIVERED");
+    expect(html).not.toContain("corr-early");
+    expect(html).not.toContain("corr-late");
     expect(html).not.toContain("收起置顶卡片");
     expect(html).not.toContain("vw-dock-grid");
     expect(html).not.toContain("SC 精翻");

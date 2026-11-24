@@ -160,6 +160,38 @@ body.vw-stage-body {
   border: 1px solid var(--tcrn-color-line-2);
 }
 
+.vw-dock-shell:not(.vw-dock-shell--embedded) {
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  background: var(--tcrn-color-panel);
+}
+
+.vw-dock-shell:not(.vw-dock-shell--embedded) > .vw-yt-stream-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--tcrn-space-2) var(--tcrn-space-3);
+}
+
+.vw-dock-shell:not(.vw-dock-shell--embedded) > .vw-banner-notice {
+  padding: var(--tcrn-space-2) var(--tcrn-space-3) 0;
+}
+
+.vw-dock-shell:not(.vw-dock-shell--embedded) .vw-dock-scroll,
+.vw-dock-shell:not(.vw-dock-shell--embedded) .vw-stream-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  max-height: none;
+}
+
 .vw-dock-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
@@ -660,12 +692,6 @@ body.vw-stage-body {
     var(--tcrn-color-ink) 48px,
     var(--tcrn-color-ink) 100%
   );
-}
-
-.vw-dock-shell:not(.vw-dock-shell--embedded) .vw-stream-viewport {
-  flex: 1 1 auto;
-  height: auto;
-  max-height: calc(100vh - 9rem);
 }
 
 .vw-stream-clip {
