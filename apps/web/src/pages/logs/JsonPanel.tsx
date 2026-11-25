@@ -9,6 +9,7 @@ import {
   type LogsCopy,
   type VoxWardLocale,
 } from "../../i18n";
+import { auditStageLabel } from "../../i18n/operator-data";
 import { describeLogError, fetchTechnicalDetail, type FetchLike } from "./api";
 import { IsolatedText } from "./IsolatedText";
 
@@ -131,7 +132,7 @@ export function JsonPanelView({
       <Card>
         <div className="vw-stack-sm">
           <div className="vw-row-between">
-            <strong>{copy.headerTitle(detail.sequence, detail.stage)}</strong>
+            <strong title={detail.stage}>{copy.headerTitle(detail.sequence, auditStageLabel(detail.stage, locale))}</strong>
             <Badge tone="neutral">
               <span className="vw-mono">
                 <IsolatedText text={detail.id} />

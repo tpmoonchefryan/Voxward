@@ -452,7 +452,7 @@ export const DELETE_ACTIONS_COPY: Readonly<Record<VoxWardLocale, DeleteActionsCo
         effect: "Planifie l'effacement des données conservées sans activer d'exception de notation.",
       },
       DELETE_AND_EXCEPT: {
-        label: "Effacer & exclure du scoring",
+        label: "Effacer et exclure de la notation",
         effect: "Planifie l'effacement et active une exception à l'exécution : les futurs messages passent en revue manuelle sans score.",
       },
     },
@@ -666,12 +666,12 @@ export const REQUEST_STATUS_COPY: Readonly<Record<VoxWardLocale, RequestStatusCo
       ACCESS: "Demande d'accès",
       CORRECTION: "Demande de rectification",
       DELETE: "Demande d'effacement",
-      STOP_SCORING: "Arrêt du scoring",
+      STOP_SCORING: "Arrêt de la notation",
     },
     kindFallback: "Demande",
     modes: {
       DELETE_DATA_ONLY: "Effacer les données seules",
-      DELETE_AND_EXCEPT: "Effacer & exclure du scoring",
+      DELETE_AND_EXCEPT: "Effacer et exclure de la notation",
     },
     methods: {
       ACCOUNT_OWNERSHIP: "Propriété du compte vérifiée",

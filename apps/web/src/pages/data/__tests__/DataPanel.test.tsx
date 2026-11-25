@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { REQUEST_STATUS_COPY, VOXWARD_SUPPORTED_LOCALES } from "../../../i18n";
+import { DELETE_ACTIONS_COPY, REQUEST_STATUS_COPY, VOXWARD_SUPPORTED_LOCALES } from "../../../i18n";
 import { ApiFailure, messageFor } from "../api";
 import type { RequestView, SubjectPanel } from "../api";
 import { DataPanelView, type DataPanelViewProps } from "../DataPanel";
@@ -35,6 +35,11 @@ const SUBJECT: SubjectPanel = {
   requests: [requestView({ requestId: "req-1", stage: "AWAITING_VERIFICATION" })],
   notices: ["PROVIDER_COPY_NOT_CONTROLLED"],
 };
+
+it("uses French notation in the deletion action and request labels", () => {
+  expect(DELETE_ACTIONS_COPY.fr.modes.DELETE_AND_EXCEPT.label).toBe("Effacer et exclure de la notation");
+  expect(JSON.stringify(REQUEST_STATUS_COPY.fr)).not.toMatch(/\bscoring\b/iu);
+});
 
 it.each([
   ["fr", "Identifiant du spectateur", "Cette action n’est pas disponible sur cette page."],

@@ -44,7 +44,7 @@ describe("validated JSON panel", () => {
     expect(auditStageLabel("BASE_RULE", locale)).toBe(label);
     const html = renderToStaticMarkup(<JsonPanelView locale={locale}
       detail={{ ...detailWith([]), stage: "BASE_RULE", data: { scenarioTag: "synthetic" } }} />);
-    expect(html).toContain("BASE_RULE");
+    expect(html).toContain(`title="BASE_RULE">${locale === "fr" ? "Détail" : "로그 상세"} · #1 ${label}</strong>`);
     expect(html).toContain(rawHeading);
     expect(html).toContain("scenarioTag:");
   });
@@ -54,7 +54,7 @@ describe("validated JSON panel", () => {
       <JsonPanelView detail={detailWith([{ kind: "VALIDATED_JSON", state: "AVAILABLE", payload: JSON_PAYLOAD }])} />,
     );
 
-    expect(html).toContain("Log Detail · #1 JSON_VALIDATE");
+    expect(html).toContain("Log Detail · #1 JSON validation");
     expect(html).toContain("log-1");
     expect(html).toContain("Stage Metadata");
     expect(html).toContain("task-1");
@@ -73,7 +73,7 @@ describe("validated JSON panel", () => {
       />,
     );
 
-    expect(html).toContain("日志详情 · #1 JSON_VALIDATE");
+    expect(html).toContain("日志详情 · #1 JSON 校验");
     expect(html).toContain("阶段数据");
     expect(html).toContain("契约版本");
     expect(html).toMatch(/<details><summary>校验后 JSON<\/summary>/);
