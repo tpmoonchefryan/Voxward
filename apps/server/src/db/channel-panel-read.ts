@@ -1,7 +1,8 @@
-import { readScPayment, type ScPayment } from "@voxward/contracts";
+import type { ScPayment } from "@voxward/contracts";
 import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { readPlatformDeleteStatusMap, type PlatformDeleteUiStatus } from "./channel-settings-store.js";
 import type { VoxwardDatabase } from "./client.js";
+import { readPaidEvents } from "./sc-payment-metadata.js";
 import { parseScTranslationPayload, type ScTranslationPayload } from "./sc-translation-payload.js";
 import {
   authOutputTokens,
@@ -33,6 +34,7 @@ export interface ScFeedItem {
   readonly notes: string | null;
   readonly acknowledgement: string | null;
   readonly safeAlias: string | null;
+  readonly amountDisplay?: string;
   readonly payment?: ScPayment;
   readonly sourceLanguage?: ScTranslationPayload["sourceLanguage"];
   readonly translations?: ScTranslationPayload["translations"];
@@ -115,25 +117,6 @@ function readEvidenceByCorrelation(
     if (row.kind === "MESSAGE_TEXT" && entry.messageText === null) entry.messageText = row.payload;
     if (row.kind === "TRANSLATION" && entry.translationJson === null) entry.translationJson = row.payload;
     result.set(row.correlationId, entry);
-  }
-  return result;
-}
-
-function readPaidEvents(database: VoxwardDatabase, channelId: string, correlationIds: readonly string[], nowIso: string) {
-  const result = new Map<string, ScPayment | null>();
-  if (correlationIds.length === 0) return result;
-  const rows = database.orm
-    .select({ correlationId: technicalLogs.correlationId, data: technicalLogs.dataJson })
-    .from(technicalLogs)
-    .where(and(eq(technicalLogs.channelId, channelId), eq(technicalLogs.stage, "BASE_RULE"),
-      inArray(technicalLogs.correlationId, correlationIds), gt(technicalLogs.expiresAt, nowIso)))
-    .orderBy(desc(technicalLogs.sequence))
-    .all();
-  for (const row of rows) {
-    if (row.data === null || result.has(row.correlationId)) continue;
-    const data = JSON.parse(row.data) as { isPaid?: unknown; scAmountMicros?: unknown; scCurrency?: unknown; scTier?: unknown } | null;
-    const payment = readScPayment({ amountMicros: data?.scAmountMicros, currency: data?.scCurrency, tier: data?.scTier });
-    if (payment !== null || data?.isPaid === true) result.set(row.correlationId, payment);
   }
   return result;
 }
@@ -268,14 +251,15 @@ export function readDockAndModerationFeed(
       blockedItems.push(item);
     } else if (paidEvents.has(ev.correlationId) || paidEventIds.has(ev.eventId) || evEvidence?.translationJson != null) {
       const sc = parseScTranslationPayload(evEvidence?.translationJson ?? null);
-      const payment = paidEvents.get(ev.correlationId);
+      const paid = paidEvents.get(ev.correlationId);
       approvedSc.push({
         eventId: ev.eventId,
         correlationId: ev.correlationId,
         subjectRef: ev.subjectKey,
         originalText: evEvidence?.messageText ?? null,
         ...sc,
-        ...(payment == null ? {} : { payment }),
+        ...(paid?.payment == null ? {} : { payment: paid.payment }),
+        ...(paid?.amountDisplay === undefined ? {} : { amountDisplay: paid.amountDisplay }),
         decidedAt: verdict.decidedAt,
         deliveryId: del?.id ?? null,
         deliveryStatus: del?.status ?? null,

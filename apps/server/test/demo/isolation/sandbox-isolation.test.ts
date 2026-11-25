@@ -104,7 +104,7 @@ describe("VOXWARD-SUB-047: sandbox fail-closed isolation and limited demo roles"
       expect(modelSave.statusCode, modelSave.body).toBe(200);
       const ingest = (language: string) => app.inject({
         method: "POST", url: "/sandbox-api/events", headers: { "x-demo-role": "DEMO_STREAMER" },
-        payload: { subjectKey: "sc-viewer", text: "감사합니다", isPaid: true, language },
+        payload: { subjectKey: "sc-viewer", text: "감사합니다", isPaid: true, language, amountDisplay: "€25.00" },
       });
       const review = await ingest("ja");
       expect(review.statusCode, review.body).toBe(200);
@@ -140,6 +140,7 @@ describe("VOXWARD-SUB-047: sandbox fail-closed isolation and limited demo roles"
       const primary = "[synthetic translation: fr]";
       expect(dock.json().feed.approvedSc).toEqual([expect.objectContaining({
         correlationId: accepted.json().result.correlationId,
+        amountDisplay: "€25.00",
         sourceLanguage: "ko",
         translations: [
           expect.objectContaining({ targetLanguage: "fr", translatedText: primary }),
@@ -147,7 +148,7 @@ describe("VOXWARD-SUB-047: sandbox fail-closed isolation and limited demo roles"
         ],
       })]);
       await expect.poll(() => nativeFrames).toContainEqual(expect.objectContaining({
-        type: "DELIVER", display: expect.objectContaining({ translation: primary }),
+        type: "DELIVER", display: expect.objectContaining({ label: "SC €25.00", translation: primary }),
       }));
       await expect.poll(() => bliveFrames).toContainEqual(expect.objectContaining({
         cmd: BLIVECHAT_CMD.ADD_TEXT, data: expect.objectContaining({ translation: primary }),

@@ -45,8 +45,8 @@ export interface HelloFrame {
 }
 
 /**
- * Display content of an ALLOW delivery. `label` is null until a safe alias is stored with the subject. That source is not
- * in the schema yet, so the output never guesses it.
+ * Display content of an ALLOW delivery. `label` can carry a paid-message display amount, prefixed with "SC ".
+ * It is otherwise null; the output does not guess a subject alias.
  */
 export interface DisplayPayload {
   readonly label: string | null;

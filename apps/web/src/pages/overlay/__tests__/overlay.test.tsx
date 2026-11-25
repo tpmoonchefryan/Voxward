@@ -14,6 +14,21 @@ import {
 } from "../api";
 
 describe("overlay pure protocol and StageView rendering (VW-Draft-01)", () => {
+  it("renders the live sandbox payment label as a Super Chat amount", () => {
+    const state = reduceStageFrame(createInitialStageState("connected"), {
+      type: "DELIVER",
+      version: NATIVE_OUTPUT_VERSION,
+      deliveryId: "sandbox-sc",
+      deliverySequence: 1,
+      platformOrder: 1,
+      validUntil: new Date(Date.now() + 60_000).toISOString(),
+      display: { label: "SC €25.00", text: "Merci !", translation: null },
+    }, Date.now());
+    const html = renderToStaticMarkup(<StageView state={state} />);
+    expect(html).toContain('data-stream-kind="sc"');
+    expect(html).toContain('<span class="vw-sc-card__amount">€25.00</span>');
+  });
+
   it("parses hash credential cleanly and rejects query credential", () => {
     const queryResult = parseOverlayCredential({
       pathname: "/overlay/ch_1",

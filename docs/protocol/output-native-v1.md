@@ -69,7 +69,7 @@
 
 `WARD_BLOCKED` 不含原文、译文、昵称或任何身份字段。拦截事件不会因为重连而补播。当已下发 `DELIVER` 的消息被改判为 `BLOCK` 时，服务端会下发一条带有同一 `platformOrder` 的 `WARD_BLOCKED` 帧；下游消费者应据此撤回或隐藏此前对应同一 `platformOrder` 的展示内容。
 
-`display.label` 当前恒为 `null`。显示昵称或安全称呼没有入库，本协议不推算它。
+`display.label` 在沙盒付费消息有展示金额时为 `SC <金额>`，否则为 `null`。本协议不推算昵称或安全称呼。
 
 ## 4. 客户端到服务端
 
@@ -141,8 +141,7 @@
 ## 9. 不承诺的事
 
 - 消费者网络之间的严格"只展示一次"。
-- 显示昵称或安全称呼（`label` 为 `null`）。
-- 付费展示信息（没有来源字段）。
+- 显示昵称或安全称呼。
 - 送达确认。服务端不接收消费者的确认。
 
 ## 10. 来源缺口与自定选择
@@ -150,6 +149,5 @@
 - 凭据保险库未接入运行时。输出凭据在 `credential_refs.secret_ref` 中保存为 `secretref:` 加 SHA-256 摘要，
   而不是保险库条目（自定，见 `apps/server/src/db/output-store.ts`）。
 - 心跳、积压限制、失败次数、每轮批量、投递泵运行间隔都是自定值，未经负载测量。补发有效期取决策服务的默认值。
-- 旧的 Bearer 只读令牌（S003 的 `auth_output_tokens`）与原生凭据共用 `vwo_` 前缀，当前没有任何 HTTP 路由要求 `output.feed` 权限，也不能订阅原生端点。
-- 显示昵称与付费信息没有来源，`display.label` 恒为 `null`。
+- 集成页签发的 OBS 只读令牌（保存在 `auth_output_tokens`）也可订阅原生端点，但不适用于 blivechat。已连接的客户端会在下一次心跳检查时收到撤销关闭码 4403。
 - 本机复现：见 `examples/consumer-dedup/README.md`。证据见 `.kiro/specs/voxward-s021-output/evidence/self-check.md`。

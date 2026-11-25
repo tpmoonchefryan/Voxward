@@ -27,6 +27,7 @@ export interface SendableDelivery {
 export interface ApprovedContent {
   readonly text: string;
   readonly translation: string | null;
+  readonly amountDisplay?: string;
 }
 
 /** The grant a credential opens. The room is the grant's channel, and the client never chooses it. */

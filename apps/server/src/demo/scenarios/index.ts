@@ -24,7 +24,6 @@ import {
   subjectScores,
   subjects,
   tasks,
-  technicalLogs,
   verdicts,
 } from "../../db/schema/index.js";
 import { createScoringLedgerPort } from "../../db/scoring-ledger.js";
@@ -623,24 +622,6 @@ export function createSandboxRuntime(
         .limit(20)
         .all();
 
-      const amountByCorrelation = new Map<string, string>();
-      const techRows = database.orm
-        .select({ correlationId: technicalLogs.correlationId, dataJson: technicalLogs.dataJson })
-        .from(technicalLogs)
-        .where(eq(technicalLogs.channelId, SANDBOX_CHANNEL_ID))
-        .all();
-      for (const row of techRows) {
-        if (row.dataJson === null) continue;
-        try {
-          const parsed = JSON.parse(row.dataJson) as Record<string, unknown>;
-          if (typeof parsed.amountDisplay === "string" && parsed.amountDisplay.trim() !== "") {
-            amountByCorrelation.set(row.correlationId, parsed.amountDisplay);
-          }
-        } catch {
-          // Ignore non-JSON data rows.
-        }
-      }
-
       const approvedStage: SandboxApprovedStageItem[] = [];
       for (const row of approvedRows) {
         const content = approvedContent.readApproved({
@@ -654,7 +635,7 @@ export function createSandboxRuntime(
             correlationId: row.correlationId,
             subjectKey: row.subjectKey,
             text: content.text,
-            amountDisplay: amountByCorrelation.get(row.correlationId) ?? null,
+            amountDisplay: content.amountDisplay ?? null,
             translation: content.translation,
             decidedAt: row.decidedAt,
           });
