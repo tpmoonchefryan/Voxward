@@ -1,12 +1,29 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
-import { SuperChatCard } from "../../../components/youtube-sc";
+import { SuperChatCard, SuperChatOverlayBar } from "../../../components/youtube-sc";
 import { DockPage, PureDockSurface } from "../DockPage";
 import type { DockApi } from "../api";
 import { route } from "../route";
 
 describe("Pure Streamer Dock (VW-Draft-02)", () => {
+  it.each([["￥1400", false], ["¥1,400", true], ["¥1400", true]] as const)(
+    "only assigns a tier and runs the shared Moderation/Dock countdown for a recognized amount: %s",
+    (amountText, timed) => {
+      const item = { id: "legacy-sc", author: "Alice", text: "Approved body", translation: null, amountText };
+      const html = renderToStaticMarkup(<><SuperChatCard item={item} /><SuperChatOverlayBar items={[item]} /></>);
+      expect(html).toContain("Approved body");
+      expect(html).toContain(amountText);
+      if (timed) {
+        expect(html).toContain('data-sc-tier="t4"');
+        expect(html).toContain('class="vw-sc-ticker__countdown">05:00');
+      } else {
+        expect(html).not.toContain("data-sc-tier");
+        expect(html).not.toContain("vw-sc-ticker__countdown");
+      }
+    },
+  );
+
   it.each([
     ["ja", "JPY", 1400, "¥1,400", 4],
     ["ja", "JPY", 1400, "¥1400", 4],

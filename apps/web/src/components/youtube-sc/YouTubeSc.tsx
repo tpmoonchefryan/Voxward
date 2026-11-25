@@ -41,18 +41,12 @@ const TIER_7: ScTierDescriptor = { id: "t7", tierNumber: 7, label: "$100–$500+
 
 const TIERS_BY_NUM: readonly ScTierDescriptor[] = [TIER_1, TIER_2, TIER_3, TIER_4, TIER_5, TIER_6, TIER_7];
 
-export function resolveScTier(amountHint: string | null | undefined): ScTierDescriptor {
-  if (amountHint === null || amountHint === undefined || amountHint.trim() === "") {
-    return TIER_3;
-  }
+export function resolveScTier(amountHint: string | null | undefined): ScTierDescriptor | undefined {
+  if (amountHint == null) return undefined;
   const payment = readLegacyScPayment(amountHint);
   if (payment?.currency === "USD" || payment?.currency === "JPY") return tierForPayment(payment) ?? TIER_1;
-  const tierMatch = /t([1-7])/i.exec(amountHint);
-  if (tierMatch !== null && tierMatch[1] !== undefined) {
-    const index = Number.parseInt(tierMatch[1], 10) - 1;
-    return TIERS_BY_NUM[index] ?? TIER_3;
-  }
-  return TIER_3;
+  const tierMatch = /^t([1-7])$/i.exec(amountHint.trim());
+  return tierMatch === null ? undefined : TIERS_BY_NUM[Number(tierMatch[1]) - 1];
 }
 
 export function formatTickerCountdown(remainingSeconds: number): string {
@@ -435,9 +429,6 @@ export function SuperChatCard({ item, locale = DEFAULT_VOXWARD_LOCALE }: {
 
 function tierForItem(item: SuperChatItemDisplay): ScTierDescriptor | undefined {
   if (item.payment !== undefined) return item.payment === null ? undefined : tierForPayment(item.payment);
-  if (item.amountText === null) return undefined;
-  const legacy = readLegacyScPayment(item.amountText);
-  if (legacy !== null && legacy.currency !== "USD" && legacy.currency !== "JPY") return undefined;
   return resolveScTier(item.amountText);
 }
 
