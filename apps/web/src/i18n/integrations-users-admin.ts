@@ -1766,6 +1766,10 @@ export interface AdminCopy {
   readonly newTermRegexPlaceholder: string;
   readonly newTermPlainPlaceholder: string;
   readonly newTermCatLabel: string;
+  readonly termLanguageLabel: string;
+  readonly termLanguageAny: string;
+  readonly termLanguageOther: string;
+  readonly termLanguageTag: string;
   readonly matchKindLabel: string;
   readonly confirmAddTermBtn: string;
   readonly regexNote: string;
@@ -1907,6 +1911,10 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermRegexPlaceholder: "e.g. promo_code\\d{4} (no backtracking or lookarounds)",
     newTermPlainPlaceholder: "Enter term to match",
     newTermCatLabel: "Category",
+    termLanguageLabel: "Language",
+    termLanguageAny: "Any language",
+    termLanguageOther: "Other language",
+    termLanguageTag: "Language tag",
     matchKindLabel: "Match Mode",
     confirmAddTermBtn: "Add Term",
     regexNote: "Safe Bounded Regex: supports character classes, fixed counts, and top-level alternation; rejects lookarounds/backreferences.",
@@ -2046,6 +2054,10 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermRegexPlaceholder: "例如：加微[vV]信?\\d{4,8}（禁止回溯量词与零宽断言）",
     newTermPlainPlaceholder: "输入触发拦截或放行的词条文本",
     newTermCatLabel: "所属分类",
+    termLanguageLabel: "语言",
+    termLanguageAny: "任意语言",
+    termLanguageOther: "其他语言",
+    termLanguageTag: "语言标签",
     matchKindLabel: "匹配模式",
     confirmAddTermBtn: "确认增添",
     regexNote: "安全规范（受限正则）：支持基础字符组、固定次数量词及线性选择；不允许环视断言（如前瞻/后顾）、反向引用或嵌套量词导致回溯爆炸。",
@@ -2185,6 +2197,10 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermRegexPlaceholder: "例：promo\\d{4}（先読み・後方参照不可）",
     newTermPlainPlaceholder: "一致させるテキストを入力",
     newTermCatLabel: "カテゴリ",
+    termLanguageLabel: "言語",
+    termLanguageAny: "すべての言語",
+    termLanguageOther: "その他の言語",
+    termLanguageTag: "言語タグ",
     matchKindLabel: "一致方式",
     confirmAddTermBtn: "追加を確定",
     regexNote: "制限付き正規表現：文字クラス・固定回数・トップレベル選択のみ対応し、ReDoS 原因となる後読みや後方参照を禁止します。",
@@ -2324,6 +2340,10 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermRegexPlaceholder: "예: promo\\d{4} (전후방 탐색 및 역참조 금지)",
     newTermPlainPlaceholder: "차단 또는 허용할 용어 입력",
     newTermCatLabel: "소속 분류",
+    termLanguageLabel: "언어",
+    termLanguageAny: "모든 언어",
+    termLanguageOther: "기타 언어",
+    termLanguageTag: "언어 태그",
     matchKindLabel: "일치 방식",
     confirmAddTermBtn: "추가 확인",
     regexNote: "제한 정규식: 문자 클래스, 고정 반복 및 최상위 분기만 허용되며 ReDoS 위험 구문은 거부됩니다.",
@@ -2463,6 +2483,10 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermRegexPlaceholder: "ex. : promo\\d{4}",
     newTermPlainPlaceholder: "Texte à détecter",
     newTermCatLabel: "Catégorie",
+    termLanguageLabel: "Langue",
+    termLanguageAny: "Toutes les langues",
+    termLanguageOther: "Autre langue",
+    termLanguageTag: "Code de langue",
     matchKindLabel: "Mode",
     confirmAddTermBtn: "Ajouter",
     regexNote: "Regex bornée sûre : classes de caractères, répétitions fixes ; lookarounds interdits.",

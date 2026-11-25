@@ -1,12 +1,29 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
+import { ADMIN_COPY } from "../../../i18n";
 import { AdminPage, buildTermCsvTemplate } from "../AdminPage";
 import { csvCopy, decodeTermCsv } from "../csv";
 import { routes } from "../route";
 import { localizeTermCategory } from "../term-category-copy";
+import { DEFAULT_TERM_LANGUAGE, selectedTermLanguage, TermLanguageSelect } from "../TermLanguageSelect";
 
 describe("Admin & Settings Page (VW-Draft-04)", () => {
+  it("offers a localized manual term language selector with an unrestricted default and custom tags", () => {
+    const render = (selection: string) => renderToStaticMarkup(
+      <TermLanguageSelect copy={ADMIN_COPY.fr} locale="fr" selection={selection} tag="pt-br"
+        onSelect={() => {}} onTag={() => {}} />,
+    );
+    const defaultHtml = render(DEFAULT_TERM_LANGUAGE);
+    expect(defaultHtml).toContain('<option value="und" selected="">Toutes les langues</option>');
+    expect(defaultHtml).toContain('<option value="fr">français</option>');
+    expect(render("other")).toContain('id="new-term-language-tag"');
+    expect(selectedTermLanguage(DEFAULT_TERM_LANGUAGE, "")).toBe("und");
+    expect(selectedTermLanguage("fr", "")).toBe("fr");
+    expect(selectedTermLanguage("other", " pt-br ")).toBe("pt-BR");
+    expect(selectedTermLanguage("other", "auto")).toBeNull();
+  });
+
   it("localizes only built-in categories and preserves operator copy", () => {
     const category = { code: "spam", label: "迷惑情報", description: "原文", listKind: "BLACKLIST" as const, createdAt: "" };
     expect(localizeTermCategory({ ...category, builtIn: true }, "fr").description).toContain("publicités");

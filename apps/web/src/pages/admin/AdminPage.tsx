@@ -34,6 +34,7 @@ import {
 } from "./api";
 import { CSV_ENCODINGS, csvCopy, decodeTermCsv, type CsvEncoding } from "./csv";
 import { localizeTermCategory } from "./term-category-copy";
+import { DEFAULT_TERM_LANGUAGE, selectedTermLanguage, TermLanguageSelect } from "./TermLanguageSelect";
 import { WordlistTools } from "./WordlistTools";
 
 type SettingsSectionId = "blacklist" | "whitelist" | "scoring" | "retention";
@@ -164,6 +165,9 @@ function AdminSurface({
   const [newTermText, setNewTermText] = useState("");
   const [newTermCategory, setNewTermCategory] = useState("");
   const [newTermMatchKind, setNewTermMatchKind] = useState<"EXACT" | "CONTAINS" | "REGEX">("EXACT");
+  const [newTermLanguageSelection, setNewTermLanguageSelection] = useState(DEFAULT_TERM_LANGUAGE);
+  const [newTermLanguageTag, setNewTermLanguageTag] = useState("");
+  const newTermLanguage = selectedTermLanguage(newTermLanguageSelection, newTermLanguageTag);
   const [csvText, setCsvText] = useState("");
   const [csvEncoding, setCsvEncoding] = useState<CsvEncoding>("utf-8");
   const [editingEntry, setEditingEntry] = useState<ExtendedTermEntryView | null>(null);
@@ -299,7 +303,7 @@ function AdminSurface({
 
   const handleAddTerm = async () => {
     const trimmed = newTermText.trim();
-    if (!trimmed) return;
+    if (!trimmed || newTermLanguage === null) return;
     const item: ExtendedTermEntryView = {
       id: `term-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       listKind: activeListKind,
@@ -307,9 +311,12 @@ function AdminSurface({
       categoryCode: effectiveNewCategory,
       matchKind: newTermMatchKind,
       enabled: true,
+      language: newTermLanguage,
     };
     await persistEntries([item, ...entries], (c) => c.messages.termAdded);
     setNewTermText("");
+    setNewTermLanguageSelection(DEFAULT_TERM_LANGUAGE);
+    setNewTermLanguageTag("");
     setShowAddTermForm(false);
   };
 
@@ -761,9 +768,11 @@ function AdminSurface({
                         ]}
                       />
                     </div>
+                    <TermLanguageSelect copy={copy} locale={locale} selection={newTermLanguageSelection} tag={newTermLanguageTag}
+                      onSelect={setNewTermLanguageSelection} onTag={setNewTermLanguageTag} />
                     <Button
                       variant="primary"
-                      disabled={busy || !newTermText.trim()}
+                      disabled={busy || !newTermText.trim() || newTermLanguage === null}
                       onClick={() => void handleAddTerm()}
                     >
                       {copy.confirmAddTermBtn}
