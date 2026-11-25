@@ -1,6 +1,6 @@
 import type { VoxWardLocale } from "../../i18n";
 import { formatNumber } from "../../i18n/format";
-import type { ChannelAdapterView } from "./api";
+import type { AdapterCatalogEntry, ChannelAdapterView } from "./api";
 
 const keys = ["kiro-cli","openai-compat","anthropic-compat","obs-overlay-source","native-readonly-protocol","test-connection","reauthorize","restart-ingest","cli-self-check","cleanup-orphans","fetch-models","issue-output-token","issue-output-grant","CONFIG_SAVED","SIMULATED_ACTION","SIMULATED_MODELS","OUTPUT_CONFIGURED","STATUS_UNKNOWN"];
 const labels = {
@@ -13,6 +13,13 @@ const labels = {
 
 export function integrationLabel(locale: VoxWardLocale, code: string, fallback: string): string {
   return labels[locale][keys.indexOf(code)] ?? fallback;
+}
+
+export function defaultAdapterName(locale: VoxWardLocale, entry: AdapterCatalogEntry | undefined): string {
+  if (entry === undefined) return "";
+  return entry.driverId === "obs-overlay-source"
+    ? integrationLabel(locale, entry.driverId, entry.displayName)
+    : entry.displayName;
 }
 
 export function integrationStatus(locale: VoxWardLocale, adapter: ChannelAdapterView): string {

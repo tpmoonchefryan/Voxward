@@ -5,8 +5,19 @@ import { UsersPage } from "../UsersPage";
 import { previewEffectivePermissions, type RbacRoleView } from "../api";
 import { route } from "../route";
 import { localizeRole } from "../preset-copy";
+import { USERS_COPY } from "../../../i18n";
 
 describe("Users & RBAC Page (VW-Draft-04C)", () => {
+  it.each([
+    ["fr", "Refus > Autorisation > Non défini", "Autorisation 11 · Refus 0"],
+    ["ko", "거부 > 허용 > 미설정", "허용 11 · 거부 0"],
+  ] as const)("localizes permission precedence and role counts in %s", (locale, precedence, counts) => {
+    const copy = USERS_COPY[locale];
+    expect(copy.pageDescList).toContain(precedence);
+    expect(copy.rolesMergeHint).toContain(precedence);
+    expect(copy.summaryCounts(11, 0)).toBe(counts);
+  });
+
   it("localizes the preset name without replacing a saved description", () => {
     const role: RbacRoleView = { id: "role-owner", name: "频道所有者", description: "Manage our weekend streams", systemPreset: true, permissions: {} };
     expect(localizeRole(role, "fr")).toMatchObject({ name: "Propriétaire de la chaîne", description: role.description });

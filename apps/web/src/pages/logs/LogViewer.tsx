@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
-import { auditSummaryLabel } from "../../i18n/operator-data";
+import { auditStageLabel, auditSummaryLabel } from "../../i18n/operator-data";
 import {
   Badge,
   Button,
@@ -215,7 +215,7 @@ function LogViewerSurface({
                             <Card key={item.id} tone={selectedTechId === item.id ? "raised" : "neutral"}>
                               <div className="vw-stack-sm">
                                 <div className="vw-row-between">
-                                  <strong>{`#${item.sequence} ${item.stage}`}</strong>
+                                  <strong title={item.stage}>{`#${item.sequence} ${auditStageLabel(item.stage, locale)}`}</strong>
                                   {techStatusBadge(item.status, copy)}
                                 </div>
                                 <div className="vw-row-between">

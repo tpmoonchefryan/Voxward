@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { LogViewerTechnicalDetail } from "@voxward/contracts";
+import { auditStageLabel } from "../../../i18n/operator-data";
 import { JsonPanelView, formatValidatedJson } from "../JsonPanel";
 
 /*
@@ -36,6 +37,18 @@ function detailWith(evidence: LogViewerTechnicalDetail["evidence"]): LogViewerTe
 }
 
 describe("validated JSON panel", () => {
+  it.each([
+    ["fr", "Vérification des règles de base", "Métadonnées brutes de l’étape"],
+    ["ko", "기본 규칙 검사", "단계 데이터(원본)"],
+  ] as const)("labels the %s audit stage while preserving the code in raw details", (locale, label, rawHeading) => {
+    expect(auditStageLabel("BASE_RULE", locale)).toBe(label);
+    const html = renderToStaticMarkup(<JsonPanelView locale={locale}
+      detail={{ ...detailWith([]), stage: "BASE_RULE", data: { scenarioTag: "synthetic" } }} />);
+    expect(html).toContain("BASE_RULE");
+    expect(html).toContain(rawHeading);
+    expect(html).toContain("scenarioTag:");
+  });
+
   it("folds the JSON by default and shows its task, model and contract versions", () => {
     const html = renderToStaticMarkup(
       <JsonPanelView detail={detailWith([{ kind: "VALIDATED_JSON", state: "AVAILABLE", payload: JSON_PAYLOAD }])} />,

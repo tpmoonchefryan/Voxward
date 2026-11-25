@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { REQUEST_STATUS_COPY, VOXWARD_SUPPORTED_LOCALES } from "../../../i18n";
+import { ApiFailure, messageFor } from "../api";
 import type { RequestView, SubjectPanel } from "../api";
 import { DataPanelView, type DataPanelViewProps } from "../DataPanel";
 import { DeleteActions, MODE_COPY } from "../DeleteActions";
@@ -34,6 +35,16 @@ const SUBJECT: SubjectPanel = {
   requests: [requestView({ requestId: "req-1", stage: "AWAITING_VERIFICATION" })],
   notices: ["PROVIDER_COPY_NOT_CONTROLLED"],
 };
+
+it.each([
+  ["fr", "Identifiant du spectateur", "Cette action n’est pas disponible sur cette page."],
+  ["ko", "시청자 고유 식별자", "이 페이지에서는 이 작업을 사용할 수 없습니다."],
+] as const)("renders the data lookup and unavailable route notice in %s", (locale, label, notice) => {
+  const html = panel({ locale, message: messageFor(new ApiFailure(404, "NOT_FOUND"), locale) });
+  expect(html).toContain(label);
+  expect(html).toContain(notice);
+  expect(html).not.toContain("Subject Ref");
+});
 
 function panel(overrides: Partial<DataPanelViewProps> = {}): string {
   const props: DataPanelViewProps = {

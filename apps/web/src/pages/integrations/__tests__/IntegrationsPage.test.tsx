@@ -2,9 +2,17 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { IntegrationsPage } from "../IntegrationsPage";
+import { defaultAdapterName } from "../operator-copy";
 import { route } from "../route";
 
 describe("Integrations Page (VW-Draft-04B)", () => {
+  it("suggests the operator's localized OBS name for new adapters", () => {
+    const catalog = { driverId: "obs-overlay-source", category: "OUTPUT_TARGET", displayName: "OBS 透明投屏源",
+      summary: "", secretFields: [], controlActions: [] } as const;
+    expect(defaultAdapterName("fr", catalog)).toBe("Superposition OBS");
+    expect(defaultAdapterName("ko", catalog)).toBe("OBS 오버레이");
+  });
+
   it("exports /integrations/:channelId? route", () => {
     expect(route.path).toBe("/integrations/:channelId?");
   });

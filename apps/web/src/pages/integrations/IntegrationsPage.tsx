@@ -30,7 +30,7 @@ import {
   type ChannelAdapterView,
   type IntegrationsApi,
 } from "./api";
-import { integrationLabel, integrationStatus } from "./operator-copy";
+import { defaultAdapterName, integrationLabel, integrationStatus } from "./operator-copy";
 
 type ConfigValues = Record<string, string | number | boolean | null>;
 
@@ -200,7 +200,7 @@ function IntegrationsSurface({
       return;
     }
     const meta = catalog.find((c) => c.driverId === id);
-    setDraftDisplayName(meta?.displayName ?? "");
+    setDraftDisplayName(defaultAdapterName(locale, meta));
     setDraftConfig(driverDefaults(id, channelId));
   };
 

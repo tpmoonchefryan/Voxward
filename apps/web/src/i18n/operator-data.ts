@@ -1,3 +1,4 @@
+import { TECHNICAL_STAGES, type TechnicalStage } from "@voxward/contracts";
 import type { VoxWardLocale } from "./types";
 
 const labels = {
@@ -42,4 +43,16 @@ export function auditSummaryLabel(summary: string, locale: VoxWardLocale): strin
     return match[1] === undefined ? label : `${label} (${match[1]})`;
   }
   return summary;
+}
+
+const stageLabels = {
+  en: ["Ingestion", "Base rule check", "Routing", "Model call", "JSON validation", "Commit", "Delivery", "Error"],
+  "zh-CN": ["接收事件", "基础规则检查", "路由", "模型调用", "JSON 校验", "提交", "投递", "错误"],
+  ja: ["取り込み", "基本ルールの確認", "ルーティング", "モデル呼び出し", "JSON 検証", "確定", "配信", "エラー"],
+  ko: ["수집", "기본 규칙 검사", "라우팅", "모델 호출", "JSON 검증", "확정", "전송", "오류"],
+  fr: ["Ingestion", "Vérification des règles de base", "Routage", "Appel du modèle", "Validation JSON", "Enregistrement", "Diffusion", "Erreur"],
+} as const;
+
+export function auditStageLabel(stage: TechnicalStage, locale: VoxWardLocale): string {
+  return stageLabels[locale][TECHNICAL_STAGES.indexOf(stage)] ?? stage;
 }

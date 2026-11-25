@@ -7,6 +7,7 @@ import {
 } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
+import { auditStageLabel } from "../../i18n/operator-data";
 import {
   DEFAULT_VOXWARD_LOCALE,
   LOGS_COPY,
@@ -164,8 +165,8 @@ export function CorrelationChain({
                         onClick={() => setSelectedId(item.id)}
                       >
                         <div className="vw-row-between">
-                          <span className="vw-mono vw-chain-step__title">
-                            {`#${item.sequence} ${item.stage}`}
+                          <span className="vw-mono vw-chain-step__title" title={item.stage}>
+                            {`#${item.sequence} ${auditStageLabel(item.stage, locale)}`}
                           </span>
                           <Badge tone={stepStatusBadgeTone(item.status)}>{item.status}</Badge>
                         </div>
