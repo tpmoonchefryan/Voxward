@@ -22,6 +22,7 @@ import {
   technicalLogEvidence,
   technicalLogs,
   verdicts,
+  wordlistSnapshots,
 } from "../db/schema/index.js";
 import { runShortTransaction } from "../db/transaction.js";
 import type { RuleSetInput } from "../modules/moderation-engine/rules/groups.js";
@@ -144,6 +145,7 @@ export function resetSandboxState(ctx: SandboxResetContext): { readonly resetAt:
     tx.delete(channelEvents).where(eq(channelEvents.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(subjects).where(eq(subjects.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(ruleTerms).where(eq(ruleTerms.channelId, SANDBOX_CHANNEL_ID)).run();
+    tx.delete(wordlistSnapshots).where(eq(wordlistSnapshots.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(ruleVersions).where(eq(ruleVersions.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(channels).where(eq(channels.id, SANDBOX_CHANNEL_ID)).run();
 

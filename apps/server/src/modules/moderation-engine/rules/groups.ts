@@ -16,9 +16,11 @@ export type GroupAction =
  * `exact` matches the original text, `normalized` the normalized text, `reading` the local reading,
  * and `regex` a bounded pattern.
  */
-export type RuleInput =
-  | { readonly id: string; readonly kind: "exact" | "normalized" | "reading"; readonly text: string }
-  | { readonly id: string; readonly kind: "regex"; readonly source: string };
+export type RuleInput = { readonly language?: string } & (
+  | { readonly id: string; readonly kind: "exact"; readonly text: string; readonly wholeField?: boolean }
+  | { readonly id: string; readonly kind: "normalized" | "reading"; readonly text: string }
+  | { readonly id: string; readonly kind: "regex"; readonly source: string }
+);
 
 export interface GroupInput {
   readonly id: string;
@@ -30,6 +32,7 @@ export interface GroupInput {
 export interface RuleSetInput {
   readonly version: string;
   readonly groups: readonly GroupInput[];
+  readonly whitelist?: readonly RuleInput[];
   /**
    * Options for the normal copy: normalized rules, their patterns, and the transliteration table must use the same
    * set. A missing key takes its default. Regex rules match the composed copy and do not depend on this (S006 4.8).
@@ -38,7 +41,8 @@ export interface RuleSetInput {
 }
 
 export type Matcher =
-  | { readonly kind: "exact" | "normalized" | "reading"; readonly needle: string }
+  | { readonly kind: "exact"; readonly needle: string; readonly wholeField?: boolean }
+  | { readonly kind: "normalized" | "reading"; readonly needle: string }
   | { readonly kind: "regex"; readonly regex: RegExp };
 
 export interface CompiledRule {
@@ -46,11 +50,13 @@ export interface CompiledRule {
   readonly groupId: string;
   readonly action: GroupAction;
   readonly matcher: Matcher;
+  readonly language?: string;
 }
 
 export interface CompiledRuleSet {
   readonly version: string;
   readonly rules: readonly CompiledRule[];
+  readonly whitelistRules: readonly CompiledRule[];
   readonly normalization: NormalizeOptions;
 }
 
@@ -135,6 +141,7 @@ export interface Verdict {
   readonly hitCount: number;
   readonly deductionsApplied: 0 | 1;
   readonly appliedDeduction: { readonly groupId: string; readonly value: number } | null;
+  readonly whitelistMatches?: readonly RuleHit[];
 }
 
 const SAFE_TOKEN = /^[A-Za-z0-9._-]{1,64}$/;
@@ -148,7 +155,8 @@ const READING_PATTERN = /^[a-z0-9]+$/;
 export function compileRuleSet(input: RuleSetInput): CompileRuleSetResult {
   const issues: RuleIssue[] = [];
   if (!SAFE_TOKEN.test(input.version)) issues.push({ code: "VERSION_INVALID", ref: "rule-set" });
-  if (input.groups.length === 0) issues.push({ code: "NO_GROUPS", ref: "rule-set" });
+  const whitelistInputs = input.whitelist ?? [];
+  if (input.groups.length === 0 && whitelistInputs.length === 0) issues.push({ code: "NO_GROUPS", ref: "rule-set" });
   const normalization = resolveNormalization(input.normalization, issues);
 
   const groupIds = new Set<string>();
@@ -182,8 +190,23 @@ export function compileRuleSet(input: RuleSetInput): CompileRuleSetResult {
     }
   }
 
+  const whitelistRules: CompiledRule[] = [];
+  const whitelistGroup: GroupInput = { id: "whitelist", action: { kind: "REVIEW" }, rules: whitelistInputs };
+  for (const [ruleIndex, rule] of whitelistInputs.entries()) {
+    const ruleRef = SAFE_TOKEN.test(rule.id) ? rule.id : `whitelist/rules[${ruleIndex}]`;
+    if (!SAFE_TOKEN.test(rule.id)) {
+      issues.push({ code: "RULE_ID_INVALID", ref: ruleRef });
+    } else if (ruleIds.has(rule.id)) {
+      issues.push({ code: "RULE_ID_DUPLICATE", ref: ruleRef });
+    }
+    ruleIds.add(rule.id);
+
+    const compiled = compileRule(rule, whitelistGroup, ruleRef, issues, normalization);
+    if (compiled !== null) whitelistRules.push(compiled);
+  }
+
   if (issues.length > 0) return { ok: false, issues };
-  return { ok: true, ruleSet: { version: input.version, rules, normalization } };
+  return { ok: true, ruleSet: { version: input.version, rules, whitelistRules, normalization } };
 }
 
 const NORMALIZATION_KEYS: readonly string[] = ["stripCombiningMarks"];
@@ -201,7 +224,11 @@ function resolveNormalization(input: Partial<NormalizeOptions> | undefined, issu
 }
 
 /** Routes a message from its hits and review reasons. BLOCK wins. Any other hit or reason routes to REVIEW. */
-export function decideVerdict(hits: readonly RuleHit[], reasons: readonly ReviewReason[]): Verdict {
+export function decideVerdict(
+  hits: readonly RuleHit[],
+  reasons: readonly ReviewReason[],
+  whitelistMatches: readonly RuleHit[] = [],
+): Verdict {
   let route: ModerationRoute = "PASS";
   if (hits.some((hit) => hit.action.kind === "BLOCK")) {
     route = "BLOCK";
@@ -216,6 +243,7 @@ export function decideVerdict(hits: readonly RuleHit[], reasons: readonly Review
     hitCount: hits.length,
     deductionsApplied: appliedDeduction === null ? 0 : 1,
     appliedDeduction,
+    ...(whitelistMatches.length > 0 ? { whitelistMatches } : {}),
   };
 }
 
@@ -257,11 +285,22 @@ function compileRule(
     }
   } else {
     const needle = needleOf(rule.kind, rule.text, ref, issues, normalization);
-    if (needle !== null) matcher = { kind: rule.kind, needle };
+    if (needle !== null) {
+      matcher =
+        rule.kind === "exact" && rule.wholeField === true
+          ? { kind: "exact", needle, wholeField: true }
+          : { kind: rule.kind, needle };
+    }
   }
 
   if (issues.length > before || matcher === null) return null;
-  return { id: rule.id, groupId: group.id, action: group.action, matcher };
+  return {
+    id: rule.id,
+    groupId: group.id,
+    action: group.action,
+    matcher,
+    ...(rule.language === undefined ? {} : { language: rule.language }),
+  };
 }
 
 function issueOf(code: RuleIssueCode, ref: string, hint: string | undefined): RuleIssue {

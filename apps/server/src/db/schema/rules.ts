@@ -1,12 +1,19 @@
 import { sql } from "drizzle-orm";
 import { check, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
-import { inList } from "./checks.js";
+import { flag, inList } from "./checks.js";
 import { channels } from "./channels.js";
 import { dataRequests } from "./data-requests.js";
 import { subjects } from "./subjects.js";
 
-export const TERM_MATCH_KINDS = ["EXACT", "NORMALIZED", "CROSS_LANGUAGE_PHONETIC", "CONSTRAINED_REGEX"] as const;
+export const TERM_MATCH_KINDS = [
+  "EXACT",
+  "CONTAINS",
+  "NORMALIZED",
+  "CROSS_LANGUAGE_PHONETIC",
+  "CONSTRAINED_REGEX",
+] as const;
 export const LIST_KINDS = ["BLACKLIST", "WHITELIST"] as const;
+export const TERM_ACTIONS = ["BLOCK", "REVIEW"] as const;
 export const SCORING_EXCEPTION_PURPOSES = ["SCORING_EXCEPTION_PREFERENCE"] as const;
 
 /** Versioned rule set of one channel. A published version is never edited in place. */
@@ -29,7 +36,27 @@ export const ruleVersions = sqliteTable(
   ],
 );
 
-/** Word-list entry. Retired entries keep their row, and one active entry per match kind, language and term. */
+/** Wordlist snapshot tied to a published rule version for rollback history. */
+export const wordlistSnapshots = sqliteTable(
+  "wordlist_snapshots",
+  {
+    id: text("id").primaryKey(),
+    channelId: text("channel_id")
+      .notNull()
+      .references(() => channels.id),
+    ruleVersion: integer("rule_version").notNull(),
+    entriesJson: text("entries_json").notNull(),
+    createdAt: text("created_at").notNull(),
+    createdByRef: text("created_by_ref").notNull(),
+  },
+  (t) => [
+    uniqueIndex("wordlist_snapshots_channel_version_uq").on(t.channelId, t.ruleVersion),
+    check("ck_wordlist_snapshots_version", sql.raw("rule_version >= 1")),
+    check("ck_wordlist_snapshots_json", sql.raw("json_valid(entries_json)")),
+  ],
+);
+
+/** Word-list entry. Retired entries keep their row, and one active entry per list kind, match kind, language and term. */
 export const ruleTerms = sqliteTable(
   "rule_terms",
   {
@@ -41,15 +68,21 @@ export const ruleTerms = sqliteTable(
     matchKind: text("match_kind").notNull(),
     language: text("language").notNull(),
     groupCode: text("group_code").notNull(),
+    listKind: text("list_kind").notNull().default("BLACKLIST"),
+    enabled: integer("enabled").notNull().default(1),
+    action: text("action").notNull().default("REVIEW"),
     createdAt: text("created_at").notNull(),
     createdByRef: text("created_by_ref").notNull(),
     retiredAt: text("retired_at"),
   },
   (t) => [
     uniqueIndex("rule_terms_active_uq")
-      .on(t.channelId, t.matchKind, t.language, t.term)
+      .on(t.channelId, t.listKind, t.matchKind, t.language, t.term)
       .where(sql.raw("retired_at IS NULL")),
     check("ck_rule_terms_match_kind", inList("match_kind", TERM_MATCH_KINDS)),
+    check("ck_rule_terms_list_kind", inList("list_kind", LIST_KINDS)),
+    check("ck_rule_terms_enabled", flag("enabled")),
+    check("ck_rule_terms_action", inList("action", TERM_ACTIONS)),
   ],
 );
 

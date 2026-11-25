@@ -177,8 +177,17 @@ export type SubjectListEditResult =
   | { readonly status: "conflict"; readonly reason: "OTHER_LIST_ACTIVE"; readonly subjectId: string }
   | { readonly status: "refused"; readonly reason: "SUBJECT_NOT_FOUND" };
 
-export const TERM_MATCH_KINDS = ["EXACT", "NORMALIZED", "CROSS_LANGUAGE_PHONETIC", "CONSTRAINED_REGEX"] as const;
+export const TERM_MATCH_KINDS = [
+  "EXACT",
+  "CONTAINS",
+  "NORMALIZED",
+  "CROSS_LANGUAGE_PHONETIC",
+  "CONSTRAINED_REGEX",
+] as const;
 export type TermMatchKind = (typeof TERM_MATCH_KINDS)[number];
+
+export const TERM_ACTIONS = ["BLOCK", "REVIEW"] as const;
+export type TermAction = (typeof TERM_ACTIONS)[number];
 
 /** A word-list entry change. `ADD` creates an active entry, `RETIRE` ends the active one. */
 export interface TermEdit {

@@ -28,6 +28,7 @@ import {
   type TermEditResult,
 } from "@voxward/contracts";
 import { and, eq, gte, isNull, sql } from "drizzle-orm";
+import { syncRuleVersionFromActiveTermsInTx } from "./channel-settings-store.js";
 import type { VoxwardDatabase } from "./client.js";
 import { TaskStore } from "./repository.js";
 import {
@@ -532,17 +533,30 @@ function applyTermInTransaction(
         matchKind: input.matchKind,
         language: input.language,
         groupCode: input.groupCode,
+        listKind: "BLACKLIST",
+        enabled: 1,
+        action: "REVIEW",
         createdAt: input.changedAt,
         createdByRef: input.actorRef,
         retiredAt: null,
       })
       .run();
+    syncRuleVersionFromActiveTermsInTx(tx, {
+      channelId: input.channelId,
+      actorRef: input.actorRef,
+      nowIso: input.changedAt,
+    });
     insertChangeLog(tx, changeRow(newId(), input, "TERM_CHANGED", "词条变更：词条入库", null, options));
     return { status: "applied" };
   }
 
   if (active === undefined) return { status: "unchanged" };
   tx.update(ruleTerms).set({ retiredAt: input.changedAt }).where(eq(ruleTerms.id, active.id)).run();
+  syncRuleVersionFromActiveTermsInTx(tx, {
+    channelId: input.channelId,
+    actorRef: input.actorRef,
+    nowIso: input.changedAt,
+  });
   insertChangeLog(tx, changeRow(newId(), input, "TERM_CHANGED", "词条变更：词条停用", null, options));
   return { status: "applied" };
 }

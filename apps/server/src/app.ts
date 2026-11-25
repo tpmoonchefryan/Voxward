@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
-import type { OutputSubscriberRegistry, SubjectCacheHub } from "@voxward/contracts";
+import { CONTRACT_VERSION, type OutputSubscriberRegistry, type SubjectCacheHub } from "@voxward/contracts";
 import { attachBlivechatOutput } from "./adapters/blivechat/socket.js";
 import { attachNativeOutput, type ClosedConnection, type NativeOutputTiming } from "./adapters/native-output/socket.js";
-import { channelPanelRoutes } from "./auth/channel-panel-routes.js";
+import { channelPanelRoutes, type ChannelPanelRoutesOptions } from "./auth/channel-panel-routes.js";
 import { dataLifecycleRoutes } from "./auth/data-routes.js";
 import { databaseViewerAccess } from "./auth/log-viewer-access.js";
 import { logViewerRoutes } from "./auth/log-viewer-routes.js";
@@ -12,8 +12,11 @@ import { createAuditLogPort } from "./db/audit-log.js";
 import {
   publishConfirmedCandidateTerm,
   readChannelSetting,
+  readLatestRuleVersion,
   writeChannelSetting,
+  type ExtendedTermEntry,
 } from "./db/channel-settings-store.js";
+import { applyManagedWordlistToRuleSet, parseRuleSetJson, wordlistRuleId } from "./db/wordlist-rules.js";
 import type { VoxwardDatabase } from "./db/client.js";
 import { createDataRequestPort } from "./db/data-request-store.js";
 import { createDecisionStorePort } from "./db/decision-store.js";
@@ -48,10 +51,12 @@ import {
 import {
   createCandidateRoutes,
   createCandidateStore,
+  createModerationChecker,
   type CandidateStore,
 } from "./modules/moderation-engine/index.js";
 import { admitRegex } from "./modules/moderation-engine/rules/bounded-regex.js";
 import { compileRuleSet, type RuleSetInput } from "./modules/moderation-engine/rules/groups.js";
+import { DEFAULT_NORMALIZE_OPTIONS, normalizeText } from "./modules/moderation-engine/rules/normalize.js";
 import { BLIVECHAT_OUTPUT_PATH, BLIVECHAT_PROTOCOL_VERSION, createBlivechatAdapter } from "./modules/output/index.js";
 import { createDeliveryPump } from "./modules/output-adapter/delivery.js";
 import { createSubscriptionRegistry } from "./modules/output-adapter/subscription.js";
@@ -304,7 +309,7 @@ function channelPanelOptionsFor(
   database: VoxwardDatabase,
   modules: ModuleRegistry,
   providedCandidates: CandidateStore | undefined,
-) {
+): ChannelPanelRoutesOptions {
   const decisionStore = createDecisionStorePort(database, {
     planner: createScoringPlanner(),
     changeLogExpiresAt: (occurredAt) =>
@@ -369,6 +374,43 @@ function channelPanelOptionsFor(
               ? "split the pattern into several rules, or give one of the quantifiers a fixed count"
               : undefined;
         return { ok: false as const, code: `REGEX_${res.rejection}`, hint };
+      },
+      normalizedTermIsEmpty: (channelId: string, term: string) => {
+        const latest = readLatestRuleVersion(database, channelId);
+        const norm = parseRuleSetJson(latest?.ruleJson ?? null).normalization;
+        const stripCombiningMarks =
+          typeof norm?.stripCombiningMarks === "boolean"
+            ? norm.stripCombiningMarks
+            : DEFAULT_NORMALIZE_OPTIONS.stripCombiningMarks;
+        return normalizeText(term, { stripCombiningMarks }).length === 0;
+      },
+      previewWordlist: async (channelId: string, entries: readonly ExtendedTermEntry[], text: string, language?: string) => {
+        const ruleSet = applyManagedWordlistToRuleSet({ version: "preview", groups: [] }, entries) as RuleSetInput;
+        const hasRules = ruleSet.groups.length > 0 || (ruleSet.whitelist?.length ?? 0) > 0;
+        if (!hasRules || !compileRuleSet(ruleSet).ok) {
+          return { hits: [], whitelistMatches: [], language: language ?? "und", action: null };
+        }
+        const checker = createModerationChecker({
+          ruleSet,
+          nicknames: { displayNicknameOf: async () => "preview-viewer" },
+        });
+        const verdict = await checker.check({
+          contractVersion: CONTRACT_VERSION,
+          platform: "synthetic",
+          channelId,
+          platformMessageId: "wordlist-preview",
+          platformOrder: 0,
+          receivedAt: new Date().toISOString(),
+          correlationId: "wordlist-preview",
+          body: text,
+          sender: { contractVersion: CONTRACT_VERSION, senderRef: "wordlist-preview" },
+        });
+        const blByRule = new Map(entries.filter((e) => e.listKind === "BLACKLIST").map((e) => [wordlistRuleId("bl", e.id), e.id]));
+        const wlByRule = new Map(entries.filter((e) => e.listKind === "WHITELIST").map((e) => [wordlistRuleId("wl", e.id), e.id]));
+        const hits = [...new Set(verdict.hits.flatMap((h) => blByRule.get(h.ruleId) ?? []))];
+        const whitelistMatches = [...new Set((verdict.whitelistMatches ?? []).flatMap((h) => wlByRule.get(h.ruleId) ?? []))];
+        const action = hits.length === 0 ? null : verdict.hits.some((h) => h.action.kind === "BLOCK") ? ("BLOCK" as const) : ("REVIEW" as const);
+        return { hits, whitelistMatches, language: language ?? "und", action };
       },
     },
   };

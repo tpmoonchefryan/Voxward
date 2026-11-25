@@ -7,7 +7,7 @@ import { grantMembership } from "../../src/auth/members.js";
 import { createSession } from "../../src/auth/session.js";
 import { publishConfirmedCandidateTerm } from "../../src/db/channel-settings-store.js";
 import type { VoxwardDatabase } from "../../src/db/client.js";
-import { channels } from "../../src/db/schema/index.js";
+import { channels, ruleTerms, ruleVersions } from "../../src/db/schema/index.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { createCandidateStore, type CandidateStore } from "../../src/modules/moderation-engine/index.js";
 import { buildRegistry } from "../../src/modules/registry.js";
@@ -121,6 +121,27 @@ describe("S022 Admin HTTP routes & RBAC (VOXWARD-SUB-042)", () => {
     });
     expect(confirmRes.statusCode).toBe(200);
     expect((confirmRes.json() as { card: { status: string } }).card.status).toBe("CONFIRMED");
+    const activeAfterConfirm = db.orm
+      .select()
+      .from(ruleTerms)
+      .all()
+      .filter((t) => t.channelId === CH1 && t.retiredAt === null);
+    expect(activeAfterConfirm.map((t) => t.term)).toContain("badword1");
+    expect(db.orm.select().from(ruleVersions).all().filter((v) => v.channelId === CH1).length).toBeGreaterThanOrEqual(1);
+
+    const listTermRes = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/lists/terms`,
+      headers: { cookie: mod.cookie, "x-csrf-token": mod.csrf },
+      payload: { action: "ADD", term: "bad phrase", matchKind: "CONTAINS", language: "en", groupCode: "spam" },
+    });
+    expect(listTermRes.statusCode).toBe(200);
+    const activeAfterList = db.orm
+      .select()
+      .from(ruleTerms)
+      .all()
+      .filter((t) => t.channelId === CH1 && t.retiredAt === null);
+    expect(activeAfterList.some((t) => t.listKind === "BLACKLIST" && t.matchKind === "CONTAINS" && t.term === "bad phrase")).toBe(true);
 
     const rejectRes = await app.inject({
       method: "POST",

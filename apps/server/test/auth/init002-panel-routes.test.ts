@@ -7,7 +7,7 @@ import { resolveEffectivePermissions } from "../../src/auth/permissions.js";
 import { createSession } from "../../src/auth/session.js";
 import type { VoxwardDatabase } from "../../src/db/client.js";
 import { ChannelEventStore, SubjectStore, TaskStore } from "../../src/db/repository.js";
-import { channels, deliveries, verdicts } from "../../src/db/schema/index.js";
+import { channels, deliveries, ruleTerms, ruleVersions, verdicts, wordlistSnapshots } from "../../src/db/schema/index.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
@@ -184,6 +184,105 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
       imported: 3,
       errors: [],
     });
+
+    // Unified relational storage, whitelist preview, version rollback, and PUT /rules wordlist preservation
+    const dbTermsAfterCsv = db.orm.select().from(ruleTerms).all().filter((r) => r.channelId === CH1 && r.retiredAt === null);
+    expect(dbTermsAfterCsv).toHaveLength(3);
+    const dbSnapshotsAfterCsv = db.orm.select().from(wordlistSnapshots).all().filter((s) => s.channelId === CH1);
+    expect(dbSnapshotsAfterCsv.length).toBeGreaterThanOrEqual(1);
+
+    const putEntries = await app.inject({
+      method: "PUT",
+      url: `/channels/${CH1}/term-entries`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: {
+        entries: [
+          {
+            id: "bl-contains",
+            listKind: "BLACKLIST",
+            term: "grass",
+            categoryCode: "scam-links",
+            matchKind: "CONTAINS",
+            enabled: true,
+            language: "en",
+            action: "REVIEW",
+          },
+          {
+            id: "wl-contains",
+            listKind: "WHITELIST",
+            term: "lemongrass",
+            categoryCode: "friendly",
+            matchKind: "CONTAINS",
+            enabled: true,
+            language: "en",
+            action: "REVIEW",
+          },
+        ],
+      },
+    });
+    expect(putEntries.statusCode).toBe(200);
+    const vAfterPut = (putEntries.json() as { version: number }).version;
+    expect(vAfterPut).toBeGreaterThan(1);
+
+    const previewRes = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/term-entries/preview`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: { text: "drinking lemongrass tea" },
+    });
+    expect(previewRes.statusCode).toBe(200);
+    expect(previewRes.json()).toMatchObject({
+      hits: [],
+      whitelistMatches: ["wl-contains"],
+      action: null,
+    });
+
+    const previewHit = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/term-entries/preview`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: { text: "green grass" },
+    });
+    expect(previewHit.statusCode).toBe(200);
+    expect(previewHit.json()).toMatchObject({
+      hits: ["bl-contains"],
+      whitelistMatches: [],
+      action: "REVIEW",
+    });
+
+    const versionsRes = await app.inject({
+      method: "GET",
+      url: `/channels/${CH1}/term-entries/versions`,
+      headers: { cookie: owner.cookie },
+    });
+    expect(versionsRes.statusCode).toBe(200);
+    const versionsList = (versionsRes.json() as { versions: Array<{ version: number }> }).versions;
+    expect(versionsList.length).toBeGreaterThanOrEqual(2);
+    const prevVersion = versionsList[1]!.version;
+
+    const rollbackRes = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/term-entries/rollback`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: { version: prevVersion },
+    });
+    expect(rollbackRes.statusCode).toBe(200);
+    const rolledEntries = (rollbackRes.json() as { entries: Array<{ term: string }> }).entries;
+    expect(rolledEntries.map((e) => e.term)).toContain("buy-cheap");
+
+    const rulesSave = await app.inject({
+      method: "PUT",
+      url: `/channels/${CH1}/rules`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: {
+        version: "v-custom",
+        groups: [{ id: "custom-digits", action: { kind: "REVIEW" }, rules: [{ id: "r-d", kind: "regex", source: "[0-9]{5}" }] }],
+      },
+    });
+    expect(rulesSave.statusCode).toBe(200);
+    const latestRuleRow = db.orm.select().from(ruleVersions).all().filter((r) => r.channelId === CH1).pop();
+    expect(latestRuleRow?.ruleJson).toContain("custom-digits");
+    expect(latestRuleRow?.ruleJson).toContain("admin-wordlist-review");
 
     // Manual blacklist with YouTube sync banId + unban
     const blkUser = await app.inject({

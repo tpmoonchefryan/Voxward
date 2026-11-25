@@ -31,6 +31,7 @@ import {
   type ModelSettingsView,
   type TermCategoryView,
 } from "./api";
+import { languageOptions, WordlistTools } from "./WordlistTools";
 
 type SettingsSectionId = "blacklist" | "whitelist" | "scoring" | "retention";
 
@@ -155,7 +156,9 @@ function AdminSurface({
   const [showCsvImport, setShowCsvImport] = useState(false);
   const [newTermText, setNewTermText] = useState("");
   const [newTermCategory, setNewTermCategory] = useState("");
-  const [newTermMatchKind, setNewTermMatchKind] = useState<"EXACT" | "CONTAINS" | "REGEX">("EXACT");
+  const [newTermMatchKind, setNewTermMatchKind] = useState<"EXACT" | "CONTAINS" | "REGEX" | "NORMALIZED">("EXACT");
+  const [newTermLanguage, setNewTermLanguage] = useState("und");
+  const [newTermAction, setNewTermAction] = useState<"REVIEW" | "BLOCK">("REVIEW");
   const [csvText, setCsvText] = useState("");
   const [editingEntry, setEditingEntry] = useState<ExtendedTermEntryView | null>(null);
 
@@ -294,9 +297,13 @@ function AdminSurface({
       categoryCode: effectiveNewCategory,
       matchKind: newTermMatchKind,
       enabled: true,
+      language: newTermLanguage,
+      ...(activeListKind === "BLACKLIST" ? { action: newTermAction } : {}),
     };
     await persistEntries([item, ...entries], (c) => c.messages.termAdded);
     setNewTermText("");
+    setNewTermLanguage("und");
+    setNewTermAction("REVIEW");
     setShowAddTermForm(false);
   };
 
@@ -721,16 +728,44 @@ function AdminSurface({
                         value={newTermMatchKind}
                         onChange={(event) =>
                           setNewTermMatchKind(
-                            event.target.value as "EXACT" | "CONTAINS" | "REGEX",
+                            event.target.value as "EXACT" | "CONTAINS" | "REGEX" | "NORMALIZED",
                           )
                         }
                         options={[
                           { value: "EXACT", label: copy.matchKinds.EXACT },
                           { value: "CONTAINS", label: copy.matchKinds.CONTAINS },
+                          { value: "NORMALIZED", label: copy.matchKinds.NORMALIZED },
                           { value: "REGEX", label: copy.matchKinds.REGEX },
                         ]}
                       />
                     </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="new-term-language">
+                        {copy.termLanguageLabel}
+                      </label>
+                      <Select
+                        id="new-term-language"
+                        value={newTermLanguage}
+                        onChange={(event) => setNewTermLanguage(event.target.value)}
+                        options={languageOptions(locale, copy.termLanguageAny)}
+                      />
+                    </div>
+                    {activeListKind === "BLACKLIST" ? (
+                      <div className="vw-field-col--compact">
+                        <label className="vw-field-label" htmlFor="new-term-action">
+                          {copy.termActionLabel}
+                        </label>
+                        <Select
+                          id="new-term-action"
+                          value={newTermAction}
+                          onChange={(event) => setNewTermAction(event.target.value as "REVIEW" | "BLOCK")}
+                          options={[
+                            { value: "REVIEW", label: copy.termActions.REVIEW },
+                            { value: "BLOCK", label: copy.termActions.BLOCK },
+                          ]}
+                        />
+                      </div>
+                    ) : null}
                     <Button
                       variant="primary"
                       disabled={busy || !newTermText.trim()}
@@ -802,12 +837,24 @@ function AdminSurface({
                 </div>
               ) : null}
 
+              <WordlistTools
+                key={channelId}
+                api={adminClient}
+                channelId={channelId}
+                entries={entries}
+                copy={copy}
+                locale={locale}
+                onRestore={setEntries}
+              />
+
               <TableShell
                 label={copy.termsTableLabel}
                 columns={[
                   { key: "term", label: copy.colTerm },
                   { key: "category", label: copy.colCategory },
                   { key: "matchKind", label: copy.colMatchKind },
+                  { key: "language", label: copy.colLanguage },
+                  ...(activeListKind === "BLACKLIST" ? [{ key: "action", label: copy.colAction }] : []),
                   { key: "enabled", label: copy.colEnabled },
                   { key: "actions", label: copy.colActions, align: "end" },
                 ]}
@@ -817,6 +864,12 @@ function AdminSurface({
                     categories.find((c) => c.code === entry.categoryCode)?.label ??
                     entry.categoryCode,
                   matchKind: <Badge tone="neutral">{matchKindLabel(entry.matchKind, copy)}</Badge>,
+                  language: <Badge tone="neutral">{entry.language ?? "und"}</Badge>,
+                  action: (
+                    <Badge tone={entry.action === "BLOCK" ? "danger" : "warning"}>
+                      {entry.action === "BLOCK" ? copy.termActions.BLOCK : copy.termActions.REVIEW}
+                    </Badge>
+                  ),
                   enabled: (
                     <Switch
                       label={entry.enabled ? copy.enabledSwitchLabel : copy.disabledSwitchLabel}
@@ -1208,10 +1261,43 @@ function AdminSurface({
                 options={[
                   { value: "EXACT", label: copy.matchKinds.EXACT },
                   { value: "CONTAINS", label: copy.matchKinds.CONTAINS },
+                  { value: "NORMALIZED", label: copy.matchKinds.NORMALIZED },
                   { value: "REGEX", label: copy.matchKinds.REGEX },
                 ]}
               />
             </div>
+            <div className="vw-field-col--compact">
+              <label className="vw-field-label" htmlFor="edit-term-language">
+                {copy.termLanguageLabel}
+              </label>
+              <Select
+                id="edit-term-language"
+                value={editingEntry.language ?? "und"}
+                onChange={(e) => setEditingEntry({ ...editingEntry, language: e.target.value })}
+                options={languageOptions(locale, copy.termLanguageAny)}
+              />
+            </div>
+            {editingEntry.listKind === "BLACKLIST" ? (
+              <div className="vw-field-col--compact">
+                <label className="vw-field-label" htmlFor="edit-term-action">
+                  {copy.termActionLabel}
+                </label>
+                <Select
+                  id="edit-term-action"
+                  value={editingEntry.action ?? "REVIEW"}
+                  onChange={(e) =>
+                    setEditingEntry({
+                      ...editingEntry,
+                      action: e.target.value as "REVIEW" | "BLOCK",
+                    })
+                  }
+                  options={[
+                    { value: "REVIEW", label: copy.termActions.REVIEW },
+                    { value: "BLOCK", label: copy.termActions.BLOCK },
+                  ]}
+                />
+              </div>
+            ) : null}
             <div className="vw-row-wrap">
               <Button
                 variant="primary"

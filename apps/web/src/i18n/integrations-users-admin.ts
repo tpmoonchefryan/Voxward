@@ -1766,9 +1766,28 @@ export interface AdminCopy {
   readonly newTermRegexPlaceholder: string;
   readonly newTermPlainPlaceholder: string;
   readonly newTermCatLabel: string;
+  readonly termLanguageLabel: string;
+  readonly termLanguageAny: string;
+  readonly termActionLabel: string;
+  readonly termActions: { readonly REVIEW: string; readonly BLOCK: string };
   readonly matchKindLabel: string;
   readonly confirmAddTermBtn: string;
   readonly regexNote: string;
+  readonly wordlistTools: {
+    readonly heading: string;
+    readonly sampleLabel: string;
+    readonly samplePlaceholder: string;
+    readonly languageLabel: string;
+    readonly previewBtn: string;
+    readonly noMatches: string;
+    readonly blacklistHitsHeading: string;
+    readonly whitelistMatchesHeading: string;
+    readonly loadVersionsBtn: string;
+    readonly versionLabel: string;
+    readonly restoreBtn: string;
+    readonly restoredNotice: string;
+    readonly failedNotice: string;
+  };
   readonly csvHeading: string;
   readonly pickCsvFileBtn: string;
   readonly csvFileInputAria: string;
@@ -1781,6 +1800,8 @@ export interface AdminCopy {
   readonly colTerm: string;
   readonly colCategory: string;
   readonly colMatchKind: string;
+  readonly colLanguage: string;
+  readonly colAction: string;
   readonly colEnabled: string;
   readonly colActions: string;
   readonly enabledSwitchLabel: string;
@@ -1903,9 +1924,28 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermRegexPlaceholder: "e.g. promo_code\\d{4} (no backtracking or lookarounds)",
     newTermPlainPlaceholder: "Enter term to match",
     newTermCatLabel: "Category",
+    termLanguageLabel: "Language",
+    termLanguageAny: "Any language (und)",
+    termActionLabel: "Action",
+    termActions: { REVIEW: "Review", BLOCK: "Block" },
     matchKindLabel: "Match Mode",
     confirmAddTermBtn: "Add Term",
     regexNote: "Safe Bounded Regex: supports character classes, fixed counts, and top-level alternation; rejects lookarounds/backreferences.",
+    wordlistTools: {
+      heading: "Wordlist history and preview",
+      sampleLabel: "Test message",
+      samplePlaceholder: "Enter a sample message to test current wordlist rules…",
+      languageLabel: "Message language",
+      previewBtn: "Preview matches",
+      noMatches: "No matching wordlist entries",
+      blacklistHitsHeading: "Blacklist hits",
+      whitelistMatchesHeading: "Whitelist matches",
+      loadVersionsBtn: "Load version history",
+      versionLabel: "Wordlist version",
+      restoreBtn: "Restore selected version",
+      restoredNotice: "Restored as a new version.",
+      failedNotice: "Wordlist operation failed.",
+    },
     csvHeading: "CSV Batch Import (format: term,category,matchKind)",
     pickCsvFileBtn: "Choose CSV File",
     csvFileInputAria: "Choose CSV template file",
@@ -1918,6 +1958,8 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     colTerm: "Term",
     colCategory: "Category",
     colMatchKind: "Mode",
+    colLanguage: "Language",
+    colAction: "Action",
     colEnabled: "Enabled",
     colActions: "Actions",
     enabledSwitchLabel: "Enabled",
@@ -2038,9 +2080,28 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermRegexPlaceholder: "例如：加微[vV]信?\\d{4,8}（禁止回溯量词与零宽断言）",
     newTermPlainPlaceholder: "输入触发拦截或放行的词条文本",
     newTermCatLabel: "所属分类",
+    termLanguageLabel: "适用语言",
+    termLanguageAny: "任意语言 (und)",
+    termActionLabel: "命中动作",
+    termActions: { REVIEW: "送审复核", BLOCK: "直接拦截" },
     matchKindLabel: "匹配模式",
     confirmAddTermBtn: "确认增添",
     regexNote: "安全规范（受限正则）：支持基础字符组、固定次数量词及线性选择；不允许环视断言（如前瞻/后顾）、反向引用或嵌套量词导致回溯爆炸。",
+    wordlistTools: {
+      heading: "词表版本历史与命中预览",
+      sampleLabel: "测试消息",
+      samplePlaceholder: "输入示例消息以测试当前词表命中情况（不保存）…",
+      languageLabel: "消息语言",
+      previewBtn: "预览命中",
+      noMatches: "未命中任何词条",
+      blacklistHitsHeading: "黑名单命中",
+      whitelistMatchesHeading: "白名单命中",
+      loadVersionsBtn: "加载版本历史",
+      versionLabel: "词表版本",
+      restoreBtn: "恢复所选版本",
+      restoredNotice: "已恢复并发布为新版本。",
+      failedNotice: "词表操作失败。",
+    },
     csvHeading: "CSV 批量导入（格式：term,category,matchKind）",
     pickCsvFileBtn: "选择 CSV 文件",
     csvFileInputAria: "选择 CSV 模板文件",
@@ -2053,6 +2114,8 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     colTerm: "词条内容",
     colCategory: "分类",
     colMatchKind: "匹配模式",
+    colLanguage: "语言",
+    colAction: "动作",
     colEnabled: "启用状态",
     colActions: "操作",
     enabledSwitchLabel: "已启用",
@@ -2173,9 +2236,28 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermRegexPlaceholder: "例：promo\\d{4}（先読み・後方参照不可）",
     newTermPlainPlaceholder: "一致させるテキストを入力",
     newTermCatLabel: "カテゴリ",
+    termLanguageLabel: "言語",
+    termLanguageAny: "すべての言語 (und)",
+    termActionLabel: "動作",
+    termActions: { REVIEW: "再確認", BLOCK: "ブロック" },
     matchKindLabel: "一致方式",
     confirmAddTermBtn: "追加を確定",
     regexNote: "制限付き正規表現：文字クラス・固定回数・トップレベル選択のみ対応し、ReDoS 原因となる後読みや後方参照を禁止します。",
+    wordlistTools: {
+      heading: "用語リストの履歴とプレビュー",
+      sampleLabel: "テストメッセージ",
+      samplePlaceholder: "現在の用語リストを試すメッセージを入力（保存されません）…",
+      languageLabel: "メッセージの言語",
+      previewBtn: "一致を確認",
+      noMatches: "一致する用語はありません",
+      blacklistHitsHeading: "ブラックリスト一致",
+      whitelistMatchesHeading: "ホワイトリスト一致",
+      loadVersionsBtn: "履歴を読み込む",
+      versionLabel: "用語リストのバージョン",
+      restoreBtn: "選択した版を復元",
+      restoredNotice: "新しい版として復元しました。",
+      failedNotice: "用語リストの操作に失敗しました。",
+    },
     csvHeading: "CSV 一括取込（形式：term,category,matchKind）",
     pickCsvFileBtn: "CSV ファイルを選択",
     csvFileInputAria: "CSV ファイル選択",
@@ -2188,6 +2270,8 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     colTerm: "用語",
     colCategory: "分類",
     colMatchKind: "一致方式",
+    colLanguage: "言語",
+    colAction: "動作",
     colEnabled: "状態",
     colActions: "操作",
     enabledSwitchLabel: "有効",
@@ -2308,9 +2392,28 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermRegexPlaceholder: "예: promo\\d{4} (전후방 탐색 및 역참조 금지)",
     newTermPlainPlaceholder: "차단 또는 허용할 용어 입력",
     newTermCatLabel: "소속 분류",
+    termLanguageLabel: "언어",
+    termLanguageAny: "모든 언어 (und)",
+    termActionLabel: "동작",
+    termActions: { REVIEW: "검토", BLOCK: "차단" },
     matchKindLabel: "일치 방식",
     confirmAddTermBtn: "추가 확인",
     regexNote: "제한 정규식: 문자 클래스, 고정 반복 및 최상위 분기만 허용되며 ReDoS 위험 구문은 거부됩니다.",
+    wordlistTools: {
+      heading: "단어 목록 기록 및 미리보기",
+      sampleLabel: "테스트 메시지",
+      samplePlaceholder: "현재 단어 목록을 시험할 메시지를 입력하세요(저장되지 않음)…",
+      languageLabel: "메시지 언어",
+      previewBtn: "일치 항목 미리보기",
+      noMatches: "일치하는 항목 없음",
+      blacklistHitsHeading: "블랙리스트 일치",
+      whitelistMatchesHeading: "화이트리스트 일치",
+      loadVersionsBtn: "버전 기록 불러오기",
+      versionLabel: "단어 목록 버전",
+      restoreBtn: "선택한 버전 복원",
+      restoredNotice: "새 버전으로 복원했습니다.",
+      failedNotice: "단어 목록 작업에 실패했습니다.",
+    },
     csvHeading: "CSV 일괄 가져오기 (형식: term,category,matchKind)",
     pickCsvFileBtn: "CSV 파일 선택",
     csvFileInputAria: "CSV 템플릿 파일 선택",
@@ -2323,6 +2426,8 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     colTerm: "용어 내용",
     colCategory: "분류",
     colMatchKind: "일치 방식",
+    colLanguage: "언어",
+    colAction: "동작",
     colEnabled: "상태",
     colActions: "작업",
     enabledSwitchLabel: "사용",
@@ -2443,9 +2548,28 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermRegexPlaceholder: "ex. : promo\\d{4}",
     newTermPlainPlaceholder: "Texte à détecter",
     newTermCatLabel: "Catégorie",
+    termLanguageLabel: "Langue",
+    termLanguageAny: "Toutes les langues (und)",
+    termActionLabel: "Action",
+    termActions: { REVIEW: "Revue", BLOCK: "Bloquer" },
     matchKindLabel: "Mode",
     confirmAddTermBtn: "Ajouter",
     regexNote: "Regex bornée sûre : classes de caractères, répétitions fixes ; lookarounds interdits.",
+    wordlistTools: {
+      heading: "Historique et aperçu du lexique",
+      sampleLabel: "Message de test",
+      samplePlaceholder: "Saisissez un message pour tester le lexique (non enregistré)…",
+      languageLabel: "Langue du message",
+      previewBtn: "Aperçu des correspondances",
+      noMatches: "Aucune correspondance dans le lexique",
+      blacklistHitsHeading: "Correspondances liste noire",
+      whitelistMatchesHeading: "Correspondances liste blanche",
+      loadVersionsBtn: "Charger l’historique",
+      versionLabel: "Version du lexique",
+      restoreBtn: "Restaurer la version sélectionnée",
+      restoredNotice: "Restauré dans une nouvelle version.",
+      failedNotice: "Échec de l’opération sur le lexique.",
+    },
     csvHeading: "Import CSV (term,category,matchKind)",
     pickCsvFileBtn: "Choisir fichier CSV",
     csvFileInputAria: "Sélectionner un fichier CSV",
@@ -2458,6 +2582,8 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     colTerm: "Terme",
     colCategory: "Catégorie",
     colMatchKind: "Mode",
+    colLanguage: "Langue",
+    colAction: "Action",
     colEnabled: "Actif",
     colActions: "Actions",
     enabledSwitchLabel: "Actif",

@@ -10,7 +10,8 @@ import {
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { createAuditLogPort } from "../../db/audit-log.js";
 import { readDockAndModerationFeed } from "../../db/channel-panel-read.js";
-import { publishConfirmedCandidateTerm } from "../../db/channel-settings-store.js";
+import { publishConfirmedCandidateTerm, readLatestRuleVersion } from "../../db/channel-settings-store.js";
+import { parseRuleSetJson } from "../../db/wordlist-rules.js";
 import type { VoxwardDatabase } from "../../db/client.js";
 import { createDataRequestPort } from "../../db/data-request-store.js";
 import { createDecisionStorePort } from "../../db/decision-store.js";
@@ -35,10 +36,11 @@ import { executeRequest, startDeletionRequest, type DataDeps } from "../../modul
 import { createDecisionService, DEFAULT_DECISION_LIMITS } from "../../modules/decision-service/index.js";
 import {
   createCandidateStore,
-  createModerationChecker,
+  createChannelModerationCache,
   type CandidateCard,
   type CandidateStore,
 } from "../../modules/moderation-engine/index.js";
+import type { RuleSetInput } from "../../modules/moderation-engine/rules/groups.js";
 import { createScoringEngine, createScoringPlanner } from "../../modules/scoring-engine/index.js";
 import { resetSandboxState, SANDBOX_RULE_SET } from "../reset.js";
 import {
@@ -133,8 +135,13 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
     },
   };
 
-  const checker = createModerationChecker({
-    ruleSet: SANDBOX_RULE_SET,
+  const checker = createChannelModerationCache({
+    loadRuleSet(channelId) {
+      const latest = readLatestRuleVersion(database, channelId);
+      if (latest === null) return null;
+      return { version: latest.version, ruleSet: parseRuleSetJson(latest.ruleJson) as RuleSetInput };
+    },
+    fallbackRuleSet: SANDBOX_RULE_SET,
     nicknames: {
       displayNicknameOf: async (event) => event.sender.senderRef,
     },
@@ -481,6 +488,7 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
         now,
         onReset: () => {
           inProcessSubjectCache.clear();
+          checker.invalidate(SANDBOX_CHANNEL_ID);
         },
       });
     },
