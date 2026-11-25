@@ -1,6 +1,7 @@
 import type { ChangeKind, ChangeLogRow, EvidenceKind, EvidenceRow, TechnicalLogRow } from "@voxward/contracts";
 import { createAuditLogPort } from "../../../src/db/audit-log.js";
 import type { VoxwardDatabase } from "../../../src/db/client.js";
+import { eventPayments } from "../../../src/db/schema/index.js";
 import { T0 } from "../../db/helpers.js";
 import { seedOpenTask } from "../../decision-service/fixtures.js";
 import { CHANNEL, SUBJECT, TWIN } from "../fixtures.js";
@@ -59,6 +60,29 @@ export function changeLog(id: string, correlationId: string, kind: ChangeKind, e
 export function seedViewerHistory(database: VoxwardDatabase): void {
   seedOpenTask(database, { channelId: CHANNEL, subjectKey: "synthetic-key-1", subjectId: SUBJECT, eventId: "event-1", platformMessageRef: "m-1", taskId: "task-1" });
   seedOpenTask(database, { channelId: CHANNEL, subjectKey: "synthetic-key-2", subjectId: TWIN, eventId: "event-2", platformMessageRef: "m-2", taskId: "task-2" });
+  database.orm
+    .insert(eventPayments)
+    .values([
+      {
+        eventId: "event-1",
+        channelId: CHANNEL,
+        amountMicros: 500_000_000,
+        currency: "USD",
+        amountDisplay: "$5.00",
+        tier: 2,
+        createdAt: T0,
+      },
+      {
+        eventId: "event-2",
+        channelId: CHANNEL,
+        amountMicros: 1_000_000_000,
+        currency: "USD",
+        amountDisplay: "$10.00",
+        tier: 3,
+        createdAt: T0,
+      },
+    ])
+    .run();
   const logs = createAuditLogPort(database);
   logs.insertTechnicalLog(techLog("log-1", "corr-event-1", SUBJECT, "task-1"), [
     evidence("ev-1", "MESSAGE_TEXT", `${MARKER}-1`),

@@ -18,6 +18,7 @@ import {
   changeLogs,
   channelEvents,
   deliveries,
+  eventPayments,
   scoreExceptions,
   scoreLedger,
   scoreOutcomes,
@@ -105,6 +106,29 @@ function seedHistory(): void {
   logs.insertChangeLog(changeLog("change-2", `subject:${SUBJECT}`, "LIST_CHANGED"));
   logs.insertChangeLog(changeLog("change-3", "corr-event-2", "MANUAL_VERDICT"));
   logs.insertChangeLog(changeLog("change-4", `subject:${TWIN}`, "LIST_CHANGED"));
+  database.orm
+    .insert(eventPayments)
+    .values([
+      {
+        eventId: "event-1",
+        channelId: CHANNEL,
+        amountMicros: 500_000_000,
+        currency: "JPY",
+        amountDisplay: "¥500",
+        tier: 2,
+        createdAt: T0,
+      },
+      {
+        eventId: "event-2",
+        channelId: CHANNEL,
+        amountMicros: 1_000_000_000,
+        currency: "JPY",
+        amountDisplay: "¥1,000",
+        tier: 3,
+        createdAt: T0,
+      },
+    ])
+    .run();
   database.orm.insert(verdicts).values([verdictRow("verdict-1", "event-1", "task-1"), verdictRow("verdict-2", "event-2", "task-2")]).run();
   database.orm
     .insert(deliveries)
@@ -195,10 +219,12 @@ describe("cleaning every storage surface of one subject (VW-SUB036-AC001)", () =
     expect(response.status).toBe(200);
     expect(executionOf(response)).toBe("COMPLETED");
     const items = fixture.deps.requests.readItems(requestId);
-    expect(items).toHaveLength(18);
+    expect(items).toHaveLength(19);
     expect(items.every((item) => item.itemState === "DONE")).toBe(true);
 
     // Database surfaces of SUBJECT are gone, and TWIN's rows of the same kinds stay.
+    expect(database.orm.select().from(eventPayments).where(eq(eventPayments.eventId, "event-1")).all()).toHaveLength(0);
+    expect(database.orm.select().from(eventPayments).where(eq(eventPayments.eventId, "event-2")).all()).toHaveLength(1);
     expect(database.orm.select().from(scoreOutcomes).where(eq(scoreOutcomes.subjectId, SUBJECT)).all()).toHaveLength(0);
     expect(database.orm.select().from(scoreOutcomes).where(eq(scoreOutcomes.subjectId, TWIN)).all()).toHaveLength(1);
     expect(database.orm.select().from(scoreLedger).where(eq(scoreLedger.subjectId, SUBJECT)).all()).toHaveLength(0);

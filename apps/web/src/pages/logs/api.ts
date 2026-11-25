@@ -42,7 +42,7 @@ export interface IntegrationLogItem {
   readonly correlationId: string;
   readonly adapterId: string;
   readonly adapterName: string;
-  readonly providerKind: "LIVE_PLATFORM" | "AI_PROVIDER";
+  readonly providerKind: "LIVE_PLATFORM" | "AI_PROVIDER" | "OUTPUT_TARGET";
   readonly method: string;
   readonly url: string;
   readonly statusCode: number;
@@ -395,7 +395,9 @@ function parseIntegrationItem(value: unknown): IntegrationLogItem | undefined {
     typeof value.correlationId !== "string" ||
     typeof value.adapterId !== "string" ||
     typeof value.adapterName !== "string" ||
-    (value.providerKind !== "LIVE_PLATFORM" && value.providerKind !== "AI_PROVIDER") ||
+    (value.providerKind !== "LIVE_PLATFORM" &&
+      value.providerKind !== "AI_PROVIDER" &&
+      value.providerKind !== "OUTPUT_TARGET") ||
     typeof value.method !== "string" ||
     typeof value.url !== "string" ||
     typeof value.statusCode !== "number" ||

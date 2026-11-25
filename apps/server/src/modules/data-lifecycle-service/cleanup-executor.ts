@@ -135,7 +135,7 @@ function runSurface(deps: DataDeps, record: DataRequestRecord, facts: CleanupFac
 const PRE_SWEEP_SURFACES: Partial<Record<DeletionTargetKind, readonly DeletionTargetKind[]>> = {
   VERDICT: ["DELIVERY"],
   TASK: ["DELIVERY", "VERDICT"],
-  CHANNEL_EVENT: ["DELIVERY", "VERDICT", "TASK"],
+  CHANNEL_EVENT: ["DELIVERY", "VERDICT", "TASK", "EVENT_PAYMENT"],
 };
 
 function cleanSurface(deps: DataDeps, record: DataRequestRecord, facts: CleanupFacts, target: CleanupTarget): void {

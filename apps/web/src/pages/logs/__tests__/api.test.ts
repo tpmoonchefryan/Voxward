@@ -3,6 +3,7 @@ import {
   LogApiError,
   describeLogError,
   fetchChain,
+  fetchIntegrationPage,
   fetchTechnicalDetail,
   fetchTechnicalPage,
   type FetchLike,
@@ -147,5 +148,33 @@ describe("log API client", () => {
     const fetchImpl: FetchLike = () => Promise.reject(new TypeError("offline"));
 
     await expect(fetchTechnicalPage("channel-1", {}, { fetchImpl })).rejects.toMatchObject({ code: "NETWORK", status: null });
+  });
+
+  it("parses OUTPUT_TARGET integration log items without throwing INVALID_RESPONSE", async () => {
+    const outputItem = {
+      id: "int-out-1",
+      correlationId: "corr-out-1",
+      adapterId: "adp-obs-1",
+      adapterName: "OBS Main Overlay",
+      providerKind: "OUTPUT_TARGET",
+      method: "POST",
+      url: "/overlay/channel-1",
+      statusCode: 200,
+      latencyMs: 5,
+      requestHeaders: {},
+      responseHeaders: {},
+      rawRequestBody: null,
+      rawResponseBody: "{\"ok\":true}",
+      occurredAt: "2026-11-25T10:00:00.000Z",
+    };
+    const ok = respondWith([{ body: { items: [outputItem], nextCursor: null } }]);
+    const page = await fetchIntegrationPage("channel-1", {}, { fetchImpl: ok.fetchImpl });
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]?.providerKind).toBe("OUTPUT_TARGET");
+
+    const bad = respondWith([{ body: { items: [{ ...outputItem, providerKind: "UNKNOWN_KIND" }], nextCursor: null } }]);
+    await expect(fetchIntegrationPage("channel-1", {}, { fetchImpl: bad.fetchImpl })).rejects.toMatchObject({
+      code: "INVALID_RESPONSE",
+    });
   });
 });

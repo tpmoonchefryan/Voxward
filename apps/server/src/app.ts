@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
-import { CONTRACT_VERSION, type OutputSubscriberRegistry, type SubjectCacheHub } from "@voxward/contracts";
+import {
+  CONTRACT_VERSION,
+  type InferenceCapabilities,
+  type OutputSubscriberRegistry,
+  type SubjectCacheHub,
+} from "@voxward/contracts";
 import { attachBlivechatOutput } from "./adapters/blivechat/socket.js";
 import { attachNativeOutput, type ClosedConnection, type NativeOutputTiming } from "./adapters/native-output/socket.js";
 import { channelPanelRoutes, type ChannelPanelRoutesOptions } from "./auth/channel-panel-routes.js";
@@ -347,8 +352,10 @@ function channelPanelOptionsFor(
     candidates,
     models: {
       describe,
-      read: (channelId: string) => readModelSettings({ store: modelStore(channelId), describe }),
-      write: (channelId: string, body: unknown) => writeModelSettings({ store: modelStore(channelId), describe }, body),
+      read: (channelId: string, capabilitiesOverride?: InferenceCapabilities) =>
+        readModelSettings({ store: modelStore(channelId), describe: () => capabilitiesOverride ?? describe() }),
+      write: (channelId: string, body: unknown, capabilitiesOverride?: InferenceCapabilities) =>
+        writeModelSettings({ store: modelStore(channelId), describe: () => capabilitiesOverride ?? describe() }, body),
       toggleScTranslation: async (channelId: string, enabled: boolean) => {
         const store = modelStore(channelId);
         const current = await store.read();

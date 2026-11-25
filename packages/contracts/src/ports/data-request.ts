@@ -40,6 +40,7 @@ export type DeletionItemState = (typeof DELETION_ITEM_STATES)[number];
 export const DELETION_TARGET_KINDS = [
   "SUBJECT",
   "CHANNEL_EVENT",
+  "EVENT_PAYMENT",
   "TASK",
   "VERDICT",
   "DELIVERY",

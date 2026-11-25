@@ -41,6 +41,7 @@ export function deletionTargets(subjectId: string, cacheNames: readonly string[]
     subjectWide("DELIVERY"),
     subjectWide("VERDICT"),
     subjectWide("TASK"),
+    subjectWide("EVENT_PAYMENT"),
     subjectWide("CHANNEL_EVENT"),
     ...caches,
   ];
@@ -64,6 +65,7 @@ const CLEANING_ORDER: readonly DeletionTargetKind[] = [
   "DELIVERY",
   "VERDICT",
   "TASK",
+  "EVENT_PAYMENT",
   "CHANNEL_EVENT",
   "CACHE",
 ];

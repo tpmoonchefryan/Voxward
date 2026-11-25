@@ -63,8 +63,8 @@ describe("starting a deletion with a scoring exception (VW-SUB035-AC001)", () =>
     const body = response.body as { execution: string; stage: string; targets: unknown[]; counts: { pending: number } };
     expect(body.execution).toBe("RUNNING");
     expect(body.stage).toBe("EXECUTING");
-    expect(body.targets).toHaveLength(15);
-    expect(body.counts.pending).toBe(15);
+    expect(body.targets).toHaveLength(16);
+    expect(body.counts.pending).toBe(16);
     expect(generationOf(TWIN)).toBe(1);
     expect(exceptionRows(TWIN).filter((row) => row.removedAt === null)).toHaveLength(1);
     expect(exceptionChangeRows(TWIN)).toHaveLength(1);
@@ -126,7 +126,7 @@ describe("starting a deletion with a scoring exception (VW-SUB035-AC001)", () =>
     expect(generationOf(TWIN)).toBe(1);
     expect(exceptionRows(TWIN)).toHaveLength(1);
     expect(exceptionChangeRows(TWIN)).toHaveLength(1);
-    expect(fixture.deps.requests.readItems(requestId)).toHaveLength(15);
+    expect(fixture.deps.requests.readItems(requestId)).toHaveLength(16);
   });
 
   it("reuses the marker of a subject already on the exception list, and writes no second exception change", () => {

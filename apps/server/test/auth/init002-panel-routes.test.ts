@@ -348,6 +348,48 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     expect(modelRes.statusCode).toBe(200);
     expect(JSON.stringify(modelRes.json())).toContain("gpt-4.1-mini");
 
+    // PUT model-settings validates against merged enabled adapterModels and preserves capabilities + modelFault
+    const saveModelRes = await app.inject({
+      method: "PUT",
+      url: `/channels/${CH1}/model-settings`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: {
+        realtimeModeration: { modelId: "gpt-4.1-mini", reasoning: "low" },
+        scTranslation: { modelId: "gpt-4.1-mini", reasoning: "low" },
+        review: null,
+        scTranslationEnabled: true,
+      },
+    });
+    expect(saveModelRes.statusCode).toBe(200);
+    const savedBody = saveModelRes.json() as {
+      settings: { realtimeModeration: { modelId: string } | null };
+      issues: unknown[];
+      capabilities: { models?: Array<{ modelId: string }> };
+      modelFault: string;
+    };
+    expect(savedBody.settings.realtimeModeration?.modelId).toBe("gpt-4.1-mini");
+    expect(savedBody.issues).toEqual([]);
+    expect(savedBody.capabilities.models?.some((m) => m.modelId === "gpt-4.1-mini")).toBe(true);
+    expect("modelFault" in savedBody).toBe(true);
+    expect(savedBody.modelFault).toBeNull();
+
+    const invalidModelRes = await app.inject({
+      method: "PUT",
+      url: `/channels/${CH1}/model-settings`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: {
+        realtimeModeration: { modelId: "non-existent-model", reasoning: null },
+        scTranslation: null,
+        review: null,
+        scTranslationEnabled: false,
+      },
+    });
+    expect(invalidModelRes.statusCode).toBe(422);
+    const invalidBody = invalidModelRes.json() as { error: string; modelFault: string | null };
+    expect(invalidBody.error).toBe("SELECTION_REFUSED");
+    expect("modelFault" in invalidBody).toBe(true);
+    expect(invalidBody.modelFault).toBeNull();
+
     const intLogs = await app.inject({
       method: "GET",
       url: `/internal/channels/${CH1}/logs/integration`,

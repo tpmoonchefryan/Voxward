@@ -105,6 +105,7 @@ function cleanSubject(deps: ReplayDeps, plan: SubjectPlan): void {
   clean("VERDICT");
   deps.logs.removeSubjectTechnicalRows(subjectId);
   clean("TASK");
+  clean("EVENT_PAYMENT");
   clean("CHANNEL_EVENT");
 }
 

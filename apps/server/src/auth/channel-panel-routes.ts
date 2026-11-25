@@ -80,8 +80,12 @@ export interface ChannelPanelCandidateHandlers {
 
 export interface ChannelPanelModelHandlers {
   describe(): InferenceCapabilities;
-  read(channelId: string): Promise<{ status: number; body: unknown }>;
-  write(channelId: string, body: unknown): Promise<{ status: number; body: unknown }>;
+  read(channelId: string, capabilitiesOverride?: InferenceCapabilities): Promise<{ status: number; body: unknown }>;
+  write(
+    channelId: string,
+    body: unknown,
+    capabilitiesOverride?: InferenceCapabilities,
+  ): Promise<{ status: number; body: unknown }>;
   toggleScTranslation(channelId: string, enabled: boolean): Promise<{ status: number; body: unknown }>;
 }
 
@@ -560,16 +564,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     },
   );
 
-  app.get<{ Params: { channelId: string } }>("/channels/:channelId/model-settings", async (request, reply) => {
-    const { channelId } = request.params;
-    requireChannelMember(database, request, channelId, ["score.config"]);
-    const res = await models.read(channelId);
-    const faults = readChannelSetting<ConnectionFaultState>(
-      database,
-      channelId,
-      "connection-fault",
-      DEFAULT_CONNECTION_FAULT_STATE,
-    );
+  function mergedCapabilitiesFor(channelId: string): InferenceCapabilities {
     const baseCaps = models.describe();
     const adapterModels = readChannelAdapters(database, channelId)
       .filter((a) => a.category === "AI_PROVIDER" && a.enabled)
@@ -586,9 +581,23 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
         mergedModels.push(am);
       }
     }
+    return { ...baseCaps, models: mergedModels };
+  }
+
+  app.get<{ Params: { channelId: string } }>("/channels/:channelId/model-settings", async (request, reply) => {
+    const { channelId } = request.params;
+    requireChannelMember(database, request, channelId, ["score.config"]);
+    const mergedCaps = mergedCapabilitiesFor(channelId);
+    const res = await models.read(channelId, mergedCaps);
+    const faults = readChannelSetting<ConnectionFaultState>(
+      database,
+      channelId,
+      "connection-fault",
+      DEFAULT_CONNECTION_FAULT_STATE,
+    );
     return send(reply, res.status, {
       ...(res.body as Record<string, unknown>),
-      capabilities: { ...baseCaps, models: mergedModels },
+      capabilities: mergedCaps,
       modelFault: faults.modelFault,
     });
   });
@@ -598,10 +607,18 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     async (request, reply) => {
       const { channelId } = request.params;
       requireChannelMember(database, request, channelId, ["score.config"]);
-      const res = await models.write(channelId, request.body);
+      const mergedCaps = mergedCapabilitiesFor(channelId);
+      const res = await models.write(channelId, request.body, mergedCaps);
+      const faults = readChannelSetting<ConnectionFaultState>(
+        database,
+        channelId,
+        "connection-fault",
+        DEFAULT_CONNECTION_FAULT_STATE,
+      );
       return send(reply, res.status, {
         ...(res.body as Record<string, unknown>),
-        capabilities: models.describe(),
+        capabilities: mergedCaps,
+        modelFault: faults.modelFault,
       });
     },
   );

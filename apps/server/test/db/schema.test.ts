@@ -120,6 +120,8 @@ describe("generated migration matches the schema", () => {
       "channel_members_copy",
       "rule_terms",
       "rule_terms_copy",
+      "data_request_items",
+      "data_request_items_copy",
     ]);
 
     for (const name of configs.keys()) {

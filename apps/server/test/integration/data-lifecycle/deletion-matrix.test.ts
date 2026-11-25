@@ -423,7 +423,7 @@ describe("S028 Data Lifecycle: Full Storage-Surface Deletion Matrix (DELETE_DATA
 
     expect(countRows(database, "score_exceptions")).toBe(0);
     expect(countRows(database, "data_requests")).toBe(1);
-    expect(countRows(database, "data_request_items")).toBe(17);
+    expect(countRows(database, "data_request_items")).toBe(18);
 
     const targetChanges = database.orm.select().from(changeLogs).where(eq(changeLogs.correlationId, target.correlationId)).all();
     expect(targetChanges).toHaveLength(1);

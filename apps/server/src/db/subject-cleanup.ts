@@ -5,6 +5,7 @@ import type { VoxwardDatabase } from "./client.js";
 import {
   channelEvents,
   deliveries,
+  eventPayments,
   scoreLedger,
   scoreOutcomes,
   subjectIdentities,
@@ -72,7 +73,14 @@ function cleanOne(tx: ShortTransaction, input: CleanSurfaceInput): number {
       return deleteForEvents(tx, input, (eventIds) =>
         tx.delete(tasks).where(inArray(tasks.eventId, eventIds)).run().changes,
       );
+    case "EVENT_PAYMENT":
+      return deleteForEvents(tx, input, (eventIds) =>
+        tx.delete(eventPayments).where(inArray(eventPayments.eventId, eventIds)).run().changes,
+      );
     case "CHANNEL_EVENT":
+      deleteForEvents(tx, input, (eventIds) =>
+        tx.delete(eventPayments).where(inArray(eventPayments.eventId, eventIds)).run().changes,
+      );
       return tx
         .delete(channelEvents)
         .where(and(eq(channelEvents.channelId, input.channelId), eq(channelEvents.subjectId, input.subjectId)))
