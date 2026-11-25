@@ -6,7 +6,18 @@ export interface CsvRecord {
 
 export function readTermCsv(text: string): readonly CsvRecord[] {
   const input = text.replace(/^\uFEFF/u, "");
-  const delimiter = delimiterOf(input);
+  const comma = readDelimited(input, ",");
+  const semicolon = readDelimited(input, ";");
+  const commaFit = delimiterFit(comma);
+  const semicolonFit = delimiterFit(semicolon);
+  for (const [index, value] of semicolonFit.entries()) {
+    const other = commaFit[index] ?? 0;
+    if (value !== other) return value > other ? semicolon : comma;
+  }
+  return comma;
+}
+
+function readDelimited(input: string, delimiter: "," | ";"): readonly CsvRecord[] {
   const records: CsvRecord[] = [];
   let fields: string[] = [];
   let field = "";
@@ -60,18 +71,14 @@ export function readTermCsv(text: string): readonly CsvRecord[] {
   return records;
 }
 
-function delimiterOf(input: string): "," | ";" {
-  let quoted = false;
-  let comma = 0;
-  let semicolon = 0;
-  for (const ch of input) {
-    if (ch === '"') quoted = !quoted;
-    else if (!quoted) {
-      if (ch === "\n" || ch === "\r") {
-        if (comma > 0 || semicolon > 0) break;
-      } else if (ch === ",") comma += 1;
-      else if (ch === ";") semicolon += 1;
-    }
-  }
-  return semicolon > comma ? ";" : ",";
+function delimiterFit(records: readonly CsvRecord[]): readonly number[] {
+  const first = records[0];
+  const header = first !== undefined && !first.invalid &&
+    first.fields[0]?.toLowerCase() === "term" && first.fields[1]?.toLowerCase() === "category" &&
+    first.fields[2]?.toLowerCase() === "matchkind";
+  const multiColumn = records.filter(({ invalid, fields }) =>
+    !invalid && fields.length >= 2 && fields.length <= 4 && Boolean(fields[0]));
+  const withMatchKind = multiColumn.filter(({ fields }) =>
+    /^(EXACT|CONTAINS|NORMALIZED|REGEX)$/i.test(fields[2] ?? ""));
+  return [Number(header), withMatchKind.length, multiColumn.length];
 }
