@@ -17,7 +17,7 @@ import {
   DEFAULT_QUEUE_ADMIN_SETTINGS,
   DEFAULT_RETENTION_ADMIN_SETTINGS,
   DEFAULT_SCORING_ADMIN_SETTINGS,
-  publishRuleVersion,
+  publishTermList,
   readBlockedUsers,
   readChannelAdapters,
   readChannelSetting,
@@ -26,6 +26,7 @@ import {
   readRbacUsers,
   readTermCategories,
   readTermEntries,
+  readTermListVersions,
   redactAdapterConfig,
   removeBlockedUser,
   upsertBlockedUser,
@@ -34,17 +35,18 @@ import {
   writePlatformDeleteStatus,
   writeRbacRoles,
   writeRbacUsers,
-  writeTermEntries,
   type AdapterDriverId,
   type ChannelAdapterRecord,
   type ConnectionFaultState,
   type ExtendedTermEntry,
+  type ManagedRuleSetShape,
   type QueueAdminSettings,
   type RetentionAdminSettings,
   type ScoringAdminSettings,
   type StoredRbacRole,
   type StoredRbacUser,
 } from "../db/channel-settings-store.js";
+import { applyManagedWordlistToRuleSet } from "../db/wordlist-rules.js";
 import type { VoxwardDatabase } from "../db/client.js";
 import { authAccounts } from "../db/schema/index.js";
 import { authenticateRequest } from "./guard.js";
@@ -84,6 +86,18 @@ export interface ChannelPanelModelHandlers {
 export interface ChannelPanelRuleValidator {
   validate(input: unknown): { ok: true } | { ok: false; issues: readonly { code: string; ref: string; hint?: string }[] };
   validateRegexPattern?(pattern: string): { ok: true } | { ok: false; code: string; hint?: string };
+  normalizedTermIsEmpty(channelId: string, term: string): boolean;
+  previewWordlist(
+    channelId: string,
+    entries: readonly ExtendedTermEntry[],
+    text: string,
+    language?: string,
+  ): Promise<{
+    readonly hits: readonly string[];
+    readonly whitelistMatches: readonly string[];
+    readonly language: string;
+    readonly action: "BLOCK" | "REVIEW" | null;
+  }>;
 }
 
 export interface ChannelPanelRoutesOptions {
@@ -161,6 +175,8 @@ const TERM_ENTRY_SCHEMA = z
     categoryCode: z.string().min(1).max(48),
     matchKind: z.enum(["EXACT", "CONTAINS", "REGEX", "NORMALIZED"]),
     enabled: z.boolean(),
+    language: z.string().min(1).max(63).optional(),
+    action: z.enum(["BLOCK", "REVIEW"]).optional(),
   })
   .strict();
 
@@ -306,6 +322,32 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
   options,
 ) => {
   const { database, decisions, candidates, models, rules } = options;
+
+  function saveTerms(
+    channelId: string,
+    actorRef: string,
+    entries: readonly ExtendedTermEntry[],
+    reply: FastifyReply,
+    baseRuleSetOverride?: ManagedRuleSetShape,
+  ) {
+    const latest = readLatestRuleVersion(database, channelId);
+    const ruleSet = applyManagedWordlistToRuleSet(baseRuleSetOverride ?? latest?.ruleJson ?? null, entries);
+    const hasRules = ruleSet.groups.length > 0 || (ruleSet.whitelist?.length ?? 0) > 0;
+    if (hasRules) {
+      const validation = rules.validate(ruleSet);
+      if (!validation.ok) {
+        send(reply, 400, { error: "RULE_SET_INVALID", issues: validation.issues });
+        return undefined;
+      }
+    }
+    return publishTermList(database, {
+      channelId,
+      entries,
+      actorRef,
+      now: new Date(),
+      baseRuleSetOverride,
+    });
+  }
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof PanelRouteFailure) {
@@ -455,13 +497,17 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     if (!validation.ok) {
       return send(reply, 400, { error: "RULE_SET_INVALID", issues: validation.issues });
     }
-    const version = publishRuleVersion(database, {
+    const activeEntries = readTermEntries(database, channelId);
+    const saved = saveTerms(
       channelId,
-      ruleJson: JSON.stringify(request.body),
-      actorRef: accountId,
-      now: new Date(),
-    });
-    return send(reply, 200, { version, ruleSet: request.body });
+      accountId,
+      activeEntries,
+      reply,
+      request.body as ManagedRuleSetShape,
+    );
+    if (saved !== undefined) {
+      return send(reply, 200, { version: saved.version, ruleSet: saved.ruleSet });
+    }
   });
 
   app.post<{ Params: { channelId: string }; Body: unknown }>(
@@ -646,30 +692,59 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
   app.get<{ Params: { channelId: string } }>("/channels/:channelId/term-entries", async (request, reply) => {
     const { channelId } = request.params;
     requireChannelMember(database, request, channelId, ["queue.read", "list.edit", "score.config"]);
-    const stored = readTermEntries(database, channelId);
-    if (stored.length > 0) {
-      return send(reply, 200, { entries: stored });
-    }
-    const legacy = readRulesAndLists(database, channelId).terms;
-    const seeded: ExtendedTermEntry[] = legacy.map((t) => ({
-      id: t.id,
-      listKind: "BLACKLIST",
-      term: t.term,
-      categoryCode: t.groupCode || "spam",
-      matchKind:
-        t.matchKind === "REGEX" || t.matchKind === "CONTAINS" || t.matchKind === "EXACT" || t.matchKind === "NORMALIZED"
-          ? t.matchKind
-          : "EXACT",
-      enabled: true,
-    }));
-    return send(reply, 200, { entries: seeded });
+    return send(reply, 200, { entries: readTermEntries(database, channelId) });
   });
+
+  app.get<{ Params: { channelId: string } }>("/channels/:channelId/term-entries/versions", async (request, reply) => {
+    const { channelId } = request.params;
+    requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
+    const versions = readTermListVersions(database, channelId);
+    return send(reply, 200, {
+      versions: versions.map(({ version, createdAt, createdByRef }) => ({ version, createdAt, createdByRef })),
+    });
+  });
+
+  app.post<{ Params: { channelId: string }; Body: unknown }>(
+    "/channels/:channelId/term-entries/rollback",
+    async (request, reply) => {
+      const { channelId } = request.params;
+      const { accountId } = requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
+      const body = z.object({ version: z.number().int().min(1) }).strict().safeParse(request.body);
+      if (!body.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const target = readTermListVersions(database, channelId, 200).find((entry) => entry.version === body.data.version);
+      if (target === undefined) throw new PanelRouteFailure(404, "RULE_VERSION_NOT_FOUND");
+      const saved = saveTerms(channelId, accountId, target.entries, reply);
+      if (saved !== undefined) {
+        return send(reply, 200, { version: saved.version, createdAt: saved.createdAt, entries: saved.entries });
+      }
+    },
+  );
+
+  app.post<{ Params: { channelId: string }; Body: unknown }>(
+    "/channels/:channelId/term-entries/preview",
+    async (request, reply) => {
+      const { channelId } = request.params;
+      requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
+      const body = z
+        .object({ text: z.string().min(1).max(500), language: z.string().min(1).max(63).optional() })
+        .strict()
+        .safeParse(request.body);
+      if (!body.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const preview = await rules.previewWordlist(
+        channelId,
+        readTermEntries(database, channelId),
+        body.data.text,
+        body.data.language,
+      );
+      return send(reply, 200, preview);
+    },
+  );
 
   app.put<{ Params: { channelId: string }; Body: unknown }>(
     "/channels/:channelId/term-entries",
     async (request, reply) => {
       const { channelId } = request.params;
-      requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
+      const { accountId } = requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
       const parsed = TERM_ENTRIES_PUT_BODY.safeParse(request.body);
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
       for (const entry of parsed.data.entries) {
@@ -682,9 +757,17 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
             });
           }
         }
+        if (entry.matchKind === "NORMALIZED" && rules.normalizedTermIsEmpty(channelId, entry.term)) {
+          return send(reply, 400, {
+            error: "RULE_SET_INVALID",
+            issues: [{ code: "PATTERN_EMPTY", ref: entry.id }],
+          });
+        }
       }
-      const next = writeTermEntries(database, channelId, parsed.data.entries);
-      return send(reply, 200, { entries: next });
+      const saved = saveTerms(channelId, accountId, parsed.data.entries, reply);
+      if (saved !== undefined) {
+        return send(reply, 200, { version: saved.version, createdAt: saved.createdAt, entries: saved.entries });
+      }
     },
   );
 
@@ -722,7 +805,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     "/channels/:channelId/term-entries/import-csv",
     async (request, reply) => {
       const { channelId } = request.params;
-      requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
+      const { accountId } = requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
       const parsed = TERM_CSV_IMPORT_BODY.safeParse(request.body);
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
       const lines = parsed.data.csvText
@@ -743,14 +826,18 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
         ) {
           continue;
         }
-        const [term = "", categoryCode = "spam", rawKind = "EXACT"] = parts;
+        const [term = "", categoryCode = "spam", rawKind = "EXACT", language = "und"] = parts;
         const matchKind = rawKind.toUpperCase();
         if (!term) {
           errors.push({ line: idx + 1, message: "词条内容不能为空" });
           continue;
         }
-        if (matchKind !== "EXACT" && matchKind !== "CONTAINS" && matchKind !== "REGEX") {
-          errors.push({ line: idx + 1, message: "matchKind 仅支持 EXACT / CONTAINS / REGEX" });
+        if (matchKind !== "EXACT" && matchKind !== "CONTAINS" && matchKind !== "REGEX" && matchKind !== "NORMALIZED") {
+          errors.push({ line: idx + 1, message: "matchKind 仅支持 EXACT / CONTAINS / REGEX / NORMALIZED" });
+          continue;
+        }
+        if (matchKind === "NORMALIZED" && rules.normalizedTermIsEmpty(channelId, term)) {
+          errors.push({ line: idx + 1, message: "归一化后词条内容不能为空" });
           continue;
         }
         if (matchKind === "REGEX" && rules.validateRegexPattern) {
@@ -767,10 +854,17 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
           categoryCode: categoryCode || (parsed.data.listKind === "WHITELIST" ? "friendly" : "spam"),
           matchKind,
           enabled: true,
+          language: language || "und",
+          action: "REVIEW",
         });
       }
-      const next = writeTermEntries(database, channelId, [...added, ...current]);
-      return send(reply, 200, { imported: added.length, errors, entries: next });
+      if (added.length === 0) {
+        return send(reply, 200, { imported: 0, errors, entries: current });
+      }
+      const saved = saveTerms(channelId, accountId, [...added, ...current], reply);
+      if (saved !== undefined) {
+        return send(reply, 200, { imported: added.length, errors, version: saved.version, entries: saved.entries });
+      }
     },
   );
 

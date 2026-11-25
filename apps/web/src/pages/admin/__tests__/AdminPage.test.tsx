@@ -25,6 +25,8 @@ describe("Admin & Settings Page (VW-Draft-04)", () => {
     expect(html).toContain("Whitelist Terms");
     expect(html).toContain("Download CSV Template");
     expect(html).toContain("data-download-csv-template");
+    expect(html).toContain("Wordlist history and preview");
+    expect(html).toContain("Preview matches");
     expect(html).toContain("Scoring &amp; Runtime");
     expect(html).toContain("Data Retention");
   });

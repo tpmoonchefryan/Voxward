@@ -1,4 +1,6 @@
+import { type ChannelEvent, CONTRACT_VERSION } from "@voxward/contracts";
 import { describe, expect, it } from "vitest";
+import { createChannelModerationCache } from "../../../src/modules/moderation-engine/channel-cache.js";
 import {
   type CheckEnvironment,
   DEFAULT_LIMITS,
@@ -268,5 +270,84 @@ describe("kana and accented letters through the checker (S006 B1, E20 §3)", () 
   it("still blocks a normalized rule hidden behind a composed mark", async () => {
     const verdict = await evaluateMessage(input("Viewer", "ba\u0301dword"), environment(normalizedSet));
     expect(verdict.route).toBe("BLOCK");
+  });
+});
+
+describe("whole-field exact matching, whitelist suppression, and channel cache (PR A)", () => {
+  it("treats wholeField exact as whole-message match while substring exact still matches substrings", async () => {
+    const wholeRule = compiled({
+      version: "v1",
+      groups: [{ id: "g-exact", action: { kind: "REVIEW" }, rules: [{ id: "e1", kind: "exact", text: "spam", wholeField: true }] }],
+    });
+    expect((await evaluateMessage(input("Viewer", "  spam  "), environment(wholeRule))).route).toBe("REVIEW");
+    expect((await evaluateMessage(input("Viewer", "anti-spam message"), environment(wholeRule))).route).toBe("PASS");
+
+    const containsRule = compiled({
+      version: "v1",
+      groups: [{ id: "g-contains", action: { kind: "REVIEW" }, rules: [{ id: "c1", kind: "exact", text: "spam" }] }],
+    });
+    expect((await evaluateMessage(input("Viewer", "anti-spam message"), environment(containsRule))).route).toBe("REVIEW");
+  });
+
+  it("suppresses non-BLOCK body hits covered by whitelist while never suppressing BLOCK hits", async () => {
+    const ruleSet = compiled({
+      version: "v1",
+      groups: [
+        { id: "soft", action: { kind: "REVIEW" }, rules: [{ id: "c-soft", kind: "exact", text: "grass" }] },
+        { id: "hard", action: { kind: "BLOCK" }, rules: [{ id: "c-hard", kind: "exact", text: "slur" }] },
+      ],
+      whitelist: [
+        { id: "w-1", kind: "exact", text: "lemongrass" },
+        { id: "w-2", kind: "exact", text: "safe slur quote" },
+      ],
+    });
+    const covered = await evaluateMessage(input("Viewer", "drinking lemongrass tea"), environment(ruleSet));
+    expect(covered.route).toBe("PASS");
+    expect(covered.whitelistMatches ?? []).toHaveLength(1);
+    expect(covered.whitelistMatches?.[0]?.ruleId).toBe("w-1");
+
+    const blocked = await evaluateMessage(input("Viewer", "safe slur quote"), environment(ruleSet));
+    expect(blocked.route).toBe("BLOCK");
+    expect(blocked.hits.some((h) => h.ruleId === "c-hard")).toBe(true);
+  });
+
+  it("caches ModerationChecker per (channelId, version) and recompiles on version bump", async () => {
+    let version = 1;
+    let term = "alpha";
+    let loads = 0;
+    const cache = createChannelModerationCache({
+      nicknames: { displayNicknameOf: async () => "Viewer" },
+      loadRuleSet: () => {
+        loads += 1;
+        return {
+          version,
+          ruleSet: {
+            version: `v${version}`,
+            groups: [{ id: "g1", action: { kind: "BLOCK" }, rules: [{ id: "r1", kind: "exact", text: term }] }],
+          },
+        };
+      },
+    });
+
+    const event = (body: string): ChannelEvent => ({
+      contractVersion: CONTRACT_VERSION,
+      channelId: "ch-1",
+      platform: "youtube",
+      platformMessageId: `pm-${loads}`,
+      platformOrder: loads,
+      receivedAt: "2026-11-25T00:00:00.000Z",
+      correlationId: `corr-${loads}`,
+      body,
+      sender: { contractVersion: CONTRACT_VERSION, senderRef: "s-1" },
+    });
+
+    expect((await cache.moderate(event("alpha"))).route).toBe("BLOCK");
+    expect(cache.size()).toBe(1);
+    expect((await cache.moderate(event("beta"))).route).toBe("PASS");
+
+    version = 2;
+    term = "beta";
+    expect((await cache.moderate(event("beta"))).route).toBe("BLOCK");
+    expect((await cache.moderate(event("alpha"))).route).toBe("PASS");
   });
 });

@@ -310,6 +310,31 @@
 | `ck_rule_versions_version` | CHECK | `version` 不小于 1。 |
 | `ck_rule_versions_json` | CHECK | `rule_json` 必须是合法 JSON。 |
 
+### `wordlist_snapshots`
+
+- 用途：与已发布规则版本绑定的词表快照，供管理端查看历史与回滚。
+- 内容分类：无正文。词条本身是规则内容。
+- 保留：与频道同寿命。
+
+#### 列
+
+| 列 | 类型 | 可空 | 说明 |
+| --- | --- | --- | --- |
+| `id` | TEXT | 否 | 主键。 |
+| `channel_id` | TEXT | 否 | 外键，指向 `channels.id`。 |
+| `rule_version` | INTEGER | 否 | 对应的规则版本号，不小于 1。 |
+| `entries_json` | TEXT | 否 | 词条快照 JSON，必须通过 `json_valid`。 |
+| `created_at` | TEXT | 否 | 创建时间。 |
+| `created_by_ref` | TEXT | 否 | 操作者的内部引用。 |
+
+#### 索引与约束
+
+| 名称 | 类别 | 说明 |
+| --- | --- | --- |
+| `wordlist_snapshots_channel_version_uq` | 唯一索引 | `(channel_id, rule_version)` 唯一。 |
+| `ck_wordlist_snapshots_version` | CHECK | `rule_version` 不小于 1。 |
+| `ck_wordlist_snapshots_json` | CHECK | `entries_json` 必须是合法 JSON。 |
+
 ### `rule_terms`
 
 - 用途：词条库（提案 §7.1「词条入库」）。撤销的词条保留行，并记录退役时间。
@@ -323,9 +348,12 @@
 | `id` | TEXT | 否 | 主键。 |
 | `channel_id` | TEXT | 否 | 外键，指向 `channels.id`。 |
 | `term` | TEXT | 否 | 词条。 |
-| `match_kind` | TEXT | 否 | 取值 `EXACT`、`NORMALIZED`、`CROSS_LANGUAGE_PHONETIC`、`CONSTRAINED_REGEX`（提案 §4.3）。 |
+| `match_kind` | TEXT | 否 | 取值 `EXACT`、`CONTAINS`、`NORMALIZED`、`CROSS_LANGUAGE_PHONETIC`、`CONSTRAINED_REGEX`（提案 §4.3）。 |
 | `language` | TEXT | 否 | 适用语言。 |
 | `group_code` | TEXT | 否 | 分组代码。 |
+| `list_kind` | TEXT | 否 | 默认 `BLACKLIST`。取值 `BLACKLIST` 或 `WHITELIST`。 |
+| `enabled` | INTEGER | 否 | 默认 1。1 表示启用，0 表示停用。 |
+| `action` | TEXT | 否 | 默认 `REVIEW`。取值 `BLOCK` 或 `REVIEW`。 |
 | `created_at` | TEXT | 否 | 入库时间。 |
 | `created_by_ref` | TEXT | 否 | 入库者的内部引用。 |
 | `retired_at` | TEXT | 是 | 退役时间。为空表示生效。 |
@@ -334,8 +362,11 @@
 
 | 名称 | 类别 | 说明 |
 | --- | --- | --- |
-| `rule_terms_active_uq` | 部分唯一索引 | `(channel_id, match_kind, language, term)` 在 `retired_at IS NULL` 时唯一。 |
-| `ck_rule_terms_match_kind` | CHECK | `match_kind` 只能取上列四个值。 |
+| `rule_terms_active_uq` | 部分唯一索引 | `(channel_id, list_kind, match_kind, language, term)` 在 `retired_at IS NULL` 时唯一。 |
+| `ck_rule_terms_match_kind` | CHECK | `match_kind` 只能取上列五个值。 |
+| `ck_rule_terms_list_kind` | CHECK | `list_kind` 只能取 `BLACKLIST` 或 `WHITELIST`。 |
+| `ck_rule_terms_enabled` | CHECK | `enabled` 只能是 0 或 1。 |
+| `ck_rule_terms_action` | CHECK | `action` 只能取 `BLOCK` 或 `REVIEW`。 |
 
 ### `list_entries`
 

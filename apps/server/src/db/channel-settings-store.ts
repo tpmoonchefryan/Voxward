@@ -1,8 +1,17 @@
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import type { VoxwardDatabase } from "./client.js";
-import { deploymentSettings, ruleTerms, ruleVersions } from "./schema/index.js";
-import { runShortTransaction } from "./transaction.js";
+import { changeLogs, deploymentSettings, ruleTerms, ruleVersions, wordlistSnapshots } from "./schema/index.js";
+import { runShortTransaction, type ShortTransaction } from "./transaction.js";
+import {
+  applyManagedWordlistToRuleSet,
+  fromDbMatchKind,
+  toDbMatchKind,
+  type ExtendedTermEntry,
+  type ManagedRuleSetShape,
+} from "./wordlist-rules.js";
+
+export type { ExtendedTermEntry, PanelTermMatchKind, ManagedRuleSetShape } from "./wordlist-rules.js";
 
 export type PlatformDeleteUiStatus = "PENDING" | "DELETED" | "FAILED" | "UNKNOWN";
 
@@ -147,68 +156,177 @@ export function publishRuleVersion(
   database: VoxwardDatabase,
   input: { readonly channelId: string; readonly ruleJson: string; readonly actorRef: string; readonly now: Date },
 ): number {
+  return runShortTransaction(database, (tx) => insertRuleVersion(tx, input));
+}
+
+function insertRuleVersion(
+  tx: ShortTransaction,
+  input: { readonly channelId: string; readonly ruleJson: string; readonly actorRef: string; readonly now: Date },
+): number {
   const createdAt = input.now.toISOString();
-  return runShortTransaction(database, (tx) => {
-    const latest = tx
-      .select({ version: ruleVersions.version })
-      .from(ruleVersions)
-      .where(eq(ruleVersions.channelId, input.channelId))
-      .orderBy(desc(ruleVersions.version))
-      .limit(1)
-      .get();
-    const nextVersion = (latest?.version ?? 0) + 1;
-    tx.insert(ruleVersions)
-      .values({
-        id: randomUUID(),
-        channelId: input.channelId,
-        version: nextVersion,
-        ruleJson: input.ruleJson,
-        createdAt,
-        createdByRef: input.actorRef,
-      })
-      .run();
-    return nextVersion;
-  });
+  const latest = tx
+    .select({ version: ruleVersions.version })
+    .from(ruleVersions)
+    .where(eq(ruleVersions.channelId, input.channelId))
+    .orderBy(desc(ruleVersions.version))
+    .limit(1)
+    .get();
+  const nextVersion = (latest?.version ?? 0) + 1;
+  tx.insert(ruleVersions)
+    .values({
+      id: randomUUID(),
+      channelId: input.channelId,
+      version: nextVersion,
+      ruleJson: input.ruleJson,
+      createdAt,
+      createdByRef: input.actorRef,
+    })
+    .run();
+  return nextVersion;
+}
+
+export function readActiveTermEntriesInTx(tx: Pick<VoxwardDatabase["orm"], "select">, channelId: string): ExtendedTermEntry[] {
+  return tx
+    .select({
+      id: ruleTerms.id,
+      term: ruleTerms.term,
+      matchKind: ruleTerms.matchKind,
+      language: ruleTerms.language,
+      groupCode: ruleTerms.groupCode,
+      listKind: ruleTerms.listKind,
+      enabled: ruleTerms.enabled,
+      action: ruleTerms.action,
+    })
+    .from(ruleTerms)
+    .where(and(eq(ruleTerms.channelId, channelId), isNull(ruleTerms.retiredAt)))
+    .orderBy(desc(ruleTerms.createdAt), ruleTerms.id)
+    .all()
+    .map((row) => ({
+      id: row.id,
+      listKind: row.listKind === "WHITELIST" ? "WHITELIST" : "BLACKLIST",
+      term: row.term,
+      categoryCode: row.groupCode || (row.listKind === "WHITELIST" ? "friendly" : "spam"),
+      matchKind: fromDbMatchKind(row.matchKind),
+      enabled: row.enabled === 1,
+      language: row.language,
+      action: row.action === "BLOCK" ? "BLOCK" : "REVIEW",
+    }));
+}
+
+/**
+ * Rebuilds managed wordlist groups onto the channel's latest rule version from active `rule_terms` rows
+ * and records a `rule_versions` + `wordlist_snapshots` entry inside the caller's transaction.
+ */
+export function syncRuleVersionFromActiveTermsInTx(
+  tx: ShortTransaction,
+  input: {
+    readonly channelId: string;
+    readonly actorRef: string;
+    readonly nowIso: string;
+    readonly baseRuleSetOverride?: ManagedRuleSetShape;
+  },
+): { readonly version: number; readonly entries: readonly ExtendedTermEntry[]; readonly ruleSet: ManagedRuleSetShape } {
+  const entries = readActiveTermEntriesInTx(tx, input.channelId);
+  const latest = tx
+    .select({ version: ruleVersions.version, ruleJson: ruleVersions.ruleJson })
+    .from(ruleVersions)
+    .where(eq(ruleVersions.channelId, input.channelId))
+    .orderBy(desc(ruleVersions.version))
+    .limit(1)
+    .get();
+  const ruleSet = applyManagedWordlistToRuleSet(input.baseRuleSetOverride ?? latest?.ruleJson ?? null, entries);
+  const nextVersion = (latest?.version ?? 0) + 1;
+  tx.insert(ruleVersions)
+    .values({
+      id: randomUUID(),
+      channelId: input.channelId,
+      version: nextVersion,
+      ruleJson: JSON.stringify(ruleSet),
+      createdAt: input.nowIso,
+      createdByRef: input.actorRef,
+    })
+    .run();
+  tx.insert(wordlistSnapshots)
+    .values({
+      id: randomUUID(),
+      channelId: input.channelId,
+      ruleVersion: nextVersion,
+      entriesJson: JSON.stringify(entries),
+      createdAt: input.nowIso,
+      createdByRef: input.actorRef,
+    })
+    .run();
+  return { version: nextVersion, entries, ruleSet };
 }
 
 export function publishConfirmedCandidateTerm(
   database: VoxwardDatabase,
-  input: { readonly channelId: string; readonly term: string; readonly candidateId: string; readonly actorRef: string },
+  input: {
+    readonly channelId: string;
+    readonly term: string;
+    readonly candidateId: string;
+    readonly actorRef: string;
+    readonly language?: string;
+    readonly now?: Date;
+  },
 ): number {
-  const createdAt = new Date().toISOString();
+  const now = input.now ?? new Date();
+  const createdAt = now.toISOString();
+  const expiresAt = new Date(now.getTime() + 30 * 86_400_000).toISOString();
+  const language = input.language ?? "und";
   return runShortTransaction(database, (tx) => {
-    const latest = tx
-      .select({ version: ruleVersions.version, ruleJson: ruleVersions.ruleJson })
-      .from(ruleVersions)
-      .where(eq(ruleVersions.channelId, input.channelId))
-      .orderBy(desc(ruleVersions.version))
-      .limit(1)
+    const existing = tx
+      .select({ id: ruleTerms.id })
+      .from(ruleTerms)
+      .where(
+        and(
+          eq(ruleTerms.channelId, input.channelId),
+          eq(ruleTerms.listKind, "BLACKLIST"),
+          eq(ruleTerms.matchKind, "NORMALIZED"),
+          eq(ruleTerms.language, language),
+          eq(ruleTerms.term, input.term),
+          isNull(ruleTerms.retiredAt),
+        ),
+      )
       .get();
-    const nextVersion = (latest?.version ?? 0) + 1;
-    tx.insert(ruleVersions)
+    if (existing === undefined) {
+      tx.insert(ruleTerms)
+        .values({
+          id: randomUUID(),
+          channelId: input.channelId,
+          term: input.term,
+          matchKind: "NORMALIZED",
+          language,
+          groupCode: `candidate:${input.candidateId}`,
+          listKind: "BLACKLIST",
+          enabled: 1,
+          action: "REVIEW",
+          createdAt,
+          createdByRef: input.actorRef,
+          retiredAt: null,
+        })
+        .run();
+    }
+    const synced = syncRuleVersionFromActiveTermsInTx(tx, {
+      channelId: input.channelId,
+      actorRef: input.actorRef,
+      nowIso: createdAt,
+    });
+    tx.insert(changeLogs)
       .values({
         id: randomUUID(),
         channelId: input.channelId,
-        version: nextVersion,
-        ruleJson: latest?.ruleJson ?? JSON.stringify({ version: `v${nextVersion}`, groups: [] }),
-        createdAt,
-        createdByRef: input.actorRef,
+        occurredAt: createdAt,
+        actorKind: "ACCOUNT",
+        actorRef: input.actorRef,
+        changeKind: "TERM_CHANGED",
+        summary: "词条变更：确认候选词条入库",
+        outcome: "SUCCEEDED",
+        correlationId: null,
+        expiresAt,
       })
       .run();
-    tx.insert(ruleTerms)
-      .values({
-        id: randomUUID(),
-        channelId: input.channelId,
-        term: input.term,
-        matchKind: "NORMALIZED",
-        language: "und",
-        groupCode: `candidate:${input.candidateId}`,
-        createdAt,
-        createdByRef: input.actorRef,
-      })
-      .onConflictDoNothing()
-      .run();
-    return nextVersion;
+    return synced.version;
   });
 }
 
@@ -318,28 +436,168 @@ export function appendTermCategory(
   return { ok: true, categories: next };
 }
 
-export interface ExtendedTermEntry {
-  readonly id: string;
-  readonly listKind: "BLACKLIST" | "WHITELIST";
-  readonly term: string;
-  readonly categoryCode: string;
-  readonly matchKind: "EXACT" | "CONTAINS" | "REGEX" | "NORMALIZED";
-  readonly enabled: boolean;
+export interface TermListVersion {
+  readonly version: number;
+  readonly createdAt: string;
+  readonly createdByRef: string;
+  readonly entries: readonly ExtendedTermEntry[];
 }
 
 export function readTermEntries(database: VoxwardDatabase, channelId: string): ExtendedTermEntry[] {
-  const saved = readChannelSetting<ExtendedTermEntry[] | null>(database, channelId, "term-entries", null);
-  return saved ?? [];
+  return readActiveTermEntriesInTx(database.orm, channelId);
 }
 
-export function writeTermEntries(
+export function readTermListVersions(database: VoxwardDatabase, channelId: string, limit = 50): readonly TermListVersion[] {
+  const rows = database.orm
+    .select({
+      version: wordlistSnapshots.ruleVersion,
+      createdAt: wordlistSnapshots.createdAt,
+      createdByRef: wordlistSnapshots.createdByRef,
+      entriesJson: wordlistSnapshots.entriesJson,
+    })
+    .from(wordlistSnapshots)
+    .where(eq(wordlistSnapshots.channelId, channelId))
+    .orderBy(desc(wordlistSnapshots.ruleVersion))
+    .limit(limit)
+    .all();
+  return rows.map((row) => ({
+    version: row.version,
+    createdAt: row.createdAt,
+    createdByRef: row.createdByRef,
+    entries: JSON.parse(row.entriesJson) as ExtendedTermEntry[],
+  }));
+}
+
+export function publishTermList(
   database: VoxwardDatabase,
-  channelId: string,
-  entries: readonly ExtendedTermEntry[],
-  now: Date = new Date(),
-): ExtendedTermEntry[] {
-  writeChannelSetting(database, channelId, "term-entries", entries, now);
-  return [...entries];
+  input: {
+    readonly channelId: string;
+    readonly entries: readonly ExtendedTermEntry[];
+    readonly actorRef: string;
+    readonly now: Date;
+    readonly changeLogExpiresAt?: string;
+    readonly baseRuleSetOverride?: ManagedRuleSetShape;
+  },
+): TermListVersion & { readonly ruleSet: ManagedRuleSetShape } {
+  const nowIso = input.now.toISOString();
+  const expiresAt = input.changeLogExpiresAt ?? new Date(input.now.getTime() + 30 * 86_400_000).toISOString();
+  return runShortTransaction(database, (tx) => {
+    const deduped: ExtendedTermEntry[] = [];
+    const seenKeys = new Set<string>();
+    for (const entry of input.entries) {
+      const language = entry.language ?? "und";
+      const dbKind = toDbMatchKind(entry.matchKind);
+      const key = JSON.stringify([entry.listKind, dbKind, language, entry.term]);
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      deduped.push({
+        ...entry,
+        language,
+        action: entry.listKind === "WHITELIST" ? "REVIEW" : (entry.action ?? "REVIEW"),
+      });
+    }
+
+    const activeRows = tx
+      .select()
+      .from(ruleTerms)
+      .where(and(eq(ruleTerms.channelId, input.channelId), isNull(ruleTerms.retiredAt)))
+      .all();
+    const activeById = new Map(activeRows.map((row) => [row.id, row]));
+
+    const unchangedIds = new Set<string>();
+    const toInsert: ExtendedTermEntry[] = [];
+    for (const entry of deduped) {
+      const active = activeById.get(entry.id);
+      if (
+        active !== undefined &&
+        active.listKind === entry.listKind &&
+        active.matchKind === toDbMatchKind(entry.matchKind) &&
+        active.language === (entry.language ?? "und") &&
+        active.term === entry.term &&
+        active.groupCode === entry.categoryCode &&
+        (active.enabled === 1) === entry.enabled &&
+        active.action === (entry.action ?? "REVIEW")
+      ) {
+        unchangedIds.add(active.id);
+      } else {
+        toInsert.push(entry);
+      }
+    }
+
+    const retireIds = activeRows.filter((row) => !unchangedIds.has(row.id)).map((row) => row.id);
+    if (retireIds.length > 0) {
+      tx.update(ruleTerms)
+        .set({ retiredAt: nowIso })
+        .where(inArray(ruleTerms.id, retireIds))
+        .run();
+    }
+
+    const candidateIds = toInsert.map((entry) => entry.id);
+    const takenIds =
+      candidateIds.length === 0
+        ? new Set<string>()
+        : new Set(
+            tx
+              .select({ id: ruleTerms.id })
+              .from(ruleTerms)
+              .where(inArray(ruleTerms.id, candidateIds))
+              .all()
+              .map((row) => row.id),
+          );
+
+    for (const entry of toInsert) {
+      let id = entry.id;
+      if (takenIds.has(id)) {
+        id = randomUUID();
+      }
+      takenIds.add(id);
+      tx.insert(ruleTerms)
+        .values({
+          id,
+          channelId: input.channelId,
+          term: entry.term,
+          matchKind: toDbMatchKind(entry.matchKind),
+          language: entry.language ?? "und",
+          groupCode: entry.categoryCode,
+          listKind: entry.listKind,
+          enabled: entry.enabled ? 1 : 0,
+          action: entry.action ?? "REVIEW",
+          createdAt: nowIso,
+          createdByRef: input.actorRef,
+          retiredAt: null,
+        })
+        .run();
+    }
+
+    const synced = syncRuleVersionFromActiveTermsInTx(tx, {
+      channelId: input.channelId,
+      actorRef: input.actorRef,
+      nowIso,
+      baseRuleSetOverride: input.baseRuleSetOverride,
+    });
+    tx.insert(changeLogs)
+      .values({
+        id: randomUUID(),
+        channelId: input.channelId,
+        occurredAt: nowIso,
+        actorKind: "ACCOUNT",
+        actorRef: input.actorRef,
+        changeKind: "TERM_CHANGED",
+        summary: "词条变更：已发布词表版本",
+        outcome: "SUCCEEDED",
+        correlationId: null,
+        expiresAt,
+      })
+      .run();
+
+    return {
+      version: synced.version,
+      createdAt: nowIso,
+      createdByRef: input.actorRef,
+      entries: synced.entries,
+      ruleSet: synced.ruleSet,
+    };
+  });
 }
 
 export interface ManualBlockedUserRecord {

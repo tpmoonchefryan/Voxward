@@ -71,8 +71,8 @@ function constraintNames(name: string): string[] {
 }
 
 describe("data dictionary matches the schema", () => {
-  it("documents exactly the 27 schema tables", () => {
-    expect(tables).toHaveLength(27);
+  it("documents exactly the 28 schema tables", () => {
+    expect(tables).toHaveLength(28);
     expect([...dictionary.keys()].sort()).toEqual([...configs.keys()].sort());
   });
 
@@ -118,6 +118,8 @@ describe("generated migration matches the schema", () => {
       "data_requests_copy",
       "channel_members",
       "channel_members_copy",
+      "rule_terms",
+      "rule_terms_copy",
     ]);
 
     for (const name of configs.keys()) {

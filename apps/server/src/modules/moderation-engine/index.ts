@@ -134,7 +134,12 @@ function compiledOrThrow(input: RuleSetInput): CompiledRuleSet {
   return result.ruleSet;
 }
 
-/* Review routing (S006). The router takes the basic checker from this module and a scoring port from the contracts. */
+export {
+  createChannelModerationCache,
+  type CachedRuleSetEntry,
+  type ChannelModerationCache,
+  type ChannelModerationCacheOptions,
+} from "./channel-cache.js";
 export { classifyDeterministicNoise, type DeterministicClass } from "./routing/classification.js";
 export {
   createInMemoryExceptionQueue,

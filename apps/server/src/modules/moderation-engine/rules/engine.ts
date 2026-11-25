@@ -140,21 +140,34 @@ export async function evaluateMessage(
   }
 
   const budget = startBudget(env.now, limits.ruleBudgetMs);
-  const scopes: ScopeCheck[] = [checkScope("body", body, ruleSet, budget)];
+  const scopes: ScopeCheck[] = [checkScope("body", body, ruleSet.rules, budget)];
+  const whitelistCheck =
+    ruleSet.whitelistRules.length > 0
+      ? checkScope("body", body, ruleSet.whitelistRules, budget)
+      : { scope: "body" as const, hits: [] as RuleHit[], complete: true };
   const reasons: ReviewReason[] = [];
   if (nickname === null) {
     reasons.push("NICKNAME_UNAVAILABLE");
   } else {
     const nicknameCheck = await nicknameScope(input.subject, nickname.text, () =>
-      checkScope("nickname", nickname.parts, ruleSet, budget),
+      checkScope("nickname", nickname.parts, ruleSet.rules, budget),
     );
     scopes.push(nicknameCheck);
-    scopes.push(checkScope("combined", joinParts(nickname.parts, body), ruleSet, budget));
+    scopes.push(checkScope("combined", joinParts(nickname.parts, body), ruleSet.rules, budget));
   }
-  if (scopes.some((scope) => !scope.complete)) reasons.push("RULE_BUDGET_EXCEEDED");
+  if (scopes.some((scope) => !scope.complete) || !whitelistCheck.complete) reasons.push("RULE_BUDGET_EXCEEDED");
 
-  const hits = scopes.flatMap((scope) => scope.hits);
-  return withVersion(decideVerdict(hits, reasons), ruleSet.version);
+  const whitelistSpans = whitelistCheck.hits.flatMap((hit) => hit.spans).filter((span) => span.field === "body");
+  const rawHits = scopes.flatMap((scope) => scope.hits);
+  const hits = whitelistSpans.length === 0 ? rawHits : rawHits.filter((hit) => !isWhitelistedHit(hit, whitelistSpans));
+  return withVersion(decideVerdict(hits, reasons, whitelistCheck.hits), ruleSet.version);
+}
+
+function isWhitelistedHit(hit: RuleHit, whitelistSpans: readonly { readonly start: number; readonly end: number }[]): boolean {
+  if (hit.action.kind === "BLOCK" || hit.spans.length === 0) return false;
+  return hit.spans.every(
+    (span) => span.field === "body" && whitelistSpans.some((allowed) => allowed.start <= span.start && span.end <= allowed.end),
+  );
 }
 
 function runNicknameCheck(_subject: SubjectRef, _nickname: string, runFresh: () => ScopeCheck): Promise<ScopeCheck> {
@@ -172,9 +185,9 @@ function startBudget(now: () => number, budgetMs: number): Budget {
  * The budget is checked before each rule and once more after the last one, because a synchronous match cannot be
  * interrupted: an overrun by the last rule is reported after the fact, not passed as a complete scope.
  */
-function checkScope(scope: HitScope, parts: FieldParts, ruleSet: CompiledRuleSet, budget: Budget): ScopeCheck {
+function checkScope(scope: HitScope, parts: FieldParts, rules: readonly CompiledRule[], budget: Budget): ScopeCheck {
   const hits: RuleHit[] = [];
-  for (const rule of ruleSet.rules) {
+  for (const rule of rules) {
     if (budget.exceeded()) return { scope, hits, complete: false };
     const copy = copyFor(rule.matcher.kind, parts);
     for (const [start, end] of matchesIn(rule, copy.text)) {
@@ -196,6 +209,15 @@ function copyFor(kind: CompiledRule["matcher"]["kind"], parts: FieldParts): Mapp
 function matchesIn(rule: CompiledRule, text: string): Array<[number, number]> {
   const { matcher } = rule;
   if (matcher.kind === "regex") return findRegexMatches(matcher.regex, text);
+  if (matcher.kind === "exact" && matcher.wholeField === true) {
+    if (text === matcher.needle) return [[0, text.length]];
+    const trimmed = text.trim();
+    if (trimmed === matcher.needle && trimmed.length > 0) {
+      const lead = text.indexOf(matcher.needle);
+      return [[lead, lead + matcher.needle.length]];
+    }
+    return [];
+  }
   return findLiterals(text, matcher.needle);
 }
 
