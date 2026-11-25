@@ -10,13 +10,14 @@ export type GeneratedTextVerdict = "CLEAN" | "REJECTED" | "UNVERIFIED";
  * Port to the rule engine of the moderation module. This module may not import that module, so the caller binds it.
  */
 export interface GeneratedTextChecker {
-  check(text: string): Promise<GeneratedTextVerdict>;
+  check(text: string, language?: string): Promise<GeneratedTextVerdict>;
 }
 
 /** One generated field of one item. `name` is the field name in the schema. */
 export interface GeneratedTextField {
   readonly name: string;
   readonly text: string;
+  readonly language?: string;
 }
 
 /** What the generated text check found for one item. Rule hits and unverified fields are kept apart (Q23). */
@@ -41,7 +42,8 @@ export async function checkGeneratedTextFields(
   const rejectedFields: string[] = [];
   for (const field of fields) {
     if (field.text === "") continue;
-    const verdict: GeneratedTextVerdict = checker === undefined ? "UNVERIFIED" : await checker.check(field.text);
+    const verdict: GeneratedTextVerdict =
+      checker === undefined ? "UNVERIFIED" : await checker.check(field.text, field.language);
     if (verdict === "CLEAN") continue;
     if (verdict === "REJECTED") {
       rejectedFields.push(field.name);

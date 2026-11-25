@@ -11,10 +11,13 @@ import {
   type SchemaIssue,
   type SchemaResult,
   SC_BATCH_SCHEMA,
+  SC_MULTILINGUAL_BATCH_SCHEMA,
   type ScItemResult,
+  type ScMultilingualItemResult,
   validateModerationBatchResult,
   validateReviewBatchResult,
   validateScBatchResult,
+  validateScMultilingualBatchResult,
 } from "@voxward/contracts";
 import { type BatchValidationError, MAX_REPORTED_BATCH_ERRORS } from "./errors.js";
 import { checkGeneratedTextFields, type GeneratedTextChecker, type GeneratedTextField } from "./output-text-check.js";
@@ -31,6 +34,7 @@ export interface AiBatchOptions {
 export interface RejectedGeneratedText {
   readonly itemId: string;
   readonly field: string;
+  readonly language?: string;
 }
 
 /**
@@ -82,6 +86,28 @@ const REVIEW_KIND: BatchKind<ReviewItemResult> = {
   generatedFieldsOf: () => [],
 };
 
+const SC_MULTILINGUAL_KIND: BatchKind<ScMultilingualItemResult> = {
+  schema: SC_MULTILINGUAL_BATCH_SCHEMA,
+  read: validateScMultilingualBatchResult,
+  generatedFieldsOf: (item) =>
+    item.verdict === "BLOCK"
+      ? []
+      : item.translations.flatMap((entry) => [
+          { name: `translations[${entry.language}].translatedText`, text: entry.translatedText, language: entry.language },
+          { name: `translations[${entry.language}].slangNote`, text: entry.slangNote, language: entry.language },
+          { name: `translations[${entry.language}].replyCue`, text: entry.replyCue, language: entry.language },
+          ...(entry.thankYouReading === undefined
+            ? []
+            : [
+                {
+                  name: `translations[${entry.language}].thankYouReading`,
+                  text: entry.thankYouReading,
+                  language: entry.language,
+                },
+              ]),
+        ]),
+};
+
 /** Validates a real-time moderation batch against the batch input. */
 export async function validateModerationBatch(
   output: unknown,
@@ -98,6 +124,15 @@ export async function validateScBatch(
   options: AiBatchOptions,
 ): Promise<AiBatchValidation<ScItemResult>> {
   return validateAiBatch(SC_KIND, output, input, options);
+}
+
+/** Validates a v2 multilingual SC batch, scoping generated-text checks to each target language. */
+export async function validateScMultilingualBatch(
+  output: unknown,
+  input: AiBatchInput,
+  options: AiBatchOptions,
+): Promise<AiBatchValidation<ScMultilingualItemResult>> {
+  return validateAiBatch(SC_MULTILINGUAL_KIND, output, input, options);
 }
 
 /** Validates a review batch. Its candidate terms are not generated text for viewers, so only structure and membership apply. */
@@ -146,9 +181,15 @@ async function validateAiBatch<Item extends ModerationItemResult>(
       errors.push({ code: "SPAN_OUT_OF_RANGE", path: `${path}/matchedSpan`, itemId: item.itemId });
     }
     const fields = kind.generatedFieldsOf(item);
+    const fieldLang = new Map(fields.map((f) => [f.name, f.language]));
     const findings = await checkGeneratedTextFields(index, item.itemId, fields, options.generatedText);
     errors.push(...findings.errors);
-    for (const field of findings.rejectedFields) rejectedGeneratedText.push({ itemId: item.itemId, field });
+    for (const fieldName of findings.rejectedFields) {
+      const language = fieldLang.get(fieldName);
+      rejectedGeneratedText.push(
+        language === undefined ? { itemId: item.itemId, field: fieldName } : { itemId: item.itemId, field: fieldName, language },
+      );
+    }
   }
   for (const source of input.items) {
     if (!seen.has(source.itemId)) {

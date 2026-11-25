@@ -122,6 +122,7 @@ export function ModerationWorkbench({
         amountText: sc.payment?.amountDisplay ?? sc.notes ?? sc.acknowledgement ?? null,
         text: sc.originalText,
         translation: sc.translation,
+        translations: sc.translations,
         decidedAtMs: Date.parse(sc.decidedAt) || Date.now(),
       })),
     [snapshot],

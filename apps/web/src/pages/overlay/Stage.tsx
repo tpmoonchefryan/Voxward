@@ -131,6 +131,7 @@ export function StageView({
                       amountText: item.payment ? null : scDisplay.amountText,
                       text: item.text,
                       translation: item.translation,
+                      translations: item.translations,
                     }}
                     locale={locale}
                   />

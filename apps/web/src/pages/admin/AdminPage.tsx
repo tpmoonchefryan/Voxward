@@ -31,6 +31,7 @@ import {
   type ModelSettingsView,
   type TermCategoryView,
 } from "./api";
+import { ScLanguageSelects } from "./ScLanguageSelects";
 import { languageOptions, WordlistTools } from "./WordlistTools";
 
 type SettingsSectionId = "blacklist" | "whitelist" | "scoring" | "retention";
@@ -947,6 +948,12 @@ function AdminSurface({
                     modelForm.review,
                     (next) => setModelForm({ ...modelForm, review: next }),
                   )}
+                  <ScLanguageSelects
+                    value={modelForm.scLanguages ?? { sourceLanguages: [], targetLanguages: [] }}
+                    onChange={(scLanguages) => setModelForm({ ...modelForm, scLanguages })}
+                    copy={copy.scLanguages}
+                    locale={locale}
+                  />
                   <div>
                     <Button
                       variant="primary"

@@ -4,6 +4,7 @@ import {
   NATIVE_OUTPUT_PATH,
   NATIVE_OUTPUT_PROTOCOL,
   type DeliverFrame,
+  type DisplayTranslation,
   type NativeFrame,
   type ScPayment,
   type WardBlockedFrame,
@@ -115,6 +116,7 @@ export interface ActiveDeliverItem {
   readonly label: string | null;
   readonly text: string;
   readonly translation: string | null;
+  readonly translations?: readonly DisplayTranslation[];
   readonly payment?: ScPayment | null;
 }
 
@@ -182,6 +184,7 @@ function toDeliverItem(frame: DeliverFrame, validUntilMs: number): ActiveDeliver
     label: frame.display.label,
     text: frame.display.text,
     translation: frame.display.translation,
+    ...(frame.display.translations !== undefined ? { translations: frame.display.translations } : {}),
     ...(frame.display.payment !== undefined ? { payment: frame.display.payment } : {}),
   };
 }

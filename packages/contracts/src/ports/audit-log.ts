@@ -54,7 +54,7 @@ export type EvidenceKind = (typeof EVIDENCE_KINDS)[number];
  */
 export const EVIDENCE_MAX_BYTES: Readonly<Record<EvidenceKind, number>> = {
   MESSAGE_TEXT: 2048,
-  TRANSLATION: 2048,
+  TRANSLATION: 16384,
   ITEM_ID_MAP: 4096,
   VALIDATED_JSON: 8192,
 };

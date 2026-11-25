@@ -75,6 +75,14 @@
     {"id": "fp-03", "group": "false-positive", "senderRef": "bench-fp-03", "nickname": "字母", "body": "甲乙丙丁", "thread": null, "expected": {"route": "PASS", "ai": "ALLOW_MEANINGFUL"}, "joint": null},
     {"id": "fp-04", "group": "false-positive", "senderRef": "bench-fp-04", "nickname": "半截", "body": "bannedal", "thread": null, "expected": {"route": "PASS", "ai": "ALLOW_MEANINGFUL"}, "joint": null},
     {"id": "fp-05", "group": "false-positive", "senderRef": "bench-fp-05", "nickname": "规则党", "body": "禁止刷屏", "thread": null, "expected": {"route": "PASS", "ai": "ALLOW_MEANINGFUL"}, "joint": null},
-    {"id": "fp-06", "group": "false-positive", "senderRef": "bench-fp-06", "nickname": "新人", "body": "扣分", "thread": null, "expected": {"route": "PASS", "ai": "ALLOW_MEANINGFUL"}, "joint": null}
+    {"id": "fp-06", "group": "false-positive", "senderRef": "bench-fp-06", "nickname": "新人", "body": "扣分", "thread": null, "expected": {"route": "PASS", "ai": "ALLOW_MEANINGFUL"}, "joint": null},
+    {"id": "ko-01", "group": "mixed", "language": "ko", "senderRef": "bench-ko-01", "nickname": "민지", "body": "오늘 방송도 정말 즐거웠어요!", "thread": null, "expected": {"route": "PASS", "ai": "ALLOW_MEANINGFUL"}, "joint": null},
+    {"id": "ko-02", "group": "mixed", "language": "ko", "senderRef": "bench-ko-02", "nickname": "테스터", "body": "금지어테스트입니다", "thread": null, "expected": {"route": "BLOCK", "ai": "BLOCK"}, "joint": null},
+    {"id": "fr-01", "group": "en", "language": "fr", "senderRef": "bench-fr-01", "nickname": "Camille", "body": "super concert acoustique ce soir", "thread": null, "expected": {"route": "PASS", "ai": "ALLOW_MEANINGFUL"}, "joint": null},
+    {"id": "fr-02", "group": "en", "language": "fr", "senderRef": "bench-fr-02", "nickname": "TestFr", "body": "attention motinterdit dans le chat", "thread": null, "expected": {"route": "BLOCK", "ai": "BLOCK"}, "joint": null},
+    {"id": "ptbr-01", "group": "en", "language": "pt-BR", "senderRef": "bench-pt-01", "nickname": "LucasBR", "body": "abraços do Brasil, ótima live!", "thread": null, "expected": {"route": "PASS", "ai": "ALLOW_MEANINGFUL"}, "joint": null},
+    {"id": "ptbr-02", "group": "en", "language": "pt-BR", "senderRef": "bench-pt-02", "nickname": "BotBR", "body": "clique spambr-link agora", "thread": null, "expected": {"route": "BLOCK", "ai": "BLOCK"}, "joint": null},
+    {"id": "zhhant-01", "group": "zh", "language": "zh-Hant", "senderRef": "bench-zhhant-01", "nickname": "小華", "body": "謝謝主播今晚的歌回，好聽！", "thread": null, "expected": {"route": "PASS", "ai": "ALLOW_MEANINGFUL"}, "joint": null},
+    {"id": "zhhant-02", "group": "zh", "language": "zh-Hant", "senderRef": "bench-zhhant-02", "nickname": "測試二", "body": "這句包含繁體禁詞請攔截", "thread": null, "expected": {"route": "BLOCK", "ai": "BLOCK"}, "joint": null}
   ]
 }

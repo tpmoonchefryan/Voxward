@@ -1,3 +1,5 @@
+import { parseScLanguagePolicy, type ScLanguagePolicy } from "@voxward/contracts";
+
 /**
  * Model settings for the three AI tasks (proposal section 9.1). Nothing here picks a model. The user chooses one from what
  * the adapter reports, and a choice the adapter does not support is refused, never replaced by another model.
@@ -20,6 +22,8 @@ export interface ModelSettings {
   readonly review: ModelSelection | null;
   /** Paid translation (精翻) switch. Turning it off does not stop the safety review of paid text (proposal line 37). */
   readonly scTranslationEnabled: boolean;
+  /** Optional multilingual source/target BCP 47 policy for SC translation. */
+  readonly scLanguages?: ScLanguagePolicy;
 }
 
 /** Nothing chosen and translation off. The module never supplies a model of its own (自定). */
@@ -36,7 +40,7 @@ export const DEFAULT_MODEL_SETTINGS: ModelSettings = {
  */
 export const SETTING_VALUE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/u;
 
-const SETTINGS_KEYS = ["realtimeModeration", "scTranslation", "review", "scTranslationEnabled"] as const;
+const SETTINGS_KEYS = ["realtimeModeration", "scTranslation", "review", "scTranslationEnabled", "scLanguages"] as const;
 const SELECTION_KEYS = ["modelId", "reasoning"] as const;
 
 export type SettingsIssueCode =
@@ -74,6 +78,16 @@ export function parseModelSettings(value: unknown): ParsedModelSettings {
   const scTranslation = readSelection(value, "scTranslation", issues);
   const review = readSelection(value, "review", issues);
   const scTranslationEnabled = readBoolean(value, "scTranslationEnabled", issues);
+  const scLanguagesPresent = value.scLanguages !== undefined;
+  let scLanguages: ScLanguagePolicy | undefined;
+  if (scLanguagesPresent) {
+    const parsedLangs = parseScLanguagePolicy(value.scLanguages);
+    if (parsedLangs === null) {
+      issues.push({ code: "VALUE_INVALID", path: "/scLanguages" });
+    } else {
+      scLanguages = parsedLangs;
+    }
+  }
   if (issues.length > 0) return { ok: false, issues };
   if (
     realtimeModeration === undefined ||
@@ -85,7 +99,13 @@ export function parseModelSettings(value: unknown): ParsedModelSettings {
   }
   return {
     ok: true,
-    settings: { realtimeModeration, scTranslation, review, scTranslationEnabled },
+    settings: {
+      realtimeModeration,
+      scTranslation,
+      review,
+      scTranslationEnabled,
+      ...(scLanguages === undefined ? {} : { scLanguages }),
+    },
   };
 }
 

@@ -1,4 +1,4 @@
-import type { InferenceCapabilities, ListKind, TermMatchKind } from "@voxward/contracts";
+import type { InferenceCapabilities, ListKind, ScLanguagePolicy, TermMatchKind } from "@voxward/contracts";
 import type { FaultBanner } from "../dock/api";
 
 export interface ChannelSummary {
@@ -75,6 +75,7 @@ export interface ModelSettingsView {
   readonly scTranslation: ModelSelectionView | null;
   readonly review: ModelSelectionView | null;
   readonly scTranslationEnabled: boolean;
+  readonly scLanguages?: ScLanguagePolicy;
 }
 
 export interface AdapterExtendedModelCapability {

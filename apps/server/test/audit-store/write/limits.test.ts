@@ -73,9 +73,20 @@ describe("evidence size", () => {
   it("counts bytes in UTF-8, so multi-byte text reaches the limit sooner", () => {
     const { port, service } = probe();
     // A CJK character is three bytes. 682 of them are 2046 bytes, and 683 are 2049.
-    service.recordTechnical(entry({ evidence: [{ kind: "TRANSLATION", payload: "中".repeat(682) }] }));
+    service.recordTechnical(entry({ evidence: [{ kind: "MESSAGE_TEXT", payload: "中".repeat(682) }] }));
     expectRefused(
-      () => service.recordTechnical(entry({ evidence: [{ kind: "TRANSLATION", payload: "中".repeat(683) }] })),
+      () => service.recordTechnical(entry({ evidence: [{ kind: "MESSAGE_TEXT", payload: "中".repeat(683) }] })),
+      /evidence\.MESSAGE_TEXT\.size/,
+    );
+    expect(port.calls).toEqual(["insertTechnicalLog"]);
+  });
+
+  it("allows up to 16384 UTF-8 bytes for 5-language CJK TRANSLATION payloads and refuses above", () => {
+    const { port, service } = probe();
+    // 5461 CJK characters = 16383 bytes (<= 16384); 5462 characters = 16386 bytes (> 16384).
+    service.recordTechnical(entry({ evidence: [{ kind: "TRANSLATION", payload: "中".repeat(5461) }] }));
+    expectRefused(
+      () => service.recordTechnical(entry({ evidence: [{ kind: "TRANSLATION", payload: "中".repeat(5462) }] })),
       /evidence\.TRANSLATION\.size/,
     );
     expect(port.calls).toEqual(["insertTechnicalLog"]);

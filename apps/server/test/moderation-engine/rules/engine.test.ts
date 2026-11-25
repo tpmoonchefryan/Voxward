@@ -351,3 +351,56 @@ describe("whole-field exact matching, whitelist suppression, and channel cache (
     expect((await cache.moderate(event("alpha"))).route).toBe("PASS");
   });
 });
+
+describe("language-scoped rules and READING_UNAVAILABLE scoping (PR C)", () => {
+  it("skips rules with disjoint language tags while matching matching/mixed/und rules", async () => {
+    const ruleSet = compiled({
+      version: "v1",
+      groups: [
+        {
+          id: "lang-scoped",
+          action: { kind: "BLOCK" },
+          rules: [
+            { id: "r-fr", kind: "exact", text: "alerte", language: "fr" },
+            { id: "r-hant", kind: "exact", text: "測試詞", language: "zh-Hant" },
+            { id: "r-any", kind: "exact", text: "globalban", language: "und" },
+          ],
+        },
+      ],
+    });
+
+    // Korean message does not trigger zh-Hant rule; explicit pt-BR triggers r-any ("und")
+    expect((await evaluateMessage({ subject, nickname: "Viewer", body: "測試詞", language: "zh-Hans" }, environment(ruleSet))).route).toBe("PASS");
+    expect((await evaluateMessage({ subject, nickname: "Viewer", body: "測試詞", language: "zh-Hant" }, environment(ruleSet))).route).toBe("BLOCK");
+    expect((await evaluateMessage({ subject, nickname: "Viewer", body: "alerte", language: "fr" }, environment(ruleSet))).route).toBe("BLOCK");
+    expect((await evaluateMessage({ subject, nickname: "Viewer", body: "alerte", language: "ja" }, environment(ruleSet))).route).toBe("PASS");
+    expect((await evaluateMessage({ subject, nickname: "Viewer", body: "globalban", language: "pt-BR" }, environment(ruleSet))).route).toBe("BLOCK");
+  });
+
+  it("emits READING_UNAVAILABLE only when an applicable reading rule exists and transliterator has no table", async () => {
+    const readingRules = compiled({
+      version: "v1",
+      groups: [
+        {
+          id: "r",
+          action: { kind: "REVIEW" },
+          rules: [{ id: "r-zh", kind: "reading", text: "jinci", language: "zh-Hans" }],
+        },
+      ],
+    });
+    const noTable = environment(readingRules);
+    const zhUnreadable = await evaluateMessage(input("Viewer", "进词"), noTable);
+    expect(zhUnreadable.reasons).toContain("READING_UNAVAILABLE");
+
+    // Different language: reading rule is not applicable -> no READING_UNAVAILABLE
+    const jaMessage = await evaluateMessage(input("Viewer", "こんにちは"), noTable);
+    expect(jaMessage.reasons).not.toContain("READING_UNAVAILABLE");
+
+    // With partial table present (like bench): transliterator.available is true -> no READING_UNAVAILABLE
+    const withTable = environment(readingRules, {
+      transliterator: createTableTransliterator(new Map([["词", "ci"]])),
+    });
+    const partialMsg = await evaluateMessage(input("Viewer", "进词"), withTable);
+    expect(partialMsg.reasons).not.toContain("READING_UNAVAILABLE");
+  });
+});

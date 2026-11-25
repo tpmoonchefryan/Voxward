@@ -56,6 +56,7 @@ export interface CandidateProposal {
   readonly channelId: string;
   readonly term: string;
   readonly note: string | null;
+  readonly language?: string;
   readonly sourceCorrelationId: string;
   readonly sourceTaskId: string;
 }

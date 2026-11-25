@@ -82,8 +82,8 @@ export function createChannelModerationCache(options: ChannelModerationCacheOpti
     }
   }
 
-  async function check(event: ChannelEvent): Promise<MessageVerdict> {
-    return checkerFor(event.channelId).check(event);
+  async function check(event: ChannelEvent, checkOptions?: { readonly language?: string }): Promise<MessageVerdict> {
+    return checkerFor(event.channelId).check(event, checkOptions);
   }
 
   return {

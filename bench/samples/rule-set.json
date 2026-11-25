@@ -32,7 +32,11 @@
         { "id": "R-NORM-ZH-A", "kind": "normalized", "text": "禁词甲" },
         { "id": "R-NORM-EN-A", "kind": "normalized", "text": "bannedalpha" },
         { "id": "R-NORM-EN-B", "kind": "normalized", "text": "badword" },
-        { "id": "R-REGEX-JA-A", "kind": "regex", "source": "禁語[乙丙]" }
+        { "id": "R-REGEX-JA-A", "kind": "regex", "source": "禁語[乙丙]" },
+        { "id": "R-SCOPE-KO-A", "kind": "normalized", "text": "금지어테스트", "language": "ko" },
+        { "id": "R-SCOPE-FR-A", "kind": "normalized", "text": "motinterdit", "language": "fr" },
+        { "id": "R-SCOPE-PTBR-A", "kind": "normalized", "text": "spambr-link", "language": "pt-BR" },
+        { "id": "R-SCOPE-ZHHANT-A", "kind": "normalized", "text": "繁體禁詞", "language": "zh-Hant" }
       ]
     },
     {

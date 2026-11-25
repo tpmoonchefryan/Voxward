@@ -52,10 +52,16 @@ export interface HelloFrame {
  * Display content of an ALLOW delivery. `label` is null until a safe alias is stored with the subject. That source is not
  * in the schema yet, so the output never guesses it.
  */
+export interface DisplayTranslation {
+  readonly language: string;
+  readonly translatedText: string;
+}
+
 export interface DisplayPayload {
   readonly label: string | null;
   readonly text: string;
   readonly translation: string | null;
+  readonly translations?: readonly DisplayTranslation[];
   readonly payment?: ScPayment;
 }
 

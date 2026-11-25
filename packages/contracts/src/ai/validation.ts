@@ -24,7 +24,7 @@ export interface SchemaIssue {
 /** Names a versioned schema, so a validated result can state which contract it satisfied. */
 export interface AiSchemaRef {
   readonly name: string;
-  readonly version: 1;
+  readonly version: 1 | 2;
 }
 
 /** Ok carries the typed value. A failure carries every issue found, so one run locates them all. */

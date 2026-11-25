@@ -25,6 +25,7 @@ import {
   verdicts,
 } from "./schema/index.js";
 import { runShortTransaction, type ShortTransaction } from "./transaction.js";
+import { parseScTranslationEvidence } from "./sc-translation-payload.js";
 
 /**
  * The value stored in credential_refs.secret_ref for an output credential: `secretref:` and the SHA-256 digest of the
@@ -158,7 +159,8 @@ export function createApprovedContentPort(database: VoxwardDatabase): ApprovedCo
 
       const text = rows.find((row) => row.kind === "MESSAGE_TEXT");
       if (text === undefined) return undefined;
-      const translation = rows.find((row) => row.kind === "TRANSLATION");
+      const translationRow = rows.find((row) => row.kind === "TRANSLATION");
+      const parsedTranslation = parseScTranslationEvidence(translationRow?.payload ?? null);
       const paymentRow = database.orm
         .select({
           amountMicros: eventPayments.amountMicros,
@@ -181,7 +183,15 @@ export function createApprovedContentPort(database: VoxwardDatabase): ApprovedCo
             };
       return {
         text: text.payload,
-        translation: translation?.payload ?? null,
+        translation: parsedTranslation.primaryTranslation,
+        ...(parsedTranslation.translations.length > 0
+          ? {
+              translations: parsedTranslation.translations.map((t) => ({
+                language: t.language,
+                translatedText: t.translatedText,
+              })),
+            }
+          : {}),
         ...(payment !== undefined ? { payment } : {}),
       };
     },
