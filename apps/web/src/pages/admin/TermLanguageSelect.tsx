@@ -8,7 +8,7 @@ export function supportedLanguageOptions(locale: VoxWardLocale) {
   const names = new Intl.DisplayNames(locale, { type: "language", languageDisplay: "standard" });
   return SUPPORTED_LANGUAGES.map((language) => ({
     value: language,
-    label: names.of(language === "zh-CN" ? "zh-Hans" : language) ?? language,
+    label: names.of(language) ?? language,
   }));
 }
 

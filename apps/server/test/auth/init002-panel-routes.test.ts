@@ -161,7 +161,7 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     })).json();
     expect(await preview("fr")).toEqual({ hits: [entry.id], language: "fr", action: "REVIEW" });
     expect(await preview("ko")).toEqual({ hits: [], language: "ko", action: null });
-    for (const language of ["zh-Hant", "zh-TW", "fr-CA", "pt-BR", "auto"]) {
+    for (const language of ["zh-Hant", "zh-TW", "zh-CN", "fr-CA", "pt-BR", "auto"]) {
       expect((await app.inject({ method: "POST", url: `${url}/preview`, headers, payload: { text: "FLARPON", language } })).statusCode)
         .toBe(400);
       expect((await app.inject({ method: "PUT", url, headers, payload: { entries: [{ ...entry, language }] } })).statusCode)
@@ -197,7 +197,7 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     const entries = tags.map((language, i) => ({
       id: `legacy-${i}`, listKind: "BLACKLIST", term: `term ${i}`, categoryCode: "spam", matchKind: "EXACT", enabled: true, language,
     }));
-    const expected = ["fr", "en", "ja", "ko", "zh-CN", "zh-CN", "zh-CN", "und", "und", "und", "und"];
+    const expected = ["fr", "en", "ja", "ko", "zh-Hans", "zh-Hans", "zh-Hans", "und", "und", "und", "und"];
     writeChannelSetting(db, CH1, "term-entries", entries);
     writeChannelSetting(db, CH1, "term-list-history", [{ version: 0, createdAt: null, entries }]);
     const loaded = await app.inject({ url, headers });

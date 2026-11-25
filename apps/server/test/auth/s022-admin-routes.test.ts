@@ -185,7 +185,7 @@ describe("S022 Admin HTTP routes & RBAC (VOXWARD-SUB-042)", () => {
     });
     const migrated = await app.inject({ method: "GET", url: settingsUrl, headers: { cookie: owner1.cookie } });
     expect(migrated.json()).toMatchObject({
-      settings: { scLanguages: { sourceLanguage: "zh-CN", targetLanguages: ["fr", "en", "ko"] } },
+      settings: { scLanguages: { sourceLanguage: "zh-Hans", targetLanguages: ["fr", "en", "ko"] } },
     });
     const resaved = await app.inject({
       method: "PUT", url: settingsUrl,

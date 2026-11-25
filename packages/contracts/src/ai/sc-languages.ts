@@ -1,4 +1,4 @@
-export const SUPPORTED_LANGUAGES = ["en", "zh-CN", "ja", "ko", "fr"] as const;
+export const SUPPORTED_LANGUAGES = ["en", "zh-Hans", "ja", "ko", "fr"] as const;
 export const SC_MAX_TARGET_LANGUAGES = 5;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 export type TermLanguage = SupportedLanguage | "und";
@@ -33,8 +33,8 @@ export function normalizeStoredLanguage(value: unknown): TermLanguage {
   if (tag === null) return "und";
   const { language, script, region } = new Intl.Locale(tag);
   if (language === "zh") {
-    if (script !== undefined) return script === "Hans" ? "zh-CN" : "und";
-    return region === "TW" || region === "HK" || region === "MO" ? "und" : "zh-CN";
+    if (script !== undefined) return script === "Hans" ? "zh-Hans" : "und";
+    return region === "TW" || region === "HK" || region === "MO" ? "und" : "zh-Hans";
   }
   return parseSupportedLanguage(language) ?? "und";
 }

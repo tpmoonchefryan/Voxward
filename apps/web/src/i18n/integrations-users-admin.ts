@@ -2070,7 +2070,7 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     csvHeading: "CSV 批量导入（格式：term,category,matchKind）",
     pickCsvFileBtn: "选择 CSV 文件",
     csvFileInputAria: "选择 CSV 模板文件",
-    csvColumnsHint: (d) => `用逗号或分号分隔：term、category（如 ${d}）、matchKind（EXACT / CONTAINS / REGEX / NORMALIZED）、language（如 zh-CN，留空为 und）。`,
+    csvColumnsHint: (d) => `用逗号或分号分隔：term、category（如 ${d}）、matchKind（EXACT / CONTAINS / REGEX / NORMALIZED）、language（如 zh-Hans，留空为 und）。`,
     csvRowsLabel: "每行一条规则",
     csvPlaceholder: (d) => `term,category,matchKind\n引流加群,${d},CONTAINS`,
     validateImportCsvBtn: "校验并导入 CSV",

@@ -251,7 +251,7 @@ export function VoxWardShell({
     }
     applyThemeAttribute(controller.theme);
     if (typeof document !== "undefined") {
-      document.documentElement.lang = controller.locale;
+      document.documentElement.lang = VOXWARD_LOCALES.find((item) => item.locale === controller.locale)?.lang ?? controller.locale;
     }
   }, [controller.theme, controller.locale, location.pathname, requireAuth, session]);
 

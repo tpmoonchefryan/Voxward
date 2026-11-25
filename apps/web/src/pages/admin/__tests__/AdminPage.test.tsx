@@ -16,7 +16,7 @@ describe("Admin & Settings Page (VW-Draft-04)", () => {
     expect(defaultHtml).toContain('<option value="und" selected="">Toutes les langues</option>');
     expect(defaultHtml).toContain('<option value="fr">français</option>');
     expect([...defaultHtml.matchAll(/<option value="([^"]+)"/g)].map((match) => match[1]))
-      .toEqual(["und", "en", "zh-CN", "ja", "ko", "fr"]);
+      .toEqual(["und", "en", "zh-Hans", "ja", "ko", "fr"]);
     expect(defaultHtml).not.toContain("<input");
   });
 
