@@ -10,6 +10,16 @@ export const MIN_PASSWORD_LENGTH = 12;
 export const LOGIN_NAME_PATTERN = /^[A-Za-z0-9_.-]{1,64}$/;
 /** Q26: cap concurrent scrypt derivations (~128 MiB each at N=2^17) to prevent memory exhaustion. */
 export const MAX_SCRYPT_CONCURRENCY = 4;
+/** Maximum queued scrypt requests waiting for a slot before rejecting with AUTH_BUSY (VW3-R-011). */
+export const MAX_SCRYPT_WAITERS = 32;
+
+export class ScryptOverloadedError extends Error {
+  readonly code = "AUTH_BUSY" as const;
+  constructor() {
+    super("AUTH_BUSY");
+    this.name = "ScryptOverloadedError";
+  }
+}
 /** Minimum accepted stored cost parameters; weak hashes below these bounds are refused without deriving. */
 export const MIN_STORED_COST_LN = 14;
 export const MIN_STORED_COST_R = 8;
@@ -59,6 +69,9 @@ const scryptWaiters: Array<() => void> = [];
 
 async function withScryptSlot<T>(action: () => Promise<T>): Promise<T> {
   if (activeScryptCount >= MAX_SCRYPT_CONCURRENCY) {
+    if (scryptWaiters.length >= MAX_SCRYPT_WAITERS) {
+      throw new ScryptOverloadedError();
+    }
     await new Promise<void>((resolve) => {
       scryptWaiters.push(resolve);
     });
@@ -207,4 +220,96 @@ export async function login(
     createSession(tx, { accountId: account.id, now: input.now, ttlMs: input.ttlMs ?? DEFAULT_SESSION_TTL_MS }),
   );
   return { ok: true, accountId: account.id, displayName: account.displayName, session };
+}
+
+export interface LoginRateLimiterOptions {
+  readonly maxFailuresPerAccount?: number;
+  readonly maxFailuresPerIp?: number;
+  readonly windowMs?: number;
+  readonly lockoutMs?: number;
+  readonly maxTrackedKeys?: number;
+}
+
+export interface LoginRateLimitVerdict {
+  readonly allowed: boolean;
+  readonly retryAfterSeconds?: number;
+}
+
+export interface LoginRateLimiter {
+  check(input: { readonly ip: string; readonly loginName: string; readonly nowMs: number }): LoginRateLimitVerdict;
+  recordFailure(input: { readonly ip: string; readonly loginName: string; readonly nowMs: number }): void;
+  recordSuccess(input: { readonly ip: string; readonly loginName: string }): void;
+}
+
+interface FailureBucket {
+  timestamps: number[];
+  lockedUntilMs: number;
+}
+
+/**
+ * Bounded in-memory brute-force rate limiter & temporary lockout for POST /auth/login (VW3-R-011).
+ * Tracks failed attempts per loginName and per client IP.
+ */
+export function createLoginRateLimiter(options: LoginRateLimiterOptions = {}): LoginRateLimiter {
+  const maxFailuresPerAccount = options.maxFailuresPerAccount ?? 8;
+  const maxFailuresPerIp = options.maxFailuresPerIp ?? 20;
+  const windowMs = options.windowMs ?? 5 * 60_000;
+  const lockoutMs = options.lockoutMs ?? 60_000;
+  const maxTrackedKeys = options.maxTrackedKeys ?? 4096;
+
+  const accountBuckets = new Map<string, FailureBucket>();
+  const ipBuckets = new Map<string, FailureBucket>();
+
+  function pruneBucket(bucket: FailureBucket, nowMs: number): void {
+    const cutoff = nowMs - windowMs;
+    bucket.timestamps = bucket.timestamps.filter((t) => t > cutoff);
+  }
+
+  function pruneMap(map: Map<string, FailureBucket>, nowMs: number): void {
+    if (map.size < maxTrackedKeys) return;
+    for (const [key, bucket] of map) {
+      pruneBucket(bucket, nowMs);
+      if (bucket.timestamps.length === 0 && bucket.lockedUntilMs <= nowMs) {
+        map.delete(key);
+      }
+    }
+    while (map.size >= maxTrackedKeys) {
+      const oldest = map.keys().next().value;
+      if (oldest === undefined) break;
+      map.delete(oldest);
+    }
+  }
+
+  function bump(map: Map<string, FailureBucket>, key: string, limit: number, nowMs: number): void {
+    pruneMap(map, nowMs);
+    let bucket = map.get(key);
+    if (bucket === undefined) {
+      bucket = { timestamps: [], lockedUntilMs: 0 };
+      map.set(key, bucket);
+    }
+    pruneBucket(bucket, nowMs);
+    bucket.timestamps.push(nowMs);
+    if (bucket.timestamps.length >= limit) {
+      bucket.lockedUntilMs = Math.max(bucket.lockedUntilMs, nowMs + lockoutMs);
+    }
+  }
+
+  return {
+    check({ ip, loginName, nowMs }) {
+      const acc = accountBuckets.get(loginName.toLowerCase());
+      const ipb = ipBuckets.get(ip);
+      const lockedUntil = Math.max(acc?.lockedUntilMs ?? 0, ipb?.lockedUntilMs ?? 0);
+      if (lockedUntil > nowMs) {
+        return { allowed: false, retryAfterSeconds: Math.max(1, Math.ceil((lockedUntil - nowMs) / 1000)) };
+      }
+      return { allowed: true };
+    },
+    recordFailure({ ip, loginName, nowMs }) {
+      bump(accountBuckets, loginName.toLowerCase(), maxFailuresPerAccount, nowMs);
+      bump(ipBuckets, ip, maxFailuresPerIp, nowMs);
+    },
+    recordSuccess({ loginName }) {
+      accountBuckets.delete(loginName.toLowerCase());
+    },
+  };
 }

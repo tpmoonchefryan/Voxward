@@ -34,7 +34,7 @@ export function deliverFrame(delivery: SendableDelivery, content: ApprovedConten
     platformOrder: delivery.platformOrder,
     validUntil: delivery.validUntil,
     display: {
-      label: null,
+      label: content.label ?? null,
       text: content.text,
       translation: content.translation,
       ...(content.translations !== undefined ? { translations: content.translations } : {}),

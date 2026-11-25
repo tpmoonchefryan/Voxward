@@ -124,6 +124,10 @@ describe("blivechat frames & session adapter", () => {
         ...SAMPLE_DELIVER,
         display: {
           ...SAMPLE_DELIVER.display,
+          translations: [
+            { language: "zh-Hans", translatedText: "你好直播间！" },
+            { language: "ja", translatedText: "こんにちは！" },
+          ],
           payment: { amountMicros: 10_000_000, currency: "USD", amountDisplay: "$10.00", tier: 4 },
         },
       },
@@ -136,7 +140,14 @@ describe("blivechat frames & session adapter", () => {
         authorName: "",
         content: "Hello stream!",
         translation: "你好直播间！",
+        translations: [
+          { language: "zh-Hans", translatedText: "你好直播间！" },
+          { language: "ja", translatedText: "こんにちは！" },
+        ],
         price: 10,
+        currency: "USD",
+        amountDisplay: "$10.00",
+        tier: 4,
         timestamp: "2026-11-14T00:00:02.000Z",
       },
     });

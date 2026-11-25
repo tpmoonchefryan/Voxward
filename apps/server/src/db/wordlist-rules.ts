@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { ListKind, TermAction, TermMatchKind } from "@voxward/contracts";
 
-export type PanelTermMatchKind = "EXACT" | "CONTAINS" | "REGEX" | "NORMALIZED";
+export type PanelTermMatchKind = "EXACT" | "CONTAINS" | "REGEX" | "NORMALIZED" | "PHONETIC";
 
 export interface ExtendedTermEntry {
   readonly id: string;
@@ -16,7 +16,7 @@ export interface ExtendedTermEntry {
 
 export interface ManagedRuleInput {
   readonly id: string;
-  readonly kind: "exact" | "normalized" | "regex";
+  readonly kind: "exact" | "normalized" | "reading" | "regex";
   readonly text?: string;
   readonly source?: string;
   readonly wholeField?: boolean;
@@ -41,11 +41,14 @@ export const WORDLIST_REVIEW_GROUP = "admin-wordlist-review";
 const LEGACY_WORDLIST_GROUP = "admin-wordlist";
 
 export function toDbMatchKind(kind: PanelTermMatchKind): TermMatchKind {
-  return kind === "REGEX" ? "CONSTRAINED_REGEX" : kind;
+  if (kind === "REGEX") return "CONSTRAINED_REGEX";
+  if (kind === "PHONETIC") return "CROSS_LANGUAGE_PHONETIC";
+  return kind;
 }
 
 export function fromDbMatchKind(kind: string): PanelTermMatchKind {
   if (kind === "CONSTRAINED_REGEX" || kind === "REGEX") return "REGEX";
+  if (kind === "CROSS_LANGUAGE_PHONETIC" || kind === "PHONETIC" || kind === "READING") return "PHONETIC";
   if (kind === "CONTAINS") return "CONTAINS";
   if (kind === "NORMALIZED") return "NORMALIZED";
   return "EXACT";
@@ -63,6 +66,9 @@ function toRuleInput(prefix: "bl" | "wl", entry: ExtendedTermEntry): ManagedRule
   }
   if (entry.matchKind === "NORMALIZED") {
     return { id, kind: "normalized", text: entry.term, language };
+  }
+  if (entry.matchKind === "PHONETIC") {
+    return { id, kind: "reading", text: entry.term.toLowerCase(), language };
   }
   if (entry.matchKind === "EXACT") {
     return { id, kind: "exact", text: entry.term, wholeField: true, language };
@@ -106,11 +112,12 @@ export function applyManagedWordlistToRuleSet(
       group.id !== LEGACY_WORDLIST_GROUP,
   );
   const enabledBlacklist = entries.filter((entry) => entry.enabled && entry.listKind === "BLACKLIST");
+  // Reading rules may only sit in REVIEW groups per S006 compileRuleSet invariant.
   const blockRules = enabledBlacklist
-    .filter((entry) => entry.action === "BLOCK")
+    .filter((entry) => entry.action === "BLOCK" && entry.matchKind !== "PHONETIC")
     .map((entry) => toRuleInput("bl", entry));
   const reviewRules = enabledBlacklist
-    .filter((entry) => entry.action !== "BLOCK")
+    .filter((entry) => entry.action !== "BLOCK" || entry.matchKind === "PHONETIC")
     .map((entry) => toRuleInput("bl", entry));
 
   if (blockRules.length > 0) {

@@ -546,10 +546,10 @@ describe("S026 Core Flow: Manual Overturn, Exception Zero-Window, Coordinator & 
       actor,
     });
     expect(overturned.status).toBe("overturned");
-    // Known Q55 C6 defect in src/: compensation adds +3 -> 9 with needsManualAdjustment=false,
-    // whereas replaying the remaining timeline without ev-c6-1 clamps at maxScore=10 then -3 -> 7 (+2 drift).
+    // VW3-R-011 fix (Q55 C6): linear compensation keeps ledger amount (+3 -> 9), while counterfactual replay
+    // detects that removing ev-c6-1 would clamp at maxScore=10 then -3 -> 7 (+2 drift), flagging needsManualAdjustment=true.
     if (overturned.status === "overturned") {
-      expect(overturned.needsManualAdjustment).toBe(false);
+      expect(overturned.needsManualAdjustment).toBe(true);
     }
     const afterRow = database.orm.select().from(subjectScores).where(eq(subjectScores.subjectId, subjectId)).get();
     expect(afterRow?.currentScore).toBe(9);

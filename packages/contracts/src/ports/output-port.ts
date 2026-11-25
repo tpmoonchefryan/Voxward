@@ -31,6 +31,7 @@ export interface ApprovedTranslationItem {
 }
 
 export interface ApprovedContent {
+  readonly label?: string | null;
   readonly text: string;
   readonly translation: string | null;
   readonly translations?: readonly ApprovedTranslationItem[];

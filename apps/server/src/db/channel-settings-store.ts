@@ -71,13 +71,13 @@ function settingKey(channelId: string, section: string): string {
   return `channel:${channelId}:${section}`;
 }
 
-export function readChannelSetting<T>(
-  database: VoxwardDatabase,
+function readChannelSettingInTx<T>(
+  tx: Pick<VoxwardDatabase["orm"], "select">,
   channelId: string,
   section: string,
   fallback: T,
 ): T {
-  const row = database.orm
+  const row = tx
     .select({ valueJson: deploymentSettings.valueJson })
     .from(deploymentSettings)
     .where(eq(deploymentSettings.key, settingKey(channelId, section)))
@@ -90,8 +90,8 @@ export function readChannelSetting<T>(
   }
 }
 
-export function writeChannelSetting(
-  database: VoxwardDatabase,
+function writeChannelSettingInTx(
+  tx: ShortTransaction,
   channelId: string,
   section: string,
   value: unknown,
@@ -100,14 +100,55 @@ export function writeChannelSetting(
   const key = settingKey(channelId, section);
   const valueJson = JSON.stringify(value);
   const updatedAt = now.toISOString();
+  tx.insert(deploymentSettings)
+    .values({ key, valueJson, updatedAt })
+    .onConflictDoUpdate({
+      target: deploymentSettings.key,
+      set: { valueJson, updatedAt },
+    })
+    .run();
+}
+
+/**
+ * Atomic read-modify-write for a JSON section in `deployment_settings`, running both the read and the upsert
+ * inside one short synchronous transaction so concurrent writers cannot lose updates (VW3-R-011).
+ */
+export function updateChannelSettingAtomic<T, R = T>(
+  database: VoxwardDatabase,
+  channelId: string,
+  section: string,
+  fallback: T,
+  updater: (current: T) => { readonly write: boolean; readonly next: T; readonly result: R },
+  now: Date = new Date(),
+): R {
+  return runShortTransaction(database, (tx) => {
+    const current = readChannelSettingInTx(tx, channelId, section, fallback);
+    const outcome = updater(current);
+    if (outcome.write) {
+      writeChannelSettingInTx(tx, channelId, section, outcome.next, now);
+    }
+    return outcome.result;
+  });
+}
+
+export function readChannelSetting<T>(
+  database: VoxwardDatabase,
+  channelId: string,
+  section: string,
+  fallback: T,
+): T {
+  return readChannelSettingInTx(database.orm, channelId, section, fallback);
+}
+
+export function writeChannelSetting(
+  database: VoxwardDatabase,
+  channelId: string,
+  section: string,
+  value: unknown,
+  now: Date = new Date(),
+): void {
   runShortTransaction(database, (tx) => {
-    tx.insert(deploymentSettings)
-      .values({ key, valueJson, updatedAt })
-      .onConflictDoUpdate({
-        target: deploymentSettings.key,
-        set: { valueJson, updatedAt },
-      })
-      .run();
+    writeChannelSettingInTx(tx, channelId, section, value, now);
   });
 }
 
@@ -130,8 +171,14 @@ export function writePlatformDeleteStatus(
   status: PlatformDeleteUiStatus,
   now: Date = new Date(),
 ): void {
-  const current = readPlatformDeleteStatusMap(database, channelId);
-  writeChannelSetting(database, channelId, "platform-delete-status", { ...current, [eventId]: status }, now);
+  updateChannelSettingAtomic<Record<string, PlatformDeleteUiStatus>, void>(
+    database,
+    channelId,
+    "platform-delete-status",
+    {},
+    (current) => ({ write: true, next: { ...current, [eventId]: status }, result: undefined }),
+    now,
+  );
 }
 
 export function readLatestRuleVersion(
@@ -430,13 +477,24 @@ export function appendTermCategory(
   item: Omit<TermCategoryItem, "createdAt">,
   now: Date = new Date(),
 ): { readonly ok: true; readonly categories: TermCategoryItem[] } | { readonly ok: false; readonly code: "CATEGORY_EXISTS" } {
-  const existing = readTermCategories(database, channelId);
-  if (existing.some((c) => c.code === item.code)) {
-    return { ok: false, code: "CATEGORY_EXISTS" };
-  }
-  const next: TermCategoryItem[] = [...existing, { ...item, createdAt: now.toISOString() }];
-  writeChannelSetting(database, channelId, "term-categories", next, now);
-  return { ok: true, categories: next };
+  return updateChannelSettingAtomic<
+    TermCategoryItem[] | null,
+    { readonly ok: true; readonly categories: TermCategoryItem[] } | { readonly ok: false; readonly code: "CATEGORY_EXISTS" }
+  >(
+    database,
+    channelId,
+    "term-categories",
+    null,
+    (saved) => {
+      const existing = saved ?? [...DEFAULT_TERM_CATEGORIES];
+      if (existing.some((c) => c.code === item.code)) {
+        return { write: false, next: existing, result: { ok: false, code: "CATEGORY_EXISTS" } };
+      }
+      const next: TermCategoryItem[] = [...existing, { ...item, createdAt: now.toISOString() }];
+      return { write: true, next, result: { ok: true, categories: next } };
+    },
+    now,
+  );
 }
 
 export interface TermListVersion {
@@ -625,10 +683,17 @@ export function upsertBlockedUser(
   record: ManualBlockedUserRecord,
   now: Date = new Date(),
 ): ManualBlockedUserRecord[] {
-  const current = readBlockedUsers(database, channelId).filter((u) => u.subjectRef !== record.subjectRef);
-  const next = [record, ...current];
-  writeChannelSetting(database, channelId, "blocked-users", next, now);
-  return next;
+  return updateChannelSettingAtomic<ManualBlockedUserRecord[], ManualBlockedUserRecord[]>(
+    database,
+    channelId,
+    "blocked-users",
+    [],
+    (current) => {
+      const next = [record, ...current.filter((u) => u.subjectRef !== record.subjectRef)];
+      return { write: true, next, result: next };
+    },
+    now,
+  );
 }
 
 export function removeBlockedUser(
@@ -637,11 +702,21 @@ export function removeBlockedUser(
   subjectRef: string,
   now: Date = new Date(),
 ): { readonly removed: ManualBlockedUserRecord | null; readonly users: ManualBlockedUserRecord[] } {
-  const current = readBlockedUsers(database, channelId);
-  const removed = current.find((u) => u.subjectRef === subjectRef) ?? null;
-  const next = current.filter((u) => u.subjectRef !== subjectRef);
-  writeChannelSetting(database, channelId, "blocked-users", next, now);
-  return { removed, users: next };
+  return updateChannelSettingAtomic<
+    ManualBlockedUserRecord[],
+    { readonly removed: ManualBlockedUserRecord | null; readonly users: ManualBlockedUserRecord[] }
+  >(
+    database,
+    channelId,
+    "blocked-users",
+    [],
+    (current) => {
+      const removed = current.find((u) => u.subjectRef === subjectRef) ?? null;
+      const next = current.filter((u) => u.subjectRef !== subjectRef);
+      return { write: removed !== null, next, result: { removed, users: next } };
+    },
+    now,
+  );
 }
 
 export type AdapterCategory = "LIVE_PLATFORM" | "AI_PROVIDER" | "OUTPUT_TARGET";
@@ -849,14 +924,23 @@ export function appendIntegrationLog(
   entry: IntegrationLogRecord,
   now: Date = new Date(),
 ): void {
-  const existing = readIntegrationLogs(database, channelId);
   const redacted: IntegrationLogRecord = {
     ...entry,
     requestHeaders: redactHttpHeaders(entry.requestHeaders),
     responseHeaders: redactHttpHeaders(entry.responseHeaders),
   };
-  const next = [redacted, ...existing].slice(0, 200);
-  writeChannelSetting(database, channelId, "integration-logs", next, now);
+  updateChannelSettingAtomic<IntegrationLogRecord[], void>(
+    database,
+    channelId,
+    "integration-logs",
+    [],
+    (existing) => ({
+      write: true,
+      next: [redacted, ...existing].slice(0, 200),
+      result: undefined,
+    }),
+    now,
+  );
 }
 
 export interface StoredRbacRole {

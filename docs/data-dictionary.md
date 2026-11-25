@@ -253,6 +253,7 @@
 | `outcome` | TEXT | 否 | 取值 `NO_EFFECT`、`REFUSED`。 |
 | `reason_code` | TEXT | 否 | 无计分或拒绝的原因，例如 `COOLDOWN`、`EXCEPTION_ACTIVE`。 |
 | `created_at` | TEXT | 否 | 记录时间。 |
+| `after_ledger_rowid` | INTEGER | 是 | 写入该结果时同一主体在 `score_ledger` 中的最大 `rowid`，用于同毫秒内区分早于或晚于原计分条目的钳制事件。 |
 
 #### 索引与约束
 

@@ -27,10 +27,10 @@ describe("native output frames (VW-SUB039-AC001, VW-S021-PARENT)", () => {
     expect(frame).toEqual({ type: "HELLO", version: 1, protocol: NATIVE_OUTPUT_PROTOCOL, heartbeatMs: 15_000 });
   });
 
-  it("DELIVER carries exactly its field list, and its display payload carries exactly its own list", () => {
+  it("DELIVER carries exactly its field list, and its display payload carries only fields declared in NATIVE_FRAME_FIELDS.DISPLAY", () => {
     const frame = deliverFrame(ALLOW, CONTENT);
     expect(sortedKeys(frame)).toEqual([...NATIVE_FRAME_FIELDS.DELIVER].sort());
-    expect(sortedKeys(frame.display)).toEqual([...NATIVE_FRAME_FIELDS.DISPLAY].sort());
+    expect(sortedKeys(frame.display)).toEqual([...NATIVE_FRAME_FIELDS.DISPLAY_REQUIRED].sort());
     expect(frame).toMatchObject({
       type: "DELIVER",
       deliveryId: "delivery-1",
@@ -38,6 +38,16 @@ describe("native output frames (VW-SUB039-AC001, VW-S021-PARENT)", () => {
       platformOrder: 7,
       display: { label: null, text: "synthetic approved line", translation: "synthetic translated line" },
     });
+
+    const fullFrame = deliverFrame(ALLOW, {
+      label: "SafeAlias",
+      text: "Hello SC!",
+      translation: "你好 SC！",
+      translations: [{ language: "zh-Hans", translatedText: "你好 SC！" }],
+      payment: { amountMicros: 5_000_000, currency: "USD", amountDisplay: "$5.00", tier: 3 },
+    });
+    expect(sortedKeys(fullFrame.display)).toEqual([...NATIVE_FRAME_FIELDS.DISPLAY].sort());
+    expect(fullFrame.display.label).toBe("SafeAlias");
   });
 
   it("WARD_BLOCKED has no text, no translation and no identity, even when content is available", () => {

@@ -61,6 +61,41 @@ export function grantMembership(tx: ShortTransaction, input: GrantInput): Member
   };
 }
 
+export function countActiveChannelOwners(tx: ShortTransaction, channelId: string): number {
+  const rows = tx
+    .select({ id: channelMembers.id })
+    .from(channelMembers)
+    .where(
+      and(
+        eq(channelMembers.channelId, channelId),
+        eq(channelMembers.role, "CHANNEL_OWNER"),
+        isNull(channelMembers.revokedAt),
+      ),
+    )
+    .all();
+  return rows.length;
+}
+
+export function wouldLeaveChannelWithoutOwner(
+  tx: ShortTransaction,
+  input: { readonly channelId: string; readonly accountId: string; readonly nextRole: ChannelRole | null },
+): boolean {
+  if (input.nextRole === "CHANNEL_OWNER") return false;
+  const active = tx
+    .select({ role: channelMembers.role })
+    .from(channelMembers)
+    .where(
+      and(
+        eq(channelMembers.channelId, input.channelId),
+        eq(channelMembers.accountRef, input.accountId),
+        isNull(channelMembers.revokedAt),
+      ),
+    )
+    .get();
+  if (active === undefined || active.role !== "CHANNEL_OWNER") return false;
+  return countActiveChannelOwners(tx, input.channelId) <= 1;
+}
+
 export function revokeMembership(
   tx: ShortTransaction,
   input: { readonly channelId: string; readonly accountId: string; readonly now: Date },

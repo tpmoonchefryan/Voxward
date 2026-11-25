@@ -1,4 +1,4 @@
-import type { DeliverFrame, WardBlockedFrame } from "@voxward/contracts";
+import type { DeliverFrame, DisplayTranslation, WardBlockedFrame } from "@voxward/contracts";
 
 /** Versioned blivechat-compatible JSON WebSocket protocol identifier. */
 export const BLIVECHAT_PROTOCOL_VERSION = "blivechat-v1.x-json-ws" as const;
@@ -41,6 +41,7 @@ export interface BlivechatAddTextFrame {
     readonly authorName: string;
     readonly content: string;
     readonly translation: string | null;
+    readonly translations?: readonly DisplayTranslation[];
     readonly timestamp: string;
     readonly privilegeType: 0;
   };
@@ -53,7 +54,11 @@ export interface BlivechatAddSuperChatFrame {
     readonly authorName: string;
     readonly content: string;
     readonly translation: string | null;
+    readonly translations?: readonly DisplayTranslation[];
     readonly price: number;
+    readonly currency?: string;
+    readonly amountDisplay?: string | null;
+    readonly tier?: number | null;
     readonly timestamp: string;
   };
 }
@@ -85,6 +90,7 @@ export function mapDeliverToAddText(frame: DeliverFrame, timestamp: string): Bli
       authorName: frame.display.label ?? "",
       content: frame.display.text,
       translation: frame.display.translation,
+      ...(frame.display.translations !== undefined ? { translations: frame.display.translations } : {}),
       timestamp,
       privilegeType: 0,
     },
@@ -100,6 +106,7 @@ export function mapDeliverToSuperChat(
   timestamp: string,
   price = 0,
 ): BlivechatAddSuperChatFrame {
+  const payment = frame.display.payment;
   return {
     cmd: BLIVECHAT_CMD.ADD_SUPER_CHAT,
     data: {
@@ -107,7 +114,15 @@ export function mapDeliverToSuperChat(
       authorName: frame.display.label ?? "",
       content: frame.display.text,
       translation: frame.display.translation,
+      ...(frame.display.translations !== undefined ? { translations: frame.display.translations } : {}),
       price,
+      ...(payment !== undefined
+        ? {
+            currency: payment.currency,
+            amountDisplay: payment.amountDisplay ?? null,
+            tier: payment.tier ?? null,
+          }
+        : {}),
       timestamp,
     },
   };

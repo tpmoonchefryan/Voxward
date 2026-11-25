@@ -3,9 +3,21 @@ import type { VoxwardDatabase } from "./client.js";
 import {
   DEFAULT_RETENTION_ADMIN_SETTINGS,
   readChannelSetting,
+  updateChannelSettingAtomic,
+  type ManualBlockedUserRecord,
   type RetentionAdminSettings,
 } from "./channel-settings-store.js";
-import { changeLogs, technicalLogEvidence, technicalLogs } from "./schema/index.js";
+import {
+  authSessions,
+  changeLogs,
+  channelEvents,
+  deliveries,
+  eventPayments,
+  tasks,
+  technicalLogEvidence,
+  technicalLogs,
+  verdicts,
+} from "./schema/index.js";
 import { runShortTransaction } from "./transaction.js";
 
 /** Rows removed per short transaction. A sweep never holds the write lock for more than one batch. */
@@ -28,11 +40,21 @@ export interface RetentionCounts {
   readonly changeLogs: number;
 }
 
+export interface ExtendedRetentionCounts {
+  readonly authSessions: number;
+  readonly deliveries: number;
+  readonly eventPayments: number;
+  readonly channelEvents: number;
+  readonly redactedBlockedNicknames: number;
+}
+
 export interface RetentionSweepResult {
   readonly removed: RetentionCounts;
   /** Rows that are past their expiry and still exist. Non-zero means the cleanup is not finished (design §3.4). */
   readonly remainingExpired: RetentionCounts;
   readonly complete: boolean;
+  /** Extended cleanup counts for auth_sessions, deliveries, event_payments, channel_events, and stale blocked-user nicknames (VW3-R-011). */
+  readonly extendedRemoved: ExtendedRetentionCounts;
 }
 
 export interface CompactResult {
@@ -74,6 +96,32 @@ export function createRetentionStore(database: VoxwardDatabase, options?: Retent
       const channelIds = database.sqlite.prepare("SELECT id FROM channels").pluck().all() as string[];
       const removed = { evidence: 0, technicalLogs: 0, changeLogs: 0 };
       const remaining = { evidence: 0, technicalLogs: 0, changeLogs: 0 };
+      const extendedRemoved = {
+        authSessions: 0,
+        deliveries: 0,
+        eventPayments: 0,
+        channelEvents: 0,
+        redactedBlockedNicknames: 0,
+      };
+
+      // Purge expired or stale-revoked auth_sessions globally (VW3-R-011).
+      // Cap expiry cutoff at wall-clock time so simulated-future retention tests do not evict live real-clock sessions.
+      const sessionNow = Math.min(now, Date.now());
+      const sessionExpiryCut = iso(sessionNow);
+      const sessionRevokedCutoff = iso(sessionNow - 7 * DAY_MS);
+      extendedRemoved.authSessions += drain(database, batchSize, undefined, (tx) => {
+        const rows = tx.all<{ tokenHash: string }>(
+          sql`SELECT token_hash AS tokenHash FROM auth_sessions
+              WHERE expires_at <= ${sessionExpiryCut} OR (revoked_at IS NOT NULL AND revoked_at <= ${sessionRevokedCutoff})
+              LIMIT ${batchSize}`,
+        );
+        if (rows.length === 0) return { changes: 0, batch: null };
+        const changes = tx
+          .delete(authSessions)
+          .where(inArray(authSessions.tokenHash, rows.map((r) => r.tokenHash)))
+          .run().changes;
+        return { changes, batch: null };
+      });
 
       for (const channelId of channelIds) {
         const policy = policyOf(database, channelId);
@@ -150,6 +198,65 @@ export function createRetentionStore(database: VoxwardDatabase, options?: Retent
           sql`SELECT count(*) FROM change_logs
               WHERE channel_id = ${channelId} AND (expires_at <= ${nowIso} OR occurred_at <= ${cut.change})`,
         );
+
+        // Redact stale plaintext nicknames in blocked-users settings past evidenceDays (VW3-R-011).
+        extendedRemoved.redactedBlockedNicknames += updateChannelSettingAtomic<ManualBlockedUserRecord[], number>(
+          database,
+          channelId,
+          "blocked-users",
+          [],
+          (users) => {
+            let redactedCount = 0;
+            const next = users.map((u) => {
+              if (u.nickname !== null && u.createdAt <= cut.evidence) {
+                redactedCount += 1;
+                return { ...u, nickname: null };
+              }
+              return u;
+            });
+            return { write: redactedCount > 0, next, result: redactedCount };
+          },
+          new Date(now),
+        );
+
+        // Purge expired terminal deliveries past technicalLogDays (VW3-R-011).
+        extendedRemoved.deliveries += drain(database, batchSize, undefined, (tx) => {
+          const rows = tx.all<{ id: string }>(
+            sql`SELECT d.id AS id FROM deliveries d
+                JOIN channel_events e ON e.id = d.event_id
+                WHERE e.channel_id = ${channelId}
+                  AND d.status IN ('SENT','FAILED','EXPIRED','CANCELLED')
+                  AND d.valid_until <= ${cut.technical}
+                LIMIT ${batchSize}`,
+          );
+          if (rows.length === 0) return { changes: 0, batch: null };
+          const changes = tx
+            .delete(deliveries)
+            .where(inArray(deliveries.id, rows.map((r) => r.id)))
+            .run().changes;
+          return { changes, batch: null };
+        });
+
+        // Purge expired event_payments and channel_events past changeLogDays (respecting FK order & active tasks).
+        drain(database, batchSize, undefined, (tx) => {
+          const rows = tx.all<{ id: string }>(
+            sql`SELECT e.id AS id FROM channel_events e
+                WHERE e.channel_id = ${channelId}
+                  AND e.created_at <= ${cut.change}
+                  AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.event_id = e.id AND t.status IN ${sql.raw(ACTIVE_TASK_STATES)})
+                  AND NOT EXISTS (SELECT 1 FROM technical_logs l WHERE l.channel_id = e.channel_id AND l.correlation_id = e.correlation_id)
+                LIMIT ${batchSize}`,
+          );
+          if (rows.length === 0) return { changes: 0, batch: null };
+          const eventIds = rows.map((r) => r.id);
+          extendedRemoved.deliveries += tx.delete(deliveries).where(inArray(deliveries.eventId, eventIds)).run().changes;
+          tx.delete(verdicts).where(inArray(verdicts.eventId, eventIds)).run();
+          tx.delete(tasks).where(inArray(tasks.eventId, eventIds)).run();
+          extendedRemoved.eventPayments += tx.delete(eventPayments).where(inArray(eventPayments.eventId, eventIds)).run().changes;
+          const evChanges = tx.delete(channelEvents).where(inArray(channelEvents.id, eventIds)).run().changes;
+          extendedRemoved.channelEvents += evChanges;
+          return { changes: evChanges, batch: null };
+        });
       }
 
       // Change Log rows that belong to no channel have no channel policy: only their stored expiry applies.
@@ -174,6 +281,7 @@ export function createRetentionStore(database: VoxwardDatabase, options?: Retent
         removed,
         remainingExpired: remaining,
         complete: remaining.evidence + remaining.technicalLogs + remaining.changeLogs === 0,
+        extendedRemoved,
       };
     },
 

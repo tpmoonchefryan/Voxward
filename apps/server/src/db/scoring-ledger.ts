@@ -8,7 +8,7 @@ import type {
   ScoreWrite,
   ScoringLedgerPort,
 } from "@voxward/contracts";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { VoxwardDatabase } from "./client.js";
 import { ScoreLedgerStore, SubjectStore } from "./repository.js";
 import { scoreExceptions, scoreLedger, scoreOutcomes, subjectIdentities, subjectScores, subjects } from "./schema/index.js";
@@ -99,6 +99,11 @@ function recordOutcome(
   outcome: "NO_EFFECT" | "REFUSED",
   reasonCode: string,
 ): void {
+  const latestLedger = tx
+    .select({ maxRowid: sql<number>`coalesce(max(rowid), 0)` })
+    .from(scoreLedger)
+    .where(eq(scoreLedger.subjectId, subjectId))
+    .get();
   tx.insert(scoreOutcomes)
     .values({
       idempotencyKey: request.idempotencyKey,
@@ -106,6 +111,7 @@ function recordOutcome(
       outcome,
       reasonCode,
       createdAt: request.committedAt,
+      afterLedgerRowid: latestLedger?.maxRowid ?? 0,
     })
     .run();
 }

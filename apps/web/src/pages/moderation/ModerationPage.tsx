@@ -264,13 +264,8 @@ export function ModerationWorkbench({
     setBusyKey(card.id);
     setFeedback(null);
     try {
+      // Server-side confirmCandidate already persists the term into rule_terms and bumps rule_versions atomically.
       await client.confirmCandidate(channelId, card.id);
-      const chosenCategory = candidateCategoryMap[card.id] ?? blacklistCategories[0]?.code ?? "spam";
-      await client.appendBlacklistTerm(channelId, {
-        term: card.term,
-        categoryCode: chosenCategory,
-        matchKind: "CONTAINS",
-      });
       setFeedback({ tone: "positive", text: copy.candidateConfirmed });
       await loadAll();
     } catch (error) {

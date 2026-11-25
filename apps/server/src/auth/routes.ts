@@ -1,16 +1,21 @@
 import { OUTPUT_GRANT_KINDS, type OutputGrantKind } from "@voxward/contracts";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { eq } from "drizzle-orm";
+import { and, desc, eq, gt } from "drizzle-orm";
 import { z } from "zod";
 import type { VoxwardDatabase } from "../db/client.js";
 import { readShellPreferences, writeShellPreferences } from "../db/channel-settings-store.js";
-import { revokeOutputGrant } from "../db/output-store.js";
-import { authAccounts, CHANNEL_ROLES } from "../db/schema/index.js";
+import { createApprovedContentPort, revokeOutputGrant } from "../db/output-store.js";
+import { authAccounts, CHANNEL_ROLES, channelEvents, deliveries, verdicts } from "../db/schema/index.js";
 import { runShortTransaction } from "../db/transaction.js";
 import { issueOutputToken, revokeOutputToken } from "./downstream-tokens.js";
 import { issueNativeGrant } from "./output-grants.js";
-import { login } from "./login.js";
-import { grantMembership, listActiveMembers, revokeMembership } from "./members.js";
+import { createLoginRateLimiter, login, ScryptOverloadedError, type LoginRateLimiter } from "./login.js";
+import {
+  grantMembership,
+  listActiveMembers,
+  revokeMembership,
+  wouldLeaveChannelWithoutOwner,
+} from "./members.js";
 import {
   authenticateRequest,
   authorizeBatch,
@@ -26,20 +31,24 @@ export interface AuthRoutesOptions {
   readonly database: VoxwardDatabase;
   /** Runs after a native output grant is revoked, so the consumers it opened are closed at once. */
   readonly onOutputGrantRevoked?: (grantId: string) => void;
+  /** Optional custom login brute-force limiter (defaults to createLoginRateLimiter()). */
+  readonly loginRateLimiter?: LoginRateLimiter;
 }
 
 /** A refusal with a stable code. The error handler turns it into a JSON body with no detail beyond the code. */
 class RouteFailure extends Error {
-  readonly status: 400 | 401 | 403 | 404;
+  readonly status: 400 | 401 | 403 | 404 | 409 | 429 | 503;
   readonly code: string;
   readonly index?: number;
+  readonly retryAfterSeconds?: number;
 
-  constructor(status: 400 | 401 | 403 | 404, code: string, index?: number) {
+  constructor(status: 400 | 401 | 403 | 404 | 409 | 429 | 503, code: string, index?: number, retryAfterSeconds?: number) {
     super(code);
     this.name = "RouteFailure";
     this.status = status;
     this.code = code;
     this.index = index;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -151,9 +160,14 @@ function clearSessionCookie(reply: FastifyReply): void {
  */
 export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: FastifyInstance, options) => {
   const { database } = options;
+  const loginLimiter = options.loginRateLimiter ?? createLoginRateLimiter();
+  const approvedContent = createApprovedContentPort(database);
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof RouteFailure) {
+      if (error.retryAfterSeconds !== undefined) {
+        void reply.header("retry-after", String(error.retryAfterSeconds));
+      }
       const body = error.index === undefined ? { error: error.code } : { error: error.code, index: error.index };
       return reply.code(error.status).send(body);
     }
@@ -170,8 +184,26 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
 
   app.post("/auth/login", async (request, reply) => {
     const body = parseBody(LOGIN_BODY, request.body);
-    const result = await login(database, { loginName: body.loginName, password: body.password, now: new Date() });
-    if (!result.ok) throw new RouteFailure(401, "INVALID_CREDENTIALS");
+    const now = new Date();
+    const ip = request.ip || "unknown";
+    const verdict = loginLimiter.check({ ip, loginName: body.loginName, nowMs: now.getTime() });
+    if (!verdict.allowed) {
+      throw new RouteFailure(429, "TOO_MANY_ATTEMPTS", undefined, verdict.retryAfterSeconds ?? 60);
+    }
+    let result;
+    try {
+      result = await login(database, { loginName: body.loginName, password: body.password, now });
+    } catch (error) {
+      if (error instanceof ScryptOverloadedError) {
+        throw new RouteFailure(503, "AUTH_BUSY", undefined, 5);
+      }
+      throw error;
+    }
+    if (!result.ok) {
+      loginLimiter.recordFailure({ ip, loginName: body.loginName, nowMs: now.getTime() });
+      throw new RouteFailure(401, "INVALID_CREDENTIALS");
+    }
+    loginLimiter.recordSuccess({ ip, loginName: body.loginName });
     setSessionCookie(reply, result.session.token);
     return reply
       .code(200)
@@ -250,16 +282,19 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
     requireCapability(database, allowed, channelId, "members.manage");
     const body = parseBody(MEMBER_BODY, request.body);
     requireKnownAccount(database, body.accountId);
-    const membership = runShortTransaction(database, (tx) =>
-      grantMembership(tx, {
+    const membership = runShortTransaction(database, (tx) => {
+      if (wouldLeaveChannelWithoutOwner(tx, { channelId, accountId: body.accountId, nextRole: body.role })) {
+        throw new RouteFailure(409, "LAST_OWNER_REQUIRED");
+      }
+      return grantMembership(tx, {
         channelId,
         accountId: body.accountId,
         role: body.role,
         logAccess: body.logAccess,
         dataAdmin: body.dataAdmin ?? false,
         now: new Date(),
-      }),
-    );
+      });
+    });
     return reply.code(201).send(membership);
   });
 
@@ -269,11 +304,69 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
       const allowed = principalOf(database, request);
       const { channelId, accountId } = request.params;
       requireCapability(database, allowed, channelId, "members.manage");
-      const revoked = runShortTransaction(database, (tx) => revokeMembership(tx, { channelId, accountId, now: new Date() }));
+      const revoked = runShortTransaction(database, (tx) => {
+        if (wouldLeaveChannelWithoutOwner(tx, { channelId, accountId, nextRole: null })) {
+          throw new RouteFailure(409, "LAST_OWNER_REQUIRED");
+        }
+        return revokeMembership(tx, { channelId, accountId, now: new Date() });
+      });
       if (!revoked) throw new RouteFailure(404, "MEMBERSHIP_NOT_FOUND");
       return reply.code(204).send();
     },
   );
+
+  /** Read-only approved delivery feed consuming downstream `output.feed` tokens (or channel owners with `output.manage`). */
+  app.get<{ Params: { channelId: string } }>("/channels/:channelId/output-feed", async (request, reply) => {
+    const allowed = principalOf(database, request);
+    const { channelId } = request.params;
+    const canFeed = authorizeChannel(database, allowed.principal, { channelId, capability: "output.feed" });
+    if (!canFeed.ok) {
+      requireCapability(database, allowed, channelId, "output.manage");
+    }
+    const nowIso = new Date().toISOString();
+    const rows = database.orm
+      .select({
+        deliveryId: deliveries.id,
+        deliverySequence: deliveries.deliverySequence,
+        platformOrder: deliveries.platformOrder,
+        validUntil: deliveries.validUntil,
+        correlationId: channelEvents.correlationId,
+      })
+      .from(deliveries)
+      .innerJoin(verdicts, eq(verdicts.id, deliveries.verdictId))
+      .innerJoin(channelEvents, eq(channelEvents.id, deliveries.eventId))
+      .where(
+        and(
+          eq(channelEvents.channelId, channelId),
+          eq(verdicts.isCurrent, 1),
+          eq(verdicts.downstream, "ALLOW"),
+          gt(deliveries.validUntil, nowIso),
+        ),
+      )
+      .orderBy(desc(deliveries.platformOrder), desc(deliveries.deliverySequence))
+      .limit(100)
+      .all();
+
+    const items = [];
+    for (const row of rows) {
+      const content = approvedContent.readApproved({ channelId, correlationId: row.correlationId, nowIso });
+      if (content === undefined) continue;
+      items.push({
+        deliveryId: row.deliveryId,
+        deliverySequence: row.deliverySequence,
+        platformOrder: row.platformOrder,
+        validUntil: row.validUntil,
+        display: {
+          label: content.label ?? null,
+          text: content.text,
+          translation: content.translation,
+          ...(content.translations !== undefined ? { translations: content.translations } : {}),
+          ...(content.payment !== undefined ? { payment: content.payment } : {}),
+        },
+      });
+    }
+    return reply.header("cache-control", "no-store").send({ items });
+  });
 
   app.post<{ Params: { channelId: string } }>("/channels/:channelId/output-tokens", async (request, reply) => {
     const allowed = principalOf(database, request);
@@ -347,16 +440,19 @@ const OUTPUT_GRANT_BODY = z
     for (const item of body.items) requireKnownAccount(database, item.accountId);
     const now = new Date();
     const granted = runShortTransaction(database, (tx) =>
-      body.items.map((item) =>
-        grantMembership(tx, {
+      body.items.map((item) => {
+        if (wouldLeaveChannelWithoutOwner(tx, { channelId: item.channelId, accountId: item.accountId, nextRole: item.role })) {
+          throw new RouteFailure(409, "LAST_OWNER_REQUIRED");
+        }
+        return grantMembership(tx, {
           channelId: item.channelId,
           accountId: item.accountId,
           role: item.role,
           logAccess: item.logAccess,
           dataAdmin: item.dataAdmin ?? false,
           now,
-        }),
-      ),
+        });
+      }),
     );
     return reply.code(201).send({ granted: granted.length });
   });

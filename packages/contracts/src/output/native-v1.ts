@@ -87,10 +87,11 @@ export interface WardBlockedFrame extends DeliveryFields {
 
 export type NativeFrame = HelloFrame | DeliverFrame | WardBlockedFrame;
 
-/** Exact key lists. A message carries these keys and no others. */
+/** Exact key lists. A message carries these keys and no others (`DISPLAY` includes optional keys `translations` & `payment`). */
 export const NATIVE_FRAME_FIELDS = {
   HELLO: ["type", "version", "protocol", "heartbeatMs"],
   DELIVER: ["type", "version", "deliveryId", "deliverySequence", "platformOrder", "validUntil", "display"],
   WARD_BLOCKED: ["type", "version", "deliveryId", "deliverySequence", "platformOrder", "validUntil"],
-  DISPLAY: ["label", "text", "translation"],
+  DISPLAY_REQUIRED: ["label", "text", "translation"],
+  DISPLAY: ["label", "text", "translation", "translations", "payment"],
 } as const;

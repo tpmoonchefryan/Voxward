@@ -23,5 +23,6 @@ export interface ChannelEvent extends Versioned {
   readonly correlationId: string;
   readonly body: string;
   readonly sender: SenderRef;
+  readonly language?: string;
   readonly scPayment?: ScPayment;
 }

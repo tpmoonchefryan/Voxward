@@ -18,6 +18,7 @@ import {
   channelEvents,
   credentialRefs,
   deliveries,
+  deploymentSettings,
   eventPayments,
   outputGrants,
   technicalLogEvidence,
@@ -163,17 +164,37 @@ export function createApprovedContentPort(database: VoxwardDatabase): ApprovedCo
       const parsedTranslation = parseScTranslationEvidence(translationRow?.payload ?? null);
       const paymentRow = database.orm
         .select({
+          subjectId: channelEvents.subjectId,
           amountMicros: eventPayments.amountMicros,
           currency: eventPayments.currency,
           amountDisplay: eventPayments.amountDisplay,
           tier: eventPayments.tier,
         })
-        .from(eventPayments)
-        .innerJoin(channelEvents, eq(channelEvents.id, eventPayments.eventId))
+        .from(channelEvents)
+        .leftJoin(eventPayments, eq(eventPayments.eventId, channelEvents.id))
         .where(and(eq(channelEvents.channelId, channelId), eq(channelEvents.correlationId, correlationId)))
         .get();
+      let safeLabel: string | null = null;
+      if (paymentRow?.subjectId) {
+        const aliasRow = database.orm
+          .select({ valueJson: deploymentSettings.valueJson })
+          .from(deploymentSettings)
+          .where(eq(deploymentSettings.key, `channel:${channelId}:safe-aliases`))
+          .get();
+        if (aliasRow !== undefined) {
+          try {
+            const aliases = JSON.parse(aliasRow.valueJson) as Record<string, unknown>;
+            const found = aliases[paymentRow.subjectId];
+            if (typeof found === "string" && found.trim().length > 0) {
+              safeLabel = found.trim();
+            }
+          } catch {
+            // Ignore corrupt alias JSON; keep label null.
+          }
+        }
+      }
       const payment: ScPayment | undefined =
-        paymentRow === undefined
+        paymentRow === undefined || paymentRow.amountMicros === null || paymentRow.currency === null
           ? undefined
           : {
               amountMicros: paymentRow.amountMicros,
@@ -182,6 +203,7 @@ export function createApprovedContentPort(database: VoxwardDatabase): ApprovedCo
               tier: paymentRow.tier,
             };
       return {
+        ...(safeLabel !== null ? { label: safeLabel } : {}),
         text: text.payload,
         translation: parsedTranslation.primaryTranslation,
         ...(parsedTranslation.translations.length > 0

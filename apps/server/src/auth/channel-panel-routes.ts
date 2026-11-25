@@ -47,7 +47,7 @@ import {
   type StoredRbacRole,
   type StoredRbacUser,
 } from "../db/channel-settings-store.js";
-import { applyManagedWordlistToRuleSet } from "../db/wordlist-rules.js";
+import { applyManagedWordlistToRuleSet, toDbMatchKind } from "../db/wordlist-rules.js";
 import type { VoxwardDatabase } from "../db/client.js";
 import { authAccounts } from "../db/schema/index.js";
 import { runShortTransaction } from "../db/transaction.js";
@@ -233,9 +233,9 @@ const TERM_ENTRY_SCHEMA = z
   .object({
     id: z.string().min(1).max(64),
     listKind: z.enum(["BLACKLIST", "WHITELIST"]),
-    term: z.string().min(1).max(200),
+    term: z.string().min(1).max(100),
     categoryCode: z.string().min(1).max(48),
-    matchKind: z.enum(["EXACT", "CONTAINS", "REGEX", "NORMALIZED"]),
+    matchKind: z.enum(["EXACT", "CONTAINS", "REGEX", "NORMALIZED", "PHONETIC"]),
     enabled: z.boolean(),
     language: z.string().min(1).max(63).optional(),
     action: z.enum(["BLOCK", "REVIEW"]).optional(),
@@ -909,6 +909,12 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
             issues: [{ code: "PATTERN_EMPTY", ref: entry.id }],
           });
         }
+        if (entry.matchKind === "PHONETIC" && !/^[a-z0-9]+$/.test(entry.term.toLowerCase())) {
+          return send(reply, 400, {
+            error: "RULE_SET_INVALID",
+            issues: [{ code: "READING_PATTERN_INVALID", ref: entry.id }],
+          });
+        }
       }
       const saved = saveTerms(channelId, accountId, parsed.data.entries, reply);
       if (saved !== undefined) {
@@ -927,27 +933,46 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       const current = readTermEntries(database, channelId);
       const result = parseTermCsv(parsed.data.csvText, {
         ...(parsed.data.delimiter !== undefined ? { delimiter: parsed.data.delimiter } : {}),
+        listKind: parsed.data.listKind,
         defaultCategoryCode: parsed.data.listKind === "WHITELIST" ? "friendly" : "spam",
+        maxRows: 500,
+        maxTermLength: 100,
         normalizedTermIsEmpty: (term) => rules.normalizedTermIsEmpty(channelId, term),
         ...(rules.validateRegexPattern ? { validateRegexPattern: rules.validateRegexPattern } : {}),
       });
-      const added: ExtendedTermEntry[] = result.rows.map((row) => ({
-        id: `term-${randomUUID()}`,
-        listKind: parsed.data.listKind,
-        term: row.term,
-        categoryCode: row.categoryCode,
-        matchKind: row.matchKind,
-        enabled: true,
-        language: row.language,
-        action: row.action === "BLOCK" ? "BLOCK" : "REVIEW",
-      }));
+      const existingKeys = new Set(
+        current.map((entry) =>
+          JSON.stringify([entry.listKind, toDbMatchKind(entry.matchKind), entry.language ?? "und", entry.term]),
+        ),
+      );
+      const added: ExtendedTermEntry[] = [];
+      let skippedDuplicates = 0;
+      for (const row of result.rows) {
+        const key = JSON.stringify([parsed.data.listKind, toDbMatchKind(row.matchKind), row.language, row.term]);
+        if (existingKeys.has(key)) {
+          skippedDuplicates += 1;
+          continue;
+        }
+        existingKeys.add(key);
+        added.push({
+          id: `term-${randomUUID()}`,
+          listKind: parsed.data.listKind,
+          term: row.term,
+          categoryCode: row.categoryCode,
+          matchKind: row.matchKind,
+          enabled: true,
+          language: row.language,
+          action: parsed.data.listKind === "WHITELIST" ? "REVIEW" : (row.action === "BLOCK" ? "BLOCK" : "REVIEW"),
+        });
+      }
       if (added.length === 0) {
-        return send(reply, 200, { imported: 0, errors: result.errors, entries: current });
+        return send(reply, 200, { imported: 0, skippedDuplicates, errors: result.errors, entries: current });
       }
       const saved = saveTerms(channelId, accountId, [...added, ...current], reply);
       if (saved !== undefined) {
         return send(reply, 200, {
           imported: added.length,
+          skippedDuplicates,
           errors: result.errors,
           version: saved.version,
           entries: saved.entries,

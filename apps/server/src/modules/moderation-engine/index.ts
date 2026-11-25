@@ -20,7 +20,7 @@ import {
 } from "./rules/engine.js";
 import { type CompiledRuleSet, compileRuleSet, ModerationConfigError, type RuleSetInput } from "./rules/groups.js";
 import { DEFAULT_NORMALIZE_OPTIONS } from "./rules/normalize.js";
-import { createTableTransliterator, type Transliterator } from "./rules/transliterate.js";
+import { createDefaultTransliterator, type Transliterator } from "./rules/transliterate.js";
 
 /**
  * Supplies the display nickname of an event's sender from local data. The ChannelEvent contract does not carry it,
@@ -61,7 +61,7 @@ const NO_NICKNAMES: NicknameSource = { displayNicknameOf: () => Promise.resolve(
 export function createModerationChecker(options: ModerationOptions = {}): ModerationChecker {
   const ruleSet = options.ruleSet === undefined ? null : compiledOrThrow(options.ruleSet);
   const normalization = ruleSet?.normalization ?? DEFAULT_NORMALIZE_OPTIONS;
-  const transliterator = options.transliterator ?? createTableTransliterator(new Map(), normalization);
+  const transliterator = options.transliterator ?? createDefaultTransliterator(normalization);
   if (ruleSet !== null && transliterator.normalization.stripCombiningMarks !== normalization.stripCombiningMarks) {
     // The table is checked and read with its own options. They must be the rule set's, or a reading would not match.
     throw new ModerationConfigError([{ code: "NORMALIZATION_MISMATCH", ref: "transliterator" }]);
@@ -84,12 +84,13 @@ export function createModerationChecker(options: ModerationOptions = {}): Modera
   return {
     async check(event, checkOptions) {
       const nickname = await nicknames.displayNicknameOf(event);
+      const language = checkOptions?.language ?? event.language;
       return evaluateMessage(
         {
           subject: { channelId: event.channelId, senderRef: event.sender.senderRef },
           nickname,
           body: event.body,
-          ...(checkOptions?.language === undefined ? {} : { language: checkOptions.language }),
+          ...(language === undefined ? {} : { language }),
         },
         env,
         nicknameScope,
@@ -120,7 +121,7 @@ export function createModerationEngine(options: ModerationOptions = {}): Moderat
 export function createNicknameReader(options: NicknameReaderOptions = {}): NicknameReader {
   const nicknames = options.nicknames ?? NO_NICKNAMES;
   const safeAliases = options.safeAliases ?? createInProcessSafeAliases();
-  const transliterator = options.transliterator ?? createTableTransliterator(new Map());
+  const transliterator = options.transliterator ?? createDefaultTransliterator();
   return {
     async read(event) {
       const nickname = await nicknames.displayNicknameOf(event);

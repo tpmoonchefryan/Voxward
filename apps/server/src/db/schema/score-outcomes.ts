@@ -1,4 +1,4 @@
-import { check, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { inList } from "./checks.js";
 import { subjects } from "./subjects.js";
 
@@ -17,4 +17,5 @@ export const scoreOutcomes = sqliteTable("score_outcomes", {
   outcome: text("outcome").notNull(),
   reasonCode: text("reason_code").notNull(),
   createdAt: text("created_at").notNull(),
+  afterLedgerRowid: integer("after_ledger_rowid"),
 }, (t) => [check("ck_score_outcomes_kind", inList("outcome", SCORE_OUTCOME_KINDS))]);

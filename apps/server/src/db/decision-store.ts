@@ -29,7 +29,7 @@ import {
   type TermEdit,
   type TermEditResult,
 } from "@voxward/contracts";
-import { and, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { syncRuleVersionFromActiveTermsInTx } from "./channel-settings-store.js";
 import type { VoxwardDatabase } from "./client.js";
 import { TaskStore } from "./repository.js";
@@ -41,6 +41,7 @@ import {
   ruleTerms,
   scoreLedger,
   scoreOutcomes,
+  subjectScores,
   subjects,
   tasks,
   verdicts,
@@ -288,7 +289,8 @@ function commitOverturnInTransaction(
     .where(eq(scoreLedger.idempotencyKey, `event:${event.channelId}:${event.platformMessageRef}`))
     .get();
   // Read before the correction is written, so the correction's own entries are not counted as later ones.
-  const laterLimitTouched = original !== undefined && laterEntryTouchedLimit(tx, event.subjectId, original);
+  const laterLimitTouched =
+    original !== undefined && laterEntryTouchedLimit(tx, event.subjectId, original, options.planner, event.correlationId);
 
   // The partial unique index allows one current verdict, so the old one is demoted before the new one is inserted.
   tx.update(verdicts).set({ isCurrent: 0 }).where(eq(verdicts.id, current.verdictId)).run();
@@ -773,11 +775,17 @@ function overturnSummary(before: DownstreamVerdict, after: DownstreamVerdict): s
 }
 
 /**
- * True when a score entry of the subject after the original reached a limit: the ledger recorded it clamped, or it changed
- * nothing because the limit was already reached. Ledger entries are ordered by their row id. No-effect results carry only a
- * time, so one written in the same millisecond as the original counts as later.
+ * True when a score entry of the subject after the original reached a limit — either in the actual ledger/outcomes
+ * (disambiguating same-millisecond outcomes via `after_ledger_rowid`) OR in a counterfactual replay of later ledger
+ * rows without `original` (Q55 C6).
  */
-function laterEntryTouchedLimit(tx: ShortTransaction, subjectId: string, original: { rowid: number; createdAt: string }): boolean {
+function laterEntryTouchedLimit(
+  tx: ShortTransaction,
+  subjectId: string,
+  original: { rowid: number; actualDelta: number; createdAt: string },
+  planner: ScoringPlanner,
+  correlationId: string,
+): boolean {
   const clampedEntry = tx
     .select({ n: sql<number>`count(*)` })
     .from(scoreLedger)
@@ -789,6 +797,8 @@ function laterEntryTouchedLimit(tx: ShortTransaction, subjectId: string, origina
       ),
     )
     .get();
+  if ((clampedEntry?.n ?? 0) > 0) return true;
+
   const clampedNoEffect = tx
     .select({ n: sql<number>`count(*)` })
     .from(scoreOutcomes)
@@ -796,11 +806,70 @@ function laterEntryTouchedLimit(tx: ShortTransaction, subjectId: string, origina
       and(
         eq(scoreOutcomes.subjectId, subjectId),
         eq(scoreOutcomes.reasonCode, "CLAMPED"),
-        gte(scoreOutcomes.createdAt, original.createdAt),
+        sql`((${scoreOutcomes.afterLedgerRowid} IS NOT NULL AND ${scoreOutcomes.afterLedgerRowid} >= ${original.rowid})
+             OR (${scoreOutcomes.afterLedgerRowid} IS NULL AND ${scoreOutcomes.createdAt} > ${original.createdAt}))`,
       ),
     )
     .get();
-  return (clampedEntry?.n ?? 0) > 0 || (clampedNoEffect?.n ?? 0) > 0;
+  if ((clampedNoEffect?.n ?? 0) > 0) return true;
+
+  // Q55 C6: check whether replaying subsequent ledger entries without `original` would hit a clamp boundary
+  // and end at a different score than applying the linear `-original.actualDelta` compensation.
+  const laterRows = tx
+    .select({
+      requestedDelta: scoreLedger.requestedDelta,
+      actualDelta: scoreLedger.actualDelta,
+    })
+    .from(scoreLedger)
+    .where(and(eq(scoreLedger.subjectId, subjectId), sql`rowid > ${original.rowid}`))
+    .orderBy(asc(sql`rowid`))
+    .all();
+  if (laterRows.length === 0) return false;
+
+  const scoreRow = tx
+    .select({
+      identityBaseScore: subjectScores.identityBaseScore,
+      behaviorAdjustTotal: subjectScores.behaviorAdjustTotal,
+      currentScore: subjectScores.currentScore,
+      version: subjectScores.version,
+      lastRewardAt: subjectScores.lastRewardAt,
+    })
+    .from(subjectScores)
+    .where(eq(subjectScores.subjectId, subjectId))
+    .get();
+  if (scoreRow === undefined) return false;
+
+  const laterActualSum = laterRows.reduce((acc, row) => acc + row.actualDelta, 0);
+  let simScore = scoreRow.currentScore - original.actualDelta - laterActualSum;
+  for (const row of laterRows) {
+    const decision = planner.planCorrection(row.requestedDelta, correlationId)({
+      subjectRef: subjectId,
+      identityKind: "UNKNOWN",
+      identityBaseScore: scoreRow.identityBaseScore,
+      behaviorAdjustTotal: 0,
+      currentScore: simScore,
+      version: scoreRow.version,
+      lastRewardAt: scoreRow.lastRewardAt,
+      exceptionActive: false,
+    });
+    if (decision.kind === "write") {
+      simScore = decision.write.nextCurrentScore;
+    }
+  }
+
+  const naiveDecision = planner.planCorrection(-original.actualDelta, correlationId)({
+    subjectRef: subjectId,
+    identityKind: "UNKNOWN",
+    identityBaseScore: scoreRow.identityBaseScore,
+    behaviorAdjustTotal: scoreRow.behaviorAdjustTotal,
+    currentScore: scoreRow.currentScore,
+    version: scoreRow.version,
+    lastRewardAt: scoreRow.lastRewardAt,
+    exceptionActive: false,
+  });
+  const naiveAfterScore =
+    naiveDecision.kind === "write" ? naiveDecision.write.nextCurrentScore : scoreRow.currentScore;
+  return simScore !== naiveAfterScore;
 }
 
 function scoringStatus(result: ScoreCommitResult): { status: ScoringStatus; actualDelta: number } {
