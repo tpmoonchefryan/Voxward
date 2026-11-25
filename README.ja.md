@@ -1,4 +1,4 @@
-> 注：本ドキュメントは[英語版](./README.md)を正文とします · `synced-to: 3f5c65f612537959611e4bdfb684ed7542ef3a8f945f802921244f1fee92951a`
+> 注：本ドキュメントは[英語版](./README.md)を正文とします · `synced-to: 1516ed92e7459e6a59ea67f860d46c72319dc79f1f952bae2be5ee6c5e809861`
 
 <div align="center">
 
