@@ -143,10 +143,18 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
     const items: ItemOutcome[] = [];
     const known: KnownTask[] = [];
     for (const task of batch.tasks) {
-      const entry = entries.get(task.taskId);
+      let entry = entries.get(task.taskId);
+      if (entry === undefined && deps.store.readCandidateByCorrelation !== undefined) {
+        const recovered = deps.store.readCandidateByCorrelation(task.correlationId);
+        if (recovered !== undefined) {
+          entry = { eventId: recovered.eventId, event: factsOf(recovered.event) };
+          entries.set(task.taskId, entry);
+        }
+      }
       if (entry === undefined) {
-        // Not enqueued by this runner. A non-retryable error would settle another owner's task (B2), so the task is left
-        // to the coordinator's deadline sweep.
+        // Task belongs to no resolvable candidate in local or shared store; report failure so it does not stall RUNNING.
+        await deps.coordinator.reportFailure(task.taskId, "TASK_ORPHANED_EVENT");
+        items.push({ status: "FAILED", taskId: task.taskId, eventId: null, errorCode: "TASK_ORPHANED_EVENT" });
         continue;
       }
       known.push({ taskId: task.taskId, text: task.text, itemId: `i${known.length}`, entry });

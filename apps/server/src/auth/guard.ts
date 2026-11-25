@@ -4,8 +4,8 @@ import type { VoxwardDatabase } from "../db/client.js";
 import { tasks } from "../db/schema/index.js";
 import { csrfMatches, isUnsafeMethod } from "./csrf.js";
 import { resolveOutputToken } from "./downstream-tokens.js";
-import { findActiveMembership } from "./members.js";
-import { downstreamAllows, membershipAllows, type Capability } from "./permissions.js";
+import { downstreamAllows, type Capability } from "./permissions.js";
+import { channelAllowsCapability } from "./rbac-enforce.js";
 import { resolveSession } from "./session.js";
 
 export const SESSION_COOKIE = "vw_session";
@@ -109,8 +109,9 @@ export function authorizeChannel(
     }
     return { ok: true };
   }
-  const membership = findActiveMembership(database, scope.channelId, principal.accountId);
-  if (membership === undefined || !membershipAllows(membership, scope.capability)) return denied(403, "FORBIDDEN");
+  if (!channelAllowsCapability(database, scope.channelId, principal.accountId, scope.capability)) {
+    return denied(403, "FORBIDDEN");
+  }
   return { ok: true };
 }
 

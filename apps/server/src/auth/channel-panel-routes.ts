@@ -50,9 +50,12 @@ import {
 import { applyManagedWordlistToRuleSet } from "../db/wordlist-rules.js";
 import type { VoxwardDatabase } from "../db/client.js";
 import { authAccounts } from "../db/schema/index.js";
+import { runShortTransaction } from "../db/transaction.js";
 import { authenticateRequest } from "./guard.js";
-import { findActiveMembership, listActiveMembers, listActiveMembershipsOf, type Membership } from "./members.js";
-import { capabilitiesOfMembership, membershipAllows, resolveEffectivePermissions, type Capability } from "./permissions.js";
+import { listActiveMembers, listActiveMembershipsOf, type Membership } from "./members.js";
+import { capabilitiesOfMembership, resolveEffectivePermissions, type Capability } from "./permissions.js";
+import { resolveChannelAccess } from "./rbac-enforce.js";
+import { revokeAccountSessions } from "./session.js";
 import { parseTermCsv } from "./term-csv.js";
 
 export interface ChannelPanelDecisionHandlers {
@@ -106,12 +109,65 @@ export interface ChannelPanelRuleValidator {
   }>;
 }
 
+export type ChannelSecretPurpose = "PLATFORM_OAUTH" | "MODEL_ACCESS";
+
+export interface ChannelPanelSecretsPort {
+  seal(purpose: ChannelSecretPurpose, plaintext: string): string;
+  reveal(ref: string, purpose: ChannelSecretPurpose): string;
+  remove(ref: string, purpose: ChannelSecretPurpose): void;
+  isSecretRef(value: unknown): value is string;
+}
+
+export interface ChannelPanelAdapterActionResult {
+  readonly ok: boolean;
+  readonly httpStatus: number;
+  readonly upstreamStatusCode: number;
+  readonly latencyMs: number;
+  readonly method: "GET" | "POST";
+  readonly url: string;
+  readonly summary: string;
+  readonly statusCode: AdapterStatusCode;
+  readonly statusParams: Readonly<Record<string, string | number>>;
+  readonly fetchedModels?: readonly {
+    readonly modelId: string;
+    readonly displayName: string;
+    readonly reasoningLevels: readonly string[];
+    readonly source: "remote";
+  }[];
+  readonly requestHeaders: Readonly<Record<string, string>>;
+  readonly responseHeaders: Readonly<Record<string, string>>;
+  readonly rawRequestBody: string | null;
+  readonly rawResponseBody: string | null;
+}
+
+export interface ChannelPanelAdapterActionsPort {
+  execute(input: {
+    readonly channelId: string;
+    readonly adapterId: string;
+    readonly category: "LIVE_PLATFORM" | "AI_PROVIDER" | "OUTPUT_TARGET";
+    readonly driverId: AdapterDriverId;
+    readonly displayName: string;
+    readonly action: string;
+    readonly config: Readonly<Record<string, string | number | boolean | null>>;
+    readonly resolvedSecrets: Readonly<Record<string, string>>;
+  }): Promise<ChannelPanelAdapterActionResult>;
+  syncYouTubeBan(input: {
+    readonly channelId: string;
+    readonly subjectRef: string;
+    readonly reason: string;
+    readonly liveChatId?: string;
+    readonly accessToken?: string;
+  }): Promise<{ readonly synced: boolean; readonly banId: string | null; readonly errorCode?: string }>;
+}
+
 export interface ChannelPanelRoutesOptions {
   readonly database: VoxwardDatabase;
   readonly decisions: ChannelPanelDecisionHandlers;
   readonly candidates: ChannelPanelCandidateHandlers;
   readonly models: ChannelPanelModelHandlers;
   readonly rules: ChannelPanelRuleValidator;
+  readonly secrets?: ChannelPanelSecretsPort;
+  readonly adapterActions?: ChannelPanelAdapterActionsPort;
 }
 
 class PanelRouteFailure extends Error {
@@ -297,6 +353,76 @@ function authenticateAccount(database: VoxwardDatabase, request: FastifyRequest)
   return { accountId: allowed.principal.accountId, displayName: allowed.principal.displayName };
 }
 
+function secretPurposeFor(driverId: AdapterDriverId): ChannelSecretPurpose {
+  return driverId === "youtube-live-v3" ? "PLATFORM_OAUTH" : "MODEL_ACCESS";
+}
+
+function sealConfigSecrets(
+  driverId: AdapterDriverId,
+  config: Readonly<Record<string, string | number | boolean | null>>,
+  secrets: ChannelPanelSecretsPort | undefined,
+): Record<string, string | number | boolean | null> {
+  if (secrets === undefined) return { ...config };
+  const desc = ADAPTER_SYSTEM_CATALOG.find((item) => item.driverId === driverId);
+  const secretFields = new Set(desc?.secretFields ?? []);
+  const purpose = secretPurposeFor(driverId);
+  const out: Record<string, string | number | boolean | null> = { ...config };
+  for (const [k, v] of Object.entries(out)) {
+    if (!secretFields.has(k) || typeof v !== "string" || v.length === 0) continue;
+    if (secrets.isSecretRef(v)) continue;
+    out[k] = secrets.seal(purpose, v);
+  }
+  return out;
+}
+
+function releaseReplacedSecrets(
+  driverId: AdapterDriverId,
+  previous: Readonly<Record<string, string | number | boolean | null>>,
+  next: Readonly<Record<string, string | number | boolean | null>>,
+  secrets: ChannelPanelSecretsPort | undefined,
+): void {
+  if (secrets === undefined) return;
+  const desc = ADAPTER_SYSTEM_CATALOG.find((item) => item.driverId === driverId);
+  const secretFields = new Set(desc?.secretFields ?? []);
+  const purpose = secretPurposeFor(driverId);
+  for (const field of secretFields) {
+    const oldVal = previous[field];
+    const newVal = next[field];
+    if (secrets.isSecretRef(oldVal) && oldVal !== newVal) {
+      try {
+        secrets.remove(oldVal, purpose);
+      } catch {
+        // Ignore missing/already removed references.
+      }
+    }
+  }
+}
+
+function revealConfigSecrets(
+  driverId: AdapterDriverId,
+  config: Readonly<Record<string, string | number | boolean | null>>,
+  secrets: ChannelPanelSecretsPort | undefined,
+): Record<string, string> {
+  const desc = ADAPTER_SYSTEM_CATALOG.find((item) => item.driverId === driverId);
+  const secretFields = new Set(desc?.secretFields ?? []);
+  const purpose = secretPurposeFor(driverId);
+  const resolved: Record<string, string> = {};
+  for (const field of secretFields) {
+    const raw = config[field];
+    if (typeof raw !== "string" || raw.length === 0) continue;
+    if (secrets !== undefined && secrets.isSecretRef(raw)) {
+      try {
+        resolved[field] = secrets.reveal(raw, purpose);
+      } catch {
+        // Unreadable or removed secret reference stays absent.
+      }
+    } else if (!raw.startsWith("secretref:")) {
+      resolved[field] = raw;
+    }
+  }
+  return resolved;
+}
+
 function requireChannelMember(
   database: VoxwardDatabase,
   request: FastifyRequest,
@@ -304,15 +430,15 @@ function requireChannelMember(
   requiredAnyOf?: readonly Capability[],
 ): { accountId: string; membership: Membership; capabilities: ReadonlySet<string> } {
   const { accountId } = authenticateAccount(database, request);
-  const membership = findActiveMembership(database, channelId, accountId);
-  if (membership === undefined) throw new PanelRouteFailure(403, "FORBIDDEN");
-  if (requiredAnyOf !== undefined && !requiredAnyOf.some((cap) => membershipAllows(membership, cap))) {
+  const access = resolveChannelAccess(database, channelId, accountId);
+  if (access === null) throw new PanelRouteFailure(403, "FORBIDDEN");
+  if (requiredAnyOf !== undefined && !requiredAnyOf.some((cap) => access.capabilities.has(cap))) {
     throw new PanelRouteFailure(403, "FORBIDDEN");
   }
   return {
     accountId,
-    membership,
-    capabilities: new Set<string>(capabilitiesOfMembership(membership)),
+    membership: access.membership,
+    capabilities: access.capabilities,
   };
 }
 
@@ -328,7 +454,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
   app: FastifyInstance,
   options,
 ) => {
-  const { database, decisions, candidates, models, rules } = options;
+  const { database, decisions, candidates, models, rules, secrets, adapterActions } = options;
 
   function saveTerms(
     channelId: string,
@@ -848,16 +974,44 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
         listKind: "BLACKLIST",
       });
       const syncYouTube = parsed.data.syncYouTube === true;
+      let banId: string | null = null;
+      let youtubeSyncError: string | undefined;
+      if (syncYouTube) {
+        if (adapterActions === undefined) {
+          youtubeSyncError = "YOUTUBE_SYNC_UNAVAILABLE";
+        } else {
+          const ytAdapter = readChannelAdapters(database, channelId).find(
+            (a) => a.driverId === "youtube-live-v3" && a.enabled,
+          );
+          const ytSecrets = ytAdapter ? revealConfigSecrets("youtube-live-v3", ytAdapter.config, secrets) : {};
+          const liveChatId =
+            ytAdapter && typeof ytAdapter.config.liveChatId === "string" && ytAdapter.config.liveChatId.trim()
+              ? ytAdapter.config.liveChatId.trim()
+              : undefined;
+          const syncRes = await adapterActions.syncYouTubeBan({
+            channelId,
+            subjectRef: parsed.data.subjectRef,
+            reason: parsed.data.reason ?? "",
+            ...(liveChatId !== undefined ? { liveChatId } : {}),
+            ...(ytSecrets.refreshToken ? { accessToken: ytSecrets.refreshToken } : {}),
+          });
+          banId = syncRes.banId;
+          if (!syncRes.synced) youtubeSyncError = syncRes.errorCode ?? "YOUTUBE_SYNC_FAILED";
+        }
+      }
       const users = upsertBlockedUser(database, channelId, {
         subjectRef: parsed.data.subjectRef,
         nickname: parsed.data.nickname ?? null,
         reason: parsed.data.reason ?? "",
         syncYouTube,
-        banId: syncYouTube ? `yt-ban-${randomUUID().slice(0, 12)}` : null,
+        banId,
         createdAt: new Date().toISOString(),
         createdBy: accountId,
       });
-      return send(reply, 201, { users });
+      return send(reply, 201, {
+        users,
+        ...(youtubeSyncError !== undefined ? { youtubeSyncError } : {}),
+      });
     },
   );
 
@@ -925,13 +1079,14 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       );
       if (desc === undefined) throw new PanelRouteFailure(400, "INVALID_REQUEST");
       const now = new Date();
+      const sealedConfig = sealConfigSecrets(parsed.data.driverId, parsed.data.config, secrets);
       const record: ChannelAdapterRecord = {
         id: `adp-${randomUUID().slice(0, 10)}`,
         category: parsed.data.category,
         driverId: parsed.data.driverId,
         displayName: parsed.data.displayName,
         enabled: parsed.data.enabled,
-        config: parsed.data.config,
+        config: sealedConfig,
         models: parsed.data.models ?? [],
         lastStatus: "已保存配置",
         lastStatusCode: "CONFIG_SAVED",
@@ -954,11 +1109,14 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       const current = list.find((a) => a.id === adapterId);
       if (current === undefined) throw new PanelRouteFailure(404, "ADAPTER_NOT_FOUND");
       const now = new Date();
+      const mergedConfig = mergeMaskedConfig(current.driverId, current.config, parsed.data.config);
+      const sealedConfig = sealConfigSecrets(current.driverId, mergedConfig, secrets);
+      releaseReplacedSecrets(current.driverId, current.config, sealedConfig, secrets);
       const updated: ChannelAdapterRecord = {
         ...current,
         displayName: parsed.data.displayName,
         enabled: parsed.data.enabled,
-        config: mergeMaskedConfig(current.driverId, current.config, parsed.data.config),
+        config: sealedConfig,
         models: parsed.data.models ?? current.models,
         updatedAt: now.toISOString(),
       };
@@ -978,7 +1136,9 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       const { channelId, adapterId } = request.params;
       requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
       const list = readChannelAdapters(database, channelId);
-      if (!list.some((a) => a.id === adapterId)) throw new PanelRouteFailure(404, "ADAPTER_NOT_FOUND");
+      const current = list.find((a) => a.id === adapterId);
+      if (current === undefined) throw new PanelRouteFailure(404, "ADAPTER_NOT_FOUND");
+      releaseReplacedSecrets(current.driverId, current.config, {}, secrets);
       writeChannelAdapters(
         database,
         channelId,
@@ -996,66 +1156,32 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       const list = readChannelAdapters(database, channelId);
       const current = list.find((a) => a.id === adapterId);
       if (current === undefined) throw new PanelRouteFailure(404, "ADAPTER_NOT_FOUND");
+      if (adapterActions === undefined) throw new PanelRouteFailure(503, "ADAPTER_ACTIONS_UNAVAILABLE");
+
       const now = new Date();
       const correlationId = `corr-int-${randomUUID().slice(0, 8)}`;
-      let fetchedModels = current.models;
-      let actionSummary = `已执行运维动作：${action}`;
-      let statusCode: AdapterStatusCode = "ACTION_EXECUTED";
-      let statusParams: Record<string, string | number> = { action };
-      let endpointUrl = "https://www.googleapis.com/youtube/v3/liveChat/messages";
+      const resolvedSecrets = revealConfigSecrets(current.driverId, current.config, secrets);
+      const outcome = await adapterActions.execute({
+        channelId,
+        adapterId: current.id,
+        category: current.category,
+        driverId: current.driverId,
+        displayName: current.displayName,
+        action,
+        config: current.config,
+        resolvedSecrets,
+      });
 
-      if (current.category === "OUTPUT_TARGET") {
-        endpointUrl =
-          current.driverId === "obs-overlay-source" ? `/overlay/${channelId}` : "/output/v1/room";
-        if (current.driverId === "obs-overlay-source") {
-          actionSummary = "OBS 透明投屏通道就绪";
-          statusCode = "OBS_OVERLAY_READY";
-        } else {
-          actionSummary = "blivechat / 原生只读输出通道就绪";
-          statusCode = "NATIVE_OUTPUT_READY";
-        }
-        statusParams = {};
-      } else if (
-        current.driverId === "openai-compat" ||
-        current.driverId === "anthropic-compat" ||
-        current.driverId === "kiro-cli"
-      ) {
-        const base = typeof current.config.baseEndpoint === "string" && current.config.baseEndpoint
-          ? current.config.baseEndpoint.replace(/\/$/, "")
-          : current.driverId === "kiro-cli"
-            ? "kiro-cli://runtime/models"
-            : "https://api.example.invalid/v1";
-        endpointUrl = `${base}/models`;
-        if (action === "fetch-models") {
-          const remoteModels =
-            current.driverId === "kiro-cli"
-              ? [
-                  { modelId: "claude-sonnet-4.5", displayName: "Claude Sonnet 4.5 (Kiro CLI)", reasoningLevels: ["low", "medium", "high"], source: "remote" as const },
-                  { modelId: "claude-haiku-4.5", displayName: "Claude Haiku 4.5 (Kiro CLI)", reasoningLevels: ["low"], source: "remote" as const },
-                ]
-              : current.driverId === "openai-compat"
-                ? [
-                    { modelId: "gpt-4.1-mini", displayName: "GPT-4.1 mini (OpenAI)", reasoningLevels: ["low", "medium"], source: "remote" as const },
-                    { modelId: "gpt-4.1", displayName: "GPT-4.1 (OpenAI)", reasoningLevels: ["medium", "high"], source: "remote" as const },
-                  ]
-                : [
-                    { modelId: "claude-sonnet-4-20250514", displayName: "Claude Sonnet 4 (Anthropic)", reasoningLevels: ["medium", "high"], source: "remote" as const },
-                    { modelId: "claude-3-5-haiku-latest", displayName: "Claude 3.5 Haiku (Anthropic)", reasoningLevels: ["low"], source: "remote" as const },
-                  ];
-          const manualOnly = current.models.filter((m) => m.source === "manual");
-          fetchedModels = [...remoteModels, ...manualOnly];
-          actionSummary = `已从远端拉取 ${remoteModels.length} 个可用模型`;
-          statusCode = "MODELS_FETCHED";
-          statusParams = { count: remoteModels.length };
-        }
-      }
+      const manualOnly = current.models.filter((m) => m.source === "manual");
+      const fetchedModels =
+        outcome.fetchedModels !== undefined ? [...outcome.fetchedModels, ...manualOnly] : current.models;
 
       const updated: ChannelAdapterRecord = {
         ...current,
         models: fetchedModels,
-        lastStatus: actionSummary,
-        lastStatusCode: statusCode,
-        lastStatusParams: statusParams,
+        lastStatus: outcome.summary,
+        lastStatusCode: outcome.statusCode,
+        lastStatusParams: outcome.statusParams,
         updatedAt: now.toISOString(),
       };
       writeChannelAdapters(
@@ -1064,33 +1190,33 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
         list.map((a) => (a.id === adapterId ? updated : a)),
         now,
       );
-      appendIntegrationLog(database, channelId, {
-        id: `int-${randomUUID().slice(0, 10)}`,
-        correlationId,
-        adapterId: current.id,
-        adapterName: current.displayName,
-        providerKind: current.category,
-        method: action === "fetch-models" || action === "test-connection" ? "GET" : "POST",
-        url: endpointUrl,
-        statusCode: 200,
-        latencyMs: 42,
-        requestHeaders: {
-          accept: "application/json",
-          authorization: "Bearer secret-token",
-          "x-voxward-action": action,
+      appendIntegrationLog(
+        database,
+        channelId,
+        {
+          id: `int-${randomUUID().slice(0, 10)}`,
+          correlationId,
+          adapterId: current.id,
+          adapterName: current.displayName,
+          providerKind: current.category,
+          method: outcome.method,
+          url: outcome.url,
+          statusCode: outcome.upstreamStatusCode,
+          latencyMs: outcome.latencyMs,
+          requestHeaders: outcome.requestHeaders,
+          responseHeaders: outcome.responseHeaders,
+          rawRequestBody: outcome.rawRequestBody,
+          rawResponseBody: outcome.rawResponseBody,
+          occurredAt: now.toISOString(),
         },
-        responseHeaders: {
-          "content-type": "application/json; charset=utf-8",
-        },
-        rawRequestBody: action === "fetch-models" ? null : JSON.stringify({ action, adapterId: current.id }),
-        rawResponseBody: JSON.stringify({ ok: true, action, modelCount: fetchedModels.length }),
-        occurredAt: now.toISOString(),
-      }, now);
-      return send(reply, 200, {
+        now,
+      );
+      return send(reply, outcome.httpStatus, {
+        ok: outcome.ok,
         adapter: sanitizeAdapterOut(updated),
-        summary: actionSummary,
-        summaryCode: statusCode,
-        summaryParams: statusParams,
+        summary: outcome.summary,
+        summaryCode: outcome.statusCode,
+        summaryParams: outcome.statusParams,
         correlationId,
       });
     },
@@ -1230,15 +1356,19 @@ function hydrateRbacUsersFromChannel(database: VoxwardDatabase, channelId: strin
       const users = hydrateRbacUsersFromChannel(database, channelId).filter(
         (u) => u.accountId !== parsed.data.accountId,
       );
+      const now = new Date();
       const record: StoredRbacUser = {
         accountId: parsed.data.accountId,
         displayName: parsed.data.displayName,
         loginName: parsed.data.loginName,
         enabled: parsed.data.enabled,
         roleIds: parsed.data.roleIds,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now.toISOString(),
       };
-      const next = writeRbacUsers(database, channelId, [...users, record]);
+      const next = writeRbacUsers(database, channelId, [...users, record], now);
+      if (!record.enabled) {
+        runShortTransaction(database, (tx) => revokeAccountSessions(tx, record.accountId, now));
+      }
       const roles = readRbacRoles(database, channelId);
       const roleMap = new Map(roles.map((r) => [r.id, r]));
       const assigned = record.roleIds.map((id) => roleMap.get(id)).filter((r): r is StoredRbacRole => r !== undefined);

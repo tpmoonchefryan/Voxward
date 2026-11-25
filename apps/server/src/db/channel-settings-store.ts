@@ -743,6 +743,12 @@ export interface AdapterModelPoolItem {
 export const ADAPTER_STATUS_CODES = [
   "CONFIG_SAVED",
   "ACTION_EXECUTED",
+  "ACTION_FAILED",
+  "CONNECTION_OK",
+  "CONNECTION_FAILED",
+  "CLI_OK",
+  "CLI_FAILED",
+  "ORPHANS_CLEANED",
   "OBS_OVERLAY_READY",
   "NATIVE_OUTPUT_READY",
   "MODELS_FETCHED",
@@ -772,7 +778,11 @@ export function redactAdapterConfig(
   const out: Record<string, string | number | boolean | null> = {};
   for (const [k, v] of Object.entries(config)) {
     if (secrets.has(k) && typeof v === "string" && v.length > 0) {
-      out[k] = v.length > 6 ? `${v.slice(0, 3)}••••${v.slice(-2)}` : "••••••";
+      if (v.startsWith("secretref:")) {
+        out[k] = "••••••";
+      } else {
+        out[k] = v.length > 6 ? `${v.slice(0, 3)}••••${v.slice(-2)}` : "••••••";
+      }
     } else {
       out[k] = v;
     }

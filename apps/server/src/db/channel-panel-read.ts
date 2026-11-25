@@ -214,7 +214,7 @@ export function readDockAndModerationFeed(
     kind: row.kind,
     status: row.status,
     deadlineAt: row.deadlineAt,
-    originalText: evidence.get(row.correlationId)?.messageText ?? null,
+    originalText: options.includeOriginal ? (evidence.get(row.correlationId)?.messageText ?? null) : null,
   }));
 
   const approvedSc: ScFeedItem[] = [];
@@ -252,7 +252,7 @@ export function readDockAndModerationFeed(
         eventId: ev.eventId,
         correlationId: ev.correlationId,
         subjectRef: ev.subjectKey,
-        originalText: evEvidence?.messageText ?? null,
+        originalText: options.includeOriginal ? (evEvidence?.messageText ?? null) : null,
         translation: sc.primaryTranslation,
         ...(sc.translations.length > 0 ? { translations: sc.translations } : {}),
         payment: paymentsByEvent.get(ev.eventId) ?? null,

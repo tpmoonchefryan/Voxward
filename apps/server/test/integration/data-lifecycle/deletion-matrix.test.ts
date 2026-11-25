@@ -494,13 +494,13 @@ describe("S028 Data Lifecycle: Full Storage-Surface Deletion Matrix (DELETE_DATA
     expect(lifted?.removedAt).not.toBeNull();
   });
 
-  it("documents buildApp default NO_SUBJECT_CACHES behavior when subjectCaches is omitted (as-is without modifying src/)", async () => {
+  it("automatically registers CANDIDATE_CARD into buildApp SubjectCacheHub even when subjectCaches is omitted (VW3-R-007)", async () => {
     await app.close();
     app = buildApp({ modules: buildRegistry(config), logger: false, database, candidateStore });
     seedAllSurfaces("sub-nocache", "nc1");
     const session = await signIn("dataadmin");
 
     await executeDeletion(session, "sub-nocache", "DELETE_DATA_ONLY");
-    expect(candidateStore.listCards("ch-1").map((c) => c.term)).toEqual(["term-nc1"]);
+    expect(candidateStore.listCards("ch-1")).toEqual([]);
   });
 });

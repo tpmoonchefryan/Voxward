@@ -381,16 +381,24 @@ describe("S026 Core Flow: Manual Overturn, Exception Zero-Window, Coordinator & 
       headers,
     });
     expect(execRes.statusCode).toBe(200);
-    // N7/N12b observation: default NO_SUBJECT_CACHES leaves unlinkedCandidates intact.
-    expect(unlinkedCandidates.listCards(fixture.channelId)).toHaveLength(1);
+    // VW3-R-004/007 fix: createApp automatically wires the default candidateStore into subjectCaches,
+    // so subject deletion purges candidate cards even when no external subjectCaches hub was passed.
+    expect(unlinkedCandidates.listCards(fixture.channelId)).toHaveLength(0);
     await appWithoutHub.close();
 
-    // Contrast: when SubjectCacheHub is explicitly injected, forgetSubject removes the candidate card.
+    // Contrast: explicit SubjectCacheHub also removes newly proposed candidate cards directly.
+    unlinkedCandidates.propose({
+      channelId: fixture.channelId,
+      term: "explicit-hub-term",
+      note: "from review",
+      sourceCorrelationId: "corr-n7-2",
+      sourceTaskId: "task-n7-2",
+    });
     const explicitHub: SubjectCacheHub = {
       names: ["candidate-store"],
       forgetSubject: (_name, ch, _sub, correlations) => unlinkedCandidates.removeBySourceCorrelations(ch, correlations),
     };
-    expect(explicitHub.forgetSubject("candidate-store", fixture.channelId, subjId, ["corr-n7-1"])).toBe(1);
+    expect(explicitHub.forgetSubject("candidate-store", fixture.channelId, subjId, ["corr-n7-2"])).toBe(1);
     expect(unlinkedCandidates.listCards(fixture.channelId)).toHaveLength(0);
 
     // 2) N13: createApprovedContentPort returns raw TRANSLATION payload string verbatim (including JSON string).
@@ -627,9 +635,11 @@ describe("S026 Core Flow: Manual Overturn, Exception Zero-Window, Coordinator & 
     const cycleA = await runnerA.runCycle({ channelId: fixture.channelId, streamEnded: true });
     expect(cycleA.enqueued).toBe(1);
 
-    // Known Q57 R7 defect in src/: runnerB takes runnerA's BACKGROUND task, skips it as unknown, and calls finishBatch.
+    // VW3-R-007 fix (Q57 R7): runnerB does not silently skip runnerA's BACKGROUND task leaving it RUNNING;
+    // when readCandidateByCorrelation cannot recover it, runnerB reports TASK_ORPHANED_EVENT.
     const batchB = await runnerB.runBatch();
     expect(batchB).not.toBeNull();
-    expect(batchB?.items).toHaveLength(0);
+    expect(batchB?.items).toHaveLength(1);
+    expect(batchB?.items[0]).toMatchObject({ status: "FAILED", eventId: null, errorCode: "TASK_ORPHANED_EVENT" });
   });
 });

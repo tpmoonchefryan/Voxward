@@ -1,8 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { VoxwardDatabase } from "../db/client.js";
 import { authenticateRequest } from "./guard.js";
-import { findActiveMembership } from "./members.js";
-import { capabilitiesOfMembership } from "./permissions.js";
+import { resolveChannelCapabilities } from "./rbac-enforce.js";
 
 /**
  * HTTP binding for the data-panel routes. The module that implements them is bound by the composition layer, so this
@@ -55,12 +54,12 @@ function actorFor(database: VoxwardDatabase, request: FastifyRequest, channelId:
   const allowed = authenticateRequest(database, { method: request.method, headers: request.headers, now: new Date() });
   if (!allowed.ok) throw new DataRouteFailure(allowed.status, allowed.code);
   if (allowed.principal.kind !== "account") throw new DataRouteFailure(403, "FORBIDDEN");
-  const membership = findActiveMembership(database, channelId, allowed.principal.accountId);
-  if (membership === undefined) throw new DataRouteFailure(403, "FORBIDDEN");
+  const capabilities = resolveChannelCapabilities(database, channelId, allowed.principal.accountId);
+  if (capabilities === null) throw new DataRouteFailure(403, "FORBIDDEN");
   return {
     accountId: allowed.principal.accountId,
     channelId,
-    capabilities: new Set<string>(capabilitiesOfMembership(membership)),
+    capabilities,
   };
 }
 

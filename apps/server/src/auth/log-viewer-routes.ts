@@ -4,8 +4,7 @@ import { z } from "zod";
 import { readIntegrationLogs } from "../db/channel-settings-store.js";
 import type { VoxwardDatabase } from "../db/client.js";
 import { authenticateRequest } from "./guard.js";
-import { findActiveMembership } from "./members.js";
-import { membershipAllows } from "./permissions.js";
+import { channelAllowsCapability } from "./rbac-enforce.js";
 
 export interface LogViewerRoutesOptions {
   readonly database: VoxwardDatabase;
@@ -102,8 +101,7 @@ export const logViewerRoutes: FastifyPluginAsync<LogViewerRoutesOptions> = async
     "/internal/channels/:channelId/logs/integration",
     async (request, reply) => {
       const actorRef = sessionAccountOf(database, request);
-      const membership = findActiveMembership(database, request.params.channelId, actorRef);
-      if (membership === undefined || !membershipAllows(membership, "logs.view")) {
+      if (!channelAllowsCapability(database, request.params.channelId, actorRef, "logs.view")) {
         throw new ViewerRouteFailure(403, "FORBIDDEN");
       }
       const query = parseQuery(CHANGE_QUERY, request.query);

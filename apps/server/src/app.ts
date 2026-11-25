@@ -6,14 +6,21 @@ import {
   type OutputSubscriberRegistry,
   type SubjectCacheHub,
 } from "@voxward/contracts";
+import { createRealAdapterActionExecutor } from "./adapters/adapter-actions.js";
 import { attachBlivechatOutput } from "./adapters/blivechat/socket.js";
 import { attachNativeOutput, type ClosedConnection, type NativeOutputTiming } from "./adapters/native-output/socket.js";
-import { channelPanelRoutes, type ChannelPanelRoutesOptions } from "./auth/channel-panel-routes.js";
+import {
+  channelPanelRoutes,
+  type ChannelPanelAdapterActionsPort,
+  type ChannelPanelRoutesOptions,
+  type ChannelPanelSecretsPort,
+} from "./auth/channel-panel-routes.js";
 import { dataLifecycleRoutes } from "./auth/data-routes.js";
 import { databaseViewerAccess } from "./auth/log-viewer-access.js";
 import { logViewerRoutes } from "./auth/log-viewer-routes.js";
 import { authRoutes } from "./auth/routes.js";
 import { createAuditLogPort } from "./db/audit-log.js";
+import { createPersistentCandidateStore } from "./db/candidate-store.js";
 import {
   publishConfirmedCandidateTerm,
   readChannelSetting,
@@ -31,6 +38,7 @@ import { createRetentionStore, type RetentionStore } from "./db/retention-store.
 import { createSubjectCleanupPort } from "./db/subject-cleanup.js";
 import { createSubjectReadPort } from "./db/subject-read.js";
 import { ledgerRecorder, type TombstoneLedger } from "./db/tombstone-ledger.js";
+import { createSqliteVaultBackingStore } from "./db/vault-store.js";
 import { RETENTION_DAYS } from "./modules/audit-store/content-policy.js";
 import {
   CERTIFICATE_SUMMARY,
@@ -65,8 +73,8 @@ import { DEFAULT_NORMALIZE_OPTIONS, normalizeText } from "./modules/moderation-e
 import { BLIVECHAT_OUTPUT_PATH, BLIVECHAT_PROTOCOL_VERSION, createBlivechatAdapter } from "./modules/output/index.js";
 import { createDeliveryPump } from "./modules/output-adapter/delivery.js";
 import { createSubscriptionRegistry } from "./modules/output-adapter/subscription.js";
-import type { ModuleRegistry } from "./modules/registry.js";
-import { createScoringPlanner } from "./modules/scoring-engine/index.js";
+import { createChannelAwareScoringPlanner, type ModuleRegistry } from "./modules/registry.js";
+import { createPersistentCredentialVault, deriveVaultKey, isSecretRef } from "./security/persistent-vault.js";
 import { redactUrlText } from "./security/redaction.js";
 import { sandboxRoutes } from "./demo/routes.js";
 import { assertSandboxStartupSafe, type SandboxOptions } from "./demo/sandbox-guard.js";
@@ -98,6 +106,16 @@ export interface AppOptions {
   readonly retentionSweepIntervalMs?: number;
   /** Opt-in isolated synthetic sandbox routes. Disabled by default. */
   readonly sandbox?: SandboxOptions;
+  /** Optional 32-byte key (or derived seed) for sealing persisted adapter secrets in CredentialVault. */
+  readonly vaultKey?: Buffer | string;
+  /** Optional custom fetch implementation for real adapter probe / fetch-models / YouTube ban sync actions. */
+  readonly adapterActionFetch?: typeof fetch;
+  /** Optional adapter action executor override (used in tests). */
+  readonly adapterActions?: ChannelPanelAdapterActionsPort;
+  /** Optional Kiro CLI command path for adapter self-check / cleanup actions. */
+  readonly kiroCommand?: string;
+  /** Optional Kiro CLI runtime root for orphan cleanup action. */
+  readonly kiroRuntimeRoot?: string;
 }
 
 export interface NativeOutputSettings {
@@ -133,6 +151,11 @@ export function buildApp({
   tombstoneLedger,
   retentionSweepIntervalMs,
   sandbox,
+  vaultKey,
+  adapterActionFetch,
+  adapterActions,
+  kiroCommand,
+  kiroRuntimeRoot,
 }: AppOptions): FastifyInstance {
   const app = Fastify({ logger: logger ? loggerOptions(logStream) : false, frameworkErrors: frameworkErrorReply });
   // One bus for the whole process: the viewer cache and the deletion path both use it (Q35).
@@ -186,9 +209,28 @@ export function buildApp({
         clearInterval(retentionTimer);
       });
     }
-    const deps = dataDepsFor(database, bus, subjectCaches ?? NO_SUBJECT_CACHES, tombstoneLedger);
+    const resolvedCandidateStore =
+      candidateStore ??
+      createPersistentCandidateStore(database, {
+        newId: () => randomUUID(),
+        now: () => new Date(),
+        rules: {
+          publishConfirmedTerm: (input) => publishConfirmedCandidateTerm(database, input),
+        },
+      });
+    const effectiveSubjectCaches = mergeSubjectCaches(subjectCaches, resolvedCandidateStore);
+    const deps = dataDepsFor(database, bus, effectiveSubjectCaches, tombstoneLedger);
     app.register(dataLifecycleRoutes, { database, routes: createDataRoutes(deps) });
-    app.register(channelPanelRoutes, channelPanelOptionsFor(database, modules, candidateStore));
+    app.register(
+      channelPanelRoutes,
+      channelPanelOptionsFor(database, modules, resolvedCandidateStore, {
+        vaultKey,
+        adapterActionFetch,
+        adapterActions,
+        kiroCommand,
+        kiroRuntimeRoot,
+      }),
+    );
     startNativeOutput(app, database, outputSubscribers, nativeOutput);
     if (sandbox?.enabled === true) {
       assertSandboxStartupSafe(sandbox, database.filePath);
@@ -262,8 +304,30 @@ function errorNameOf(error: unknown): string {
   return error instanceof Error ? error.name : "unknown";
 }
 
-/** Holds no in-process surface. A deletion then registers none of them, and the status says so. */
-const NO_SUBJECT_CACHES: SubjectCacheHub = { names: [], forgetSubject: () => 0 };
+/**
+ * Always registers CANDIDATE_CARD into the process SubjectCacheHub (merged with any caller-provided caches),
+ * preventing NO_SUBJECT_CACHES / SURFACE_NOT_REGISTERED during data deletion cleanup.
+ */
+function mergeSubjectCaches(
+  external: SubjectCacheHub | undefined,
+  candidateStore: Pick<CandidateStore, "removeBySourceCorrelations">,
+): SubjectCacheHub {
+  const externalNames = external?.names ?? [];
+  const hasCandidate = externalNames.includes("CANDIDATE_CARD");
+  const names = hasCandidate ? [...externalNames] : ["CANDIDATE_CARD", ...externalNames];
+  return {
+    names,
+    forgetSubject(name, channelId, platformSubjectKey, correlationIds) {
+      if (name === "CANDIDATE_CARD" && !hasCandidate) {
+        return candidateStore.removeBySourceCorrelations(channelId, correlationIds);
+      }
+      if (external !== undefined && externalNames.includes(name)) {
+        return external.forgetSubject(name, channelId, platformSubjectKey, correlationIds);
+      }
+      return 0;
+    },
+  };
+}
 
 /** Binds the data module to the database. Each port is one database layer, and the module sees only the ports. */
 function dataDepsFor(
@@ -311,13 +375,28 @@ export function restoreDatabaseWithLedger(options: RestoreDatabaseOptions): void
   });
 }
 
+function resolveVaultKeyBuffer(database: VoxwardDatabase, provided?: Buffer | string): Buffer {
+  if (Buffer.isBuffer(provided) && provided.length === 32) return provided;
+  if (typeof provided === "string" && provided.trim().length > 0) return deriveVaultKey(provided);
+  const envKey = process.env.VOXWARD_VAULT_KEY?.trim();
+  if (envKey) return deriveVaultKey(envKey);
+  return deriveVaultKey(`voxward-local-vault:${database.filePath}`);
+}
+
 function channelPanelOptionsFor(
   database: VoxwardDatabase,
   modules: ModuleRegistry,
-  providedCandidates: CandidateStore | undefined,
+  resolvedCandidates: CandidateStore,
+  extras: {
+    readonly vaultKey?: Buffer | string;
+    readonly adapterActionFetch?: typeof fetch;
+    readonly adapterActions?: ChannelPanelAdapterActionsPort;
+    readonly kiroCommand?: string;
+    readonly kiroRuntimeRoot?: string;
+  } = {},
 ): ChannelPanelRoutesOptions {
   const decisionStore = createDecisionStorePort(database, {
-    planner: createScoringPlanner(),
+    planner: createChannelAwareScoringPlanner(database),
     changeLogExpiresAt: (occurredAt) =>
       new Date(Date.parse(occurredAt) + RETENTION_DAYS.metadata * 86_400_000).toISOString(),
   });
@@ -331,16 +410,26 @@ function channelPanelOptionsFor(
     createDecisionService(decisionDeps),
     createListAdministration(decisionDeps),
   );
-  const candidates = createCandidateRoutes(
-    providedCandidates ??
-      createCandidateStore({
-        newId: () => randomUUID(),
-        now: () => new Date(),
-        rules: {
-          publishConfirmedTerm: (input) => publishConfirmedCandidateTerm(database, input),
-        },
-      }),
-  );
+  const candidates = createCandidateRoutes(resolvedCandidates);
+  const vault = createPersistentCredentialVault({
+    key: resolveVaultKeyBuffer(database, extras.vaultKey),
+    store: createSqliteVaultBackingStore(database),
+  });
+  const secrets: ChannelPanelSecretsPort = {
+    seal: (purpose, plaintext) => vault.put(purpose, plaintext).ref,
+    reveal: (ref, purpose) => vault.reveal(ref, purpose),
+    remove: (ref, purpose) => {
+      vault.remove(ref, purpose);
+    },
+    isSecretRef,
+  };
+  const adapterActions: ChannelPanelAdapterActionsPort =
+    extras.adapterActions ??
+    createRealAdapterActionExecutor({
+      fetchImpl: extras.adapterActionFetch,
+      kiroCommand: extras.kiroCommand,
+      kiroRuntimeRoot: extras.kiroRuntimeRoot,
+    });
   const modelStore = (channelId: string): ModelSettingsStore => ({
     read: async () => readChannelSetting<ModelSettings>(database, channelId, "model-settings", DEFAULT_MODEL_SETTINGS),
     write: async (next) => writeChannelSetting(database, channelId, "model-settings", next),
@@ -350,6 +439,8 @@ function channelPanelOptionsFor(
     database,
     decisions,
     candidates,
+    secrets,
+    adapterActions,
     models: {
       describe,
       read: (channelId: string, capabilitiesOverride?: InferenceCapabilities) =>

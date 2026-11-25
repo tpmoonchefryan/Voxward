@@ -90,6 +90,8 @@ export interface PendingScoring {
 export interface ReviewStorePort {
   listOpenCandidates(channelId: string): readonly ReviewCandidate[];
   readCandidate(eventId: string): ReviewCandidate | undefined;
+  /** Optional cross-instance lookup by correlation id so any runner can settle tasks enqueued by another instance. */
+  readCandidateByCorrelation?(correlationId: string): ReviewCandidate | undefined;
   markExpired(eventId: string): void;
   commitSettlement(write: SettlementWrite): SettlementCommit;
   markScoring(eventId: string, state: ScoringState): void;

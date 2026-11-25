@@ -68,10 +68,21 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
         })
         .run();
     });
+    const stubFetch: typeof fetch = async (input) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.endsWith("/models")) {
+        return new Response(
+          JSON.stringify({ data: [{ id: "gpt-4.1-mini" }, { id: "o4-mini" }] }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response(JSON.stringify({ error: "unexpected url" }), { status: 404 });
+    };
     app = buildApp({
       modules: buildRegistry({ adapters: "synthetic", host: "127.0.0.1", port: 3000, databaseFile: ":memory:" }),
       logger: false,
       database: db,
+      adapterActionFetch: stubFetch,
     });
     await app.ready();
   });
@@ -284,7 +295,7 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     expect(latestRuleRow?.ruleJson).toContain("custom-digits");
     expect(latestRuleRow?.ruleJson).toContain("admin-wordlist-review");
 
-    // Manual blacklist with YouTube sync banId + unban
+    // Manual blacklist with YouTube sync: when YouTube adapter is not configured, does NOT fabricate yt-ban-*
     const blkUser = await app.inject({
       method: "POST",
       url: `/channels/${CH1}/blocked-users`,
@@ -292,8 +303,9 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
       payload: { subjectRef: "yt-viewer-001", nickname: "BadViewer", reason: "恶意刷屏", syncYouTube: true },
     });
     expect(blkUser.statusCode).toBe(201);
-    const usersList = (blkUser.json() as { users: Array<{ banId: string | null }> }).users;
-    expect(usersList[0]?.banId).toMatch(/^yt-ban-/);
+    const blkJson = blkUser.json() as { users: Array<{ banId: string | null }>; youtubeSyncError?: string };
+    expect(blkJson.users[0]?.banId).toBeNull();
+    expect(blkJson.youtubeSyncError).toBe("YOUTUBE_NOT_CONFIGURED");
 
     const unban = await app.inject({
       method: "DELETE",
@@ -301,7 +313,7 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
       headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
     });
     expect(unban.statusCode).toBe(200);
-    expect((unban.json() as { youtubeUnbanned: boolean; restoreBaseScoreApplied: boolean }).youtubeUnbanned).toBe(true);
+    expect((unban.json() as { youtubeUnbanned: boolean; restoreBaseScoreApplied: boolean }).youtubeUnbanned).toBe(false);
 
     // Blocked rejudge: updates verdict/score WITHOUT queueing any PENDING OBS/blivechat delivery
     const rejudge = await app.inject({
@@ -354,8 +366,8 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
       url: `/channels/${CH1}/model-settings`,
       headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
       payload: {
-        realtimeModeration: { modelId: "gpt-4.1-mini", reasoning: "low" },
-        scTranslation: { modelId: "gpt-4.1-mini", reasoning: "low" },
+        realtimeModeration: { modelId: "gpt-4.1-mini", reasoning: null },
+        scTranslation: { modelId: "o4-mini", reasoning: "low" },
         review: null,
         scTranslationEnabled: true,
       },

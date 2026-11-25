@@ -1,15 +1,21 @@
-import { CONTRACT_VERSION, type DataLifecycleService } from "@voxward/contracts";
+import { CONTRACT_VERSION, type DataLifecycleService, type DeletionRequest } from "@voxward/contracts";
+
+export interface DataLifecycleServiceOptions {
+  readonly onRequestDeletion?: (request: DeletionRequest) => Promise<void>;
+}
 
 /**
- * Placeholder for the DataLifecycleService contract. `requestDeletion` stays a placeholder: deletions start through
- * `startDeletionRequest` and the data panel's routes. The panel reaches this module through `createDataRoutes`.
+ * DataLifecycleService contract entry point. Without options, `requestDeletion` stays unwired; when bound by the
+ * composition root with a real handler, deletion requests execute against the server's data-request store.
  */
-export function createDataLifecycleService(): DataLifecycleService {
+export function createDataLifecycleService(options?: DataLifecycleServiceOptions): DataLifecycleService {
   return {
     moduleName: "DataLifecycleService",
     contractVersion: CONTRACT_VERSION,
-    requestDeletion: () =>
-      Promise.reject(new Error("MODULE_NOT_IMPLEMENTED: DataLifecycleService.requestDeletion")),
+    requestDeletion: (request) =>
+      options?.onRequestDeletion !== undefined
+        ? options.onRequestDeletion(request)
+        : Promise.reject(new Error("MODULE_NOT_IMPLEMENTED: DataLifecycleService.requestDeletion")),
   };
 }
 

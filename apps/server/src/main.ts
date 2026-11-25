@@ -6,6 +6,7 @@ import { registerProductionSpaRoutes, resolveWebDistDir } from "./config/web-sta
 import { DatabaseSetupError, openDatabase, type VoxwardDatabase } from "./db/client.js";
 import { runMigrations } from "./db/migrate.js";
 import { createTombstoneLedger } from "./db/tombstone-ledger.js";
+import { createInvalidationBus } from "./modules/audit-store/index.js";
 import { buildRegistry } from "./modules/registry.js";
 
 const sandboxEnabledRaw = process.env.VOXWARD_SANDBOX_ENABLED?.trim().toLowerCase();
@@ -24,11 +25,16 @@ const { config } = loaded;
 const database = openDatabaseOrExit(config.databaseFile);
 const tombstoneLedger =
   config.databaseFile !== ":memory:" ? createTombstoneLedger(join(dirname(config.databaseFile), "tombstones")) : undefined;
+const bus = createInvalidationBus();
 const app = buildApp({
-  modules: buildRegistry(config),
+  modules: buildRegistry(config, {}, { database, invalidation: bus }),
   database,
+  invalidation: bus,
   tombstoneLedger,
   retentionSweepIntervalMs: config.databaseFile === ":memory:" ? undefined : 60_000,
+  vaultKey: config.vaultKey,
+  kiroCommand: config.kiroCommand,
+  kiroRuntimeRoot: config.kiroRuntimeRoot,
 });
 const webDistDir = resolveWebDistDir();
 if (webDistDir !== undefined) {
