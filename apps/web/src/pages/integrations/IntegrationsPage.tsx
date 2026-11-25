@@ -17,7 +17,15 @@ import {
 import { BannerNotice } from "../../components/banner-notice";
 import { SectionTabs } from "../../components/section-tabs";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
-import { INTEGRATIONS_COPY, pickLocale, type IntegrationsCopy } from "../../i18n";
+import {
+  formatAdapterActionLabel,
+  formatAdapterCatalogDriver,
+  formatAdapterStatus,
+  INTEGRATIONS_COPY,
+  pickLocale,
+  type AdapterStatusCode,
+  type IntegrationsCopy,
+} from "../../i18n";
 import { VoxWardShell, useVoxWardShell } from "../../shell";
 import type { OutputsSummaryView } from "../admin/api";
 import {
@@ -122,6 +130,8 @@ function IntegrationsSurface({
   } | null>(null);
   const [lastActionResult, setLastActionResult] = useState<{
     readonly summary: string;
+    readonly summaryCode?: AdapterStatusCode;
+    readonly summaryParams?: Readonly<Record<string, string | number>>;
     readonly correlationId: string;
   } | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -280,10 +290,26 @@ function IntegrationsSurface({
     setNotice(null);
     try {
       const res = await client.runAdapterAction(channelId, editingAdapterId, action);
-      setLastActionResult({ summary: res.summary, correlationId: res.correlationId });
+      setLastActionResult({
+        summary: res.summary,
+        summaryCode: res.summaryCode,
+        summaryParams: res.summaryParams,
+        correlationId: res.correlationId,
+      });
       setDraftModels([...res.adapter.models]);
       await loadAll();
-      setNotice({ tone: "positive", resolve: () => res.summary });
+      setNotice({
+        tone: "positive",
+        resolve: () =>
+          formatAdapterStatus(
+            {
+              lastStatus: res.summary,
+              lastStatusCode: res.summaryCode,
+              lastStatusParams: res.summaryParams,
+            },
+            locale,
+          ),
+      });
     } catch (error) {
       setNotice({
         tone: "danger",
@@ -416,24 +442,31 @@ function IntegrationsSurface({
               { key: "lastStatus", label: copy.cols.lastStatus },
               { key: "actions", label: copy.cols.actions, align: "end" },
             ]}
-            rows={filteredAdapters.map((a) => ({
-              name: <UntrustedText text={a.displayName} />,
-              category: <Badge tone="neutral">{copy.categories[a.category]}</Badge>,
-              driver: catalog.find((c) => c.driverId === a.driverId)?.displayName ?? a.driverId,
-              status: (
-                <Badge tone={a.enabled ? "positive" : "neutral"}>
-                  {a.enabled ? copy.enabledBadge : copy.disabledBadge}
-                </Badge>
-              ),
-              lastStatus: a.lastStatus,
-              actions: (
-                <div className="vw-table-actions">
-                  <Button size="sm" variant="secondary" onClick={() => startEditFlow(a)}>
-                    {copy.configureBtn}
-                  </Button>
-                </div>
-              ),
-            }))}
+            rows={filteredAdapters.map((a) => {
+              const meta = catalog.find((c) => c.driverId === a.driverId);
+              return {
+                name: <UntrustedText text={a.displayName} />,
+                category: <Badge tone="neutral">{copy.categories[a.category]}</Badge>,
+                driver: formatAdapterCatalogDriver(
+                  a.driverId,
+                  { displayName: meta?.displayName ?? a.driverId, summary: meta?.summary ?? "" },
+                  locale,
+                ).displayName,
+                status: (
+                  <Badge tone={a.enabled ? "positive" : "neutral"}>
+                    {a.enabled ? copy.enabledBadge : copy.disabledBadge}
+                  </Badge>
+                ),
+                lastStatus: formatAdapterStatus(a, locale),
+                actions: (
+                  <div className="vw-table-actions">
+                    <Button size="sm" variant="secondary" onClick={() => startEditFlow(a)}>
+                      {copy.configureBtn}
+                    </Button>
+                  </div>
+                ),
+              };
+            })}
             emptyState={
               <EmptyState
                 title={copy.emptyTitle}
@@ -469,7 +502,7 @@ function IntegrationsSurface({
                     { value: "", label: copy.pickDriverPlaceholder },
                     ...scopedCatalogOptions.map((c) => ({
                       value: c.driverId,
-                      label: c.displayName,
+                      label: formatAdapterCatalogDriver(c.driverId, c, locale).displayName,
                     })),
                   ]}
                 />
@@ -495,7 +528,14 @@ function IntegrationsSurface({
                           {
                             key: "driver",
                             label: copy.boundDriverLabel,
-                            value: activeCatalogMeta?.displayName ?? draftDriverId,
+                            value: formatAdapterCatalogDriver(
+                              draftDriverId,
+                              {
+                                displayName: activeCatalogMeta?.displayName ?? draftDriverId,
+                                summary: activeCatalogMeta?.summary ?? "",
+                              },
+                              locale,
+                            ).displayName,
                           },
                           {
                             key: "category",
@@ -507,7 +547,16 @@ function IntegrationsSurface({
                     ) : (
                       <div className="vw-row-between">
                         <Badge tone="accent">
-                          {copy.pickedDriverBadge(activeCatalogMeta?.displayName ?? draftDriverId)}
+                          {copy.pickedDriverBadge(
+                            formatAdapterCatalogDriver(
+                              draftDriverId,
+                              {
+                                displayName: activeCatalogMeta?.displayName ?? draftDriverId,
+                                summary: activeCatalogMeta?.summary ?? "",
+                              },
+                              locale,
+                            ).displayName,
+                          )}
                         </Badge>
                         <Button
                           size="sm"
@@ -855,7 +904,7 @@ function IntegrationsSurface({
                               disabled={busy}
                               onClick={() => void handleRunAction(act.action)}
                             >
-                              {act.label}
+                              {formatAdapterActionLabel(act.action, act.label, locale)}
                             </Button>
                           ))}
                         </div>
@@ -870,7 +919,14 @@ function IntegrationsSurface({
                               </Link>
                             }
                           >
-                            {lastActionResult.summary}
+                            {formatAdapterStatus(
+                              {
+                                lastStatus: lastActionResult.summary,
+                                lastStatusCode: lastActionResult.summaryCode,
+                                lastStatusParams: lastActionResult.summaryParams,
+                              },
+                              locale,
+                            )}
                           </BannerNotice>
                         ) : null}
                       </div>

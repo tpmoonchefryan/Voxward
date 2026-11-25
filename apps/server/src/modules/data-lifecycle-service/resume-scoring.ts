@@ -22,6 +22,8 @@ export function resumeScoring(deps: DataDeps, actor: DataActor, subjectRef: stri
       actorRef: actor.accountId,
       subjectId: subjectRef,
       summary: `记分例外已恢复计分，请求 ${requestId}`,
+      summaryCode: "SCORE_EXCEPTION_RESUMED",
+      summaryParams: { requestId },
       at,
     }),
   });

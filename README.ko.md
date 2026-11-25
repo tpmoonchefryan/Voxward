@@ -1,4 +1,4 @@
-> 참고: 이 문서는 [영문 원본](./README.md)을 정본으로 합니다 · `synced-to: 3f5c65f612537959611e4bdfb684ed7542ef3a8f945f802921244f1fee92951a`
+> 참고: 이 문서는 [영문 원본](./README.md)을 정본으로 합니다 · `synced-to: 27d8f9ec0339989539fa4558b628adbdb6f524883ba786a9e036639497e3f3f9`
 
 <div align="center">
 
@@ -116,11 +116,11 @@ flowchart LR
 
 | 영역 | 주요 기능 | 핵심 경로 |
 | --- | --- | --- |
-| **5개 언어 및 테마 UI** | `/login`, `/sandbox`, 신규 계정 기본값 `halloween` + `en`; `/auth/shell-preferences` 연동 | [`apps/web/src/i18n/`](./apps/web/src/i18n/), [`VoxWardShell.tsx`](./apps/web/src/shell/VoxWardShell.tsx) |
-| **실시간 검토 워크벤치** | 분할 대기열 검토, 일괄 판정, AI 후보 키워드 승격, 신뢰 점수 재판정 | [`ModerationPage.tsx`](./apps/web/src/pages/moderation/ModerationPage.tsx) |
-| **Pure Dock & OBS 스테이지** | 관리 UI가 제거된 `/dock/:channelId` 와 URL 프래그먼트 `#cred=vwo_...` 기반 `/overlay/:channelId` | [`DockPage.tsx`](./apps/web/src/pages/dock/DockPage.tsx), [`Stage.tsx`](./apps/web/src/pages/overlay/Stage.tsx), [`output-native-v1.md`](./docs/protocol/output-native-v1.md) |
-| **단어장 및 CSV 일괄 처리** | 추가 전용 분류 사전, 안전 정규식 검증, CSV 템플릿 다운로드 및 가져오기 | [`AdminPage.tsx`](./apps/web/src/pages/admin/AdminPage.tsx) |
-| **3상태 RBAC 및 감사 로그** | `Deny > Grant > Not Set` 권한 합성 미리보기, 상관관계 체인 추적 및 `<bdi>` 텍스트 격리 | [`UsersPage.tsx`](./apps/web/src/pages/users/UsersPage.tsx), [`LogViewer.tsx`](./apps/web/src/pages/logs/LogViewer.tsx) |
+| **5개 언어 및 테마 UI** | `/login`, `/sandbox`, 신규 계정 기본값 `halloween` + `en`; `zh-Hans` 태그 및 강타입 5개 언어 포맷터 지원 | [`apps/web/src/i18n/`](./apps/web/src/i18n/), [`VoxWardShell.tsx`](./apps/web/src/shell/VoxWardShell.tsx) |
+| **실시간 검토 워크벤치** | 분할 대기열 검토, 일괄 판정, AI 후보 키워드 승격, 신뢰 점수 재판정, 다국어 SC 번역 | [`ModerationPage.tsx`](./apps/web/src/pages/moderation/ModerationPage.tsx) |
+| **Pure Dock & OBS 스테이지** | `ScPayment` 카드 표시 `/dock/:channelId` 및 `OBS_OVERLAY`/`BLIVECHAT` 자격 분리 기반 `/overlay/:channelId` | [`DockPage.tsx`](./apps/web/src/pages/dock/DockPage.tsx), [`Stage.tsx`](./apps/web/src/pages/overlay/Stage.tsx), [`output-native-v1.en.md`](./docs/protocol/output-native-v1.en.md) |
+| **단어장 및 CSV 일괄 처리** | 통합 언어 스코프 `rule_terms` + 스냅샷 롤백, 추가 전용 분류, RFC-4180 CSV(다중 인코딩/구분 기호 미리보기) | [`AdminPage.tsx`](./apps/web/src/pages/admin/AdminPage.tsx), [`term-csv.ts`](./apps/server/src/auth/term-csv.ts) |
+| **3상태 RBAC 및 감사 로그** | `Deny > Grant > Not Set` 권한 합성, 구조화 `change_logs` (`summary_code`) 및 `<bdi>` 텍스트 격리 | [`UsersPage.tsx`](./apps/web/src/pages/users/UsersPage.tsx), [`LogViewer.tsx`](./apps/web/src/pages/logs/LogViewer.tsx) |
 | **데이터 규정 준수 및 삭제** | 시청자 조회, `DELETE_DATA_ONLY` / `DELETE_AND_EXCEPT` 요청 등록·검증·비동기 정리 실행 | [`DataPanel.tsx`](./apps/web/src/pages/data/DataPanel.tsx) |
 
 ---
@@ -154,7 +154,7 @@ Voxward/
 - Linux systemd 및 프록시 템플릿: [`deploy/server/README.md`](./deploy/server/README.md)
 - k3s 컨테이너 및 매니페스트(`/sandbox` + 운영): [`deploy/k3s/README.md`](./deploy/k3s/README.md)
 - 원격 배포 매뉴얼: [`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
-- OBS 및 YouTube 연동: [`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
+- OBS 및 YouTube 연동: [`docs/obs/setup.en.md`](./docs/obs/setup.en.md) ([zh-CN](./docs/obs/setup.md)), [`docs/deployment/youtube-credentials.en.md`](./docs/deployment/youtube-credentials.en.md) ([zh-CN](./docs/deployment/youtube-credentials.md))
 
 ### 검증 범위 및 외부 미검증 경계
 
@@ -181,6 +181,11 @@ Voxward/
 | 문서 | 범위 | 언어 |
 | --- | --- | --- |
 | [`docs/KIROWEEN.md`](./docs/KIROWEEN.md) | Kiroween 2026 제출 개요, 아키텍처 및 Kiro 매핑 | English |
+| [`docs/multilingual.md`](./docs/multilingual.md) | BCP 47 콘텐츠 언어, 다국어 SC v2 번역, CSV 및 구조화 i18n | English |
+| [`docs/protocol/output-native-v1.en.md`](./docs/protocol/output-native-v1.en.md) | 읽기 전용 출력 WebSocket 프로토콜 (`vw-output.v1`) | [EN](./docs/protocol/output-native-v1.en.md) · [zh-CN](./docs/protocol/output-native-v1.md) |
+| [`docs/obs/setup.en.md`](./docs/obs/setup.en.md) | OBS Browser Source (`#cred`) 및 Custom Dock 가이드 | [EN](./docs/obs/setup.en.md) · [zh-CN](./docs/obs/setup.md) |
+| [`docs/deployment/youtube-credentials.en.md`](./docs/deployment/youtube-credentials.en.md) | YouTube API OAuth 범위, 콜백 규칙 및 할당량 문제 해결 | [EN](./docs/deployment/youtube-credentials.en.md) · [zh-CN](./docs/deployment/youtube-credentials.md) / [Troubleshooting (EN)](./docs/deployment/troubleshooting-and-quotas.en.md) |
+| [`docs/integrations/support-matrix.en.md`](./docs/integrations/support-matrix.en.md) | 다운스트림 연동 지원 범위 및 루프백 경계 | [EN](./docs/integrations/support-matrix.en.md) · [zh-CN](./docs/integrations/support-matrix.md) |
 | [`SECURITY.md`](./SECURITY.md) | 지원 버전, GitHub Private Vulnerability Reporting 및 보안 경계 | [EN](./SECURITY.md) · [zh-CN](./docs/i18n/zh-CN/SECURITY.md) · [JA](./docs/i18n/ja/SECURITY.md) · [KO](./docs/i18n/ko/SECURITY.md) · [FR](./docs/i18n/fr/SECURITY.md) |
 | [`PRIVACY.md`](./PRIVACY.md) | 셀프 호스팅 데이터 처리, AI 최소화 및 플랫폼 원본 경계 | [EN](./PRIVACY.md) · [zh-CN](./docs/i18n/zh-CN/PRIVACY.md) · [JA](./docs/i18n/ja/PRIVACY.md) · [KO](./docs/i18n/ko/PRIVACY.md) · [FR](./docs/i18n/fr/PRIVACY.md) |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | 개발 환경, 검증 게이트 및 5개 언어 문서 동기화 규칙 | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |

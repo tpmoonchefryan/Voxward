@@ -142,6 +142,13 @@ export function registerRequest(deps: DataDeps, actor: DataActor, input: Registe
       channelId: actor.channelId,
       actorRef: actor.accountId,
       summary: `DATA_REQUEST registered kind=${input.kind} mode=${input.mode ?? "NONE"} source=${input.requestSource} request=${record.id}`,
+      summaryCode: "DATA_REQUEST_REGISTERED",
+      summaryParams: {
+        kind: input.kind,
+        mode: input.mode ?? "NONE",
+        requestSource: input.requestSource,
+        requestId: record.id,
+      },
       at,
     }),
   );
@@ -179,6 +186,12 @@ export function recordVerification(
       channelId: actor.channelId,
       actorRef: actor.accountId,
       summary: `DATA_REQUEST verification=${input.verdict} method=${input.method ?? "NONE"} request=${requestId}`,
+      summaryCode: "DATA_REQUEST_VERIFIED",
+      summaryParams: {
+        verdict: input.verdict,
+        method: input.method ?? "NONE",
+        requestId,
+      },
       at,
     }),
   );

@@ -11,6 +11,10 @@ and this project uses semantic pre-release / version tags (`rc0.1.0`, package ma
 
 ### Added
 
+- **Unified Wordlist Persistence & Snapshot History**: Unified moderation rule evaluation directly on channel-scoped `rule_terms` + `wordlist_snapshots` (`0008_unified_wordlists.sql`) with deterministic normalization, language tagging, version history browsing, text match preview, and one-click snapshot rollback.
+- **Structured Super Chat Payments & Scoped Output Grants**: Added `ScPayment` (`@voxward/contracts`), `event_payments` persistence (`0009_event_payments.sql`), `OBS_OVERLAY` / `BLIVECHAT` / `NATIVE_V1` output grant kind isolation, `blivechat` `ADD_SUPER_CHAT` emission, and neutral unknown-tier styling without fabricating payment tiers.
+- **Multilingual SC Pipeline & Language-Scoped Moderation**: Added open BCP-47 tag canonicalization (`canonicalizeContentLanguage`, `parseTermLanguage`, up to 5 target languages via `ScLanguagePolicy`), language-scoped wordlist matching and fail-closed `READING_UNAVAILABLE`, `VoxWardScBatchV2` multi-target SC translation with per-language generated-text safety filtering and compact v2 `TRANSLATION` evidence (`16384` bytes), multi-language SC rendering via `Intl.DisplayNames`, and multilingual bench evaluation (`bench:quality`).
+- **Structured Audit Summaries, Typed 5-Locale i18n, and RFC-4180 CSV Import**: Added `summary_code` + `summary_params_json` on `change_logs` (`0010_structured_change_logs.sql`, cleared on privacy certification), `ADAPTER_STATUS_CODES` + `builtIn` flags on seeded categories/roles, typed 5-locale formatters (`apps/web/src/i18n/format.ts`) with `zh-Hans` HTML lang tag, RFC-4180 CSV parser (`term-csv.ts` & web multi-encoding/delimiter preview), `docs/multilingual.md`, and English operational guides.
 - Standard open-source repository documentation (`README.md` in five languages, `LICENSE`, `NOTICE`, `CHANGELOG.md`, `docs/KIROWEEN.md`, five-language `SECURITY.md` / `PRIVACY.md` / `CONTRIBUTING.md` / `CODE_OF_CONDUCT.md`, and `.github/` templates).
 - GitHub Private Vulnerability Reporting enabled for security disclosures.
 

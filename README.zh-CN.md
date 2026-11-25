@@ -1,4 +1,4 @@
-> 说明：本文档以[英文原版](./README.md)为准 · `synced-to: 3f5c65f612537959611e4bdfb684ed7542ef3a8f945f802921244f1fee92951a`
+> 说明：本文档以[英文原版](./README.md)为准 · `synced-to: 27d8f9ec0339989539fa4558b628adbdb6f524883ba786a9e036639497e3f3f9`
 
 <div align="center">
 
@@ -116,11 +116,11 @@ flowchart LR
 
 | 模块 | 核心特性 | 主要源码入口 |
 | --- | --- | --- |
-| **五语与多主题界面** | `/login`、`/sandbox` 与新账号默认 `halloween` + `en`；支持 5 语实时切换与 `/auth/shell-preferences` 持久化 | [`apps/web/src/i18n/`](./apps/web/src/i18n/), [`VoxWardShell.tsx`](./apps/web/src/shell/VoxWardShell.tsx) |
-| **实时审核工作台** | 分栏工作台、批量裁决、AI 候选词确认入库、关联积分重判 | [`ModerationPage.tsx`](./apps/web/src/pages/moderation/ModerationPage.tsx) |
-| **纯净弹幕姬与 OBS 舞台** | 独立极简弹幕/SC 流（`/dock/:channelId`）与仅通过 Hash `#cred=vwo_...` 鉴权的 OBS 舞台（`/overlay/:channelId`） | [`DockPage.tsx`](./apps/web/src/pages/dock/DockPage.tsx), [`Stage.tsx`](./apps/web/src/pages/overlay/Stage.tsx), [`output-native-v1.md`](./docs/protocol/output-native-v1.md) |
-| **词库、CSV 与系统设置** | 只增不删分类字典、受限正则校验、CSV 模板下载与批量导入、计分与保留周期策略 | [`AdminPage.tsx`](./apps/web/src/pages/admin/AdminPage.tsx) |
-| **三态 RBAC 与关联日志** | `Deny > Grant > Not Set` 权限合成预览；技术/变更/集成日志联合追踪与 `<bdi>` 隔离展示 | [`UsersPage.tsx`](./apps/web/src/pages/users/UsersPage.tsx), [`LogViewer.tsx`](./apps/web/src/pages/logs/LogViewer.tsx) |
+| **五语与多主题界面** | `/login`、`/sandbox` 与新账号默认 `halloween` + `en`；支持 5 语实时切换（`zh-Hans`）与强类型结构化状态渲染 | [`apps/web/src/i18n/`](./apps/web/src/i18n/), [`VoxWardShell.tsx`](./apps/web/src/shell/VoxWardShell.tsx) |
+| **实时审核工作台** | 分栏工作台、批量裁决、AI 候选词确认入库、关联积分重判与多目标 SC 精翻 | [`ModerationPage.tsx`](./apps/web/src/pages/moderation/ModerationPage.tsx) |
+| **纯净弹幕姬与 OBS 舞台** | 独立极简弹幕/付费 `ScPayment` 卡片（`/dock/:channelId`）与按 `OBS_OVERLAY`/`BLIVECHAT` 凭据隔离的 OBS 舞台（`/overlay/:channelId`） | [`DockPage.tsx`](./apps/web/src/pages/dock/DockPage.tsx), [`Stage.tsx`](./apps/web/src/pages/overlay/Stage.tsx), [`output-native-v1.md`](./docs/protocol/output-native-v1.md) |
+| **词库、CSV 与系统设置** | 统一语言作用域 `rule_terms` + 快照回滚、只增不删分类、RFC-4180 CSV（多编码/分隔符预览）与 SC 语种策略 | [`AdminPage.tsx`](./apps/web/src/pages/admin/AdminPage.tsx), [`term-csv.ts`](./apps/server/src/auth/term-csv.ts) |
+| **三态 RBAC 与关联日志** | `Deny > Grant > Not Set` 权限合成；结构化 `change_logs`（`summary_code`）与 `<bdi>` 隔离追踪 | [`UsersPage.tsx`](./apps/web/src/pages/users/UsersPage.tsx), [`LogViewer.tsx`](./apps/web/src/pages/logs/LogViewer.tsx) |
 | **数据合规与遗忘权闭环** | 主体档案检索、`DELETE_DATA_ONLY` 与 `DELETE_AND_EXCEPT` 请求登记、核验及异步清理执行 | [`DataPanel.tsx`](./apps/web/src/pages/data/DataPanel.tsx) |
 
 ---
@@ -154,7 +154,7 @@ Voxward/
 - Linux systemd 与反代模板：[`deploy/server/README.md`](./deploy/server/README.md)
 - k3s 容器与清单（`/sandbox` + 生产）：[`deploy/k3s/README.md`](./deploy/k3s/README.md)
 - 完整远端自托管手册：[`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
-- OBS 与 YouTube OAuth 配置：[`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
+- OBS 与 YouTube OAuth 配置：[`docs/obs/setup.md`](./docs/obs/setup.md)（[EN](./docs/obs/setup.en.md)）, [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)（[EN](./docs/deployment/youtube-credentials.en.md)）
 
 ### 已验证范围与外部未验证边界
 
@@ -181,6 +181,11 @@ Voxward/
 | 文档 | 内容范围 | 支持语言 |
 | --- | --- | --- |
 | [`docs/KIROWEEN.md`](./docs/KIROWEEN.md) | Kiroween 2026 参赛说明、架构拼接与 Kiro 清单 | English |
+| [`docs/multilingual.md`](./docs/multilingual.md) | BCP 47 内容语言标签、多目标 SC 精翻、RFC-4180 CSV 与结构化 i18n | English |
+| [`docs/protocol/output-native-v1.md`](./docs/protocol/output-native-v1.md) | 原生只读 WebSocket 输出协议（`vw-output.v1`） | [EN](./docs/protocol/output-native-v1.en.md) · [zh-CN](./docs/protocol/output-native-v1.md) |
+| [`docs/obs/setup.md`](./docs/obs/setup.md) | OBS 浏览器源（`#cred`）与 Custom Dock 接入指引 | [EN](./docs/obs/setup.en.md) · [zh-CN](./docs/obs/setup.md) |
+| [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md) | YouTube API OAuth 权限、回调规则与配额排障 | [EN](./docs/deployment/youtube-credentials.en.md) · [zh-CN](./docs/deployment/youtube-credentials.md) / [Troubleshooting (EN)](./docs/deployment/troubleshooting-and-quotas.en.md) |
+| [`docs/integrations/support-matrix.md`](./docs/integrations/support-matrix.md) | 下游集成支持范围与本机回环边界 | [EN](./docs/integrations/support-matrix.en.md) · [zh-CN](./docs/integrations/support-matrix.md) |
 | [`SECURITY.md`](./SECURITY.md) | 支持版本、GitHub 私密漏洞披露与安全边界 | [EN](./SECURITY.md) · [zh-CN](./docs/i18n/zh-CN/SECURITY.md) · [JA](./docs/i18n/ja/SECURITY.md) · [KO](./docs/i18n/ko/SECURITY.md) · [FR](./docs/i18n/fr/SECURITY.md) |
 | [`PRIVACY.md`](./PRIVACY.md) | 自托管数据流、AI 最小化传入与平台原始副本边界 | [EN](./PRIVACY.md) · [zh-CN](./docs/i18n/zh-CN/PRIVACY.md) · [JA](./docs/i18n/ja/PRIVACY.md) · [KO](./docs/i18n/ko/PRIVACY.md) · [FR](./docs/i18n/fr/PRIVACY.md) |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | 环境要求、校验门禁、开发约定与五语文档同步规范 | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |

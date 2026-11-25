@@ -247,6 +247,8 @@ export function resetSandboxState(ctx: SandboxResetContext): { readonly resetAt:
         actorRef: "sandbox-reset",
         changeKind: "CONFIG_CHANGED",
         summary: "SANDBOX_RESET deterministic synthetic baseline initialized",
+        summaryCode: "SANDBOX_RESET",
+        summaryParamsJson: null,
         outcome: "SUCCEEDED",
         correlationId: null,
         expiresAt,

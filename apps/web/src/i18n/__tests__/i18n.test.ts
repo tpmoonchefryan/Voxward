@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  ADAPTER_ACTION_LABELS,
+  ADAPTER_DRIVER_COPY,
+  ADAPTER_STATUS_TEMPLATES,
   ADMIN_COPY,
   BLOCKED_COPY,
+  BUILT_IN_RBAC_ROLES,
+  BUILT_IN_TERM_CATEGORIES,
+  CHANGE_SUMMARY_ENUM_LABELS,
+  CHANGE_SUMMARY_TEMPLATES,
   DATA_COPY,
   DEFAULT_VOXWARD_LOCALE,
   DEFAULT_VOXWARD_THEME,
@@ -82,6 +89,7 @@ describe("VoxWard i18n dictionaries and defaults", () => {
     expect(DEFAULT_VOXWARD_LOCALE).toBe("en");
     expect(VOXWARD_SUPPORTED_LOCALES).toEqual(["en", "zh-CN", "ja", "ko", "fr"]);
     expect(SHELL_LOCALES.map((item) => item.locale)).toEqual(["en", "zh-CN", "ja", "ko", "fr"]);
+    expect(SHELL_LOCALES.find((item) => item.locale === "zh-CN")?.lang).toBe("zh-Hans");
 
     for (const loc of VOXWARD_SUPPORTED_LOCALES) {
       expect(isVoxWardLocale(loc)).toBe(true);
@@ -112,6 +120,13 @@ describe("VoxWard i18n dictionaries and defaults", () => {
       ["INTEGRATIONS_COPY", INTEGRATIONS_COPY],
       ["USERS_COPY", USERS_COPY],
       ["ADMIN_COPY", ADMIN_COPY],
+      ["CHANGE_SUMMARY_TEMPLATES", CHANGE_SUMMARY_TEMPLATES],
+      ["CHANGE_SUMMARY_ENUM_LABELS", CHANGE_SUMMARY_ENUM_LABELS],
+      ["ADAPTER_STATUS_TEMPLATES", ADAPTER_STATUS_TEMPLATES],
+      ["BUILT_IN_TERM_CATEGORIES", BUILT_IN_TERM_CATEGORIES],
+      ["BUILT_IN_RBAC_ROLES", BUILT_IN_RBAC_ROLES],
+      ["ADAPTER_DRIVER_COPY", ADAPTER_DRIVER_COPY],
+      ["ADAPTER_ACTION_LABELS", ADAPTER_ACTION_LABELS],
     ];
 
     const issues: string[] = [];

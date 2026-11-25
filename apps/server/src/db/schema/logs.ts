@@ -2,6 +2,8 @@ import {
   ACTOR_KINDS,
   CHANGE_KINDS,
   CHANGE_OUTCOMES,
+  CHANGE_SUMMARY_CODES,
+  CHANGE_SUMMARY_PARAMS_MAX_BYTES,
   EVIDENCE_KINDS,
   TECHNICAL_DATA_MAX_BYTES,
   TECHNICAL_LEVELS,
@@ -29,6 +31,8 @@ export const changeLogs = sqliteTable(
     actorRef: text("actor_ref").notNull(),
     changeKind: text("change_kind").notNull(),
     summary: text("summary").notNull(),
+    summaryCode: text("summary_code"),
+    summaryParamsJson: text("summary_params_json"),
     outcome: text("outcome").notNull(),
     correlationId: text("correlation_id"),
     expiresAt: text("expires_at").notNull(),
@@ -41,6 +45,8 @@ export const changeLogs = sqliteTable(
     check("ck_change_logs_kind", inList("change_kind", CHANGE_KINDS)),
     check("ck_change_logs_outcome", inList("outcome", CHANGE_OUTCOMES)),
     check("ck_change_logs_summary", sql.raw("length(summary) <= 500")),
+    check("ck_change_logs_summary_code", sql.raw(`summary_code is null or summary_code in (${CHANGE_SUMMARY_CODES.map((c) => `'${c}'`).join(", ")})`)),
+    check("ck_change_logs_summary_params", sql.raw(`summary_params_json is null or (json_valid(summary_params_json) and length(cast(summary_params_json as blob)) <= ${CHANGE_SUMMARY_PARAMS_MAX_BYTES})`)),
   ],
 );
 

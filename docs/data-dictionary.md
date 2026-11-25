@@ -670,6 +670,8 @@
 | `actor_ref` | TEXT | 否 | 操作者的内部引用，或 `system`。 |
 | `change_kind` | TEXT | 否 | 变更类别，取值见下方 CHECK 约束。 |
 | `summary` | TEXT | 否 | 必要的变更摘要，最多 500 个字符。 |
+| `summary_code` | TEXT | 是 | 结构化变更摘要代码，用于前端按受控模板多语种渲染。 |
+| `summary_params_json` | TEXT | 是 | 结构化摘要参数（合法 JSON 对象，UTF-8 不超过 1000 字节；经隐私证明清除后置空）。 |
 | `outcome` | TEXT | 否 | 取值 `SUCCEEDED`、`FAILED`、`PARTIAL`。 |
 | `correlation_id` | TEXT | 是 | 关联 ID，用于跳转到同一处理链的 Technical Log。 |
 | `expires_at` | TEXT | 否 | 到期时间。 |
@@ -685,6 +687,8 @@
 | `ck_change_logs_kind` | CHECK | `change_kind` 取值：`CONFIG_CHANGED`、`MEMBER_GRANTED`、`MEMBER_REVOKED`、`CREDENTIAL_CHANGED`、`OUTPUT_GRANT_CHANGED`、`LIST_CHANGED`、`TERM_CHANGED`、`RULE_VERSION_PUBLISHED`、`MANUAL_VERDICT`、`SCORE_CHANGED`、`SCORE_EXCEPTION_CHANGED`、`DATA_REQUEST_CHANGED`。 |
 | `ck_change_logs_outcome` | CHECK | `outcome` 只能取上列三个值。 |
 | `ck_change_logs_summary` | CHECK | `summary` 不超过 500 个字符。 |
+| `ck_change_logs_summary_code` | CHECK | `summary_code` 为空或属于受控摘要代码枚举。 |
+| `ck_change_logs_summary_params` | CHECK | `summary_params_json` 为空，或为合法 JSON 且字节长度不超过 1000。 |
 
 ## Technical Log
 

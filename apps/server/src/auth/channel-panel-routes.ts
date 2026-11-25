@@ -36,6 +36,7 @@ import {
   writeRbacRoles,
   writeRbacUsers,
   type AdapterDriverId,
+  type AdapterStatusCode,
   type ChannelAdapterRecord,
   type ConnectionFaultState,
   type ExtendedTermEntry,
@@ -52,6 +53,7 @@ import { authAccounts } from "../db/schema/index.js";
 import { authenticateRequest } from "./guard.js";
 import { findActiveMembership, listActiveMembers, listActiveMembershipsOf, type Membership } from "./members.js";
 import { capabilitiesOfMembership, membershipAllows, resolveEffectivePermissions, type Capability } from "./permissions.js";
+import { parseTermCsv } from "./term-csv.js";
 
 export interface ChannelPanelDecisionHandlers {
   commitTask(actor: DecisionActor, taskId: unknown, body: unknown): Promise<{ status: number; body: unknown }>;
@@ -185,6 +187,7 @@ const TERM_CSV_IMPORT_BODY = z
   .object({
     listKind: z.enum(["BLACKLIST", "WHITELIST"]),
     csvText: z.string().max(64_000),
+    delimiter: z.enum([",", ";", "\t"]).optional(),
   })
   .strict();
 
@@ -771,36 +774,6 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     },
   );
 
-  const parseCsvFields = (line: string): string[] => {
-    const fields: string[] = [];
-    let current = "";
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i += 1) {
-      const ch = line[i] ?? "";
-      if (inQuotes) {
-        if (ch === '"' && line[i + 1] === '"') {
-          current += '"';
-          i += 1;
-        } else if (ch === '"') {
-          inQuotes = false;
-        } else {
-          current += ch;
-        }
-        continue;
-      }
-      if (ch === '"') {
-        inQuotes = true;
-      } else if (ch === ",") {
-        fields.push(current);
-        current = "";
-      } else {
-        current += ch;
-      }
-    }
-    fields.push(current);
-    return fields;
-  };
-
   app.post<{ Params: { channelId: string }; Body: unknown }>(
     "/channels/:channelId/term-entries/import-csv",
     async (request, reply) => {
@@ -808,62 +781,34 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       const { accountId } = requireChannelMember(database, request, channelId, ["list.edit", "score.config"]);
       const parsed = TERM_CSV_IMPORT_BODY.safeParse(request.body);
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
-      const lines = parsed.data.csvText
-        .replace(/^\uFEFF/, "")
-        .split(/\r?\n/)
-        .map((l) => l.trim())
-        .filter((l) => l.length > 0);
       const current = readTermEntries(database, channelId);
-      const added: ExtendedTermEntry[] = [];
-      const errors: Array<{ readonly line: number; readonly message: string }> = [];
-      for (const [idx, line] of lines.entries()) {
-        const parts = parseCsvFields(line).map((p) => p.trim());
-        if (
-          idx === 0 &&
-          parts[0]?.toLowerCase() === "term" &&
-          parts[1]?.toLowerCase() === "category" &&
-          parts[2]?.toLowerCase() === "matchkind"
-        ) {
-          continue;
-        }
-        const [term = "", categoryCode = "spam", rawKind = "EXACT", language = "und"] = parts;
-        const matchKind = rawKind.toUpperCase();
-        if (!term) {
-          errors.push({ line: idx + 1, message: "词条内容不能为空" });
-          continue;
-        }
-        if (matchKind !== "EXACT" && matchKind !== "CONTAINS" && matchKind !== "REGEX" && matchKind !== "NORMALIZED") {
-          errors.push({ line: idx + 1, message: "matchKind 仅支持 EXACT / CONTAINS / REGEX / NORMALIZED" });
-          continue;
-        }
-        if (matchKind === "NORMALIZED" && rules.normalizedTermIsEmpty(channelId, term)) {
-          errors.push({ line: idx + 1, message: "归一化后词条内容不能为空" });
-          continue;
-        }
-        if (matchKind === "REGEX" && rules.validateRegexPattern) {
-          const check = rules.validateRegexPattern(term);
-          if (!check.ok) {
-            errors.push({ line: idx + 1, message: check.hint ?? check.code });
-            continue;
-          }
-        }
-        added.push({
-          id: `term-${randomUUID()}`,
-          listKind: parsed.data.listKind,
-          term,
-          categoryCode: categoryCode || (parsed.data.listKind === "WHITELIST" ? "friendly" : "spam"),
-          matchKind,
-          enabled: true,
-          language: language || "und",
-          action: "REVIEW",
-        });
-      }
+      const result = parseTermCsv(parsed.data.csvText, {
+        ...(parsed.data.delimiter !== undefined ? { delimiter: parsed.data.delimiter } : {}),
+        defaultCategoryCode: parsed.data.listKind === "WHITELIST" ? "friendly" : "spam",
+        normalizedTermIsEmpty: (term) => rules.normalizedTermIsEmpty(channelId, term),
+        ...(rules.validateRegexPattern ? { validateRegexPattern: rules.validateRegexPattern } : {}),
+      });
+      const added: ExtendedTermEntry[] = result.rows.map((row) => ({
+        id: `term-${randomUUID()}`,
+        listKind: parsed.data.listKind,
+        term: row.term,
+        categoryCode: row.categoryCode,
+        matchKind: row.matchKind,
+        enabled: true,
+        language: row.language,
+        action: row.action === "BLOCK" ? "BLOCK" : "REVIEW",
+      }));
       if (added.length === 0) {
-        return send(reply, 200, { imported: 0, errors, entries: current });
+        return send(reply, 200, { imported: 0, errors: result.errors, entries: current });
       }
       const saved = saveTerms(channelId, accountId, [...added, ...current], reply);
       if (saved !== undefined) {
-        return send(reply, 200, { imported: added.length, errors, version: saved.version, entries: saved.entries });
+        return send(reply, 200, {
+          imported: added.length,
+          errors: result.errors,
+          version: saved.version,
+          entries: saved.entries,
+        });
       }
     },
   );
@@ -972,6 +917,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
         config: parsed.data.config,
         models: parsed.data.models ?? [],
         lastStatus: "已保存配置",
+        lastStatusCode: "CONFIG_SAVED",
         updatedAt: now.toISOString(),
       };
       const existing = readChannelAdapters(database, channelId);
@@ -1037,15 +983,21 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       const correlationId = `corr-int-${randomUUID().slice(0, 8)}`;
       let fetchedModels = current.models;
       let actionSummary = `已执行运维动作：${action}`;
+      let statusCode: AdapterStatusCode = "ACTION_EXECUTED";
+      let statusParams: Record<string, string | number> = { action };
       let endpointUrl = "https://www.googleapis.com/youtube/v3/liveChat/messages";
 
       if (current.category === "OUTPUT_TARGET") {
         endpointUrl =
           current.driverId === "obs-overlay-source" ? `/overlay/${channelId}` : "/output/v1/room";
-        actionSummary =
-          current.driverId === "obs-overlay-source"
-            ? "OBS 透明投屏通道就绪"
-            : "blivechat / 原生只读输出通道就绪";
+        if (current.driverId === "obs-overlay-source") {
+          actionSummary = "OBS 透明投屏通道就绪";
+          statusCode = "OBS_OVERLAY_READY";
+        } else {
+          actionSummary = "blivechat / 原生只读输出通道就绪";
+          statusCode = "NATIVE_OUTPUT_READY";
+        }
+        statusParams = {};
       } else if (
         current.driverId === "openai-compat" ||
         current.driverId === "anthropic-compat" ||
@@ -1076,6 +1028,8 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
           const manualOnly = current.models.filter((m) => m.source === "manual");
           fetchedModels = [...remoteModels, ...manualOnly];
           actionSummary = `已从远端拉取 ${remoteModels.length} 个可用模型`;
+          statusCode = "MODELS_FETCHED";
+          statusParams = { count: remoteModels.length };
         }
       }
 
@@ -1083,6 +1037,8 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
         ...current,
         models: fetchedModels,
         lastStatus: actionSummary,
+        lastStatusCode: statusCode,
+        lastStatusParams: statusParams,
         updatedAt: now.toISOString(),
       };
       writeChannelAdapters(
@@ -1113,7 +1069,13 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
         rawResponseBody: JSON.stringify({ ok: true, action, modelCount: fetchedModels.length }),
         occurredAt: now.toISOString(),
       }, now);
-      return send(reply, 200, { adapter: sanitizeAdapterOut(updated), summary: actionSummary, correlationId });
+      return send(reply, 200, {
+        adapter: sanitizeAdapterOut(updated),
+        summary: actionSummary,
+        summaryCode: statusCode,
+        summaryParams: statusParams,
+        correlationId,
+      });
     },
   );
 

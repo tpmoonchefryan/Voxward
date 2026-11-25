@@ -2,6 +2,7 @@ import {
   ACTOR_KINDS,
   CHANGE_KINDS,
   CHANGE_OUTCOMES,
+  CHANGE_SUMMARY_CODES,
   CONTRACT_VERSION,
   EVIDENCE_KINDS,
   LOG_VIEWER_PAGE_SIZE,
@@ -10,6 +11,9 @@ import {
   TECHNICAL_STATUSES,
   type ChangeKind,
   type ChangeOutcome,
+  type ChangeSummaryCode,
+  type ChangeSummaryParams,
+  type ChangeSummaryParamValue,
   type LogPage,
   type LogViewerChangeItem,
   type LogViewerEvidence,
@@ -268,6 +272,17 @@ function parsePage<T>(value: unknown, parseItem: (item: unknown) => T | undefine
   return { items, nextCursor };
 }
 
+function parseSummaryParams(value: unknown): ChangeSummaryParams | undefined {
+  if (!isRecord(value)) return undefined;
+  const out: Record<string, ChangeSummaryParamValue> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (typeof v === "string" || typeof v === "number" || typeof v === "boolean" || v === null) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 function parseChangeItem(value: unknown): LogViewerChangeItem | undefined {
   if (!isRecord(value) || !isRecord(value.actor)) return undefined;
   const id = typeof value.id === "string" ? value.id : undefined;
@@ -277,6 +292,8 @@ function parseChangeItem(value: unknown): LogViewerChangeItem | undefined {
   const changeKind = oneOf(value.changeKind, CHANGE_KINDS);
   const outcome = oneOf(value.outcome, CHANGE_OUTCOMES);
   const summary = typeof value.summary === "string" ? value.summary : undefined;
+  const summaryCode = value.summaryCode === null ? null : oneOf(value.summaryCode, CHANGE_SUMMARY_CODES);
+  const summaryParams = value.summaryParams === null ? null : parseSummaryParams(value.summaryParams);
   const channelId = nullableString(value.channelId);
   const correlationId = nullableString(value.correlationId);
   if (
@@ -300,6 +317,8 @@ function parseChangeItem(value: unknown): LogViewerChangeItem | undefined {
     changeKind,
     outcome,
     summary,
+    ...(summaryCode !== undefined ? { summaryCode: summaryCode as ChangeSummaryCode | null } : {}),
+    ...(summaryParams !== undefined ? { summaryParams } : {}),
     correlationId,
   };
 }

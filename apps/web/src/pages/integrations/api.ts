@@ -1,4 +1,5 @@
 import type { OutputGrantKind } from "@voxward/contracts";
+import type { AdapterStatusCode } from "../../i18n";
 import type { OutputsSummaryView } from "../admin/api";
 
 export type AdapterCategory = "LIVE_PLATFORM" | "AI_PROVIDER" | "OUTPUT_TARGET";
@@ -35,6 +36,8 @@ export interface ChannelAdapterView {
   readonly config: Readonly<Record<string, string | number | boolean | null>>;
   readonly models: readonly AdapterModelPoolItem[];
   readonly lastStatus: string;
+  readonly lastStatusCode?: AdapterStatusCode;
+  readonly lastStatusParams?: Readonly<Record<string, string | number>>;
   readonly updatedAt: string;
 }
 
@@ -79,7 +82,13 @@ export interface IntegrationsApi {
     channelId: string,
     adapterId: string,
     action: string,
-  ): Promise<{ readonly adapter: ChannelAdapterView; readonly summary: string; readonly correlationId: string }>;
+  ): Promise<{
+    readonly adapter: ChannelAdapterView;
+    readonly summary: string;
+    readonly summaryCode?: AdapterStatusCode;
+    readonly summaryParams?: Readonly<Record<string, string | number>>;
+    readonly correlationId: string;
+  }>;
   getOutputs(channelId: string): Promise<OutputsSummaryView>;
   issueOutputToken(channelId: string): Promise<{ readonly id?: string; readonly token?: string }>;
   revokeOutputToken(channelId: string, tokenId: string): Promise<void>;

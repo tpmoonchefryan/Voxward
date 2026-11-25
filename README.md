@@ -114,11 +114,11 @@ flowchart LR
 
 | Area | Highlight | Key Paths |
 | --- | --- | --- |
-| **Multilingual & Themeable UI** | Halloween default on `/login`, `/sandbox`, and fresh accounts; live switching across `en`, `zh-CN`, `ja`, `ko`, `fr` backed by `/auth/shell-preferences` | [`apps/web/src/i18n/`](./apps/web/src/i18n/), [`VoxWardShell.tsx`](./apps/web/src/shell/VoxWardShell.tsx) |
-| **Live Moderation & Queue** | Split-view review workbench, bulk verdicts, candidate keyword promotion, score rejudgement | [`ModerationPage.tsx`](./apps/web/src/pages/moderation/ModerationPage.tsx) |
-| **Pure Dock & OBS Overlay** | Standalone clean chat + countdown Super Chat pills (`/dock/:channelId`) and `#cred=vwo_...` fragment-only OBS WebSocket stage (`/overlay/:channelId`) | [`DockPage.tsx`](./apps/web/src/pages/dock/DockPage.tsx), [`Stage.tsx`](./apps/web/src/pages/overlay/Stage.tsx), [`output-native-v1.md`](./docs/protocol/output-native-v1.md) |
-| **Wordlists & CSV Workflows** | Append-only category dictionary, bounded regex validation, CSV template download + bulk import, scoring & retention controls | [`AdminPage.tsx`](./apps/web/src/pages/admin/AdminPage.tsx) |
-| **Tri-State RBAC & Audit Chain** | `Deny > Grant > Not Set` multi-role permission synthesis, bidirectional technical/change/integration log trace with `<bdi>` isolation | [`UsersPage.tsx`](./apps/web/src/pages/users/UsersPage.tsx), [`LogViewer.tsx`](./apps/web/src/pages/logs/LogViewer.tsx) |
+| **Multilingual & Themeable UI** | Halloween default on `/login`, `/sandbox`, and fresh accounts; live switching across `en`, `zh-CN` (`zh-Hans`), `ja`, `ko`, `fr` with typed structured status formatting | [`apps/web/src/i18n/`](./apps/web/src/i18n/), [`VoxWardShell.tsx`](./apps/web/src/shell/VoxWardShell.tsx) |
+| **Live Moderation & Queue** | Split-view review workbench, bulk verdicts, candidate keyword promotion, score rejudgement, multi-target SC translations | [`ModerationPage.tsx`](./apps/web/src/pages/moderation/ModerationPage.tsx) |
+| **Pure Dock & OBS Overlay** | Standalone clean chat + paid `ScPayment` pills (`/dock/:channelId`) and `#cred=vwo_...` OBS WebSocket stage (`/overlay/:channelId`) with scoped `OBS_OVERLAY`/`BLIVECHAT` grants | [`DockPage.tsx`](./apps/web/src/pages/dock/DockPage.tsx), [`Stage.tsx`](./apps/web/src/pages/overlay/Stage.tsx), [`output-native-v1.en.md`](./docs/protocol/output-native-v1.en.md) |
+| **Wordlists & CSV Workflows** | Unified language-scoped `rule_terms` + snapshot rollback, append-only categories, bounded regex, RFC-4180 CSV import (multi-encoding/delimiter preview) | [`AdminPage.tsx`](./apps/web/src/pages/admin/AdminPage.tsx), [`term-csv.ts`](./apps/server/src/auth/term-csv.ts) |
+| **Tri-State RBAC & Audit Chain** | `Deny > Grant > Not Set` multi-role permission synthesis, structured `change_logs` (`summary_code`) & bidirectional log trace with `<bdi>` isolation | [`UsersPage.tsx`](./apps/web/src/pages/users/UsersPage.tsx), [`LogViewer.tsx`](./apps/web/src/pages/logs/LogViewer.tsx) |
 | **Data Compliance & Privacy** | Subject lookup, `DELETE_DATA_ONLY` / `DELETE_AND_EXCEPT` async cleanup registration, verification, and execution wiring | [`DataPanel.tsx`](./apps/web/src/pages/data/DataPanel.tsx) |
 
 ---
@@ -152,7 +152,7 @@ Production deployment targets self-hosted Linux servers behind an HTTPS reverse 
 - Linux systemd & reverse-proxy templates: [`deploy/server/README.md`](./deploy/server/README.md)
 - k3s container & manifests (`/sandbox` + production): [`deploy/k3s/README.md`](./deploy/k3s/README.md)
 - Detailed remote deploy runbook: [`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
-- OBS & YouTube setup: [`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
+- OBS & YouTube setup: [`docs/obs/setup.en.md`](./docs/obs/setup.en.md) ([zh-CN](./docs/obs/setup.md)), [`docs/deployment/youtube-credentials.en.md`](./docs/deployment/youtube-credentials.en.md) ([zh-CN](./docs/deployment/youtube-credentials.md))
 
 ### Current Verification & External Boundaries
 
@@ -179,6 +179,11 @@ External dependencies explicitly left outside synthetic verification (see [`docs
 | Document | Scope | Languages |
 | --- | --- | --- |
 | [`docs/KIROWEEN.md`](./docs/KIROWEEN.md) | Kiroween 2026 Frankenstein pitch, walkthrough & Kiro mapping | English |
+| [`docs/multilingual.md`](./docs/multilingual.md) | BCP 47 content languages, SC v2 translation, CSV & typed i18n | English |
+| [`docs/protocol/output-native-v1.en.md`](./docs/protocol/output-native-v1.en.md) | Native read-only output WebSocket protocol (`vw-output.v1`) | [EN](./docs/protocol/output-native-v1.en.md) · [zh-CN](./docs/protocol/output-native-v1.md) |
+| [`docs/obs/setup.en.md`](./docs/obs/setup.en.md) | OBS Browser Source (`#cred`) & Custom Dock setup guide | [EN](./docs/obs/setup.en.md) · [zh-CN](./docs/obs/setup.md) |
+| [`docs/deployment/youtube-credentials.en.md`](./docs/deployment/youtube-credentials.en.md) | YouTube API OAuth scopes, callback rules & quota troubleshooting | [EN](./docs/deployment/youtube-credentials.en.md) · [zh-CN](./docs/deployment/youtube-credentials.md) / [Troubleshooting (EN)](./docs/deployment/troubleshooting-and-quotas.en.md) |
+| [`docs/integrations/support-matrix.en.md`](./docs/integrations/support-matrix.en.md) | Downstream integration support & loopback boundaries | [EN](./docs/integrations/support-matrix.en.md) · [zh-CN](./docs/integrations/support-matrix.md) |
 | [`SECURITY.md`](./SECURITY.md) | Supported versions, Private Vulnerability Reporting & trust boundaries | [EN](./SECURITY.md) · [zh-CN](./docs/i18n/zh-CN/SECURITY.md) · [JA](./docs/i18n/ja/SECURITY.md) · [KO](./docs/i18n/ko/SECURITY.md) · [FR](./docs/i18n/fr/SECURITY.md) |
 | [`PRIVACY.md`](./PRIVACY.md) | Self-hosted data flow, AI minimization & platform copy boundaries | [EN](./PRIVACY.md) · [zh-CN](./docs/i18n/zh-CN/PRIVACY.md) · [JA](./docs/i18n/ja/PRIVACY.md) · [KO](./docs/i18n/ko/PRIVACY.md) · [FR](./docs/i18n/fr/PRIVACY.md) |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Local workflow, DS/deps gates & five-language sync rules | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |

@@ -15,7 +15,7 @@ import {
 } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
-import { pickLocale, USERS_COPY, type UsersCopy } from "../../i18n";
+import { formatBuiltInRbacRole, pickLocale, USERS_COPY, type UsersCopy } from "../../i18n";
 import { VoxWardShell, useVoxWardShell } from "../../shell";
 import {
   createUsersRbacApi,
@@ -471,7 +471,7 @@ function UsersSurface({
                       clearSelectionLabel={copy.clearRolesLabel}
                       value={userRoleIds}
                       onChange={setUserRoleIds}
-                      options={roles.map((r) => ({ value: r.id, label: r.name }))}
+                      options={roles.map((r) => ({ value: r.id, label: formatBuiltInRbacRole(r, locale).name }))}
                     />
                   </div>
                   <div className="vw-row-wrap">
@@ -520,7 +520,7 @@ function UsersSurface({
                       onChange={(e) => setRoleFilter(e.target.value)}
                       options={[
                         { value: "ALL", label: copy.allRolesOption(roles.length) },
-                        ...roles.map((r) => ({ value: r.id, label: r.name })),
+                        ...roles.map((r) => ({ value: r.id, label: formatBuiltInRbacRole(r, locale).name })),
                       ]}
                     />
                   </div>
@@ -650,7 +650,7 @@ function UsersSurface({
                       name: (
                         <span>
                           <strong>
-                            <UntrustedText text={r.name} />
+                            <UntrustedText text={formatBuiltInRbacRole(r, locale).name} />
                           </strong>
                           {r.systemPreset ? copy.systemPresetSuffix : ""}
                         </span>
@@ -738,7 +738,7 @@ function UsersSurface({
                 clearSelectionLabel={copy.clearRolesLabel}
                 value={userRoleIds}
                 onChange={setUserRoleIds}
-                options={roles.map((r) => ({ value: r.id, label: r.name }))}
+                options={roles.map((r) => ({ value: r.id, label: formatBuiltInRbacRole(r, locale).name }))}
               />
             </div>
 

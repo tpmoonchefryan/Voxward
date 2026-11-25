@@ -188,6 +188,8 @@ function toChangeReadEntry(row: ChangeLogRow): ChangeLogEntry {
     changeKind: row.changeKind,
     outcome: row.outcome,
     summary: row.summary,
+    ...(row.summaryCode !== undefined ? { summaryCode: row.summaryCode } : {}),
+    ...(row.summaryParams !== undefined ? { summaryParams: row.summaryParams } : {}),
     correlationId: row.correlationId,
   };
 }

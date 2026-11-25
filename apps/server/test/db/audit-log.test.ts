@@ -102,4 +102,31 @@ describe("subject and channel scope", () => {
     expect(fixture.port.readChangeLogs("corr-port", [CHANNEL_ID]).map((item) => item.id)).toEqual(["cl-port"]);
     expect(fixture.port.readChangeLogs("corr-port", ["channel-elsewhere"])).toEqual([]);
   });
+
+  it("persists summaryCode/summaryParams and clears summaryParamsJson on certification", () => {
+    fixture.port.insertChangeLog({
+      id: "cl-struct",
+      channelId: CHANNEL_ID,
+      occurredAt: T0,
+      actorKind: "ACCOUNT",
+      actorRef: "mod-1",
+      changeKind: "MANUAL_VERDICT",
+      summary: "legacy",
+      summaryCode: "MANUAL_VERDICT_OVERTURNED",
+      summaryParams: { before: "ALLOW", after: "BLOCK" },
+      outcome: "SUCCEEDED",
+      correlationId: `subject:${SUBJECT_A}`,
+      expiresAt: T0,
+    });
+
+    const before = fixture.port.readChangeLogs(`subject:${SUBJECT_A}`, [CHANNEL_ID])[0];
+    expect(before?.summaryCode).toBe("MANUAL_VERDICT_OVERTURNED");
+    expect(before?.summaryParams).toEqual({ before: "ALLOW", after: "BLOCK" });
+
+    fixture.port.certifySubjectChangeLogs(SUBJECT_A, "DATA_REQUEST_CERTIFICATE");
+    const after = fixture.port.readChangeLogs(`subject:${SUBJECT_A}`, [CHANNEL_ID])[0];
+    expect(after?.summary).toBe("DATA_REQUEST_CERTIFICATE");
+    expect(after?.summaryCode).toBe("DATA_REQUEST_CERTIFICATE");
+    expect(after?.summaryParams).toBeUndefined();
+  });
 });

@@ -1791,6 +1791,26 @@ export interface AdminCopy {
   readonly csvHeading: string;
   readonly pickCsvFileBtn: string;
   readonly csvFileInputAria: string;
+  readonly csvEncodingLabel: string;
+  readonly csvDelimiterLabel: string;
+  readonly csvDelimiters: {
+    readonly comma: string;
+    readonly semicolon: string;
+    readonly tab: string;
+  };
+  readonly csvPreviewHeading: (shown: number, total: number) => string;
+  readonly csvPreviewTableLabel: string;
+  readonly csvPreviewEmpty: string;
+  readonly csvUnterminatedQuote: string;
+  readonly csvErrorCodes: {
+    readonly UNTERMINATED_QUOTE: string;
+    readonly EMPTY_TERM: string;
+    readonly INVALID_MATCH_KIND: string;
+    readonly INVALID_LANGUAGE: string;
+    readonly INVALID_ACTION: string;
+    readonly EMPTY_NORMALIZED: string;
+    readonly INVALID_REGEX: string;
+  };
   readonly csvColumnsHint: (defaultCat: string) => string;
   readonly csvRowsLabel: string;
   readonly csvPlaceholder: (defaultCat: string) => string;
@@ -1961,6 +1981,22 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     csvHeading: "CSV Batch Import (format: term,category,matchKind)",
     pickCsvFileBtn: "Choose CSV File",
     csvFileInputAria: "Choose CSV template file",
+    csvEncodingLabel: "File encoding",
+    csvDelimiterLabel: "Delimiter",
+    csvDelimiters: { comma: "Comma (,)", semicolon: "Semicolon (;)", tab: "Tab (\\t)" },
+    csvPreviewHeading: (shown, total) => `Preview (${shown} of ${total} data rows)`,
+    csvPreviewTableLabel: "CSV preview rows",
+    csvPreviewEmpty: "No data rows detected yet.",
+    csvUnterminatedQuote: "Unterminated quoted field detected in CSV input.",
+    csvErrorCodes: {
+      UNTERMINATED_QUOTE: "Unterminated quoted CSV field",
+      EMPTY_TERM: "Term must not be empty",
+      INVALID_MATCH_KIND: "Invalid matchKind (expected EXACT / CONTAINS / REGEX / NORMALIZED)",
+      INVALID_LANGUAGE: "Invalid BCP 47 language tag",
+      INVALID_ACTION: "Invalid action (expected BLOCK / REVIEW / ALLOW)",
+      EMPTY_NORMALIZED: "Normalized term is empty",
+      INVALID_REGEX: "Invalid or unsafe regular expression",
+    },
     csvColumnsHint: (d) => `Columns: term, category (code above, e.g. ${d}), matchKind (EXACT / CONTAINS / REGEX).`,
     csvRowsLabel: "One rule per line",
     csvPlaceholder: (d) => `term,category,matchKind\nspam_promo,${d},CONTAINS`,
@@ -2129,6 +2165,22 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     csvHeading: "CSV 批量导入（格式：term,category,matchKind）",
     pickCsvFileBtn: "选择 CSV 文件",
     csvFileInputAria: "选择 CSV 模板文件",
+    csvEncodingLabel: "文件编码",
+    csvDelimiterLabel: "分隔符",
+    csvDelimiters: { comma: "逗号 (,)", semicolon: "分号 (;)", tab: "制表符 (Tab)" },
+    csvPreviewHeading: (shown, total) => `解析预览（展示前 ${shown} / 共 ${total} 行数据）`,
+    csvPreviewTableLabel: "CSV 预览行",
+    csvPreviewEmpty: "暂未识别到有效数据行。",
+    csvUnterminatedQuote: "检测到未闭合的 CSV 引号字段。",
+    csvErrorCodes: {
+      UNTERMINATED_QUOTE: "CSV 引号未闭合",
+      EMPTY_TERM: "词条内容不能为空",
+      INVALID_MATCH_KIND: "matchKind 仅支持 EXACT / CONTAINS / REGEX / NORMALIZED",
+      INVALID_LANGUAGE: "BCP 47 语言标签无效",
+      INVALID_ACTION: "action 仅支持 BLOCK / REVIEW / ALLOW",
+      EMPTY_NORMALIZED: "归一化后词条内容不能为空",
+      INVALID_REGEX: "正则表达式无效或超出复杂度限制",
+    },
     csvColumnsHint: (d) => `列说明：term（词条文本或受限正则）、category（上方分类代码，如 ${d}）、matchKind（EXACT / CONTAINS / REGEX）。`,
     csvRowsLabel: "每行一条规则",
     csvPlaceholder: (d) => `term,category,matchKind\n引流加群,${d},CONTAINS`,
@@ -2297,6 +2349,22 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     csvHeading: "CSV 一括取込（形式：term,category,matchKind）",
     pickCsvFileBtn: "CSV ファイルを選択",
     csvFileInputAria: "CSV ファイル選択",
+    csvEncodingLabel: "文字コード",
+    csvDelimiterLabel: "区切り文字",
+    csvDelimiters: { comma: "カンマ (,)", semicolon: "セミコロン (;)", tab: "タブ (Tab)" },
+    csvPreviewHeading: (shown, total) => `プレビュー（${total} 行中 ${shown} 行表示）`,
+    csvPreviewTableLabel: "CSV プレビュー行",
+    csvPreviewEmpty: "有効なデータ行がありません。",
+    csvUnterminatedQuote: "閉じられていない引用符があります。",
+    csvErrorCodes: {
+      UNTERMINATED_QUOTE: "CSV の引用符が閉じられていません",
+      EMPTY_TERM: "用語を入力してください",
+      INVALID_MATCH_KIND: "matchKind は EXACT / CONTAINS / REGEX / NORMALIZED のみ指定できます",
+      INVALID_LANGUAGE: "BCP 47 言語タグが不正です",
+      INVALID_ACTION: "action は BLOCK / REVIEW / ALLOW のみ指定できます",
+      EMPTY_NORMALIZED: "正規化後の用語が空です",
+      INVALID_REGEX: "正規表現が不正または複雑すぎます",
+    },
     csvColumnsHint: (d) => `列：term、category（例：${d}）、matchKind（EXACT / CONTAINS / REGEX）。`,
     csvRowsLabel: "1 行 1 ルール",
     csvPlaceholder: (d) => `term,category,matchKind\nspam_link,${d},CONTAINS`,
@@ -2465,6 +2533,22 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     csvHeading: "CSV 일괄 가져오기 (형식: term,category,matchKind)",
     pickCsvFileBtn: "CSV 파일 선택",
     csvFileInputAria: "CSV 템플릿 파일 선택",
+    csvEncodingLabel: "파일 인코딩",
+    csvDelimiterLabel: "구분 기호",
+    csvDelimiters: { comma: "쉼표 (,)", semicolon: "세미콜론 (;)", tab: "탭 (Tab)" },
+    csvPreviewHeading: (shown, total) => `미리보기 (전체 ${total}행 중 ${shown}행)`,
+    csvPreviewTableLabel: "CSV 미리보기 행",
+    csvPreviewEmpty: "감지된 데이터 행이 없습니다.",
+    csvUnterminatedQuote: "닫히지 않은 CSV 따옴표 필드가 있습니다.",
+    csvErrorCodes: {
+      UNTERMINATED_QUOTE: "CSV 따옴표가 닫히지 않았습니다",
+      EMPTY_TERM: "용어는 비워 둘 수 없습니다",
+      INVALID_MATCH_KIND: "matchKind는 EXACT / CONTAINS / REGEX / NORMALIZED만 지원합니다",
+      INVALID_LANGUAGE: "유효하지 않은 BCP 47 언어 태그입니다",
+      INVALID_ACTION: "action은 BLOCK / REVIEW / ALLOW만 지원합니다",
+      EMPTY_NORMALIZED: "정규화 후 용어가 비어 있습니다",
+      INVALID_REGEX: "정규식이 잘못되었거나 허용 범위를 초과했습니다",
+    },
     csvColumnsHint: (d) => `열 설명: term, category (위 분류 코드, 예: ${d}), matchKind (EXACT / CONTAINS / REGEX).`,
     csvRowsLabel: "줄당 규칙 1개",
     csvPlaceholder: (d) => `term,category,matchKind\nspam_link,${d},CONTAINS`,
@@ -2633,6 +2717,22 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     csvHeading: "Import CSV (term,category,matchKind)",
     pickCsvFileBtn: "Choisir fichier CSV",
     csvFileInputAria: "Sélectionner un fichier CSV",
+    csvEncodingLabel: "Encodage",
+    csvDelimiterLabel: "Séparateur",
+    csvDelimiters: { comma: "Virgule (,)", semicolon: "Point-virgule (;)", tab: "Tabulation (Tab)" },
+    csvPreviewHeading: (shown, total) => `Aperçu (${shown} sur ${total} lignes)`,
+    csvPreviewTableLabel: "Aperçu des lignes CSV",
+    csvPreviewEmpty: "Aucune ligne de données détectée.",
+    csvUnterminatedQuote: "Guillemet CSV non fermé détecté.",
+    csvErrorCodes: {
+      UNTERMINATED_QUOTE: "Champ entre guillemets non fermé",
+      EMPTY_TERM: "Le terme ne peut pas être vide",
+      INVALID_MATCH_KIND: "matchKind doit être EXACT, CONTAINS, REGEX ou NORMALIZED",
+      INVALID_LANGUAGE: "Étiquette de langue BCP 47 invalide",
+      INVALID_ACTION: "action doit être BLOCK, REVIEW ou ALLOW",
+      EMPTY_NORMALIZED: "Le terme normalisé est vide",
+      INVALID_REGEX: "Expression régulière invalide ou trop complexe",
+    },
     csvColumnsHint: (d) => `Colonnes : term, category (ex. : ${d}), matchKind (EXACT / CONTAINS / REGEX).`,
     csvRowsLabel: "Une règle par ligne",
     csvPlaceholder: (d) => `term,category,matchKind\npromo,${d},CONTAINS`,

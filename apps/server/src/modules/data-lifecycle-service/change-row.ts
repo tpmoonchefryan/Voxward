@@ -1,4 +1,4 @@
-import type { ChangeLogRow } from "@voxward/contracts";
+import type { ChangeLogRow, ChangeSummaryCode, ChangeSummaryParams } from "@voxward/contracts";
 import type { DataDeps } from "./types.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -8,6 +8,8 @@ interface RowInput {
   readonly actorRef: string;
   readonly changeKind: "DATA_REQUEST_CHANGED" | "SCORE_EXCEPTION_CHANGED";
   readonly summary: string;
+  readonly summaryCode: ChangeSummaryCode;
+  readonly summaryParams: ChangeSummaryParams | null;
   readonly correlationId: string | null;
   readonly at: Date;
   /** SUCCEEDED for a complete step, PARTIAL when some storage surfaces failed (S019, SUB-036). */
@@ -27,6 +29,8 @@ function rowOf(deps: DataDeps, input: RowInput): ChangeLogRow {
     actorRef: input.actorRef,
     changeKind: input.changeKind,
     summary: input.summary,
+    summaryCode: input.summaryCode,
+    summaryParams: input.summaryParams,
     outcome: input.outcome ?? "SUCCEEDED",
     correlationId: input.correlationId,
     expiresAt: new Date(input.at.getTime() + deps.retentionDays.metadata * DAY_MS).toISOString(),
@@ -40,11 +44,18 @@ export function dataRequestChange(
     readonly channelId: string;
     readonly actorRef: string;
     readonly summary: string;
+    readonly summaryCode: ChangeSummaryCode;
+    readonly summaryParams?: ChangeSummaryParams | null;
     readonly at: Date;
     readonly outcome?: "SUCCEEDED" | "PARTIAL";
   },
 ): ChangeLogRow {
-  return rowOf(deps, { ...input, changeKind: "DATA_REQUEST_CHANGED", correlationId: null });
+  return rowOf(deps, {
+    ...input,
+    summaryParams: input.summaryParams ?? null,
+    changeKind: "DATA_REQUEST_CHANGED",
+    correlationId: null,
+  });
 }
 
 /**
@@ -58,6 +69,8 @@ export function exceptionChange(
     readonly actorRef: string;
     readonly subjectId: string;
     readonly summary: string;
+    readonly summaryCode: ChangeSummaryCode;
+    readonly summaryParams?: ChangeSummaryParams | null;
     readonly at: Date;
   },
 ): ChangeLogRow {
@@ -66,6 +79,8 @@ export function exceptionChange(
     actorRef: input.actorRef,
     changeKind: "SCORE_EXCEPTION_CHANGED",
     summary: input.summary,
+    summaryCode: input.summaryCode,
+    summaryParams: input.summaryParams ?? null,
     correlationId: `subject:${input.subjectId}`,
     at: input.at,
   });

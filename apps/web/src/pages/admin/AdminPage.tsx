@@ -18,8 +18,14 @@ import {
 } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
-import { ADMIN_COPY, pickLocale, type AdminCopy } from "../../i18n";
+import { ADMIN_COPY, formatBuiltInTermCategory, pickLocale, type AdminCopy } from "../../i18n";
 import { useVoxWardShell, VoxWardShell } from "../../shell";
+import {
+  decodeCsvBuffer,
+  previewTermCsv,
+  type CsvDelimiter,
+  type CsvEncoding,
+} from "./csv";
 import {
   AdminApiFailure,
   createAdminApi,
@@ -161,6 +167,9 @@ function AdminSurface({
   const [newTermLanguage, setNewTermLanguage] = useState("und");
   const [newTermAction, setNewTermAction] = useState<"REVIEW" | "BLOCK">("REVIEW");
   const [csvText, setCsvText] = useState("");
+  const [csvFileBuffer, setCsvFileBuffer] = useState<ArrayBuffer | null>(null);
+  const [csvEncoding, setCsvEncoding] = useState<CsvEncoding>("utf-8");
+  const [csvDelimiter, setCsvDelimiter] = useState<CsvDelimiter>(",");
   const [editingEntry, setEditingEntry] = useState<ExtendedTermEntryView | null>(null);
 
   // Scoring, model, retention state
@@ -330,12 +339,26 @@ function AdminSurface({
 
   const handleCsvFileSelected = async (file: File | null) => {
     if (file === null) return;
-    const text = (await file.text()).replace(/^\uFEFF/, "");
-    setCsvText(text);
+    if (typeof file.arrayBuffer === "function") {
+      const buffer = await file.arrayBuffer();
+      setCsvFileBuffer(buffer);
+      setCsvText(decodeCsvBuffer(buffer, csvEncoding));
+    } else {
+      const text = (await file.text()).replace(/^\uFEFF/, "");
+      setCsvFileBuffer(null);
+      setCsvText(text);
+    }
     setNotice({
       tone: "positive",
       resolve: (c) => c.messages.csvFileLoaded(file.name),
     });
+  };
+
+  const handleCsvEncodingChange = (nextEncoding: CsvEncoding) => {
+    setCsvEncoding(nextEncoding);
+    if (csvFileBuffer !== null) {
+      setCsvText(decodeCsvBuffer(csvFileBuffer, nextEncoding));
+    }
   };
 
   const handleCsvImport = async () => {
@@ -344,16 +367,28 @@ function AdminSurface({
     setBusy(true);
     setNotice(null);
     try {
-      const res = await adminClient.importTermEntriesCsv(channelId, activeListKind, normalized);
+      const res = await adminClient.importTermEntriesCsv(
+        channelId,
+        activeListKind,
+        normalized,
+        csvDelimiter,
+      );
       setEntries(res.entries);
       setCsvText("");
+      setCsvFileBuffer(null);
       setShowCsvImport(false);
       const firstErr = res.errors[0];
       if (firstErr !== undefined) {
         setNotice({
           tone: "warning",
-          resolve: (c) =>
-            c.messages.csvPartial(res.imported, res.errors.length, firstErr.line, firstErr.message),
+          resolve: (c) => {
+            const codeKey = firstErr.code as keyof AdminCopy["csvErrorCodes"] | undefined;
+            const localizedMsg =
+              codeKey && codeKey in c.csvErrorCodes
+                ? c.csvErrorCodes[codeKey]
+                : firstErr.message;
+            return c.messages.csvPartial(res.imported, res.errors.length, firstErr.line, localizedMsg);
+          },
         });
       } else {
         setNotice({
@@ -567,11 +602,14 @@ function AdminSurface({
                   { key: "label", label: copy.colCatLabel },
                   { key: "description", label: copy.colCatDesc },
                 ]}
-                rows={scopedCategories.map((c) => ({
-                  code: <span className="vw-mono">{c.code}</span>,
-                  label: c.label,
-                  description: c.description || <span className="vw-muted">{copy.noDesc}</span>,
-                }))}
+                rows={scopedCategories.map((c) => {
+                  const formatted = formatBuiltInTermCategory(c, locale);
+                  return {
+                    code: <span className="vw-mono">{c.code}</span>,
+                    label: formatted.label,
+                    description: formatted.description || <span className="vw-muted">{copy.noDesc}</span>,
+                  };
+                })}
                 emptyState={<EmptyState title={copy.emptyCatTitle} />}
               />
               <div className="vw-input-action-row">
@@ -680,7 +718,10 @@ function AdminSurface({
                     onChange={(event) => setCategoryFilter(event.target.value)}
                     options={[
                       { value: "ALL", label: copy.allCatsOption },
-                      ...scopedCategories.map((c) => ({ value: c.code, label: c.label })),
+                      ...scopedCategories.map((c) => ({
+                        value: c.code,
+                        label: formatBuiltInTermCategory(c, locale).label,
+                      })),
                     ]}
                   />
                 </div>
@@ -715,7 +756,10 @@ function AdminSurface({
                         onChange={(event) => setNewTermCategory(event.target.value)}
                         options={
                           scopedCategories.length > 0
-                            ? scopedCategories.map((c) => ({ value: c.code, label: c.label }))
+                            ? scopedCategories.map((c) => ({
+                                value: c.code,
+                                label: formatBuiltInTermCategory(c, locale).label,
+                              }))
                             : [{ value: defaultCatForList, label: defaultCatForList }]
                         }
                       />
@@ -811,6 +855,39 @@ function AdminSurface({
                     </div>
                   </div>
                   <span className="vw-caption">{copy.csvColumnsHint(defaultCatForList)}</span>
+                  <div className="vw-input-action-row">
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="term-csv-encoding">
+                        {copy.csvEncodingLabel}
+                      </label>
+                      <Select
+                        id="term-csv-encoding"
+                        value={csvEncoding}
+                        onChange={(event) => handleCsvEncodingChange(event.target.value as CsvEncoding)}
+                        options={[
+                          { value: "utf-8", label: "UTF-8" },
+                          { value: "gb18030", label: "GB18030" },
+                          { value: "shift_jis", label: "Shift_JIS" },
+                          { value: "euc-kr", label: "EUC-KR" },
+                        ]}
+                      />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="term-csv-delimiter">
+                        {copy.csvDelimiterLabel}
+                      </label>
+                      <Select
+                        id="term-csv-delimiter"
+                        value={csvDelimiter}
+                        onChange={(event) => setCsvDelimiter(event.target.value as CsvDelimiter)}
+                        options={[
+                          { value: ",", label: copy.csvDelimiters.comma },
+                          { value: ";", label: copy.csvDelimiters.semicolon },
+                          { value: "\t", label: copy.csvDelimiters.tab },
+                        ]}
+                      />
+                    </div>
+                  </div>
                   <div className="vw-field-col--wide">
                     <label className="vw-field-label" htmlFor="term-csv-box">
                       {copy.csvRowsLabel}
@@ -819,10 +896,44 @@ function AdminSurface({
                       id="term-csv-box"
                       rows={4}
                       value={csvText}
-                      onChange={(event) => setCsvText(event.target.value)}
+                      onChange={(event) => {
+                        setCsvFileBuffer(null);
+                        setCsvText(event.target.value);
+                      }}
                       placeholder={copy.csvPlaceholder(defaultCatForList)}
                     />
                   </div>
+                  {csvText.trim()
+                    ? (() => {
+                        const preview = previewTermCsv(csvText, csvDelimiter, 5);
+                        return (
+                          <div className="vw-stack-sm">
+                            <span className="vw-caption">
+                              {copy.csvPreviewHeading(preview.rows.length, preview.totalRows)}
+                            </span>
+                            {preview.unterminatedQuote ? (
+                              <BannerNotice tone="warning">{copy.csvUnterminatedQuote}</BannerNotice>
+                            ) : null}
+                            <TableShell
+                              label={copy.csvPreviewTableLabel}
+                              columns={[
+                                { key: "term", label: copy.colTerm },
+                                { key: "category", label: copy.colCategory },
+                                { key: "matchKind", label: copy.colMatchKind },
+                                { key: "language", label: copy.colLanguage },
+                              ]}
+                              rows={preview.rows.map((cols) => ({
+                                term: <UntrustedText text={cols[0] ?? ""} />,
+                                category: cols[1] ?? defaultCatForList,
+                                matchKind: cols[2] ?? "EXACT",
+                                language: cols[3] ?? "und",
+                              }))}
+                              emptyState={<EmptyState title={copy.csvPreviewEmpty} />}
+                            />
+                          </div>
+                        );
+                      })()
+                    : null}
                   <div className="vw-row-wrap">
                     <Button
                       variant="primary"
@@ -859,11 +970,13 @@ function AdminSurface({
                   { key: "enabled", label: copy.colEnabled },
                   { key: "actions", label: copy.colActions, align: "end" },
                 ]}
-                rows={filteredEntries.map((entry) => ({
-                  term: <UntrustedText text={entry.term} />,
-                  category:
-                    categories.find((c) => c.code === entry.categoryCode)?.label ??
-                    entry.categoryCode,
+                rows={filteredEntries.map((entry) => {
+                  const matchedCat = categories.find((c) => c.code === entry.categoryCode);
+                  return {
+                    term: <UntrustedText text={entry.term} />,
+                    category: matchedCat
+                      ? formatBuiltInTermCategory(matchedCat, locale).label
+                      : entry.categoryCode,
                   matchKind: <Badge tone="neutral">{matchKindLabel(entry.matchKind, copy)}</Badge>,
                   language: <Badge tone="neutral">{entry.language ?? "und"}</Badge>,
                   action: (
@@ -900,7 +1013,8 @@ function AdminSurface({
                       }
                     />
                   ),
-                }))}
+                };
+              })}
                 emptyState={
                   <EmptyState
                     title={copy.emptyTermsTitle}

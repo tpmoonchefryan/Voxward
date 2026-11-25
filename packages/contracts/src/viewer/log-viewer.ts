@@ -7,6 +7,8 @@ import type {
   ActorKind,
   ChangeKind,
   ChangeOutcome,
+  ChangeSummaryCode,
+  ChangeSummaryParams,
   EvidenceKind,
   TechnicalData,
   TechnicalLevel,
@@ -47,6 +49,8 @@ export interface LogViewerChangeItem {
   readonly changeKind: ChangeKind;
   readonly outcome: ChangeOutcome;
   readonly summary: string;
+  readonly summaryCode?: ChangeSummaryCode | null;
+  readonly summaryParams?: ChangeSummaryParams | null;
   readonly correlationId: string | null;
 }
 
