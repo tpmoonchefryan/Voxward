@@ -6,6 +6,7 @@ import {
   type InternalClassification,
   type InferenceProvider,
   type ModerationEngine,
+  type ScPayment,
   type SubjectCacheHub,
   type Verdict,
 } from "@voxward/contracts";
@@ -69,6 +70,7 @@ export interface SandboxApprovedStageItem {
   readonly subjectKey: string;
   readonly text: string;
   readonly amountDisplay: string | null;
+  readonly payment?: ScPayment;
   readonly translation: string | null;
   readonly decidedAt: string;
 }
@@ -636,6 +638,7 @@ export function createSandboxRuntime(
             subjectKey: row.subjectKey,
             text: content.text,
             amountDisplay: content.amountDisplay ?? null,
+            ...(content.payment === undefined ? {} : { payment: content.payment }),
             translation: content.translation,
             decidedAt: row.decidedAt,
           });

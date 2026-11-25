@@ -14,6 +14,37 @@ import {
 } from "../api";
 
 describe("overlay pure protocol and StageView rendering (VW-Draft-01)", () => {
+  it.each(["¥1,400", "¥1400"])("shows the body and the same tier for legacy OBS amount %s", (amount) => {
+    const state = reduceStageFrame(createInitialStageState("connected"), {
+      type: "DELIVER",
+      version: NATIVE_OUTPUT_VERSION,
+      deliveryId: "yen-sc",
+      deliverySequence: 1,
+      platformOrder: 1,
+      validUntil: new Date(Date.now() + 60_000).toISOString(),
+      display: { label: `SC ${amount}`, text: "Keep this message visible", translation: null },
+    });
+    const html = renderToStaticMarkup(<StageView state={state} />);
+    expect(html).toContain('data-sc-tier="t4"');
+    expect(html).toContain("Keep this message visible");
+  });
+
+  it("uses structured payment over the legacy label in OBS", () => {
+    const state = reduceStageFrame(createInitialStageState("connected"), {
+      type: "DELIVER",
+      version: NATIVE_OUTPUT_VERSION,
+      deliveryId: "structured-yen-sc",
+      deliverySequence: 1,
+      platformOrder: 1,
+      validUntil: new Date(Date.now() + 60_000).toISOString(),
+      display: { label: "SC ¥1", text: "Structured amount wins", translation: null,
+        payment: { amountMicros: 1_400_000_000, currency: "JPY" } },
+    });
+    const html = renderToStaticMarkup(<StageView state={state} />);
+    expect(html).toContain('data-sc-tier="t4"');
+    expect(html).toContain("Structured amount wins");
+  });
+
   it("renders the live sandbox payment label as a Super Chat amount", () => {
     const state = reduceStageFrame(createInitialStageState("connected"), {
       type: "DELIVER",

@@ -3,8 +3,10 @@ import {
   NATIVE_OUTPUT_CREDENTIAL_PREFIX,
   NATIVE_OUTPUT_PATH,
   NATIVE_OUTPUT_PROTOCOL,
+  readScPayment,
   type DeliverFrame,
   type NativeFrame,
+  type ScPayment,
   type WardBlockedFrame,
 } from "@voxward/contracts";
 import { DEFAULT_VOXWARD_LOCALE, OVERLAY_COPY, pickLocale, type VoxWardLocale } from "../../i18n";
@@ -114,6 +116,7 @@ export interface ActiveDeliverItem {
   readonly label: string | null;
   readonly text: string;
   readonly translation: string | null;
+  readonly payment?: ScPayment;
 }
 
 export interface WardBlockedEvent {
@@ -171,6 +174,7 @@ export function pruneExpiredStageItems(state: StageState, nowMs = Date.now()): S
 }
 
 function toDeliverItem(frame: DeliverFrame, validUntilMs: number): ActiveDeliverItem {
+  const payment = readScPayment(frame.display.payment);
   return {
     deliveryId: frame.deliveryId,
     deliverySequence: frame.deliverySequence,
@@ -180,6 +184,7 @@ function toDeliverItem(frame: DeliverFrame, validUntilMs: number): ActiveDeliver
     label: frame.display.label,
     text: frame.display.text,
     translation: frame.display.translation,
+    ...(payment === null ? {} : { payment }),
   };
 }
 

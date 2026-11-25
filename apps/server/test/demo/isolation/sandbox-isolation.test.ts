@@ -141,6 +141,7 @@ describe("VOXWARD-SUB-047: sandbox fail-closed isolation and limited demo roles"
       expect(dock.json().feed.approvedSc).toEqual([expect.objectContaining({
         correlationId: accepted.json().result.correlationId,
         amountDisplay: "€25.00",
+        payment: { amountMicros: 25_000_000, currency: "EUR" },
         sourceLanguage: "ko",
         translations: [
           expect.objectContaining({ targetLanguage: "fr", translatedText: primary }),
@@ -148,7 +149,8 @@ describe("VOXWARD-SUB-047: sandbox fail-closed isolation and limited demo roles"
         ],
       })]);
       await expect.poll(() => nativeFrames).toContainEqual(expect.objectContaining({
-        type: "DELIVER", display: expect.objectContaining({ label: "SC €25.00", translation: primary }),
+        type: "DELIVER", display: expect.objectContaining({ label: "SC €25.00", translation: primary,
+          payment: { amountMicros: 25_000_000, currency: "EUR" } }),
       }));
       await expect.poll(() => bliveFrames).toContainEqual(expect.objectContaining({
         cmd: BLIVECHAT_CMD.ADD_TEXT, data: expect.objectContaining({ translation: primary }),

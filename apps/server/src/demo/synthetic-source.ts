@@ -1,4 +1,4 @@
-import type { IdentityKind, ScPayment } from "@voxward/contracts";
+import { readLegacyScPayment, type IdentityKind, type ScPayment } from "@voxward/contracts";
 
 export const SANDBOX_CHANNEL_ID = "sandbox-ch-01";
 export const SANDBOX_BANNER = "SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）";
@@ -144,6 +144,9 @@ export function buildCustomSyntheticEvent(
   seq: number,
   nowIso: string,
 ): SyntheticChatEvent {
+  const isPaid = input.isPaid ?? false;
+  const amountDisplay = input.amountDisplay !== undefined ? input.amountDisplay : isPaid ? "$5.00" : null;
+  const scPayment = isPaid && amountDisplay !== null ? readLegacyScPayment(amountDisplay) : null;
   return {
     messageId: `sbx-msg-custom-${seq}`,
     channelId: SANDBOX_CHANNEL_ID,
@@ -151,8 +154,9 @@ export function buildCustomSyntheticEvent(
     displayName: input.subjectKey,
     identityKind: "UNKNOWN",
     text: input.text,
-    isPaid: input.isPaid ?? false,
-    amountDisplay: input.amountDisplay !== undefined ? input.amountDisplay : input.isPaid ? "$5.00" : null,
+    isPaid,
+    amountDisplay,
+    ...(scPayment === null ? {} : { scPayment }),
     translationText: input.translationText ?? null,
     ...(input.language === undefined ? {} : { language: input.language }),
     receivedAt: nowIso,

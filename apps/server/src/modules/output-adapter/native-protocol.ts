@@ -24,7 +24,7 @@ export function frameFor(delivery: SendableDelivery, content: ApprovedContent | 
   return deliverFrame(delivery, content);
 }
 
-/** The ALLOW frame. The field list is `NATIVE_FRAME_FIELDS.DELIVER` and nothing else. */
+/** The ALLOW frame. */
 export function deliverFrame(delivery: SendableDelivery, content: ApprovedContent): DeliverFrame {
   return {
     type: "DELIVER",
@@ -33,7 +33,12 @@ export function deliverFrame(delivery: SendableDelivery, content: ApprovedConten
     deliverySequence: delivery.deliverySequence,
     platformOrder: delivery.platformOrder,
     validUntil: delivery.validUntil,
-    display: { label: content.amountDisplay === undefined ? null : `SC ${content.amountDisplay}`, text: content.text, translation: content.translation },
+    display: {
+      label: content.amountDisplay === undefined ? null : `SC ${content.amountDisplay}`,
+      text: content.text,
+      translation: content.translation,
+      ...(content.payment === undefined ? {} : { payment: content.payment }),
+    },
   };
 }
 

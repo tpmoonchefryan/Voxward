@@ -151,11 +151,12 @@ export function createApprovedContentPort(database: VoxwardDatabase): ApprovedCo
       const text = rows.find((row) => row.kind === "MESSAGE_TEXT");
       if (text === undefined) return undefined;
       const translation = rows.find((row) => row.kind === "TRANSLATION");
-      const amountDisplay = readPaidEvents(database, channelId, [correlationId], nowIso).get(correlationId)?.amountDisplay;
+      const paid = readPaidEvents(database, channelId, [correlationId], nowIso).get(correlationId);
       return {
         text: text.payload,
         translation: parseScTranslationPayload(translation?.payload ?? null).translation,
-        ...(amountDisplay === undefined ? {} : { amountDisplay }),
+        ...(paid?.amountDisplay === undefined ? {} : { amountDisplay: paid.amountDisplay }),
+        ...(paid?.payment == null ? {} : { payment: paid.payment }),
       };
     },
   };

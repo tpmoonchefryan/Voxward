@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type WheelEvent } from "react";
-import type { LocalizedScTranslation, ScPayment } from "@voxward/contracts";
+import { readLegacyScPayment, type LocalizedScTranslation, type ScPayment } from "@voxward/contracts";
 import { DEFAULT_VOXWARD_LOCALE, pickLocale, YOUTUBE_SC_COPY, type VoxWardLocale } from "../../i18n";
 import { formatCurrency } from "../../i18n/format";
 import { UntrustedText } from "../untrusted-text/UntrustedText";
@@ -45,29 +45,8 @@ export function resolveScTier(amountHint: string | null | undefined): ScTierDesc
   if (amountHint === null || amountHint === undefined || amountHint.trim() === "") {
     return TIER_3;
   }
-  const usdMatch = /(?:\$|USD\s*)(\d+(?:\.\d+)?)/i.exec(amountHint);
-  if (usdMatch !== null && usdMatch[1] !== undefined) {
-    const usd = Number.parseFloat(usdMatch[1]);
-    if (usd >= 500) return { ...TIER_7, durationSeconds: 18000 };
-    if (usd >= 100) return TIER_7;
-    if (usd >= 50) return TIER_6;
-    if (usd >= 20) return TIER_5;
-    if (usd >= 10) return TIER_4;
-    if (usd >= 5) return TIER_3;
-    if (usd >= 2) return TIER_2;
-    return TIER_1;
-  }
-  const jpyCnyMatch = /(?:¥|JPY\s*|CNY\s*)(\d+(?:\.\d+)?)/i.exec(amountHint);
-  if (jpyCnyMatch !== null && jpyCnyMatch[1] !== undefined) {
-    const val = Number.parseFloat(jpyCnyMatch[1]);
-    if (val >= 15000) return TIER_7;
-    if (val >= 7000) return TIER_6;
-    if (val >= 2800) return TIER_5;
-    if (val >= 1400) return TIER_4;
-    if (val >= 700) return TIER_3;
-    if (val >= 300) return TIER_2;
-    return TIER_1;
-  }
+  const payment = readLegacyScPayment(amountHint);
+  if (payment?.currency === "USD" || payment?.currency === "JPY") return tierForPayment(payment) ?? TIER_1;
   const tierMatch = /t([1-7])/i.exec(amountHint);
   if (tierMatch !== null && tierMatch[1] !== undefined) {
     const index = Number.parseInt(tierMatch[1], 10) - 1;
@@ -455,10 +434,14 @@ export function SuperChatCard({ item, locale = DEFAULT_VOXWARD_LOCALE }: {
 }
 
 function tierForItem(item: SuperChatItemDisplay): ScTierDescriptor | undefined {
-  // These hints are only used by legacy overlay demo presets, never by live panel data.
-  if (item.payment === undefined) return item.amountText === null ? undefined : resolveScTier(item.amountText);
-  const payment = item.payment;
-  if (payment === null) return undefined;
+  if (item.payment !== undefined) return item.payment === null ? undefined : tierForPayment(item.payment);
+  if (item.amountText === null) return undefined;
+  const legacy = readLegacyScPayment(item.amountText);
+  if (legacy !== null && legacy.currency !== "USD" && legacy.currency !== "JPY") return undefined;
+  return resolveScTier(item.amountText);
+}
+
+function tierForPayment(payment: ScPayment): ScTierDescriptor | undefined {
   if (payment.tier !== undefined) return TIERS_BY_NUM[payment.tier - 1];
   const thresholds = payment.currency === "USD" ? [1, 2, 5, 10, 20, 50, 100]
     : payment.currency === "JPY" ? [100, 300, 700, 1400, 2800, 7000, 15000] : null;

@@ -70,6 +70,7 @@
 `WARD_BLOCKED` 不含原文、译文、昵称或任何身份字段。拦截事件不会因为重连而补播。当已下发 `DELIVER` 的消息被改判为 `BLOCK` 时，服务端会下发一条带有同一 `platformOrder` 的 `WARD_BLOCKED` 帧；下游消费者应据此撤回或隐藏此前对应同一 `platformOrder` 的展示内容。
 
 `display.label` 在沙盒付费消息有展示金额时为 `SC <金额>`，否则为 `null`。本协议不推算昵称或安全称呼。
+`display.payment` 是可选的结构化支付信息，含整数 `amountMicros`、ISO 货币代码和可选的 1–7 档位。
 
 ## 4. 客户端到服务端
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ScPayment } from "@voxward/contracts";
 import {
   Badge,
   Button,
@@ -103,7 +104,7 @@ function toDockSnapshot(
 
   for (const item of snap?.approvedStage ?? []) {
     const hasAmount = item.amountDisplay !== undefined && item.amountDisplay !== null;
-    if (!hasAmount && item.translation === null) {
+    if (!hasAmount && item.payment === undefined && item.translation === null) {
       continue;
     }
     scMap.set(item.eventId, {
@@ -113,6 +114,7 @@ function toDockSnapshot(
       originalText: item.text,
       translation: item.translation,
       amountDisplay: item.amountDisplay ?? "$10",
+      ...(item.payment === undefined ? {} : { payment: item.payment }),
       notes: null,
       acknowledgement: null,
       safeAlias: item.subjectKey,
@@ -243,6 +245,7 @@ function toSandboxStageState(dockSnap: DockSnapshot): StageState {
       readonly label: string;
       readonly text: string;
       readonly translation: string | null;
+      readonly payment?: ScPayment;
     }
   >();
 
@@ -264,6 +267,7 @@ function toSandboxStageState(dockSnap: DockSnapshot): StageState {
       label: `${sc.safeAlias ?? sc.subjectRef} · ${sc.amountDisplay ?? "$20"}`,
       text: sc.originalText ?? "",
       translation: sc.translation,
+      ...(sc.payment === undefined ? {} : { payment: sc.payment }),
     });
   }
 
@@ -279,6 +283,7 @@ function toSandboxStageState(dockSnap: DockSnapshot): StageState {
       label: item.label,
       text: item.text,
       translation: item.translation,
+      ...(item.payment === undefined ? {} : { payment: item.payment }),
     }));
 
   return {

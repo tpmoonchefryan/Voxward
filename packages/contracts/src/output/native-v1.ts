@@ -1,3 +1,5 @@
+import type { ScPayment } from "../events/sc-payment.js";
+
 /**
  * Native read-only output protocol, version 1. A downstream consumer subscribes to one room with a revocable credential
  * and receives approved display events as JSON text messages. The consumer sends no content. Its only client messages are
@@ -52,6 +54,7 @@ export interface DisplayPayload {
   readonly label: string | null;
   readonly text: string;
   readonly translation: string | null;
+  readonly payment?: ScPayment;
 }
 
 interface DeliveryFields {
@@ -76,7 +79,7 @@ export interface WardBlockedFrame extends DeliveryFields {
 
 export type NativeFrame = HelloFrame | DeliverFrame | WardBlockedFrame;
 
-/** Exact key lists. A message carries these keys and no others. */
+/** Required keys. DISPLAY may additionally carry payment. */
 export const NATIVE_FRAME_FIELDS = {
   HELLO: ["type", "version", "protocol", "heartbeatMs"],
   DELIVER: ["type", "version", "deliveryId", "deliverySequence", "platformOrder", "validUntil", "display"],
