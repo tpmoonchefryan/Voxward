@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { OutputGrantPort } from "@voxward/contracts";
 import { and, eq, isNull } from "drizzle-orm";
 import type { VoxwardDatabase } from "../db/client.js";
 import { authOutputTokens } from "../db/schema/index.js";
@@ -66,4 +67,28 @@ export function resolveOutputToken(database: VoxwardDatabase, token: string): Re
     .get();
   if (row === undefined || row.scope !== OUTPUT_SCOPE) return undefined;
   return { id: row.id, channelId: row.channelId, scope: OUTPUT_SCOPE };
+}
+
+export function withObsOutputTokens(database: VoxwardDatabase, grants: OutputGrantPort): OutputGrantPort {
+  const tokenPrefix = "obs-token:";
+  return {
+    resolveCredential(credential) {
+      const grant = grants.resolveCredential(credential);
+      if (grant !== undefined) return grant;
+      const token = resolveOutputToken(database, credential);
+      return token === undefined ? undefined : { grantId: `${tokenPrefix}${token.id}`, channelId: token.channelId };
+    },
+    isActive(grantId) {
+      if (!grantId.startsWith(tokenPrefix)) return grants.isActive(grantId);
+      return database.orm
+        .select({ id: authOutputTokens.id })
+        .from(authOutputTokens)
+        .where(and(
+          eq(authOutputTokens.id, grantId.slice(tokenPrefix.length)),
+          eq(authOutputTokens.scope, OUTPUT_SCOPE),
+          isNull(authOutputTokens.revokedAt),
+        ))
+        .get() !== undefined;
+    },
+  };
 }

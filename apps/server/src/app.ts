@@ -5,6 +5,7 @@ import { attachBlivechatOutput } from "./adapters/blivechat/socket.js";
 import { attachNativeOutput, type ClosedConnection, type NativeOutputTiming } from "./adapters/native-output/socket.js";
 import { channelPanelRoutes, type ChannelPanelRoutesOptions } from "./auth/channel-panel-routes.js";
 import { dataLifecycleRoutes } from "./auth/data-routes.js";
+import { withObsOutputTokens } from "./auth/downstream-tokens.js";
 import { databaseViewerAccess } from "./auth/log-viewer-access.js";
 import { logViewerRoutes } from "./auth/log-viewer-routes.js";
 import { authRoutes } from "./auth/routes.js";
@@ -248,7 +249,7 @@ function startNativeOutput(
 ): void {
   const grants = createOutputGrantPort(database);
   const endpoint = attachNativeOutput(app.server, {
-    grants,
+    grants: withObsOutputTokens(database, grants),
     subscribers,
     timing: settings?.timing,
     ignoredPaths: new Set([BLIVECHAT_OUTPUT_PATH]),

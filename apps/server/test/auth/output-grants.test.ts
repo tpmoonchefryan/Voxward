@@ -1,5 +1,7 @@
+import { NATIVE_CLOSE, NATIVE_OUTPUT_CREDENTIAL_PREFIX, NATIVE_OUTPUT_PATH, NATIVE_OUTPUT_PROTOCOL } from "@voxward/contracts";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { WebSocket } from "ws";
 import { buildApp } from "../../src/app.js";
 import { createAccount } from "../../src/auth/login.js";
 import { grantMembership } from "../../src/auth/members.js";
@@ -43,7 +45,7 @@ describe("native output grant routes (VW-SUB039-AC001, Q18)", () => {
       grantMembership(tx, { channelId: "channel-1", accountId: modId, role: "MODERATOR", logAccess: false, now: NOW });
       grantMembership(tx, { channelId: "channel-2", accountId: otherId, role: "CHANNEL_OWNER", logAccess: false, now: NOW });
     });
-    app = buildApp({ modules: buildRegistry(config), logger: false, database });
+    app = buildApp({ modules: buildRegistry(config), logger: false, database, nativeOutput: { timing: { heartbeatMs: 50 } } });
   });
 
   afterEach(async () => {
@@ -67,6 +69,45 @@ describe("native output grant routes (VW-SUB039-AC001, Q18)", () => {
       headers: { cookie: session.cookie, "x-csrf-token": session.csrf },
     });
   }
+
+  it("opens the native overlay with an issued OBS token and closes it when revoked", async () => {
+    const owner = await signIn("owner");
+    const headers = { cookie: owner.cookie, "x-csrf-token": owner.csrf };
+    const issued = await app.inject({ method: "POST", url: "/channels/channel-1/output-tokens", headers });
+    expect(issued.statusCode).toBe(201);
+    const { id, token } = issued.json<{ id: string; token: string }>();
+    const address = await app.listen({ host: "127.0.0.1", port: 0 });
+    const url = `${address.replace(/^http:/, "ws:")}${NATIVE_OUTPUT_PATH}`;
+    const protocols = [NATIVE_OUTPUT_PROTOCOL, `${NATIVE_OUTPUT_CREDENTIAL_PREFIX}${token}`];
+    const socket = new WebSocket(url, protocols);
+    try {
+      const hello = await new Promise<unknown>((resolve, reject) => {
+        socket.once("message", (frame) => resolve(JSON.parse(frame.toString())));
+        socket.once("error", reject);
+      });
+      expect(hello).toMatchObject({ type: "HELLO", protocol: NATIVE_OUTPUT_PROTOCOL });
+      const closed = new Promise<number>((resolve) => socket.once("close", resolve));
+      const revoked = await app.inject({ method: "DELETE", url: `/channels/channel-1/output-tokens/${id}`, headers });
+      expect(revoked.statusCode).toBe(204);
+      expect(await closed).toBe(NATIVE_CLOSE.GRANT_REVOKED.code);
+      const reconnect = new WebSocket(url, protocols);
+      try {
+        const status = await new Promise<number | undefined>((resolve, reject) => {
+          reconnect.once("unexpected-response", (_request, response) => {
+            response.resume();
+            resolve(response.statusCode);
+          });
+          reconnect.once("open", () => reject(new Error("Revoked token opened the overlay")));
+          reconnect.on("error", reject);
+        });
+        expect(status).toBe(401);
+      } finally {
+        reconnect.terminate();
+      }
+    } finally {
+      socket.terminate();
+    }
+  });
 
   it("the channel owner gets a credential once, uncached, and the database resolves it to that channel", async () => {
     const owner = await signIn("owner");
