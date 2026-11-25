@@ -14,7 +14,7 @@ export function readTermCsv(text: string): readonly CsvRecord[] {
     const other = commaFit[index] ?? 0;
     if (value !== other) return value > other ? semicolon : comma;
   }
-  return comma;
+  return semicolonFit[2] > 0 ? semicolon : comma;
 }
 
 function readDelimited(input: string, delimiter: "," | ";"): readonly CsvRecord[] {
@@ -71,7 +71,7 @@ function readDelimited(input: string, delimiter: "," | ";"): readonly CsvRecord[
   return records;
 }
 
-function delimiterFit(records: readonly CsvRecord[]): readonly number[] {
+function delimiterFit(records: readonly CsvRecord[]): readonly [header: number, matchKinds: number, multiColumn: number] {
   const first = records[0];
   const header = first !== undefined && !first.invalid &&
     first.fields[0]?.toLowerCase() === "term" && first.fields[1]?.toLowerCase() === "category" &&
