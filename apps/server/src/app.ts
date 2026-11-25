@@ -58,6 +58,7 @@ import {
 } from "./modules/moderation-engine/index.js";
 import { admitRegex } from "./modules/moderation-engine/rules/bounded-regex.js";
 import { compileRuleSet, type RuleInput, type RuleSetInput } from "./modules/moderation-engine/rules/groups.js";
+import { DEFAULT_NORMALIZE_OPTIONS, normalizeText } from "./modules/moderation-engine/rules/normalize.js";
 import { BLIVECHAT_OUTPUT_PATH, BLIVECHAT_PROTOCOL_VERSION, createBlivechatAdapter } from "./modules/output/index.js";
 import { createDeliveryPump } from "./modules/output-adapter/delivery.js";
 import { createSubscriptionRegistry } from "./modules/output-adapter/subscription.js";
@@ -401,6 +402,10 @@ function channelPanelOptionsFor(
     rules: {
       buildWordlist: (channelId, entries, base) =>
         withWordlist(base === undefined ? publishedRules(database, channelId) : base as RuleSetInput, entries),
+      normalizedTermIsEmpty: (channelId, term) => normalizeText(term, {
+        ...DEFAULT_NORMALIZE_OPTIONS,
+        ...publishedRules(database, channelId).normalization,
+      }).length === 0,
       previewWordlist: async (channelId, entries, text, language) => {
         const base = publishedRules(database, channelId);
         const ruleSet = withWordlist({ ...base, groups: [] }, entries);

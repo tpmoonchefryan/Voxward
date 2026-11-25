@@ -221,13 +221,13 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
       headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
       payload: {
         listKind: "BLACKLIST",
-        csvText: '\uFEFFterm;category;matchKind;language\r\n"bonjour; ""voisin""\r\nà bientôt";scam-links;NORMALIZED;fr-ca\r\nbad;scam-links;EXACT;en;extra\r\n"unclosed;scam-links;EXACT;en',
+        csvText: '\uFEFFterm;category;matchKind;language\r\n"bonjour; ""voisin""\r\nà bientôt";scam-links;NORMALIZED;fr-ca\r\nbad;scam-links;EXACT;en;extra\r\n\u200B;scam-links;NORMALIZED;fr\r\n"unclosed;scam-links;EXACT;en',
       },
     });
     expect(localizedCsv.statusCode).toBe(200);
     expect(localizedCsv.json()).toMatchObject({
       imported: 1,
-      errors: [{ line: 4, code: "CSV_EXTRA_COLUMNS" }, { line: 5, code: "CSV_INVALID_QUOTING" }],
+      errors: [{ line: 4, code: "CSV_EXTRA_COLUMNS" }, { line: 5, code: "CSV_INVALID_TERM" }, { line: 6, code: "CSV_INVALID_QUOTING" }],
       entries: expect.arrayContaining([
         expect.objectContaining({ term: 'bonjour; "voisin"\nà bientôt', matchKind: "NORMALIZED", language: "fr-CA" }),
       ]),

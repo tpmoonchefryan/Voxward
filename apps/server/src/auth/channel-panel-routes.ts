@@ -88,6 +88,7 @@ export interface ChannelPanelRuleValidator {
   validate(input: unknown): { ok: true } | { ok: false; issues: readonly { code: string; ref: string; hint?: string }[] };
   validateRegexPattern?(pattern: string): { ok: true } | { ok: false; code: string; hint?: string };
   buildWordlist(channelId: string, entries: readonly ExtendedTermEntry[], base?: unknown): { readonly groups: readonly unknown[] };
+  normalizedTermIsEmpty(channelId: string, term: string): boolean;
   previewWordlist(channelId: string, entries: readonly ExtendedTermEntry[], text: string, language?: string): Promise<{
     readonly hits: readonly string[];
     readonly language: string;
@@ -768,6 +769,10 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
         }
         if (language === null || language === "auto") {
           errors.push({ line, code: "CSV_INVALID_LANGUAGE" });
+          continue;
+        }
+        if (parsed.data.listKind === "BLACKLIST" && matchKind === "NORMALIZED" && rules.normalizedTermIsEmpty(channelId, term)) {
+          errors.push({ line, code: "CSV_INVALID_TERM" });
           continue;
         }
         if (current.length + added.length >= 500) {
