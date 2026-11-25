@@ -1817,6 +1817,18 @@ export interface AdminCopy {
   readonly modelReviewLabel: string;
   readonly unboundModelOption: string;
   readonly reasoningLabel: string;
+  readonly scLanguages: {
+    readonly heading: string;
+    readonly sourceLabel: string;
+    readonly targetLabel: string;
+    readonly noTargetsHint: string;
+    readonly presetSelectLabel: string;
+    readonly customTagLabel: string;
+    readonly addTargetBtn: string;
+    readonly addCustomBtn: string;
+    readonly removeTargetLabel: string;
+    readonly invalidTagHint: string;
+  };
   readonly saveModelsBtn: string;
   readonly loadingModelsTitle: string;
   readonly scoringAria: string;
@@ -1975,6 +1987,18 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     modelReviewLabel: "Manual Review Assistant Model",
     unboundModelOption: "Unbound",
     reasoningLabel: "Reasoning",
+    scLanguages: {
+      heading: "SC Source & Target Languages (BCP 47)",
+      sourceLabel: "Expected stream languages",
+      targetLabel: "Target translation languages",
+      noTargetsHint: "No target languages selected (uses single-language SC output).",
+      presetSelectLabel: "Preset language",
+      customTagLabel: "Custom BCP 47 tag",
+      addTargetBtn: "Add target",
+      addCustomBtn: "Add custom",
+      removeTargetLabel: "Remove",
+      invalidTagHint: "Enter a valid BCP 47 language tag (e.g. pt-BR, es, zh-Hant).",
+    },
     saveModelsBtn: "Save Model & SC Settings",
     loadingModelsTitle: "Loading model settings…",
     scoringAria: "Trust score & concurrency settings",
@@ -2131,6 +2155,18 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     modelReviewLabel: "待审复核辅助模型",
     unboundModelOption: "暂未绑定模型",
     reasoningLabel: "推理强度",
+    scLanguages: {
+      heading: "SC 源语言与目标翻译语言（BCP 47）",
+      sourceLabel: "直播间常见源语言",
+      targetLabel: "目标翻译语言",
+      noTargetsHint: "未配置多语目标（沿用单语精翻输出）。",
+      presetSelectLabel: "预设语言",
+      customTagLabel: "自定义 BCP 47 标签",
+      addTargetBtn: "添加预设",
+      addCustomBtn: "添加标签",
+      removeTargetLabel: "移除",
+      invalidTagHint: "请输入合法的 BCP 47 语言标签（例如 pt-BR、es、zh-Hant）。",
+    },
     saveModelsBtn: "保存模型与 SC 精翻策略",
     loadingModelsTitle: "正在加载模型策略…",
     scoringAria: "观众信任计分与并发队列参数",
@@ -2287,6 +2323,18 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     modelReviewLabel: "再確認補助モデル",
     unboundModelOption: "未設定",
     reasoningLabel: "推論強度",
+    scLanguages: {
+      heading: "SC 原文言語・翻訳先言語 (BCP 47)",
+      sourceLabel: "想定される配信言語",
+      targetLabel: "翻訳ターゲット言語",
+      noTargetsHint: "翻訳先言語が未設定です（単一言語 SC 出力を使用）。",
+      presetSelectLabel: "プリセット言語",
+      customTagLabel: "カスタム BCP 47 タグ",
+      addTargetBtn: "追加",
+      addCustomBtn: "タグ追加",
+      removeTargetLabel: "削除",
+      invalidTagHint: "有効な BCP 47 言語タグを入力してください（例: pt-BR, es, zh-Hant）。",
+    },
     saveModelsBtn: "モデルと SC 翻訳設定を保存",
     loadingModelsTitle: "モデル設定を読み込み中…",
     scoringAria: "信頼スコアと同時実行設定",
@@ -2443,6 +2491,18 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     modelReviewLabel: "대기열 재확인 보조 모델",
     unboundModelOption: "미지정",
     reasoningLabel: "추론 강도",
+    scLanguages: {
+      heading: "SC 원본 및 번역 대상 언어 (BCP 47)",
+      sourceLabel: "방송 주요 입력 언어",
+      targetLabel: "번역 대상 언어",
+      noTargetsHint: "번역 대상 언어가 없습니다 (단일 언어 SC 출력 사용).",
+      presetSelectLabel: "기본 언어",
+      customTagLabel: "사용자 지정 BCP 47 태그",
+      addTargetBtn: "추가",
+      addCustomBtn: "태그 추가",
+      removeTargetLabel: "제거",
+      invalidTagHint: "유효한 BCP 47 언어 태그를 입력하세요 (예: pt-BR, es, zh-Hant).",
+    },
     saveModelsBtn: "모델 및 SC 번역 설정 저장",
     loadingModelsTitle: "모델 정책 불러오는 중…",
     scoringAria: "시청자 신뢰 점수 및 동시성 설정",
@@ -2599,6 +2659,18 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     modelReviewLabel: "Modèle assistance revue",
     unboundModelOption: "Non défini",
     reasoningLabel: "Raisonnement",
+    scLanguages: {
+      heading: "Langues source et cibles SC (BCP 47)",
+      sourceLabel: "Langues du flux",
+      targetLabel: "Langues cibles",
+      noTargetsHint: "Aucune langue cible sélectionnée (sortie SC monolingue).",
+      presetSelectLabel: "Langue prédéfinie",
+      customTagLabel: "Code BCP 47 personnalisé",
+      addTargetBtn: "Ajouter",
+      addCustomBtn: "Ajouter code",
+      removeTargetLabel: "Supprimer",
+      invalidTagHint: "Saisissez un code BCP 47 valide (ex. pt-BR, es, zh-Hant).",
+    },
     saveModelsBtn: "Enregistrer modèles & SC",
     loadingModelsTitle: "Chargement…",
     scoringAria: "Seuils de score et file",

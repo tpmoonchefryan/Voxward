@@ -25,9 +25,15 @@ export interface SendableDelivery {
 }
 
 /** Approved text of one message, read from its evidence. `translation` is null when no translation was stored. */
+export interface ApprovedTranslationItem {
+  readonly language: string;
+  readonly translatedText: string;
+}
+
 export interface ApprovedContent {
   readonly text: string;
   readonly translation: string | null;
+  readonly translations?: readonly ApprovedTranslationItem[];
   readonly payment?: ScPayment;
 }
 

@@ -57,7 +57,10 @@ async function main(): Promise<void> {
   // Rules: the full message, nickname included, through the real engine.
   const routes = new Map<string, ModerationRoute>();
   for (const [order, sample] of set.samples.entries()) {
-    const verdict = await full.check(channelEventOf({ id: sample.id, order, senderRef: sample.senderRef, body: sample.body }));
+    const verdict = await full.check(
+      channelEventOf({ id: sample.id, order, senderRef: sample.senderRef, body: sample.body }),
+      sample.language === undefined ? undefined : { language: sample.language },
+    );
     routes.set(sample.id, verdict.route);
   }
 

@@ -26,11 +26,21 @@ export interface GeneratedCue {
   readonly thankYouReading: string | null;
 }
 
+export interface GeneratedTranslationCue {
+  readonly language: string;
+  readonly translatedText: string;
+  readonly slangNote: string;
+  readonly replyCue: string;
+  readonly thankYouReading: string | null;
+}
+
 /** One cue sheet entry: original and generated text in separate blocks, with the local safe address. */
 export interface CueSheetItem {
   readonly correlationId: string;
   readonly original: OriginalText;
   readonly generated: GeneratedCue;
+  readonly sourceLanguage?: string;
+  readonly translations?: readonly GeneratedTranslationCue[];
   readonly address: SafeAddress;
 }
 
@@ -61,4 +71,50 @@ export function buildCueSheetItem(
     },
     address,
   };
+}
+
+/** Builds a multilingual cue sheet entry whose primary `generated` block mirrors the first surviving translation. */
+export function buildMultilingualCueSheetItem(
+  correlationId: string,
+  originalText: string,
+  sourceLanguage: string,
+  translations: readonly GeneratedTranslationCue[],
+  address: SafeAddress,
+): CueSheetItem {
+  const primary = translations[0] ?? {
+    language: "und",
+    translatedText: "",
+    slangNote: "",
+    replyCue: "",
+    thankYouReading: null,
+  };
+  return {
+    correlationId,
+    original: { origin: "VIEWER_ORIGINAL", text: originalText },
+    generated: {
+      origin: "AI_GENERATED",
+      translatedText: primary.translatedText,
+      slangNote: primary.slangNote,
+      replyCue: primary.replyCue,
+      thankYouReading: primary.thankYouReading,
+    },
+    sourceLanguage,
+    translations,
+    address,
+  };
+}
+
+/**
+ * Serializes SC translation evidence in compact v2 JSON (without duplicating `translations[0]` at top level)
+ * when `translations` is present, or plain translated text for legacy single-language cues.
+ */
+export function serializeScTranslationEvidence(cue: CueSheetItem): string {
+  if (cue.translations !== undefined && cue.translations.length > 0) {
+    return JSON.stringify({
+      version: 2,
+      sourceLanguage: cue.sourceLanguage ?? "und",
+      translations: cue.translations,
+    });
+  }
+  return cue.generated.translatedText;
 }

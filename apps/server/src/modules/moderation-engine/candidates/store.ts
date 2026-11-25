@@ -13,6 +13,7 @@ export interface CandidateCard {
   readonly channelId: string;
   readonly term: string;
   readonly note: string | null;
+  readonly language: string | null;
   readonly sourceCorrelationId: string;
   readonly sourceTaskId: string;
   readonly status: CandidateStatus;
@@ -31,6 +32,7 @@ export interface CandidateRulePort {
     readonly term: string;
     readonly candidateId: string;
     readonly actorRef: string;
+    readonly language?: string;
   }): number;
 }
 
@@ -72,6 +74,7 @@ interface MutableCard {
   channelId: string;
   term: string;
   note: string | null;
+  language: string | null;
   sourceCorrelationId: string;
   sourceTaskId: string;
   status: CandidateStatus;
@@ -99,6 +102,7 @@ export function createCandidateStore(options: CandidateStoreOptions): CandidateS
         channelId: proposal.channelId,
         term: proposal.term,
         note: proposal.note,
+        language: proposal.language ?? null,
         sourceCorrelationId: proposal.sourceCorrelationId,
         sourceTaskId: proposal.sourceTaskId,
         status: "PENDING_CONFIRMATION",
@@ -130,7 +134,13 @@ export function createCandidateStore(options: CandidateStoreOptions): CandidateS
       if (card.status !== "PENDING_CONFIRMATION") return { status: "ALREADY_DECIDED", card: snapshotOf(card) };
 
       // The port runs first. If it throws, the card stays pending and nothing is recorded as confirmed.
-      const ruleVersion = options.rules.publishConfirmedTerm({ channelId, term: card.term, candidateId: card.id, actorRef });
+      const ruleVersion = options.rules.publishConfirmedTerm({
+        channelId,
+        term: card.term,
+        candidateId: card.id,
+        actorRef,
+        ...(card.language === null ? {} : { language: card.language }),
+      });
       card.status = "CONFIRMED";
       card.decidedByRef = actorRef;
       card.decidedAt = options.now().toISOString();

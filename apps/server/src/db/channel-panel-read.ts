@@ -3,6 +3,7 @@ import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { readPlatformDeleteStatusMap, type PlatformDeleteUiStatus } from "./channel-settings-store.js";
 import type { VoxwardDatabase } from "./client.js";
 import { EventPaymentStore } from "./repository.js";
+import { parseScTranslationEvidence, type ScDisplayTranslation } from "./sc-translation-payload.js";
 import {
   authOutputTokens,
   channelEvents,
@@ -30,6 +31,7 @@ export interface ScFeedItem {
   readonly subjectRef: string;
   readonly originalText: string | null;
   readonly translation: string | null;
+  readonly translations?: readonly ScDisplayTranslation[];
   readonly payment: ScPayment | null;
   readonly notes: string | null;
   readonly acknowledgement: string | null;
@@ -114,26 +116,6 @@ function readEvidenceByCorrelation(
     result.set(row.correlationId, entry);
   }
   return result;
-}
-
-function parseTranslationPayload(raw: string | null): {
-  translation: string | null;
-  notes: string | null;
-  acknowledgement: string | null;
-  safeAlias: string | null;
-} {
-  if (raw === null) return { translation: null, notes: null, acknowledgement: null, safeAlias: null };
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return {
-      translation: typeof parsed.translation === "string" ? parsed.translation : null,
-      notes: typeof parsed.notes === "string" ? parsed.notes : null,
-      acknowledgement: typeof parsed.acknowledgement === "string" ? parsed.acknowledgement : null,
-      safeAlias: typeof parsed.safeAlias === "string" ? parsed.safeAlias : null,
-    };
-  } catch {
-    return { translation: raw, notes: null, acknowledgement: null, safeAlias: null };
-  }
 }
 
 export function readDockAndModerationFeed(
@@ -265,13 +247,14 @@ export function readDockAndModerationFeed(
     if (isBlocked) {
       blockedItems.push(item);
     } else if (!isBlocked && (paidEventIds.has(ev.eventId) || paymentsByEvent.has(ev.eventId) || evEvidence?.translationJson != null)) {
-      const sc = parseTranslationPayload(evEvidence?.translationJson ?? null);
+      const sc = parseScTranslationEvidence(evEvidence?.translationJson ?? null);
       approvedSc.push({
         eventId: ev.eventId,
         correlationId: ev.correlationId,
         subjectRef: ev.subjectKey,
         originalText: evEvidence?.messageText ?? null,
-        translation: sc.translation,
+        translation: sc.primaryTranslation,
+        ...(sc.translations.length > 0 ? { translations: sc.translations } : {}),
         payment: paymentsByEvent.get(ev.eventId) ?? null,
         notes: sc.notes,
         acknowledgement: sc.acknowledgement,

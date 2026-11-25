@@ -43,7 +43,17 @@ export interface RuleMetrics {
   readonly falseReview: number;
   readonly missedReview: number;
   readonly byGroup: Record<string, { readonly total: number; readonly correct: number }>;
+  readonly byLanguage: Record<string, { readonly total: number; readonly correct: number }>;
   readonly mismatches: readonly string[];
+}
+
+function sampleLanguageOf(sample: Sample): string {
+  if (sample.language !== undefined) return sample.language;
+  if (sample.group === "zh") return "zh-Hans";
+  if (sample.group === "ja") return "ja";
+  if (sample.group === "en") return "en";
+  if (sample.group === "mixed") return "mixed";
+  return "und";
 }
 
 /** Compares the route of each sample with its rule-layer expectation. Mismatches are listed by id, in sample order. */
@@ -54,15 +64,19 @@ export function ruleMetrics(samples: readonly Sample[], routes: ReadonlyMap<stri
   let falseReview = 0;
   let missedReview = 0;
   const byGroup: Record<string, { total: number; correct: number }> = {};
+  const byLanguage: Record<string, { total: number; correct: number }> = {};
   const mismatches: string[] = [];
   for (const sample of samples) {
     const actual = routes.get(sample.id) ?? "UNCHECKED";
     const expected = sample.expected.route;
     const group = (byGroup[sample.group] ??= { total: 0, correct: 0 });
     group.total += 1;
+    const langBucket = (byLanguage[sampleLanguageOf(sample)] ??= { total: 0, correct: 0 });
+    langBucket.total += 1;
     if (actual === expected) {
       correct += 1;
       group.correct += 1;
+      langBucket.correct += 1;
       continue;
     }
     mismatches.push(`${sample.id}:${expected}->${actual}`);
@@ -71,7 +85,7 @@ export function ruleMetrics(samples: readonly Sample[], routes: ReadonlyMap<stri
     if (expected === "PASS" && actual === "REVIEW") falseReview += 1;
     if (expected === "REVIEW" && actual === "PASS") missedReview += 1;
   }
-  return { total: samples.length, correct, falseBlock, miss, falseReview, missedReview, byGroup, mismatches };
+  return { total: samples.length, correct, falseBlock, miss, falseReview, missedReview, byGroup, byLanguage, mismatches };
 }
 
 export interface AiMetrics {

@@ -27,6 +27,7 @@ export const MIN_PER_GROUP = 5;
 export interface Sample {
   readonly id: string;
   readonly group: SampleGroup;
+  readonly language?: string;
   readonly senderRef: string;
   readonly nickname: string | null;
   readonly body: string;
@@ -124,11 +125,15 @@ function readSample(entry: unknown, where: string, issues: string[]): Sample | u
     if (!includesOf(AI_EXPECTATIONS, expected.ai)) issues.push(`${where}.expected.ai: unknown class`);
   }
   if (entry.joint !== null && entry.joint !== "PASS" && entry.joint !== "BLOCK") issues.push(`${where}.joint: PASS, BLOCK or null`);
+  if (entry.language !== undefined && (typeof entry.language !== "string" || entry.language.trim() === "")) {
+    issues.push(`${where}.language: non-empty string when provided`);
+  }
 
   if (issues.length !== before) return undefined;
   return {
     id: id as string,
     group: entry.group as SampleGroup,
+    ...(typeof entry.language === "string" ? { language: entry.language } : {}),
     senderRef: entry.senderRef as string,
     nickname: entry.nickname as string | null,
     body: entry.body as string,

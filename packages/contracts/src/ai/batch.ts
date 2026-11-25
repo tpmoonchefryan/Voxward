@@ -18,6 +18,16 @@ export interface AiBatchInput {
   readonly items: readonly AiBatchItemInput[];
 }
 
+/** Multilingual SC request extension carrying target language tags without changing base `AiBatchInput`. */
+export interface ScMultilingualBatchItemInput extends AiBatchItemInput {
+  readonly language?: string;
+}
+
+export interface ScMultilingualBatchInput extends AiBatchInput {
+  readonly items: readonly ScMultilingualBatchItemInput[];
+  readonly targetLanguages?: readonly string[];
+}
+
 /** Server-side record that ties a batch item id to its internal correlation id. Never sent to a model. */
 export interface AiItemIdMapping {
   readonly itemId: string;

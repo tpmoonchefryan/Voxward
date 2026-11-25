@@ -1,4 +1,5 @@
 import {
+  canonicalizeContentLanguage,
   type AiBatchInput,
   type InferenceCapabilities,
   type InferenceProvider,
@@ -7,12 +8,21 @@ import {
   type MatchedSpan,
   type ModerationReasonCode,
   type ScItemResult,
+  type ScMultilingualBatchInput,
+  type ScMultilingualItemResult,
 } from "@voxward/contracts";
 import { checkSelection } from "../model-settings/capability-check.js";
 import type { ModelSelection, SettingsIssue } from "../model-settings/settings.js";
-import { validateScBatch } from "../validation/batch-contract.js";
+import { validateScBatch, validateScMultilingualBatch } from "../validation/batch-contract.js";
 import type { GeneratedTextChecker } from "../validation/output-text-check.js";
-import { buildCueSheetItem, type CueSheetItem, isShowableAddressText, type SafeAddress } from "./cue-sheet.js";
+import {
+  buildCueSheetItem,
+  buildMultilingualCueSheetItem,
+  type CueSheetItem,
+  type GeneratedTranslationCue,
+  isShowableAddressText,
+  type SafeAddress,
+} from "./cue-sheet.js";
 
 /**
  * The SC model call used when translation is on. It returns the raw business output, which the pipeline validates. The
@@ -21,7 +31,10 @@ import { buildCueSheetItem, type CueSheetItem, isShowableAddressText, type SafeA
  */
 export interface ScModelPort {
   describe(): InferenceCapabilities;
-  infer(input: AiBatchInput, call: { readonly batchId: string; readonly selection: ModelSelection }): Promise<unknown>;
+  infer(
+    input: AiBatchInput | ScMultilingualBatchInput,
+    call: { readonly batchId: string; readonly selection: ModelSelection },
+  ): Promise<unknown>;
 }
 
 export interface ScPipelineDeps {
@@ -42,10 +55,11 @@ export interface ScPipelineDeps {
   readonly maxItems: number;
 }
 
-/** One run's choices: the translation switch, and the SC model selection (null when none was chosen). */
+/** One run's choices: the translation switch, SC model selection, and optional target BCP 47 languages. */
 export interface ScRunChoices {
   readonly translationEnabled: boolean;
   readonly selection: ModelSelection | null;
+  readonly targetLanguages?: readonly string[];
 }
 
 /** Why an item has no cue sheet entry. A withheld entry carries no text. */
@@ -115,6 +129,13 @@ export async function runScBatch(
   if (issues.length > 0) return refused(request.batchId, issues);
 
   if (!choices.translationEnabled) return safetyOnly(request, selection, deps);
+  const targetLanguages = (choices.targetLanguages ?? [])
+    .map((lang) => canonicalizeContentLanguage(lang))
+    .filter((lang): lang is string => lang !== null && lang !== "und" && lang !== "mixed");
+  const dedupedTargets = [...new Set(targetLanguages)];
+  if (dedupedTargets.length > 0) {
+    return translateMultilingual(request, selection, dedupedTargets, deps);
+  }
   return translate(request, selection, deps);
 }
 
@@ -192,6 +213,114 @@ async function translate(
     items.push(await outcomeOf(item.correlationId, item.text, validated, rejected.has(sent.itemId), deps));
   }
   return { ok: true, batchId: request.batchId, items };
+}
+
+async function translateMultilingual(
+  request: InferenceRequest,
+  selection: ModelSelection,
+  targetLanguages: readonly string[],
+  deps: ScPipelineDeps,
+): Promise<ScRunOutcome> {
+  const sentByCorrelation = new Map<string, { readonly itemId: string; readonly text: string }>();
+  const modelInput: ScMultilingualBatchInput = {
+    items: request.items.map((item) => {
+      const sent = { itemId: deps.newItemId(), text: item.text };
+      sentByCorrelation.set(item.correlationId, sent);
+      return sent;
+    }),
+    targetLanguages,
+  };
+  if (new Set(modelInput.items.map((item) => item.itemId)).size !== modelInput.items.length) {
+    return { ok: false, batchId: request.batchId, reason: "BATCH_REJECTED", errorCodes: ["INPUT_ITEM_ID_DUPLICATE"] };
+  }
+
+  const raw = await deps.scModel.infer(modelInput, { batchId: request.batchId, selection });
+  const validation = await validateScMultilingualBatch(raw, modelInput, {
+    maxItems: deps.maxItems,
+    generatedText: deps.generatedText,
+  });
+  if (!validation.ok) {
+    const errorCodes = validation.errors.map((error) => error.code);
+    return { ok: false, batchId: request.batchId, reason: "BATCH_REJECTED", errorCodes };
+  }
+
+  const rejectedLangsByItem = new Map<string, Set<string>>();
+  for (const rejectedEntry of validation.rejectedGeneratedText) {
+    if (rejectedEntry.language === undefined) continue;
+    let langs = rejectedLangsByItem.get(rejectedEntry.itemId);
+    if (langs === undefined) {
+      langs = new Set<string>();
+      rejectedLangsByItem.set(rejectedEntry.itemId, langs);
+    }
+    langs.add(rejectedEntry.language);
+  }
+
+  const validatedByItemId = new Map(validation.items.map((item) => [item.itemId, item] as const));
+  const items: ScItemOutcome[] = [];
+  for (const item of request.items) {
+    const sent = sentByCorrelation.get(item.correlationId);
+    const validated = sent === undefined ? undefined : validatedByItemId.get(sent.itemId);
+    if (sent === undefined || validated === undefined) throw new Error("SC_ITEM_UNMAPPED");
+    items.push(
+      await multilingualOutcomeOf(
+        item.correlationId,
+        item.text,
+        validated,
+        rejectedLangsByItem.get(sent.itemId) ?? new Set<string>(),
+        targetLanguages,
+        deps,
+      ),
+    );
+  }
+  return { ok: true, batchId: request.batchId, items };
+}
+
+async function multilingualOutcomeOf(
+  correlationId: string,
+  original: string,
+  item: ScMultilingualItemResult,
+  rejectedLanguages: ReadonlySet<string>,
+  targetOrder: readonly string[],
+  deps: ScPipelineDeps,
+): Promise<ScItemOutcome> {
+  const base = {
+    correlationId,
+    classification: item.verdict,
+    reasonCodes: item.reasonCodes,
+    ...(item.matchedSpan === undefined ? {} : { matchedSpan: item.matchedSpan }),
+  };
+  if (item.verdict === "BLOCK") {
+    return { ...base, cue: null, withheld: "VERDICT_BLOCK" };
+  }
+  const orderIndex = new Map(targetOrder.map((lang, idx) => [lang, idx]));
+  const nonEmpty = item.translations.filter((t) => t.translatedText !== "");
+  const surviving: GeneratedTranslationCue[] = nonEmpty
+    .filter((t) => !rejectedLanguages.has(t.language))
+    .sort((a, b) => (orderIndex.get(a.language) ?? Number.MAX_SAFE_INTEGER) - (orderIndex.get(b.language) ?? Number.MAX_SAFE_INTEGER))
+    .map((t) => ({
+      language: t.language,
+      translatedText: t.translatedText,
+      slangNote: t.slangNote,
+      replyCue: t.replyCue,
+      thankYouReading: t.thankYouReading ?? null,
+    }));
+
+  if (surviving.length === 0) {
+    const withheld: CueWithheldReason =
+      nonEmpty.length > 0 && rejectedLanguages.size > 0 ? "GENERATED_TEXT_REJECTED" : "NO_TRANSLATION";
+    return { ...base, cue: null, withheld };
+  }
+
+  const address = await deps.addressFor(correlationId);
+  if (!isShowableAddressText(address.display)) {
+    return { ...base, cue: null, withheld: "ADDRESS_UNAVAILABLE" };
+  }
+  const reading = address.reading !== null && isShowableAddressText(address.reading) ? address.reading : null;
+  const cue = buildMultilingualCueSheetItem(correlationId, original, item.sourceLanguage, surviving, {
+    display: address.display,
+    reading,
+  });
+  return { ...base, cue, withheld: null };
 }
 
 async function outcomeOf(

@@ -1,4 +1,4 @@
-import { resolveScTierFromPayment, type ScPayment } from "@voxward/contracts";
+import { resolveScTierFromPayment, type DisplayTranslation, type ScPayment } from "@voxward/contracts";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type WheelEvent } from "react";
 import { DEFAULT_VOXWARD_LOCALE, pickLocale, YOUTUBE_SC_COPY, type VoxWardLocale } from "../../i18n";
 import { UntrustedText } from "../untrusted-text/UntrustedText";
@@ -136,6 +136,7 @@ export interface SuperChatItemDisplay {
   readonly amountText: string | null;
   readonly text: string | null;
   readonly translation: string | null;
+  readonly translations?: readonly DisplayTranslation[];
   readonly decidedAtMs?: number;
 }
 
@@ -440,6 +441,15 @@ export function useLiveStreamAutoScroll(
   return { viewportRef, trackRef, handleScroll, handleWheel };
 }
 
+function formatLanguageTag(tag: string, locale: VoxWardLocale): string {
+  try {
+    const names = new Intl.DisplayNames(locale, { type: "language", languageDisplay: "standard" });
+    return names.of(tag) ?? tag;
+  } catch {
+    return tag;
+  }
+}
+
 export function SuperChatCard({
   item,
   locale = DEFAULT_VOXWARD_LOCALE,
@@ -449,6 +459,8 @@ export function SuperChatCard({
 }) {
   const tier = resolveScTierForItem(item);
   const amountLabel = formatScAmountDisplay(item, locale);
+  const translations = item.translations ?? [];
+  const hasTranslations = translations.length > 0 || Boolean(item.translation);
 
   return (
     <article
@@ -462,14 +474,24 @@ export function SuperChatCard({
         </span>
         {amountLabel !== "" ? <span className="vw-sc-card__amount">{amountLabel}</span> : null}
       </header>
-      {tier.showsBody && (item.text || item.translation) ? (
+      {tier.showsBody && (item.text || hasTranslations) ? (
         <div className="vw-sc-card__body">
           {item.text ? (
             <div>
               <UntrustedText text={item.text} />
             </div>
           ) : null}
-          {item.translation ? (
+          {translations.length > 0 ? (
+            translations.map((entry) => (
+              <div
+                key={entry.language}
+                className={tier.darkInk ? "vw-sc-card__tr vw-sc-card__tr--dark-ink" : "vw-sc-card__tr"}
+              >
+                <span className="vw-caption">{formatLanguageTag(entry.language, locale)}: </span>
+                <UntrustedText text={entry.translatedText} />
+              </div>
+            ))
+          ) : item.translation ? (
             <div className={tier.darkInk ? "vw-sc-card__tr vw-sc-card__tr--dark-ink" : "vw-sc-card__tr"}>
               <UntrustedText text={item.translation} />
             </div>

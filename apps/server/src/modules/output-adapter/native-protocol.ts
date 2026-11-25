@@ -37,6 +37,7 @@ export function deliverFrame(delivery: SendableDelivery, content: ApprovedConten
       label: null,
       text: content.text,
       translation: content.translation,
+      ...(content.translations !== undefined ? { translations: content.translations } : {}),
       ...(content.payment !== undefined ? { payment: content.payment } : {}),
     },
   };

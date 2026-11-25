@@ -48,6 +48,7 @@ export function proposalsOf(
     channelId: input.channelId,
     term: candidate.term,
     note: candidate.note ?? null,
+    ...(candidate.language === undefined ? {} : { language: candidate.language }),
     sourceCorrelationId: input.correlationId,
     sourceTaskId: input.taskId,
   }));

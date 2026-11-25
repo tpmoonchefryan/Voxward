@@ -1,4 +1,4 @@
-import type { ModerationRoute } from "@voxward/contracts";
+import { canonicalizeContentLanguage, type ModerationRoute } from "@voxward/contracts";
 import { admitRegex, type RegexRejection } from "./bounded-regex.js";
 import { DEFAULT_NORMALIZE_OPTIONS, type NormalizeOptions, normalizeText } from "./normalize.js";
 import type { FieldSpan } from "./span-map.js";
@@ -73,6 +73,7 @@ export type RuleIssueCode =
   | "PATTERN_TOO_LONG"
   | "READING_PATTERN_INVALID"
   | "READING_CANNOT_PENALIZE"
+  | "LANGUAGE_INVALID"
   | "NORMALIZATION_INVALID"
   | "NORMALIZATION_MISMATCH"
   | `REGEX_${RegexRejection}`;
@@ -123,6 +124,7 @@ export type ReviewReason =
   | "INPUT_TOO_LONG"
   | "NORMALIZED_TOO_LONG"
   | "NICKNAME_UNAVAILABLE"
+  | "READING_UNAVAILABLE"
   | "RULE_BUDGET_EXCEEDED";
 
 /** One occurrence of a rule in a message. Each occurrence is one hit, so a repeated word gives several hits. */
@@ -293,13 +295,23 @@ function compileRule(
     }
   }
 
+  let language: string | undefined;
+  if (rule.language !== undefined) {
+    const canonical = canonicalizeContentLanguage(rule.language);
+    if (canonical === null) {
+      issues.push({ code: "LANGUAGE_INVALID", ref });
+    } else {
+      language = canonical;
+    }
+  }
+
   if (issues.length > before || matcher === null) return null;
   return {
     id: rule.id,
     groupId: group.id,
     action: group.action,
     matcher,
-    ...(rule.language === undefined ? {} : { language: rule.language }),
+    ...(language === undefined ? {} : { language }),
   };
 }
 

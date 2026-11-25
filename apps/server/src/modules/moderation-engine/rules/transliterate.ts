@@ -21,6 +21,8 @@ export interface Reading {
  */
 export interface Transliterator {
   readonly normalization: NormalizeOptions;
+  /** False when backed by an empty reading table and unable to transliterate non-ASCII scripts. */
+  readonly available?: boolean;
   transliterate(field: MatchField, text: string): Reading;
 }
 
@@ -46,6 +48,7 @@ export function createTableTransliterator(
   }
   return {
     normalization: options,
+    available: table.size > 0,
     transliterate(field, text) {
       let reading = "";
       let complete = true;

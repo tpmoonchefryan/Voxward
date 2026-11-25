@@ -395,17 +395,20 @@ function channelPanelOptionsFor(
           ruleSet,
           nicknames: { displayNicknameOf: async () => "preview-viewer" },
         });
-        const verdict = await checker.check({
-          contractVersion: CONTRACT_VERSION,
-          platform: "synthetic",
-          channelId,
-          platformMessageId: "wordlist-preview",
-          platformOrder: 0,
-          receivedAt: new Date().toISOString(),
-          correlationId: "wordlist-preview",
-          body: text,
-          sender: { contractVersion: CONTRACT_VERSION, senderRef: "wordlist-preview" },
-        });
+        const verdict = await checker.check(
+          {
+            contractVersion: CONTRACT_VERSION,
+            platform: "synthetic",
+            channelId,
+            platformMessageId: "wordlist-preview",
+            platformOrder: 0,
+            receivedAt: new Date().toISOString(),
+            correlationId: "wordlist-preview",
+            body: text,
+            sender: { contractVersion: CONTRACT_VERSION, senderRef: "wordlist-preview" },
+          },
+          language === undefined ? undefined : { language },
+        );
         const blByRule = new Map(entries.filter((e) => e.listKind === "BLACKLIST").map((e) => [wordlistRuleId("bl", e.id), e.id]));
         const wlByRule = new Map(entries.filter((e) => e.listKind === "WHITELIST").map((e) => [wordlistRuleId("wl", e.id), e.id]));
         const hits = [...new Set(verdict.hits.flatMap((h) => blByRule.get(h.ruleId) ?? []))];

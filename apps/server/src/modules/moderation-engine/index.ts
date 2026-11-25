@@ -43,7 +43,7 @@ export interface ModerationOptions {
 
 /** Checks a message and returns the detailed verdict, including hits and spans for audit. */
 export interface ModerationChecker {
-  check(event: ChannelEvent): Promise<MessageVerdict>;
+  check(event: ChannelEvent, options?: { readonly language?: string }): Promise<MessageVerdict>;
 }
 
 export interface NicknameReaderOptions {
@@ -82,10 +82,15 @@ export function createModerationChecker(options: ModerationOptions = {}): Modera
     ruleSet === null ? undefined : withNicknameVerdictCache(cache, ruleSet.version);
   const nicknames = options.nicknames ?? NO_NICKNAMES;
   return {
-    async check(event) {
+    async check(event, checkOptions) {
       const nickname = await nicknames.displayNicknameOf(event);
       return evaluateMessage(
-        { subject: { channelId: event.channelId, senderRef: event.sender.senderRef }, nickname, body: event.body },
+        {
+          subject: { channelId: event.channelId, senderRef: event.sender.senderRef },
+          nickname,
+          body: event.body,
+          ...(checkOptions?.language === undefined ? {} : { language: checkOptions.language }),
+        },
         env,
         nicknameScope,
       );

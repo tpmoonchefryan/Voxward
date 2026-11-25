@@ -9,7 +9,7 @@
 | 路径 | 作用 |
 | --- | --- |
 | `samples/SOURCES.md` | 样本来源、许可、覆盖矩阵，以及两组期望标签的含义 |
-| `samples/moderation-samples.json` | 73 条合成样本，每条带规则期望与 AI 期望 |
+| `samples/moderation-samples.json` | 81 条合成样本，每条带规则期望、AI 期望与可选 `language` 标签 |
 | `samples/rule-set.json` | 占位规则集 `bench-synth-v1` 与读音表 |
 | `fixtures/fake-kiro-cli.mjs` | 假 CLI 替身，内容复制自 `apps/server/test` 的替身，不调用模型 |
 | `lib/` | 样本校验、规则装配、替身装配、指标、真实模型闸门、环境记录 |
@@ -41,7 +41,7 @@ pnpm bench:typecheck
 
 ## 质量（quality）
 
-- `rules`：完整消息（含昵称）经规则引擎的路由，与样本的规则期望比较。输出误拦、漏检、误送复核、未送复核，并按组给出结果。规则集是占位规则集，结果只对它有意义。
+- `rules`：完整消息（含昵称）经规则引擎的路由，与样本的规则期望比较。输出误拦、漏检、误送复核、未送复核，并按组（`byGroup`）与语言（`byLanguage`）给出结果。规则集是占位规则集，结果只对它有意义。
 - `realtime.synthetic`、`realtime.fakeCli`：实时 AI 分类，只看正文，与合同一致。合成适配器恒为 `ALLOW_MEANINGFUL`。假 CLI 只把含 `badword` 的正文判为 BLOCK，因此它检验的是管线，不是分类能力。
 - `sc.translationOff`：翻译关闭，只跑安全审核，检查每条的裁决与隐藏原因。
 - `sc.translationOnNoFault`：翻译开启，合成 SC 模型输出经真实批次校验与生成文本检查，统计展示的条目、隐藏原因（含生成文本被规则拒绝的数量）。

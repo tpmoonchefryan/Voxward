@@ -1,3 +1,4 @@
+import { canonicalizeContentLanguage } from "@voxward/contracts";
 import { findRegexMatches } from "./bounded-regex.js";
 import {
   type CompiledRule,
@@ -8,6 +9,7 @@ import {
   type RuleHit,
   type Verdict,
 } from "./groups.js";
+import { detectMessageLanguage, matchLanguageScope } from "./language.js";
 import {
   COMPOSED_NORMALIZE_OPTIONS,
   identityField,
@@ -51,6 +53,7 @@ export interface MessageInput {
   /** The display nickname, or null when no local source supplied one. */
   readonly nickname: string | null;
   readonly body: string;
+  readonly language?: string;
 }
 
 export interface CheckEnvironment {
@@ -91,6 +94,11 @@ interface Budget {
   exceeded(): boolean;
 }
 
+export interface PreparedField {
+  readonly parts: FieldParts;
+  readonly readingComplete: boolean;
+}
+
 /** Copies one field into the three matching forms. */
 export function prepareField(
   field: MatchField,
@@ -98,11 +106,24 @@ export function prepareField(
   transliterator: Transliterator,
   normalization: NormalizeOptions,
 ): FieldParts {
+  return prepareFieldWithStatus(field, raw, transliterator, normalization).parts;
+}
+
+function prepareFieldWithStatus(
+  field: MatchField,
+  raw: string,
+  transliterator: Transliterator,
+  normalization: NormalizeOptions,
+): PreparedField {
+  const transliterated = transliterator.transliterate(field, raw);
   return {
-    raw: identityField(field, raw),
-    normal: normalizeField(field, raw, normalization),
-    composed: normalizeField(field, raw, COMPOSED_NORMALIZE_OPTIONS),
-    reading: transliterator.transliterate(field, raw).mapped,
+    parts: {
+      raw: identityField(field, raw),
+      normal: normalizeField(field, raw, normalization),
+      composed: normalizeField(field, raw, COMPOSED_NORMALIZE_OPTIONS),
+      reading: transliterated.mapped,
+    },
+    readingComplete: transliterated.complete,
   };
 }
 
@@ -124,7 +145,8 @@ export async function evaluateMessage(
     return withVersion(decideVerdict([], ["INPUT_TOO_LONG"]), ruleSet.version);
   }
 
-  const body = prepareField("body", input.body, env.transliterator, ruleSet.normalization);
+  const bodyPrepared = prepareFieldWithStatus("body", input.body, env.transliterator, ruleSet.normalization);
+  const body = bodyPrepared.parts;
   // A blank nickname is treated as missing, so it cannot pass as a checked nickname.
   const nicknameText = input.nickname === null || input.nickname.trim() === "" ? null : input.nickname;
   const nickname =
@@ -139,21 +161,34 @@ export async function evaluateMessage(
     return withVersion(decideVerdict([], ["NORMALIZED_TOO_LONG"]), ruleSet.version);
   }
 
+  const messageLanguage =
+    input.language !== undefined
+      ? (canonicalizeContentLanguage(input.language) ?? "und")
+      : detectMessageLanguage(input.body);
+  const applicableRules = ruleSet.rules.filter((rule) => matchLanguageScope(rule.language, messageLanguage));
+  const applicableWhitelist = ruleSet.whitelistRules.filter((rule) =>
+    matchLanguageScope(rule.language, messageLanguage),
+  );
+
   const budget = startBudget(env.now, limits.ruleBudgetMs);
-  const scopes: ScopeCheck[] = [checkScope("body", body, ruleSet.rules, budget)];
+  const scopes: ScopeCheck[] = [checkScope("body", body, applicableRules, budget)];
   const whitelistCheck =
-    ruleSet.whitelistRules.length > 0
-      ? checkScope("body", body, ruleSet.whitelistRules, budget)
+    applicableWhitelist.length > 0
+      ? checkScope("body", body, applicableWhitelist, budget)
       : { scope: "body" as const, hits: [] as RuleHit[], complete: true };
   const reasons: ReviewReason[] = [];
   if (nickname === null) {
     reasons.push("NICKNAME_UNAVAILABLE");
   } else {
     const nicknameCheck = await nicknameScope(input.subject, nickname.text, () =>
-      checkScope("nickname", nickname.parts, ruleSet.rules, budget),
+      checkScope("nickname", nickname.parts, applicableRules, budget),
     );
     scopes.push(nicknameCheck);
-    scopes.push(checkScope("combined", joinParts(nickname.parts, body), ruleSet.rules, budget));
+    scopes.push(checkScope("combined", joinParts(nickname.parts, body), applicableRules, budget));
+  }
+  const hasApplicableReadingRule = applicableRules.some((rule) => rule.matcher.kind === "reading");
+  if (hasApplicableReadingRule && env.transliterator.available === false && !bodyPrepared.readingComplete) {
+    reasons.push("READING_UNAVAILABLE");
   }
   if (scopes.some((scope) => !scope.complete) || !whitelistCheck.complete) reasons.push("RULE_BUDGET_EXCEEDED");
 
