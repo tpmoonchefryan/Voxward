@@ -18,6 +18,10 @@ export interface AiBatchInput {
   readonly items: readonly AiBatchItemInput[];
 }
 
+export interface ReviewBatchInput extends AiBatchInput {
+  readonly items: readonly (AiBatchItemInput & { readonly language: string })[];
+}
+
 /** Server-side record that ties a batch item id to its internal correlation id. Never sent to a model. */
 export interface AiItemIdMapping {
   readonly itemId: string;

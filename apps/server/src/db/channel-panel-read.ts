@@ -1,6 +1,8 @@
+import { readScPayment, type ScPayment } from "@voxward/contracts";
 import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { readPlatformDeleteStatusMap, type PlatformDeleteUiStatus } from "./channel-settings-store.js";
 import type { VoxwardDatabase } from "./client.js";
+import { parseScTranslationPayload, type ScTranslationPayload } from "./sc-translation-payload.js";
 import {
   authOutputTokens,
   channelEvents,
@@ -31,6 +33,10 @@ export interface ScFeedItem {
   readonly notes: string | null;
   readonly acknowledgement: string | null;
   readonly safeAlias: string | null;
+  readonly payment?: ScPayment;
+  readonly sourceLanguage?: ScTranslationPayload["sourceLanguage"];
+  readonly translations?: ScTranslationPayload["translations"];
+  readonly thankYouReading?: ScTranslationPayload["thankYouReading"];
   readonly decidedAt: string;
   readonly deliveryId: string | null;
   readonly deliveryStatus: string | null;
@@ -113,24 +119,23 @@ function readEvidenceByCorrelation(
   return result;
 }
 
-function parseTranslationPayload(raw: string | null): {
-  translation: string | null;
-  notes: string | null;
-  acknowledgement: string | null;
-  safeAlias: string | null;
-} {
-  if (raw === null) return { translation: null, notes: null, acknowledgement: null, safeAlias: null };
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return {
-      translation: typeof parsed.translation === "string" ? parsed.translation : null,
-      notes: typeof parsed.notes === "string" ? parsed.notes : null,
-      acknowledgement: typeof parsed.acknowledgement === "string" ? parsed.acknowledgement : null,
-      safeAlias: typeof parsed.safeAlias === "string" ? parsed.safeAlias : null,
-    };
-  } catch {
-    return { translation: raw, notes: null, acknowledgement: null, safeAlias: null };
+function readScPayments(database: VoxwardDatabase, channelId: string, correlationIds: readonly string[], nowIso: string) {
+  const result = new Map<string, ScPayment>();
+  if (correlationIds.length === 0) return result;
+  const rows = database.orm
+    .select({ correlationId: technicalLogs.correlationId, data: technicalLogs.dataJson })
+    .from(technicalLogs)
+    .where(and(eq(technicalLogs.channelId, channelId), eq(technicalLogs.stage, "BASE_RULE"),
+      inArray(technicalLogs.correlationId, correlationIds), gt(technicalLogs.expiresAt, nowIso)))
+    .orderBy(desc(technicalLogs.sequence))
+    .all();
+  for (const row of rows) {
+    if (row.data === null || result.has(row.correlationId)) continue;
+    const data = JSON.parse(row.data) as { scAmountMicros?: unknown; scCurrency?: unknown; scTier?: unknown } | null;
+    const payment = readScPayment({ amountMicros: data?.scAmountMicros, currency: data?.scCurrency, tier: data?.scTier });
+    if (payment !== null) result.set(row.correlationId, payment);
   }
+  return result;
 }
 
 export function readDockAndModerationFeed(
@@ -155,6 +160,7 @@ export function readDockAndModerationFeed(
 
   const correlationIds = events.map((e) => e.correlationId);
   const evidence = readEvidenceByCorrelation(database, channelId, correlationIds, options.nowIso);
+  const payments = readScPayments(database, channelId, correlationIds, options.nowIso);
   const platformDeletes = readPlatformDeleteStatusMap(database, channelId);
 
   const eventIds = events.map((e) => e.eventId);
@@ -261,16 +267,15 @@ export function readDockAndModerationFeed(
     if (isBlocked) {
       blockedItems.push(item);
     } else if (!isBlocked && (paidEventIds.has(ev.eventId) || evEvidence?.translationJson != null)) {
-      const sc = parseTranslationPayload(evEvidence?.translationJson ?? null);
+      const sc = parseScTranslationPayload(evEvidence?.translationJson ?? null);
+      const payment = payments.get(ev.correlationId);
       approvedSc.push({
         eventId: ev.eventId,
         correlationId: ev.correlationId,
         subjectRef: ev.subjectKey,
         originalText: evEvidence?.messageText ?? null,
-        translation: sc.translation,
-        notes: sc.notes,
-        acknowledgement: sc.acknowledgement,
-        safeAlias: sc.safeAlias,
+        ...sc,
+        ...(payment === undefined ? {} : { payment }),
         decidedAt: verdict.decidedAt,
         deliveryId: del?.id ?? null,
         deliveryStatus: del?.status ?? null,

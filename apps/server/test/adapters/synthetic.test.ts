@@ -74,6 +74,7 @@ describe("synthetic inference provider", () => {
       contractVersion: "1",
       providerName: "synthetic",
       supportsCancel: true,
+      models: [{ modelId: "synthetic-demo", reasoningLevels: [] }],
     });
   });
 });

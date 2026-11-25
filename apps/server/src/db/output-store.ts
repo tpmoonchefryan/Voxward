@@ -11,6 +11,7 @@ import {
 } from "@voxward/contracts";
 import { and, asc, desc, eq, gt, inArray, isNull, lte } from "drizzle-orm";
 import type { VoxwardDatabase } from "./client.js";
+import { parseScTranslationPayload } from "./sc-translation-payload.js";
 import {
   channelEvents,
   credentialRefs,
@@ -149,7 +150,7 @@ export function createApprovedContentPort(database: VoxwardDatabase): ApprovedCo
       const text = rows.find((row) => row.kind === "MESSAGE_TEXT");
       if (text === undefined) return undefined;
       const translation = rows.find((row) => row.kind === "TRANSLATION");
-      return { text: text.payload, translation: translation?.payload ?? null };
+      return { text: text.payload, translation: parseScTranslationPayload(translation?.payload ?? null).translation };
     },
   };
 }

@@ -142,6 +142,36 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     expect(listedUsers.some((u) => u.accountId === "acc-multi")).toBe(true);
   });
 
+  it("publishes, previews, and restores channel term versions with language scope", async () => {
+    const owner = await signIn("owner-terms", "Owner Terms");
+    runShortTransaction(db, (tx) => {
+      grantMembership(tx, { channelId: CH1, accountId: owner.accountId, role: "CHANNEL_OWNER", logAccess: true, now: NOW });
+    });
+    const headers = { cookie: owner.cookie, "x-csrf-token": owner.csrf };
+    const url = `/channels/${CH1}/term-entries`;
+    const entry = { id: "fr-1", listKind: "BLACKLIST", term: "flarpon", categoryCode: "spam", matchKind: "NORMALIZED", enabled: true, language: "fr" };
+    const first = await app.inject({ method: "PUT", url, headers, payload: { entries: [entry] } });
+    expect(first.statusCode).toBe(200);
+    const version = first.json().version;
+    const published = await app.inject({ url: `/channels/${CH1}/rules`, headers });
+    expect(published.json()).toMatchObject({ version, ruleSet: { groups: [{ id: "admin-wordlist", rules: [{ language: "fr" }] }] } });
+    const preview = async (language: string) => (await app.inject({
+      method: "POST", url: `${url}/preview`, headers, payload: { text: "FLARPON", language },
+    })).json();
+    expect(await preview("fr")).toEqual({ hits: [entry.id], language: "fr", action: "REVIEW" });
+    expect(await preview("ko")).toEqual({ hits: [], language: "ko", action: null });
+    const second = await app.inject({ method: "PUT", url, headers, payload: { entries: [] } });
+    expect(second.statusCode).toBe(200);
+    expect(await preview("fr")).toMatchObject({ hits: [] });
+    const history = await app.inject({ url: `${url}/versions`, headers });
+    expect(history.json().versions.map((entry: { version: number }) => entry.version)).toEqual([second.json().version, version, 0]);
+    const restored = await app.inject({ method: "POST", url: `${url}/rollback`, headers, payload: { version } });
+    expect(restored.statusCode).toBe(200);
+    expect(restored.json().version).toBeGreaterThan(second.json().version);
+    expect(restored.json().entries).toEqual([entry]);
+    expect(await preview("fr")).toMatchObject({ hits: [entry.id] });
+  });
+
   it("handles term categories/REGEX/CSV, manual blocked users, score-only rejudge, adapters + Integration Log", async () => {
     const owner = await signIn("owner-ext", "Owner Ext");
     runShortTransaction(db, (tx) => {
@@ -183,6 +213,24 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     expect((csvRes.json() as { imported: number; errors: unknown[] })).toMatchObject({
       imported: 3,
       errors: [],
+    });
+
+    const localizedCsv = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/term-entries/import-csv`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: {
+        listKind: "BLACKLIST",
+        csvText: '\uFEFFterm;category;matchKind;language\r\n"bonjour; ""voisin""\r\nà bientôt";scam-links;NORMALIZED;fr-ca\r\nbad;scam-links;EXACT;en;extra\r\n"unclosed;scam-links;EXACT;en',
+      },
+    });
+    expect(localizedCsv.statusCode).toBe(200);
+    expect(localizedCsv.json()).toMatchObject({
+      imported: 1,
+      errors: [{ line: 4, code: "CSV_EXTRA_COLUMNS" }, { line: 5, code: "CSV_INVALID_QUOTING" }],
+      entries: expect.arrayContaining([
+        expect.objectContaining({ term: 'bonjour; "voisin"\nà bientôt', matchKind: "NORMALIZED", language: "fr-CA" }),
+      ]),
     });
 
     // Manual blacklist with YouTube sync banId + unban

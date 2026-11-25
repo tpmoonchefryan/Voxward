@@ -73,6 +73,20 @@ describe("SC extension schema", () => {
       "slangNote",
       "replyCue",
       "thankYouReading",
+      "sourceLanguage",
+      "translations",
     ]);
+  });
+
+  it("canonicalizes language tags and rejects duplicate targets after canonicalization", () => {
+    const { translatedText, slangNote, replyCue, ...base } = scItem;
+    const translation = { targetLanguage: "fr-ca", translatedText, slangNote, replyCue };
+    const item = { ...base, sourceLanguage: "EN", translations: [translation] };
+    expect(validateScBatchResult({ items: [item] })).toMatchObject({
+      ok: true,
+      value: { items: [{ sourceLanguage: "en", translations: [{ targetLanguage: "fr-CA" }] }] },
+    });
+    expect(scIssuesOf({ items: [{ ...item, translations: [translation, { ...translation, targetLanguage: "fr-CA" }] }] }))
+      .toContainEqual({ code: "DUPLICATE_VALUE", path: "/items/0/translations/1/targetLanguage" });
   });
 });

@@ -85,7 +85,10 @@ export function createModerationChecker(options: ModerationOptions = {}): Modera
     async check(event) {
       const nickname = await nicknames.displayNicknameOf(event);
       return evaluateMessage(
-        { subject: { channelId: event.channelId, senderRef: event.sender.senderRef }, nickname, body: event.body },
+        {
+          subject: { channelId: event.channelId, senderRef: event.sender.senderRef }, nickname, body: event.body,
+          ...(event.language === undefined ? {} : { language: event.language }),
+        },
         env,
         nicknameScope,
       );

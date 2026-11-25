@@ -4,13 +4,15 @@ import {
   toDownstreamVerdict,
   type ChannelEvent,
   type InternalClassification,
+  type InferenceProvider,
+  type ModerationEngine,
   type SubjectCacheHub,
   type Verdict,
 } from "@voxward/contracts";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { createAuditLogPort } from "../../db/audit-log.js";
 import { readDockAndModerationFeed } from "../../db/channel-panel-read.js";
-import { publishConfirmedCandidateTerm } from "../../db/channel-settings-store.js";
+import { publishConfirmedCandidateTerm, readChannelSetting } from "../../db/channel-settings-store.js";
 import type { VoxwardDatabase } from "../../db/client.js";
 import { createDataRequestPort } from "../../db/data-request-store.js";
 import { createDecisionStorePort } from "../../db/decision-store.js";
@@ -33,6 +35,9 @@ import { RETENTION_DAYS } from "../../modules/audit-store/content-policy.js";
 import { CERTIFICATE_SUMMARY, createInvalidationBus } from "../../modules/audit-store/index.js";
 import { executeRequest, startDeletionRequest, type DataDeps } from "../../modules/data-lifecycle-service/index.js";
 import { createDecisionService, DEFAULT_DECISION_LIMITS } from "../../modules/decision-service/index.js";
+import { DEFAULT_MODEL_SETTINGS, type ModelSettings } from "../../modules/inference-provider/index.js";
+import { encodeScTranslationEvidence } from "../../modules/inference-provider/sc-translation/cue-sheet.js";
+import { runScBatch, scRunChoicesFromSettings } from "../../modules/inference-provider/sc-translation/pipeline.js";
 import {
   createCandidateStore,
   createModerationChecker,
@@ -49,6 +54,7 @@ import {
   type ScenarioId,
   type SyntheticChatEvent,
 } from "../synthetic-source.js";
+import { createSyntheticScModel } from "./synthetic-sc-model.js";
 
 export interface SandboxSubjectView {
   readonly subjectId: string;
@@ -98,12 +104,17 @@ export interface SandboxRuntime {
     readonly isPaid?: boolean;
     readonly amountDisplay?: string | null;
     readonly translationText?: string | null;
+    readonly language?: string;
   }): Promise<{ readonly correlationId: string; readonly classification: InternalClassification | "PENDING_REVIEW" }>;
   decideReview(taskId: string, classification: InternalClassification): Promise<{ readonly status: number; readonly body: unknown }>;
   snapshot(): SandboxSnapshot;
 }
 
-export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date = () => new Date()): SandboxRuntime {
+export function createSandboxRuntime(
+  database: VoxwardDatabase,
+  now: () => Date = () => new Date(),
+  modules?: { readonly moderationEngine: ModerationEngine; readonly inferenceProvider: InferenceProvider },
+): SandboxRuntime {
   let seq = 0;
   const nextSeq = () => ++seq;
   const inProcessSubjectCache = new Map<string, { readonly lastText: string; readonly updatedAt: string }>();
@@ -247,13 +258,52 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
       receivedAt: ev.receivedAt,
       correlationId,
       body: ev.text,
+      ...(ev.language === undefined ? {} : { language: ev.language }),
+      ...(ev.scPayment === undefined ? {} : { scPayment: ev.scPayment }),
       sender: {
         contractVersion: CONTRACT_VERSION,
         senderRef: ev.subjectKey,
       },
     };
 
-    const mod = await checker.check(channelEvent);
+    const mod = await (modules === undefined ? checker.check(channelEvent) : modules.moderationEngine.moderate(channelEvent));
+    let translation = ev.translationText;
+    let scClassification: InternalClassification | null = null;
+    let scFailed = false;
+    if (ev.isPaid && modules !== undefined) {
+      const settings = readChannelSetting<ModelSettings>(database, SANDBOX_CHANNEL_ID, "model-settings", DEFAULT_MODEL_SETTINGS);
+      const choices = scRunChoicesFromSettings(settings);
+      if (choices.translationEnabled || choices.selection !== null) {
+        translation = null;
+        if (mod.route !== "BLOCK" && mod.route !== "REVIEW" && !subject.hasException) {
+          const outcome = await runScBatch({
+            contractVersion: CONTRACT_VERSION, batchId: randomUUID(),
+            items: [{ correlationId, text: ev.text }],
+          }, choices, {
+            safety: modules.inferenceProvider,
+            scModel: createSyntheticScModel(modules.inferenceProvider, ev.language),
+            generatedText: {
+              async check(body) {
+                const checked = await modules.moderationEngine.moderate({
+                  ...channelEvent, body, language: "und",
+                  sender: { contractVersion: CONTRACT_VERSION, senderRef: "synthetic-stage" },
+                });
+                return checked.route === "BLOCK" || checked.route === "REVIEW" ? "REJECTED" : "CLEAN";
+              },
+            },
+            addressFor: async () => ({ display: "Sandbox viewer", reading: null }),
+            newItemId: randomUUID,
+            maxItems: 1,
+          });
+          const item = outcome.ok ? outcome.items[0] : undefined;
+          scFailed = item === undefined;
+          if (item !== undefined) {
+            scClassification = item.classification;
+            if (item.cue !== null) translation = encodeScTranslationEvidence(item.cue);
+          }
+        }
+      }
+    }
 
     runShortTransaction(database, (tx) => {
       tx.insert(channelEvents)
@@ -276,11 +326,11 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
     const evidence: { id: string; kind: "MESSAGE_TEXT" | "TRANSLATION"; payload: string; expiresAt: string }[] = [
       { id: `sbx-evid-${randomUUID().slice(0, 8)}`, kind: "MESSAGE_TEXT", payload: ev.text, expiresAt },
     ];
-    if (ev.translationText !== null && ev.translationText.length > 0) {
+    if (translation !== null && translation.length > 0) {
       evidence.push({
         id: `sbx-evid-${randomUUID().slice(0, 8)}`,
         kind: "TRANSLATION",
-        payload: ev.translationText,
+        payload: translation,
         expiresAt,
       });
     }
@@ -299,6 +349,11 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
           route: mod.route,
           isPaid: ev.isPaid,
           ...(ev.amountDisplay !== null ? { amountDisplay: ev.amountDisplay } : {}),
+          ...(ev.scPayment === undefined ? {} : {
+            scAmountMicros: ev.scPayment.amountMicros,
+            scCurrency: ev.scPayment.currency,
+            ...(ev.scPayment.tier === undefined ? {} : { scTier: ev.scPayment.tier }),
+          }),
         },
         stage: "BASE_RULE",
         status: "OK",
@@ -314,7 +369,7 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
       evidence,
     );
 
-    if (mod.route === "REVIEW" || (subject.hasException && mod.route !== "BLOCK")) {
+    if (mod.route === "REVIEW" || scFailed || (subject.hasException && mod.route !== "BLOCK")) {
       const taskId = `sbx-task-${randomUUID().slice(0, 8)}`;
       const deadlineAt = new Date(Date.parse(nowIso) + 300_000).toISOString();
       runShortTransaction(database, (tx) => {
@@ -347,7 +402,7 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
       return { correlationId, classification: "PENDING_REVIEW" };
     }
 
-    const classification: InternalClassification = mod.route === "BLOCK" ? "BLOCK" : "ALLOW_MEANINGFUL";
+    const classification: InternalClassification = mod.route === "BLOCK" ? "BLOCK" : (scClassification ?? "ALLOW_MEANINGFUL");
     const verdict: Verdict = {
       contractVersion: CONTRACT_VERSION,
       classification,
@@ -382,8 +437,8 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
             deliverySequence: order,
             platformOrder: order,
             validUntil: new Date(Date.parse(nowIso) + 3600_000).toISOString(),
-            status: "SENT",
-            attempts: 1,
+            status: "PENDING",
+            attempts: 0,
             updatedAt: nowIso,
           })
           .run();

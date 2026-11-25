@@ -1,12 +1,21 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
+import WebSocket from "ws";
 import { buildApp } from "../../../src/app.js";
+import { createAccount } from "../../../src/auth/login.js";
+import { grantMembership } from "../../../src/auth/members.js";
+import { issueNativeGrant } from "../../../src/auth/output-grants.js";
+import { createSession } from "../../../src/auth/session.js";
 import { serverConfigSchema } from "../../../src/config/schema.js";
 import { openDatabase, type VoxwardDatabase } from "../../../src/db/client.js";
 import { runMigrations } from "../../../src/db/migrate.js";
+import { runShortTransaction } from "../../../src/db/transaction.js";
 import { assertSandboxStartupSafe, SandboxGuardError } from "../../../src/demo/sandbox-guard.js";
+import { SANDBOX_CHANNEL_ID } from "../../../src/demo/synthetic-source.js";
+import { BLIVECHAT_CMD, BLIVECHAT_OUTPUT_PATH, BLIVECHAT_PROTOCOL_VERSION } from "../../../src/modules/output/index.js";
 import { buildRegistry } from "../../../src/modules/registry.js";
 
 function setupDb(dirs: string[]): VoxwardDatabase {
@@ -59,6 +68,94 @@ describe("VOXWARD-SUB-047: sandbox fail-closed isolation and limited demo roles"
         "data/voxward.sqlite3",
       ),
     ).toThrowError(SandboxGuardError);
+  });
+
+  it("dispatches a synthetic Super Chat through the app's published rules, SC settings, Dock and both output sockets", async () => {
+    const database = setupDb(dirs);
+    dbs.push(database);
+    const app = buildApp({
+      modules: buildRegistry(serverConfigSchema.parse({ adapters: "synthetic" })),
+      logger: false, database, sandbox: { enabled: true, env: {} }, nativeOutput: { passIntervalMs: 20 },
+    });
+    const sockets: WebSocket[] = [];
+    try {
+      const now = new Date();
+      const account = await createAccount(database, { loginName: "sc-test", displayName: "SC Test", password: "sc-test-password", now });
+      const { session, credential } = runShortTransaction(database, (tx) => {
+        grantMembership(tx, { channelId: SANDBOX_CHANNEL_ID, accountId: account.accountId, role: "CHANNEL_OWNER", logAccess: true, now });
+        return {
+          session: createSession(tx, { accountId: account.accountId, now }),
+          credential: issueNativeGrant(tx, { channelId: SANDBOX_CHANNEL_ID, nowIso: now.toISOString() }).credential,
+        };
+      });
+      const channel = `/channels/${SANDBOX_CHANNEL_ID}`;
+      const headers = { cookie: `vw_session=${session.token}`, "x-csrf-token": session.csrfToken };
+      const termSave = await app.inject({
+        method: "PUT", url: `${channel}/term-entries`, headers,
+        payload: { entries: [{ id: "ko-rule", listKind: "BLACKLIST", term: "감사합니다", categoryCode: "spam",
+          matchKind: "NORMALIZED", enabled: true, language: "ja" }] },
+      });
+      expect(termSave.statusCode, termSave.body).toBe(200);
+      const modelSave = await app.inject({
+        method: "PUT", url: `${channel}/model-settings`, headers,
+        payload: { realtimeModeration: null, review: null, scTranslation: { modelId: "synthetic-demo", reasoning: null },
+          scTranslationEnabled: true, scLanguages: { sourceLanguage: "auto", targetLanguages: ["fr", "ja"] } },
+      });
+      expect(modelSave.statusCode, modelSave.body).toBe(200);
+      const ingest = (language: string) => app.inject({
+        method: "POST", url: "/sandbox-api/events", headers: { "x-demo-role": "DEMO_STREAMER" },
+        payload: { subjectKey: "sc-viewer", text: "감사합니다", isPaid: true, language },
+      });
+      const review = await ingest("ja");
+      expect(review.statusCode, review.body).toBe(200);
+      expect(review.json().result.classification).toBe("PENDING_REVIEW");
+
+      await app.listen({ host: "127.0.0.1", port: 0 });
+      const port = (app.server.address() as AddressInfo).port;
+      const nativeFrames: unknown[] = [];
+      const bliveFrames: unknown[] = [];
+      await Promise.all([
+        { path: "/output/v1/room", protocol: "vw-output.v1", frames: nativeFrames },
+        { path: BLIVECHAT_OUTPUT_PATH, protocol: BLIVECHAT_PROTOCOL_VERSION, frames: bliveFrames },
+      ].map(({ path, protocol, frames }) => new Promise<void>((resolve, reject) => {
+        const socket = new WebSocket(`ws://127.0.0.1:${port}${path}`, [protocol, `vw-cred.${credential}`]);
+        sockets.push(socket);
+        socket.on("message", (message) => frames.push(JSON.parse(message.toString())));
+        socket.once("open", () => {
+          if (protocol === BLIVECHAT_PROTOCOL_VERSION) {
+            socket.send(JSON.stringify({ cmd: BLIVECHAT_CMD.JOIN_ROOM, data: { roomId: SANDBOX_CHANNEL_ID } }));
+            socket.send(JSON.stringify({ cmd: BLIVECHAT_CMD.HEARTBEAT }));
+          }
+          resolve();
+        });
+        socket.once("error", reject);
+      })));
+      await expect.poll(() => bliveFrames).toContainEqual(expect.objectContaining({ cmd: BLIVECHAT_CMD.HEARTBEAT_REPLY }));
+
+      const accepted = await ingest("ko");
+      expect(accepted.statusCode, accepted.body).toBe(200);
+      expect(accepted.json().result.classification).toBe("ALLOW_MEANINGFUL");
+      const dock = await app.inject({ url: `${channel}/dock`, headers });
+      expect(dock.statusCode, dock.body).toBe(200);
+      const primary = "[synthetic translation: fr]";
+      expect(dock.json().feed.approvedSc).toEqual([expect.objectContaining({
+        correlationId: accepted.json().result.correlationId,
+        sourceLanguage: "ko",
+        translations: [
+          expect.objectContaining({ targetLanguage: "fr", translatedText: primary }),
+          expect.objectContaining({ targetLanguage: "ja", translatedText: "[synthetic translation: ja]" }),
+        ],
+      })]);
+      await expect.poll(() => nativeFrames).toContainEqual(expect.objectContaining({
+        type: "DELIVER", display: expect.objectContaining({ translation: primary }),
+      }));
+      await expect.poll(() => bliveFrames).toContainEqual(expect.objectContaining({
+        cmd: BLIVECHAT_CMD.ADD_TEXT, data: expect.objectContaining({ translation: primary }),
+      }));
+    } finally {
+      sockets.forEach((socket) => socket.terminate());
+      await app.close();
+    }
   });
 
   it("does not expose /sandbox-api/* on default buildApp without sandbox opt-in", async () => {

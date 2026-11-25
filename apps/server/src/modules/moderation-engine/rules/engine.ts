@@ -1,3 +1,4 @@
+import { languageScopeOf, messageLanguageOf } from "@voxward/contracts";
 import { findRegexMatches } from "./bounded-regex.js";
 import {
   type CompiledRule,
@@ -51,6 +52,7 @@ export interface MessageInput {
   /** The display nickname, or null when no local source supplied one. */
   readonly nickname: string | null;
   readonly body: string;
+  readonly language?: string;
 }
 
 export interface CheckEnvironment {
@@ -66,6 +68,7 @@ export interface FieldParts {
   readonly normal: MappedText;
   readonly composed: MappedText;
   readonly reading: MappedText;
+  readonly readingComplete: boolean;
 }
 
 /** Result of one scope. `complete` is false when the budget ran out before every rule had run. */
@@ -98,11 +101,13 @@ export function prepareField(
   transliterator: Transliterator,
   normalization: NormalizeOptions,
 ): FieldParts {
+  const reading = transliterator.transliterate(field, raw);
   return {
     raw: identityField(field, raw),
     normal: normalizeField(field, raw, normalization),
     composed: normalizeField(field, raw, COMPOSED_NORMALIZE_OPTIONS),
-    reading: transliterator.transliterate(field, raw).mapped,
+    reading: reading.mapped,
+    readingComplete: reading.complete,
   };
 }
 
@@ -140,16 +145,21 @@ export async function evaluateMessage(
   }
 
   const budget = startBudget(env.now, limits.ruleBudgetMs);
-  const scopes: ScopeCheck[] = [checkScope("body", body, ruleSet, budget)];
+  const language = messageLanguageOf(input.body, input.language);
+  const scopes: ScopeCheck[] = [checkScope("body", body, ruleSet, budget, language)];
   const reasons: ReviewReason[] = [];
+  if ((!body.readingComplete || nickname?.parts.readingComplete === false) &&
+    ruleSet.rules.some((rule) => rule.matcher.kind === "reading" && languageScopeOf(rule.language ?? "und", language) !== "different")) {
+    reasons.push("READING_UNAVAILABLE");
+  }
   if (nickname === null) {
     reasons.push("NICKNAME_UNAVAILABLE");
   } else {
     const nicknameCheck = await nicknameScope(input.subject, nickname.text, () =>
-      checkScope("nickname", nickname.parts, ruleSet, budget),
+      checkScope("nickname", nickname.parts, ruleSet, budget, "und"),
     );
     scopes.push(nicknameCheck);
-    scopes.push(checkScope("combined", joinParts(nickname.parts, body), ruleSet, budget));
+    scopes.push(checkScope("combined", joinParts(nickname.parts, body), ruleSet, budget, "und"));
   }
   if (scopes.some((scope) => !scope.complete)) reasons.push("RULE_BUDGET_EXCEEDED");
 
@@ -172,15 +182,17 @@ function startBudget(now: () => number, budgetMs: number): Budget {
  * The budget is checked before each rule and once more after the last one, because a synchronous match cannot be
  * interrupted: an overrun by the last rule is reported after the fact, not passed as a complete scope.
  */
-function checkScope(scope: HitScope, parts: FieldParts, ruleSet: CompiledRuleSet, budget: Budget): ScopeCheck {
+function checkScope(scope: HitScope, parts: FieldParts, ruleSet: CompiledRuleSet, budget: Budget, language: string): ScopeCheck {
   const hits: RuleHit[] = [];
   for (const rule of ruleSet.rules) {
     if (budget.exceeded()) return { scope, hits, complete: false };
+    const match = languageScopeOf(rule.language ?? "und", language);
+    if (match === "different" || (rule.matcher.kind === "reading" && !parts.readingComplete)) continue;
     const copy = copyFor(rule.matcher.kind, parts);
     for (const [start, end] of matchesIn(rule, copy.text)) {
       const spans = spansFor(copy, start, end);
       if (scope === "combined" && spans.length < 2) continue;
-      hits.push({ ruleId: rule.id, groupId: rule.groupId, action: rule.action, scope, spans });
+      hits.push({ ruleId: rule.id, groupId: rule.groupId, action: match === "uncertain" ? { kind: "REVIEW" } : rule.action, scope, spans });
     }
   }
   return { scope, hits, complete: !budget.exceeded() };
@@ -216,6 +228,7 @@ function joinParts(first: FieldParts, second: FieldParts): FieldParts {
     normal: joinMapped(first.normal, second.normal),
     composed: joinMapped(first.composed, second.composed),
     reading: joinMapped(first.reading, second.reading),
+    readingComplete: first.readingComplete && second.readingComplete,
   };
 }
 

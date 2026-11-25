@@ -66,6 +66,7 @@ describe("business events from accepted messages", () => {
       receivedAt: NOW_ISO,
       correlationId: "corr-1",
       body: "synthetic text m1",
+      scPayment: { amountMicros: 2_000_000, currency: "JPY" },
       sender: { contractVersion: CONTRACT_VERSION, senderRef: hash("UC-synthetic-m1") },
     });
     expect(JSON.stringify(output.message)).not.toContain("UC-synthetic-m1");

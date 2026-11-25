@@ -1,8 +1,9 @@
 import {
-  type AiBatchInput,
   type ChannelEvent,
   type EvidenceEntry,
   type InternalClassification,
+  messageLanguageOf,
+  type ReviewBatchInput,
   type ReviewItemResult,
   validateReviewBatchResult,
 } from "@voxward/contracts";
@@ -182,10 +183,11 @@ export function createReviewRunner(deps: ReviewRunnerDeps): ReviewRunner {
    */
   async function reviewWithModel(known: readonly KnownTask[]): Promise<ModelReview> {
     const aliases = createTaskAliasTable(deps.newNonce());
-    const input: AiBatchInput = {
+    const input: ReviewBatchInput = {
       items: known.map((task) => ({
         itemId: task.itemId,
         text: `[${aliases.aliasFor(subjectRefOf(task.entry.event))}] ${task.text}`,
+        language: messageLanguageOf(task.text, task.entry.event.language),
       })),
     };
     let raw: unknown;

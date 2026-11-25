@@ -1,5 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
 import type { SubjectCacheHub } from "@voxward/contracts";
+import { clearTermList } from "../db/channel-settings-store.js";
 import type { VoxwardDatabase } from "../db/client.js";
 import {
   changeLogs,
@@ -145,6 +146,7 @@ export function resetSandboxState(ctx: SandboxResetContext): { readonly resetAt:
     tx.delete(subjects).where(eq(subjects.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(ruleTerms).where(eq(ruleTerms.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(ruleVersions).where(eq(ruleVersions.channelId, SANDBOX_CHANNEL_ID)).run();
+    clearTermList(tx, SANDBOX_CHANNEL_ID);
     tx.delete(channels).where(eq(channels.id, SANDBOX_CHANNEL_ID)).run();
 
     tx.insert(channels)

@@ -163,6 +163,17 @@ describe("S022 Admin HTTP routes & RBAC (VOXWARD-SUB-042)", () => {
     });
     expect(badModel.statusCode).toBe(422);
 
+    const settingsUrl = `/channels/${CH1}/model-settings`;
+    const languagePolicy = { sourceLanguage: "auto", targetLanguages: ["ja", "fr-CA"] };
+    const saveLanguages = await app.inject({
+      method: "PUT", url: settingsUrl,
+      headers: { cookie: owner1.cookie, "x-csrf-token": owner1.csrf },
+      payload: { realtimeModeration: null, scTranslation: null, review: null, scTranslationEnabled: false, scLanguages: languagePolicy },
+    });
+    expect(saveLanguages.statusCode).toBe(200);
+    const reread = await app.inject({ method: "GET", url: settingsUrl, headers: { cookie: owner1.cookie } });
+    expect(reread.json()).toMatchObject({ settings: { scLanguages: languagePolicy } });
+
     // Owner updates admin-settings
     const saveAdmin = await app.inject({
       method: "PUT",

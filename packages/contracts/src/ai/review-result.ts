@@ -3,6 +3,7 @@ import {
   type ModerationItemResult,
   readModerationItemBase,
 } from "./moderation-result.js";
+import { canonicalLanguageTag } from "./sc-languages.js";
 import {
   type AiSchemaRef,
   checkKnownKeys,
@@ -24,12 +25,13 @@ export const CANDIDATE_TERM_MAX_LENGTH = 64;
 export const CANDIDATE_NOTE_MAX_LENGTH = 200;
 
 export const REVIEW_ITEM_FIELDS = [...MODERATION_ITEM_FIELDS, "candidateTerms"] as const;
-const CANDIDATE_TERM_FIELDS = ["term", "note"] as const;
+const CANDIDATE_TERM_FIELDS = ["term", "note", "language"] as const;
 
 /** A word or phrase proposed for the rule set. It waits for a person to confirm it. */
 export interface CandidateTerm {
   readonly term: string;
   readonly note?: string;
+  readonly language?: string;
 }
 
 export interface ReviewItemResult extends ModerationItemResult {
@@ -50,7 +52,12 @@ function readCandidateTerm(value: unknown, path: string, issues: SchemaIssue[]):
     ? readString(record, "note", path, { min: 0, max: CANDIDATE_NOTE_MAX_LENGTH }, issues)
     : undefined;
   if (term === undefined || (notePresent && note === undefined)) return undefined;
-  return note === undefined ? { term } : { term, note };
+  const language = canonicalLanguageTag(record.language);
+  if (record.language !== undefined && (language === null || language === "auto")) {
+    issues.push({ code: "ENUM_INVALID", path: childPath(path, "language") });
+    return undefined;
+  }
+  return { term, ...(note === undefined ? {} : { note }), ...(language === null ? {} : { language }) };
 }
 
 function isCandidateTerm(term: CandidateTerm | undefined): term is CandidateTerm {

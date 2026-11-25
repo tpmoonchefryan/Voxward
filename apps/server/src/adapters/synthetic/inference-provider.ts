@@ -12,6 +12,7 @@ export function createSyntheticInferenceProvider(): InferenceProvider {
       contractVersion: CONTRACT_VERSION,
       providerName: "synthetic",
       supportsCancel: true,
+      models: [{ modelId: "synthetic-demo", reasoningLevels: [] }],
     }),
     async infer(request) {
       return {

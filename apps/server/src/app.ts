@@ -1,9 +1,9 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
-import type { OutputSubscriberRegistry, SubjectCacheHub } from "@voxward/contracts";
+import { CONTRACT_VERSION, messageLanguageOf, type OutputSubscriberRegistry, type SubjectCacheHub } from "@voxward/contracts";
 import { attachBlivechatOutput } from "./adapters/blivechat/socket.js";
 import { attachNativeOutput, type ClosedConnection, type NativeOutputTiming } from "./adapters/native-output/socket.js";
-import { channelPanelRoutes } from "./auth/channel-panel-routes.js";
+import { channelPanelRoutes, type ChannelPanelRoutesOptions } from "./auth/channel-panel-routes.js";
 import { dataLifecycleRoutes } from "./auth/data-routes.js";
 import { databaseViewerAccess } from "./auth/log-viewer-access.js";
 import { logViewerRoutes } from "./auth/log-viewer-routes.js";
@@ -12,7 +12,11 @@ import { createAuditLogPort } from "./db/audit-log.js";
 import {
   publishConfirmedCandidateTerm,
   readChannelSetting,
+  readLatestRuleVersion,
+  readTermEntries,
+  hasPublishedTermList,
   writeChannelSetting,
+  type ExtendedTermEntry,
 } from "./db/channel-settings-store.js";
 import type { VoxwardDatabase } from "./db/client.js";
 import { createDataRequestPort } from "./db/data-request-store.js";
@@ -48,10 +52,12 @@ import {
 import {
   createCandidateRoutes,
   createCandidateStore,
+  createModerationChecker,
+  createModerationEngine,
   type CandidateStore,
 } from "./modules/moderation-engine/index.js";
 import { admitRegex } from "./modules/moderation-engine/rules/bounded-regex.js";
-import { compileRuleSet, type RuleSetInput } from "./modules/moderation-engine/rules/groups.js";
+import { compileRuleSet, type RuleInput, type RuleSetInput } from "./modules/moderation-engine/rules/groups.js";
 import { BLIVECHAT_OUTPUT_PATH, BLIVECHAT_PROTOCOL_VERSION, createBlivechatAdapter } from "./modules/output/index.js";
 import { createDeliveryPump } from "./modules/output-adapter/delivery.js";
 import { createSubscriptionRegistry } from "./modules/output-adapter/subscription.js";
@@ -60,6 +66,8 @@ import { createScoringPlanner } from "./modules/scoring-engine/index.js";
 import { redactUrlText } from "./security/redaction.js";
 import { sandboxRoutes } from "./demo/routes.js";
 import { assertSandboxStartupSafe, type SandboxOptions } from "./demo/sandbox-guard.js";
+import { createSandboxRuntime } from "./demo/scenarios/index.js";
+import { SANDBOX_CHANNEL_ID } from "./demo/synthetic-source.js";
 
 export interface AppOptions {
   readonly modules: ModuleRegistry;
@@ -127,7 +135,7 @@ export function buildApp({
   const app = Fastify({ logger: logger ? loggerOptions(logStream) : false, frameworkErrors: frameworkErrorReply });
   // One bus for the whole process: the viewer cache and the deletion path both use it (Q35).
   const bus = invalidation ?? createInvalidationBus();
-  app.decorate("modules", modules);
+  app.decorate("modules", database === undefined ? modules : { ...modules, moderationEngine: channelModeration(database) });
   // Native output consumers of this process. Revoking a grant closes the consumers that the grant opened.
   const outputSubscribers = createSubscriptionRegistry();
   // A fixed body. The default one repeats the requested URL, and a URL can carry a credential.
@@ -182,10 +190,49 @@ export function buildApp({
     startNativeOutput(app, database, outputSubscribers, nativeOutput);
     if (sandbox?.enabled === true) {
       assertSandboxStartupSafe(sandbox, database.filePath);
-      app.register(sandboxRoutes, { database });
+      app.register(sandboxRoutes, { database, runtime: createSandboxRuntime(database, undefined, app.modules) });
     }
   }
   return app;
+}
+
+function channelModeration(database: VoxwardDatabase): ModuleRegistry["moderationEngine"] {
+  const fallback = createModerationEngine();
+  return {
+    ...fallback,
+    async moderate(event) {
+      const published = publishedRules(database, event.channelId);
+      const input = !hasPublishedTermList(database, event.channelId)
+        ? withWordlist(published, readTermEntries(database, event.channelId))
+        : published;
+      if (input.groups.length === 0 || !compileRuleSet(input).ok) return fallback.moderate(event);
+      return createModerationEngine({ ruleSet: input, nicknames: { displayNicknameOf: async (item) =>
+        item.channelId === SANDBOX_CHANNEL_ID ? item.sender.senderRef : null } }).moderate(event);
+    },
+  };
+}
+
+const WORDLIST_GROUP = "admin-wordlist";
+
+function publishedRules(database: VoxwardDatabase, channelId: string): RuleSetInput {
+  const saved = readLatestRuleVersion(database, channelId);
+  return saved === null ? { version: "initial", groups: [] } : JSON.parse(saved.ruleJson) as RuleSetInput;
+}
+
+function wordlistRuleId(id: string): string {
+  return `admin-${createHash("sha256").update(id).digest("hex").slice(0, 32)}`;
+}
+
+function withWordlist(base: RuleSetInput, entries: readonly ExtendedTermEntry[]): RuleSetInput {
+  const rules = entries.filter((entry) => entry.enabled && entry.listKind === "BLACKLIST").map((entry): RuleInput => {
+    const settings = { id: wordlistRuleId(entry.id), ...(entry.language === undefined ? {} : { language: entry.language }) };
+    return entry.matchKind === "REGEX" ? { ...settings, kind: "regex", source: entry.term }
+      : { ...settings, kind: entry.matchKind === "NORMALIZED" ? "normalized" : "exact", text: entry.term };
+  });
+  const groups = base.groups.filter((group) => group.id !== WORDLIST_GROUP);
+  if (rules.length > 0) groups.push({ id: WORDLIST_GROUP, action: { kind: "REVIEW" }, rules });
+  const version = `channel-${createHash("sha256").update(JSON.stringify([groups, base.normalization])).digest("hex").slice(0, 32)}`;
+  return { ...base, version, groups };
 }
 
 /**
@@ -304,7 +351,7 @@ function channelPanelOptionsFor(
   database: VoxwardDatabase,
   modules: ModuleRegistry,
   providedCandidates: CandidateStore | undefined,
-) {
+): ChannelPanelRoutesOptions {
   const decisionStore = createDecisionStorePort(database, {
     planner: createScoringPlanner(),
     changeLogExpiresAt: (occurredAt) =>
@@ -352,6 +399,25 @@ function channelPanelOptionsFor(
       },
     },
     rules: {
+      buildWordlist: (channelId, entries, base) =>
+        withWordlist(base === undefined ? publishedRules(database, channelId) : base as RuleSetInput, entries),
+      previewWordlist: async (channelId, entries, text, language) => {
+        const base = publishedRules(database, channelId);
+        const ruleSet = withWordlist({ ...base, groups: [] }, entries);
+        const sampleLanguage = messageLanguageOf(text, language);
+        if (!compileRuleSet(ruleSet).ok) return { hits: [], language: sampleLanguage, action: null };
+        const verdict = await createModerationChecker({
+          ...(ruleSet.groups.length === 0 ? {} : { ruleSet }),
+        }).check({
+          contractVersion: CONTRACT_VERSION, platform: "synthetic", channelId,
+          platformMessageId: "wordlist-preview", platformOrder: 0, receivedAt: new Date().toISOString(),
+          correlationId: "wordlist-preview", body: text, ...(language === undefined ? {} : { language }),
+          sender: { contractVersion: CONTRACT_VERSION, senderRef: "wordlist-preview" },
+        });
+        const termByRule = new Map(entries.map((entry) => [wordlistRuleId(entry.id), entry.id]));
+        const hits = [...new Set(verdict.hits.flatMap((hit) => termByRule.get(hit.ruleId) ?? []))];
+        return { hits, language: sampleLanguage, action: hits.length === 0 ? null : "REVIEW" };
+      },
       validate: (input: unknown) => {
         if (typeof input !== "object" || input === null || !("version" in input) || !Array.isArray((input as { groups?: unknown }).groups)) {
           return { ok: false as const, issues: [{ code: "INVALID_REQUEST", ref: "rule-set" }] };
@@ -409,4 +475,3 @@ function frameworkErrorReply(error: FastifyError, _request: FastifyRequest, repl
 function pathOf(url: string): string {
   return url.split("?", 1)[0] ?? "";
 }
-

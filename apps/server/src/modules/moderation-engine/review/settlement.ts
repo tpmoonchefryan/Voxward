@@ -1,4 +1,4 @@
-import { createVerdict, type InternalClassification, type ReviewItemResult, type Verdict } from "@voxward/contracts";
+import { createVerdict, messageLanguageOf, type InternalClassification, type ReviewItemResult, type Verdict } from "@voxward/contracts";
 import type { CandidateProposal, ReviewRecord } from "./ports.js";
 
 /**
@@ -48,6 +48,7 @@ export function proposalsOf(
     channelId: input.channelId,
     term: candidate.term,
     note: candidate.note ?? null,
+    language: messageLanguageOf(candidate.term, candidate.language),
     sourceCorrelationId: input.correlationId,
     sourceTaskId: input.taskId,
   }));

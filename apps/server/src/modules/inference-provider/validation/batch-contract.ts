@@ -12,6 +12,7 @@ import {
   type SchemaResult,
   SC_BATCH_SCHEMA,
   type ScItemResult,
+  type ScTranslationText,
   validateModerationBatchResult,
   validateReviewBatchResult,
   validateScBatchResult,
@@ -67,13 +68,19 @@ const SC_KIND: BatchKind<ScItemResult> = {
   generatedFieldsOf: (item) =>
     item.verdict === "BLOCK"
       ? []
-      : [
-          { name: "translatedText", text: item.translatedText },
-          { name: "slangNote", text: item.slangNote },
-          { name: "replyCue", text: item.replyCue },
-          ...(item.thankYouReading === undefined ? [] : [{ name: "thankYouReading", text: item.thankYouReading }]),
-        ],
+      : item.translations === undefined
+        ? scGeneratedFields(item)
+        : item.translations.flatMap((translation, index) => scGeneratedFields(translation, `translations/${index}/`)),
 };
+
+function scGeneratedFields(text: ScTranslationText, prefix = ""): readonly GeneratedTextField[] {
+  return [
+    { name: `${prefix}translatedText`, text: text.translatedText },
+    { name: `${prefix}slangNote`, text: text.slangNote },
+    { name: `${prefix}replyCue`, text: text.replyCue },
+    ...(text.thankYouReading === undefined ? [] : [{ name: `${prefix}thankYouReading`, text: text.thankYouReading }]),
+  ];
+}
 
 const REVIEW_KIND: BatchKind<ReviewItemResult> = {
   schema: REVIEW_BATCH_SCHEMA,

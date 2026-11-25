@@ -188,8 +188,20 @@ describe("settlement", () => {
     await runner.runBatch();
 
     expect(candidates.proposals).toEqual([
-      { channelId: "ch-1", term: "phrase-x", note: "seen once", sourceCorrelationId: "corr-ch-1-m1", sourceTaskId: expect.any(String) },
+      { channelId: "ch-1", term: "phrase-x", note: "seen once", language: "und", sourceCorrelationId: "corr-ch-1-m1", sourceTaskId: expect.any(String) },
     ]);
+  });
+
+  it("includes the language hint and carries the candidate's own canonical tag", async () => {
+    const { store, candidates, model, runner } = reviewHarness();
+    store.seed({ eventId: "e-lang", event: { ...messageOf("lang"), body: "ありがとう", language: "ja" } });
+    model.respondWith((input) => ({
+      items: input.items.map((item) => ({ ...allow(item.itemId), candidateTerms: [{ term: "ça", language: "FR-ca" }] })),
+    }));
+    await runner.runCycle(CHANNEL);
+    await runner.runBatch();
+    expect(model.inputs[0]?.items[0]).toMatchObject({ language: "ja" });
+    expect(candidates.proposals[0]?.language).toBe("fr-CA");
   });
 });
 

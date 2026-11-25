@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { messageLanguageOf } from "@voxward/contracts";
 import type { VoxwardDatabase } from "./client.js";
 import { deploymentSettings, ruleTerms, ruleVersions } from "./schema/index.js";
-import { runShortTransaction } from "./transaction.js";
+import { runShortTransaction, type ShortTransaction } from "./transaction.js";
 
 export type PlatformDeleteUiStatus = "PENDING" | "DELETED" | "FAILED" | "UNKNOWN";
 
@@ -88,18 +89,20 @@ export function writeChannelSetting(
   value: unknown,
   now: Date = new Date(),
 ): void {
+  runShortTransaction(database, (tx) => putChannelSetting(tx, channelId, section, value, now));
+}
+
+function putChannelSetting(tx: ShortTransaction, channelId: string, section: string, value: unknown, now: Date): void {
   const key = settingKey(channelId, section);
   const valueJson = JSON.stringify(value);
   const updatedAt = now.toISOString();
-  runShortTransaction(database, (tx) => {
-    tx.insert(deploymentSettings)
-      .values({ key, valueJson, updatedAt })
-      .onConflictDoUpdate({
-        target: deploymentSettings.key,
-        set: { valueJson, updatedAt },
-      })
-      .run();
-  });
+  tx.insert(deploymentSettings)
+    .values({ key, valueJson, updatedAt })
+    .onConflictDoUpdate({
+      target: deploymentSettings.key,
+      set: { valueJson, updatedAt },
+    })
+    .run();
 }
 
 export function readPlatformDeleteStatusMap(
@@ -147,33 +150,38 @@ export function publishRuleVersion(
   database: VoxwardDatabase,
   input: { readonly channelId: string; readonly ruleJson: string; readonly actorRef: string; readonly now: Date },
 ): number {
+  return runShortTransaction(database, (tx) => insertRuleVersion(tx, input));
+}
+
+function insertRuleVersion(
+  tx: ShortTransaction,
+  input: { readonly channelId: string; readonly ruleJson: string; readonly actorRef: string; readonly now: Date },
+): number {
   const createdAt = input.now.toISOString();
-  return runShortTransaction(database, (tx) => {
-    const latest = tx
-      .select({ version: ruleVersions.version })
-      .from(ruleVersions)
-      .where(eq(ruleVersions.channelId, input.channelId))
-      .orderBy(desc(ruleVersions.version))
-      .limit(1)
-      .get();
-    const nextVersion = (latest?.version ?? 0) + 1;
-    tx.insert(ruleVersions)
-      .values({
-        id: randomUUID(),
-        channelId: input.channelId,
-        version: nextVersion,
-        ruleJson: input.ruleJson,
-        createdAt,
-        createdByRef: input.actorRef,
-      })
-      .run();
-    return nextVersion;
-  });
+  const latest = tx
+    .select({ version: ruleVersions.version })
+    .from(ruleVersions)
+    .where(eq(ruleVersions.channelId, input.channelId))
+    .orderBy(desc(ruleVersions.version))
+    .limit(1)
+    .get();
+  const nextVersion = (latest?.version ?? 0) + 1;
+  tx.insert(ruleVersions)
+    .values({
+      id: randomUUID(),
+      channelId: input.channelId,
+      version: nextVersion,
+      ruleJson: input.ruleJson,
+      createdAt,
+      createdByRef: input.actorRef,
+    })
+    .run();
+  return nextVersion;
 }
 
 export function publishConfirmedCandidateTerm(
   database: VoxwardDatabase,
-  input: { readonly channelId: string; readonly term: string; readonly candidateId: string; readonly actorRef: string },
+  input: { readonly channelId: string; readonly term: string; readonly candidateId: string; readonly actorRef: string; readonly language?: string },
 ): number {
   const createdAt = new Date().toISOString();
   return runShortTransaction(database, (tx) => {
@@ -201,7 +209,7 @@ export function publishConfirmedCandidateTerm(
         channelId: input.channelId,
         term: input.term,
         matchKind: "NORMALIZED",
-        language: "und",
+        language: messageLanguageOf(input.term, input.language),
         groupCode: `candidate:${input.candidateId}`,
         createdAt,
         createdByRef: input.actorRef,
@@ -284,6 +292,7 @@ export function writeShellPreferences(
 }
 
 export interface TermCategoryItem {
+  readonly builtIn?: boolean;
   readonly code: string;
   readonly label: string;
   readonly listKind: "BLACKLIST" | "WHITELIST";
@@ -300,7 +309,11 @@ const DEFAULT_TERM_CATEGORIES: readonly TermCategoryItem[] = [
 
 export function readTermCategories(database: VoxwardDatabase, channelId: string): TermCategoryItem[] {
   const saved = readChannelSetting<TermCategoryItem[] | null>(database, channelId, "term-categories", null);
-  return saved ?? [...DEFAULT_TERM_CATEGORIES];
+  return (saved ?? DEFAULT_TERM_CATEGORIES).map((item) => {
+    const preset = DEFAULT_TERM_CATEGORIES.find((current) => current.code === item.code);
+    return preset?.listKind === item.listKind && preset.label === item.label && preset.description === item.description
+      ? { ...item, builtIn: true } : item;
+  });
 }
 
 export function appendTermCategory(
@@ -325,21 +338,65 @@ export interface ExtendedTermEntry {
   readonly categoryCode: string;
   readonly matchKind: "EXACT" | "CONTAINS" | "REGEX" | "NORMALIZED";
   readonly enabled: boolean;
+  readonly language?: string;
 }
 
 export function readTermEntries(database: VoxwardDatabase, channelId: string): ExtendedTermEntry[] {
   const saved = readChannelSetting<ExtendedTermEntry[] | null>(database, channelId, "term-entries", null);
-  return saved ?? [];
+  if (saved !== null) return saved;
+  return database.orm
+    .select({ id: ruleTerms.id, term: ruleTerms.term, matchKind: ruleTerms.matchKind, language: ruleTerms.language, groupCode: ruleTerms.groupCode })
+    .from(ruleTerms)
+    .where(and(eq(ruleTerms.channelId, channelId), isNull(ruleTerms.retiredAt)))
+    .orderBy(desc(ruleTerms.createdAt))
+    .all()
+    .map((term) => ({
+      id: term.id,
+      term: term.term,
+      listKind: "BLACKLIST",
+      categoryCode: term.groupCode || "spam",
+      matchKind: term.matchKind === "REGEX" || term.matchKind === "CONTAINS" || term.matchKind === "NORMALIZED" ? term.matchKind : "EXACT",
+      language: term.language ?? "und",
+      enabled: true,
+    }));
 }
 
-export function writeTermEntries(
+export interface TermListVersion {
+  readonly version: number;
+  readonly createdAt: string | null;
+  readonly entries: readonly ExtendedTermEntry[];
+}
+
+export function hasPublishedTermList(database: VoxwardDatabase, channelId: string): boolean {
+  return database.orm.select({ key: deploymentSettings.key }).from(deploymentSettings)
+    .where(eq(deploymentSettings.key, settingKey(channelId, "term-list-history"))).get() !== undefined;
+}
+
+export function clearTermList(tx: ShortTransaction, channelId: string): void {
+  tx.delete(deploymentSettings).where(inArray(deploymentSettings.key, [
+    settingKey(channelId, "term-entries"),
+    settingKey(channelId, "term-list-history"),
+  ])).run();
+}
+
+export function readTermListVersions(database: VoxwardDatabase, channelId: string): readonly TermListVersion[] {
+  return readChannelSetting(database, channelId, "term-list-history", [
+    { version: 0, createdAt: null, entries: readTermEntries(database, channelId) },
+  ]);
+}
+
+export function publishTermList(
   database: VoxwardDatabase,
-  channelId: string,
-  entries: readonly ExtendedTermEntry[],
-  now: Date = new Date(),
-): ExtendedTermEntry[] {
-  writeChannelSetting(database, channelId, "term-entries", entries, now);
-  return [...entries];
+  input: { readonly channelId: string; readonly entries: readonly ExtendedTermEntry[]; readonly ruleJson: string; readonly actorRef: string; readonly now: Date },
+): TermListVersion {
+  const history = readTermListVersions(database, input.channelId);
+  return runShortTransaction(database, (tx) => {
+    const version = insertRuleVersion(tx, input);
+    const snapshot = { version, createdAt: input.now.toISOString(), entries: input.entries };
+    putChannelSetting(tx, input.channelId, "term-entries", input.entries, input.now);
+    putChannelSetting(tx, input.channelId, "term-list-history", [snapshot, ...history], input.now);
+    return snapshot;
+  });
 }
 
 export interface ManualBlockedUserRecord {
@@ -486,6 +543,7 @@ export interface ChannelAdapterRecord {
   readonly config: Readonly<Record<string, string | number | boolean | null>>;
   readonly models: readonly AdapterModelPoolItem[];
   readonly lastStatus: string;
+  readonly lastStatusDetails?: { readonly code: string; readonly count?: number };
   readonly updatedAt: string;
 }
 

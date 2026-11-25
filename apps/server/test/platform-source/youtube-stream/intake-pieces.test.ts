@@ -53,6 +53,18 @@ describe("official item parsing", () => {
     expect(message?.text).toBe("synthetic comment");
   });
 
+  it("uses numeric Super Chat metadata and never derives money from display text", () => {
+    for (const amountDisplayString of ["¥1,400", "¥1400"]) {
+      const item = chatItem("sc-pay", { type: "superChatEvent" });
+      (item.snippet as Record<string, unknown>).superChatDetails = {
+        amountDisplayString, amountMicros: "1400000000", currency: "JPY", tier: 4,
+      };
+      expect(parseStreamItem(item)?.scPayment).toEqual({ currency: "JPY", amountMicros: 1_400_000_000, tier: 4 });
+      (item.snippet as Record<string, unknown>).superChatDetails = { amountDisplayString };
+      expect(parseStreamItem(item)?.scPayment).toBeUndefined();
+    }
+  });
+
   it("gives a null text for a Super Chat without a comment, and never reads a text field of another shape (Q40)", () => {
     expect(parseStreamItem(chatItem("sc2", { type: "superChatEvent", superChatComment: null }))?.text).toBeNull();
 

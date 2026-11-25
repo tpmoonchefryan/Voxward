@@ -35,6 +35,8 @@ import { RETENTION_DAYS } from "../../../src/modules/audit-store/content-policy.
 import { createDecisionService } from "../../../src/modules/decision-service/index.js";
 import { createCandidateStore } from "../../../src/modules/moderation-engine/index.js";
 import { createReviewRunner } from "../../../src/modules/moderation-engine/review/runner.js";
+import { frameFor } from "../../../src/modules/output-adapter/native-protocol.js";
+import { mapDeliverToSuperChat } from "../../../src/modules/output/blivechat/frames.js";
 import { buildRegistry } from "../../../src/modules/registry.js";
 import { createScoringEngine, createScoringPlanner } from "../../../src/modules/scoring-engine/index.js";
 import { createTaskCoordinator } from "../../../src/modules/task-coordinator/index.js";
@@ -290,7 +292,7 @@ describe("S026 Core Flow: Manual Overturn, Exception Zero-Window, Coordinator & 
     });
   });
 
-  it("records composition root gaps as-is without modifying src/: N7/N12b NO_SUBJECT_CACHES & N13 raw JSON translation", async () => {
+  it("records N7/N12b NO_SUBJECT_CACHES behavior and reads the approved translation from N13 JSON", async () => {
     // 1) N7 / N12b: buildApp without subjectCaches uses NO_SUBJECT_CACHES, leaving an external CandidateStore untouched.
     const admin = (
       await createAccount(database, {
@@ -393,7 +395,7 @@ describe("S026 Core Flow: Manual Overturn, Exception Zero-Window, Coordinator & 
     expect(explicitHub.forgetSubject("candidate-store", fixture.channelId, subjId, ["corr-n7-1"])).toBe(1);
     expect(unlinkedCandidates.listCards(fixture.channelId)).toHaveLength(0);
 
-    // 2) N13: createApprovedContentPort returns raw TRANSLATION payload string verbatim (including JSON string).
+    // 2) N13: createApprovedContentPort reads the translated text, not the evidence envelope.
     const rawTranslationJson = JSON.stringify(fixture.translationPayloadExample);
     runShortTransaction(database, (tx) => {
       tx.insert(technicalLogs)
@@ -439,7 +441,14 @@ describe("S026 Core Flow: Manual Overturn, Exception Zero-Window, Coordinator & 
       nowIso: fixture.baseTimeIso,
     });
     expect(approved?.text).toBe(fixture.translationPayloadExample.text);
-    expect(approved?.translation).toBe(rawTranslationJson);
+    expect(approved?.translation).toBe(fixture.translationPayloadExample.translatedText);
+    const frame = frameFor({
+      channelId: fixture.channelId, correlationId: "corr-n13-1", deliveryId: "n13", verdict: "ALLOW",
+      deliverySequence: 1, platformOrder: 1, validUntil: "2026-12-14T10:20:00.000Z", status: "PENDING",
+    }, approved);
+    expect(frame).toMatchObject({ type: "DELIVER", display: { translation: fixture.translationPayloadExample.translatedText } });
+    if (frame?.type !== "DELIVER") throw new Error("Expected an approved delivery");
+    expect(mapDeliverToSuperChat(frame, fixture.baseTimeIso).data.translation).toBe(fixture.translationPayloadExample.translatedText);
   });
 
   it("reproduces Q55 C6 clamp compensation drift on overturn (+2 vs ledger replay, as-is without modifying src/)", async () => {

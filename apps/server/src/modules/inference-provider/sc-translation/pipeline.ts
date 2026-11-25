@@ -6,10 +6,12 @@ import {
   type InternalClassification,
   type MatchedSpan,
   type ModerationReasonCode,
+  parseScLanguagePolicy,
   type ScItemResult,
+  type ScLanguagePolicy,
 } from "@voxward/contracts";
 import { checkSelection } from "../model-settings/capability-check.js";
-import type { ModelSelection, SettingsIssue } from "../model-settings/settings.js";
+import type { ModelSelection, ModelSettings, SettingsIssue } from "../model-settings/settings.js";
 import { validateScBatch } from "../validation/batch-contract.js";
 import type { GeneratedTextChecker } from "../validation/output-text-check.js";
 import { buildCueSheetItem, type CueSheetItem, isShowableAddressText, type SafeAddress } from "./cue-sheet.js";
@@ -21,7 +23,11 @@ import { buildCueSheetItem, type CueSheetItem, isShowableAddressText, type SafeA
  */
 export interface ScModelPort {
   describe(): InferenceCapabilities;
-  infer(input: AiBatchInput, call: { readonly batchId: string; readonly selection: ModelSelection }): Promise<unknown>;
+  infer(input: AiBatchInput, call: {
+    readonly batchId: string;
+    readonly selection: ModelSelection;
+    readonly languages?: ScLanguagePolicy;
+  }): Promise<unknown>;
 }
 
 export interface ScPipelineDeps {
@@ -46,6 +52,15 @@ export interface ScPipelineDeps {
 export interface ScRunChoices {
   readonly translationEnabled: boolean;
   readonly selection: ModelSelection | null;
+  readonly languages?: ScLanguagePolicy;
+}
+
+export function scRunChoicesFromSettings(settings: ModelSettings): ScRunChoices {
+  return {
+    translationEnabled: settings.scTranslationEnabled,
+    selection: settings.scTranslation,
+    ...(settings.scLanguages === undefined ? {} : { languages: settings.scLanguages }),
+  };
 }
 
 /** Why an item has no cue sheet entry. A withheld entry carries no text. */
@@ -115,7 +130,9 @@ export async function runScBatch(
   if (issues.length > 0) return refused(request.batchId, issues);
 
   if (!choices.translationEnabled) return safetyOnly(request, selection, deps);
-  return translate(request, selection, deps);
+  const languages = choices.languages === undefined ? undefined : parseScLanguagePolicy(choices.languages);
+  if (languages === null) return refused(request.batchId, [{ code: "VALUE_INVALID", path: "/scLanguages" }]);
+  return translate(request, selection, deps, languages);
 }
 
 /** Request shape problems: an empty or oversized batch, or a repeated correlation id. Each is a code, never text. */
@@ -157,6 +174,7 @@ async function translate(
   request: InferenceRequest,
   selection: ModelSelection,
   deps: ScPipelineDeps,
+  languages: ScLanguagePolicy | undefined,
 ): Promise<ScRunOutcome> {
   // The model sees only a temporary item id and the message text. The mapping back to the viewer stays here.
   const sentByCorrelation = new Map<string, { readonly itemId: string; readonly text: string }>();
@@ -171,7 +189,7 @@ async function translate(
     return { ok: false, batchId: request.batchId, reason: "BATCH_REJECTED", errorCodes: ["INPUT_ITEM_ID_DUPLICATE"] };
   }
 
-  const raw = await deps.scModel.infer(modelInput, { batchId: request.batchId, selection });
+  const raw = await deps.scModel.infer(modelInput, { batchId: request.batchId, selection, ...(languages === undefined ? {} : { languages }) });
   const validation = await validateScBatch(raw, modelInput, {
     maxItems: deps.maxItems,
     generatedText: deps.generatedText,
@@ -179,6 +197,9 @@ async function translate(
   if (!validation.ok) {
     const errorCodes = validation.errors.map((error) => error.code);
     return { ok: false, batchId: request.batchId, reason: "BATCH_REJECTED", errorCodes };
+  }
+  if (languages !== undefined && validation.items.some((item) => !matchesLanguagePolicy(item, languages))) {
+    return { ok: false, batchId: request.batchId, reason: "BATCH_REJECTED", errorCodes: ["SC_LANGUAGE_MISMATCH"] };
   }
 
   const rejected = new Set(validation.rejectedGeneratedText.map((entry) => entry.itemId));
@@ -189,9 +210,34 @@ async function translate(
     const validated = sent === undefined ? undefined : validatedByItemId.get(sent.itemId);
     // The validator accepts only the ids of this batch and requires every one of them, so a miss is a broken invariant.
     if (sent === undefined || validated === undefined) throw new Error("SC_ITEM_UNMAPPED");
-    items.push(await outcomeOf(item.correlationId, item.text, validated, rejected.has(sent.itemId), deps));
+    const ordered = languages === undefined ? validated : orderTranslations(validated, languages);
+    items.push(await outcomeOf(item.correlationId, item.text, ordered, rejected.has(sent.itemId), deps));
   }
   return { ok: true, batchId: request.batchId, items };
+}
+
+function matchesLanguagePolicy(item: ScItemResult, languages: ScLanguagePolicy): boolean {
+  if (item.verdict === "BLOCK") return true;
+  if (item.sourceLanguage === undefined || item.translations === undefined) return false;
+  if (languages.sourceLanguage !== "auto" && item.sourceLanguage !== languages.sourceLanguage) return false;
+  return item.translations.every((entry) => languages.targetLanguages.includes(entry.targetLanguage));
+}
+
+function orderTranslations(item: ScItemResult, languages: ScLanguagePolicy): ScItemResult {
+  if (item.translations === undefined) return item;
+  const translations = languages.targetLanguages.flatMap((tag) =>
+    item.translations?.filter((entry) => entry.targetLanguage === tag && entry.translatedText.trim() !== "") ?? [],
+  );
+  const primary = translations[0];
+  const { thankYouReading: _reading, ...rest } = item;
+  return {
+    ...rest,
+    translatedText: primary?.translatedText ?? "",
+    slangNote: primary?.slangNote ?? "",
+    replyCue: primary?.replyCue ?? "",
+    ...(primary?.thankYouReading === undefined ? {} : { thankYouReading: primary.thankYouReading }),
+    translations,
+  };
 }
 
 async function outcomeOf(

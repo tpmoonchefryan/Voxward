@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runScBatch, type ScRunOutcome } from "../../../src/modules/inference-provider/index.js";
+import { runScBatch, scRunChoicesFromSettings, type ScRunOutcome } from "../../../src/modules/inference-provider/index.js";
 import { REPORT_AFTER_CHANGE } from "../model-settings/fixtures.js";
 import {
   depsWith,
@@ -26,6 +26,37 @@ function okItems(outcome: ScRunOutcome) {
 }
 
 describe("cue sheet entries with translation on", () => {
+  it("requests automatic source detection and selects the primary translation by configured order", async () => {
+    const model = standInScModel(({ items }) => ({
+      items: items.map(({ itemId }) => ({
+        itemId, verdict: "ALLOW_MEANINGFUL", reasonCodes: ["NONE"], sourceLanguage: "ko",
+        translations: [
+          { targetLanguage: "ja", translatedText: "ありがとう", slangNote: "", replyCue: "" },
+          { targetLanguage: "fr", translatedText: "Merci", slangNote: "", replyCue: "", thankYouReading: "mehr-see" },
+        ],
+      })),
+    }));
+    const languages = { sourceLanguage: "auto", targetLanguages: ["fr", "ja"] };
+    const choices = scRunChoicesFromSettings({
+      realtimeModeration: null, review: null, scTranslationEnabled: true, scTranslation: SC_SELECTION, scLanguages: languages,
+    });
+    const items = okItems(await runScBatch(requestOf("b-lang", [{ correlationId: "c-ko", text: "감사합니다" }]), choices, depsWith({ scModel: model })));
+    expect(model.received).toEqual([{ batchId: "b-lang", selection: SC_SELECTION, languages }]);
+    expect(items[0]?.cue).toMatchObject({
+      original: { language: "ko" },
+      generated: {
+        translatedText: "Merci", thankYouReading: "mehr-see",
+        translations: [{ targetLanguage: "fr" }, { targetLanguage: "ja" }],
+      },
+    });
+    const mismatched = await runScBatch(
+      requestOf("b-lang2", [{ correlationId: "c-ko", text: "감사합니다" }]),
+      { ...ON, languages: { ...languages, sourceLanguage: "en" } },
+      depsWith({ scModel: model }),
+    );
+    expect(mismatched).toMatchObject({ ok: false, errorCodes: ["SC_LANGUAGE_MISMATCH"] });
+  });
+
   it("gives every cross-language sample an entry with the viewer's words and the generated text kept apart", async () => {
     const outcome = await runScBatch(requestOf("b-1", SAMPLES), ON, depsWith());
     const items = okItems(outcome);

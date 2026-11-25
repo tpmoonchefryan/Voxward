@@ -13,6 +13,7 @@ export interface CandidateCard {
   readonly channelId: string;
   readonly term: string;
   readonly note: string | null;
+  readonly language?: string;
   readonly sourceCorrelationId: string;
   readonly sourceTaskId: string;
   readonly status: CandidateStatus;
@@ -31,6 +32,7 @@ export interface CandidateRulePort {
     readonly term: string;
     readonly candidateId: string;
     readonly actorRef: string;
+    readonly language?: string;
   }): number;
 }
 
@@ -72,6 +74,7 @@ interface MutableCard {
   channelId: string;
   term: string;
   note: string | null;
+  language?: string;
   sourceCorrelationId: string;
   sourceTaskId: string;
   status: CandidateStatus;
@@ -92,13 +95,14 @@ export function createCandidateStore(options: CandidateStoreOptions): CandidateS
 
   return {
     propose(proposal) {
-      const key = termKeyOf(proposal.channelId, proposal.term);
+      const key = termKeyOf(proposal.channelId, proposal.term, proposal.language);
       if (cardByTerm.has(key)) return null;
       const card: MutableCard = {
         id: options.newId(),
         channelId: proposal.channelId,
         term: proposal.term,
         note: proposal.note,
+        ...(proposal.language === undefined ? {} : { language: proposal.language }),
         sourceCorrelationId: proposal.sourceCorrelationId,
         sourceTaskId: proposal.sourceTaskId,
         status: "PENDING_CONFIRMATION",
@@ -130,7 +134,10 @@ export function createCandidateStore(options: CandidateStoreOptions): CandidateS
       if (card.status !== "PENDING_CONFIRMATION") return { status: "ALREADY_DECIDED", card: snapshotOf(card) };
 
       // The port runs first. If it throws, the card stays pending and nothing is recorded as confirmed.
-      const ruleVersion = options.rules.publishConfirmedTerm({ channelId, term: card.term, candidateId: card.id, actorRef });
+      const ruleVersion = options.rules.publishConfirmedTerm({
+        channelId, term: card.term, candidateId: card.id, actorRef,
+        ...(card.language === undefined ? {} : { language: card.language }),
+      });
       card.status = "CONFIRMED";
       card.decidedByRef = actorRef;
       card.decidedAt = options.now().toISOString();
@@ -155,7 +162,7 @@ export function createCandidateStore(options: CandidateStoreOptions): CandidateS
       for (const card of [...cards.values()]) {
         if (card.channelId !== channelId || !chains.has(card.sourceCorrelationId)) continue;
         cards.delete(card.id);
-        const key = termKeyOf(card.channelId, card.term);
+        const key = termKeyOf(card.channelId, card.term, card.language);
         if (cardByTerm.get(key) === card.id) cardByTerm.delete(key);
         removed += 1;
       }
@@ -164,8 +171,8 @@ export function createCandidateStore(options: CandidateStoreOptions): CandidateS
   };
 }
 
-function termKeyOf(channelId: string, term: string): string {
-  return JSON.stringify([channelId, normalizeText(term).trim()]);
+function termKeyOf(channelId: string, term: string, language = "und"): string {
+  return JSON.stringify([channelId, language, normalizeText(term).trim()]);
 }
 
 function snapshotOf(card: MutableCard): CandidateCard {

@@ -14,6 +14,7 @@ export interface SafeAddress {
 export interface OriginalText {
   readonly origin: "VIEWER_ORIGINAL";
   readonly text: string;
+  readonly language?: string;
 }
 
 /** Text the model generated. The origin tag keeps it apart from the viewer's words. */
@@ -24,6 +25,15 @@ export interface GeneratedCue {
   readonly replyCue: string;
   /** Reading of the thank-you phrase, when the model gave one. */
   readonly thankYouReading: string | null;
+  readonly translations?: ScItemResult["translations"];
+}
+
+export function encodeScTranslationEvidence(cue: CueSheetItem): string {
+  return JSON.stringify({
+    ...(cue.original.language === undefined ? {} : { sourceLanguage: cue.original.language }),
+    generated: cue.generated,
+    safeAlias: cue.address.display,
+  });
 }
 
 /** One cue sheet entry: original and generated text in separate blocks, with the local safe address. */
@@ -51,13 +61,18 @@ export function buildCueSheetItem(
 ): CueSheetItem {
   return {
     correlationId,
-    original: { origin: "VIEWER_ORIGINAL", text: originalText },
+    original: {
+      origin: "VIEWER_ORIGINAL",
+      text: originalText,
+      ...(item.sourceLanguage === undefined ? {} : { language: item.sourceLanguage }),
+    },
     generated: {
       origin: "AI_GENERATED",
       translatedText: item.translatedText,
       slangNote: item.slangNote,
       replyCue: item.replyCue,
       thankYouReading: item.thankYouReading ?? null,
+      ...(item.translations === undefined ? {} : { translations: item.translations }),
     },
     address,
   };

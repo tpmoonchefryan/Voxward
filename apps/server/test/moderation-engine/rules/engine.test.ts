@@ -10,6 +10,30 @@ import { createTableTransliterator } from "../../../src/modules/moderation-engin
 
 const subject = { channelId: "channel-1", senderRef: "sender-1" };
 
+it("routes scoped matches in unknown or mixed text to review without deducting", async () => {
+  const env = environment(compiled({
+    version: "multilingual",
+    groups: [{
+      id: "french", action: { kind: "DEDUCT", deduction: 5 },
+      rules: [{ id: "fr-rule", kind: "normalized", text: "café", language: "fr" }],
+    }],
+  }));
+  const message = { subject, nickname: "viewer", body: "ＣＡＦÉ" };
+  expect(await evaluateMessage(message, env)).toMatchObject({ route: "REVIEW", appliedDeduction: null });
+  expect(await evaluateMessage({ ...message, body: "café ありがとう" }, env)).toMatchObject({ route: "REVIEW", appliedDeduction: null });
+  expect(await evaluateMessage({ ...message, language: "fr-CA" }, env)).toMatchObject({ route: "REVIEW", appliedDeduction: { value: 5 } });
+  expect(await evaluateMessage({ ...message, language: "en" }, env)).toMatchObject({ route: "PASS" });
+});
+
+it("does not turn incomplete phonetic coverage into a hit", async () => {
+  const env = environment(compiled({
+    version: "phonetics",
+    groups: [{ id: "reading", action: { kind: "REVIEW" }, rules: [{ id: "homophone", kind: "reading", text: "spam" }] }],
+  }));
+  expect(await evaluateMessage({ subject, nickname: "viewer", body: "spam あ" }, env))
+    .toMatchObject({ route: "REVIEW", reasons: ["READING_UNAVAILABLE"], hits: [] });
+});
+
 function compiled(input: RuleSetInput): CompiledRuleSet {
   const result = compileRuleSet(input);
   if (!result.ok) throw new Error(`rule set refused: ${result.issues.map((issue) => issue.code).join(", ")}`);

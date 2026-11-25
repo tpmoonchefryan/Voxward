@@ -33,6 +33,21 @@ describe("reading the settings", () => {
 });
 
 describe("writing the settings", () => {
+  it("round-trips the language policy and does not overwrite it with invalid duplicate targets", async () => {
+    const store = createInMemoryModelSettingsStore();
+    const deps = { store, describe: () => REPORT_WITH_MODELS };
+    const response = await writeModelSettings(deps, withBody({
+      scLanguages: { sourceLanguage: "auto", targetLanguages: ["FR-ca", "ja"] },
+    }));
+    expect(response).toMatchObject({ status: 200 });
+    expect(await writeModelSettings(deps, withBody({
+      scLanguages: { sourceLanguage: "auto", targetLanguages: ["fr-ca", "fr-CA"] },
+    }))).toEqual({ status: 400, body: { error: "SETTINGS_INVALID", issues: [{ code: "VALUE_INVALID", path: "/scLanguages" }] } });
+    expect((await readModelSettings(deps)).body.settings.scLanguages).toEqual({
+      sourceLanguage: "auto", targetLanguages: ["fr-CA", "ja"],
+    });
+  });
+
   it("stores a valid body and returns it with no problems", async () => {
     const store = createInMemoryModelSettingsStore();
 

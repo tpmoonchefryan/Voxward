@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { readDockAndModerationFeed } from "../../../src/db/channel-panel-read.js";
+import { publishTermList, readTermListVersions } from "../../../src/db/channel-settings-store.js";
 import { openDatabase, type VoxwardDatabase } from "../../../src/db/client.js";
 import { runMigrations } from "../../../src/db/migrate.js";
 import { createApprovedContentPort } from "../../../src/db/output-store.js";
@@ -119,7 +120,11 @@ describe("VOXWARD-SUB-046: sandbox synthetic scenarios and deterministic reset",
     await runtime.runScenario("superchat-translation");
     await runtime.runScenario("manual-review");
 
+    publishTermList(db, { channelId: SANDBOX_CHANNEL_ID, entries: [], ruleJson: JSON.stringify({ version: "seed", groups: [] }),
+      actorRef: "sandbox-test", now: new Date() });
+    expect(readTermListVersions(db, SANDBOX_CHANNEL_ID).map(({ version }) => version)).toEqual([2, 0]);
     runtime.reset();
+    expect(readTermListVersions(db, SANDBOX_CHANNEL_ID).map(({ version }) => version)).toEqual([0]);
     const snap = runtime.snapshot();
     expect(snap.reviewQueue.length).toBe(0);
     expect(snap.blockedItems.length).toBe(0);

@@ -4,6 +4,7 @@
  * - runStreamList performs those decisions. The transport, the sink, the clock and the connect gate are injected.
  * The transport is the only part that talks to the platform. It yields the platform's answers as events, nothing else.
  */
+import { readScPayment, type ScPayment } from "@voxward/contracts";
 import { type YouTubeStreamConfig } from "./config.js";
 import { claimMessageId, type MessageIdStore } from "./dedup.js";
 import { classifyReplay } from "./replay-age.js";
@@ -54,6 +55,7 @@ export interface StreamMessage {
   readonly type: string;
   readonly publishedAtMs: number;
   readonly text: string | null;
+  readonly scPayment?: ScPayment;
   readonly authorChannelId: string;
   readonly authorFlags: AuthorFlags;
 }
@@ -99,11 +101,19 @@ export function parseStreamItem(raw: unknown): StreamMessage | null {
   if (Number.isNaN(publishedAtMs)) return null;
   const { channelId } = authorDetails;
   if (typeof channelId !== "string" || channelId === "") return null;
+  const details = snippet.type === "superChatEvent" && isRecord(snippet.superChatDetails) ? snippet.superChatDetails : null;
+  const amountMicros = details?.amountMicros;
+  const payment = details === null ? null : readScPayment({
+    currency: details.currency,
+    amountMicros: typeof amountMicros === "string" && /^\d{1,16}$/u.test(amountMicros) ? Number(amountMicros) : amountMicros,
+    tier: details.tier,
+  });
   return {
     platformMessageId: id,
     type: snippet.type,
     publishedAtMs,
     text: messageTextOf(snippet.type, snippet),
+    ...(payment === null ? {} : { scPayment: payment }),
     authorChannelId: channelId,
     authorFlags: {
       isChatOwner: flagOf(authorDetails.isChatOwner),

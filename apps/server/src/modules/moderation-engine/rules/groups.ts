@@ -1,4 +1,4 @@
-import type { ModerationRoute } from "@voxward/contracts";
+import { canonicalLanguageTag, type ModerationRoute } from "@voxward/contracts";
 import { admitRegex, type RegexRejection } from "./bounded-regex.js";
 import { DEFAULT_NORMALIZE_OPTIONS, type NormalizeOptions, normalizeText } from "./normalize.js";
 import type { FieldSpan } from "./span-map.js";
@@ -16,9 +16,10 @@ export type GroupAction =
  * `exact` matches the original text, `normalized` the normalized text, `reading` the local reading,
  * and `regex` a bounded pattern.
  */
-export type RuleInput =
+export type RuleInput = { readonly language?: string } & (
   | { readonly id: string; readonly kind: "exact" | "normalized" | "reading"; readonly text: string }
-  | { readonly id: string; readonly kind: "regex"; readonly source: string };
+  | { readonly id: string; readonly kind: "regex"; readonly source: string }
+);
 
 export interface GroupInput {
   readonly id: string;
@@ -46,6 +47,7 @@ export interface CompiledRule {
   readonly groupId: string;
   readonly action: GroupAction;
   readonly matcher: Matcher;
+  readonly language?: string;
 }
 
 export interface CompiledRuleSet {
@@ -63,6 +65,7 @@ export type RuleIssueCode =
   | "DEDUCTION_INVALID"
   | "RULE_ID_INVALID"
   | "RULE_ID_DUPLICATE"
+  | "LANGUAGE_INVALID"
   | "PATTERN_EMPTY"
   | "PATTERN_TOO_LONG"
   | "READING_PATTERN_INVALID"
@@ -117,6 +120,7 @@ export type ReviewReason =
   | "INPUT_TOO_LONG"
   | "NORMALIZED_TOO_LONG"
   | "NICKNAME_UNAVAILABLE"
+  | "READING_UNAVAILABLE"
   | "RULE_BUDGET_EXCEEDED";
 
 /** One occurrence of a rule in a message. Each occurrence is one hit, so a repeated word gives several hits. */
@@ -243,6 +247,8 @@ function compileRule(
   normalization: NormalizeOptions,
 ): CompiledRule | null {
   const before = issues.length;
+  const language = canonicalLanguageTag(rule.language);
+  if (rule.language !== undefined && (language === null || language === "auto")) issues.push({ code: "LANGUAGE_INVALID", ref });
   if (rule.kind === "reading" && group.action.kind !== "REVIEW") {
     issues.push({ code: "READING_CANNOT_PENALIZE", ref });
   }
@@ -261,7 +267,7 @@ function compileRule(
   }
 
   if (issues.length > before || matcher === null) return null;
-  return { id: rule.id, groupId: group.id, action: group.action, matcher };
+  return { id: rule.id, groupId: group.id, action: group.action, matcher, ...(language === null ? {} : { language }) };
 }
 
 function issueOf(code: RuleIssueCode, ref: string, hint: string | undefined): RuleIssue {

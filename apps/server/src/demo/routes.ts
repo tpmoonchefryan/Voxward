@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import { canonicalLanguageTag } from "@voxward/contracts";
 import { z } from "zod";
 import type { VoxwardDatabase } from "../db/client.js";
 import {
@@ -40,6 +41,7 @@ const CUSTOM_EVENT_BODY = z
     isPaid: z.boolean().optional(),
     amountDisplay: z.string().max(32).nullable().optional(),
     translationText: z.string().max(500).nullable().optional(),
+    language: z.string().max(63).transform(canonicalLanguageTag).pipe(z.string().refine((tag) => tag !== "auto")).optional(),
   })
   .strict();
 

@@ -43,6 +43,7 @@ export function toBusinessEvent(accepted: AcceptedStreamMessage, deps: BusinessE
     receivedAt: new Date(accepted.receivedAtMs).toISOString(),
     correlationId: deps.newId(),
     body: message.text ?? "",
+    ...(message.scPayment === undefined ? {} : { scPayment: message.scPayment }),
     sender: { contractVersion: CONTRACT_VERSION, senderRef },
   };
   const identityChange = deps.identities.observe({

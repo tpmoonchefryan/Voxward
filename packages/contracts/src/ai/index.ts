@@ -10,4 +10,6 @@ export {
 export * from "./batch.js";
 export * from "./moderation-result.js";
 export * from "./sc-result.js";
+export * from "./sc-languages.js";
+export * from "./message-language.js";
 export * from "./review-result.js";

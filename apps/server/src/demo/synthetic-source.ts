@@ -1,4 +1,4 @@
-import type { IdentityKind } from "@voxward/contracts";
+import type { IdentityKind, ScPayment } from "@voxward/contracts";
 
 export const SANDBOX_CHANNEL_ID = "sandbox-ch-01";
 export const SANDBOX_BANNER = "SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）";
@@ -20,6 +20,8 @@ export interface SyntheticChatEvent {
   readonly text: string;
   readonly isPaid: boolean;
   readonly amountDisplay: string | null;
+  readonly scPayment?: ScPayment;
+  readonly language?: string;
   readonly translationText: string | null;
   readonly receivedAt: string;
   readonly scenarioTag: ScenarioId | "custom";
@@ -108,6 +110,7 @@ export function buildScenarioEvent(
         text: "神回ありがとう！これからも応援しています",
         isPaid: true,
         amountDisplay: "$10.00",
+        scPayment: { amountMicros: 10_000_000, currency: "USD", tier: 4 },
         translationText: "Thanks for the awesome stream! Supporting you always!",
         receivedAt: nowIso,
         scenarioTag: "superchat-translation",
@@ -136,6 +139,7 @@ export function buildCustomSyntheticEvent(
     readonly isPaid?: boolean;
     readonly amountDisplay?: string | null;
     readonly translationText?: string | null;
+    readonly language?: string;
   },
   seq: number,
   nowIso: string,
@@ -150,6 +154,7 @@ export function buildCustomSyntheticEvent(
     isPaid: input.isPaid ?? false,
     amountDisplay: input.amountDisplay !== undefined ? input.amountDisplay : input.isPaid ? "$5.00" : null,
     translationText: input.translationText ?? null,
+    ...(input.language === undefined ? {} : { language: input.language }),
     receivedAt: nowIso,
     scenarioTag: "custom",
   };

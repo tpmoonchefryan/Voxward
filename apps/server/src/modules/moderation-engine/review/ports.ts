@@ -1,5 +1,5 @@
 import type {
-  AiBatchInput,
+  ReviewBatchInput,
   ChannelEvent,
   EvidenceEntry,
   InternalClassification,
@@ -56,6 +56,7 @@ export interface CandidateProposal {
   readonly channelId: string;
   readonly term: string;
   readonly note: string | null;
+  readonly language?: string;
   readonly sourceCorrelationId: string;
   readonly sourceTaskId: string;
 }
@@ -97,7 +98,7 @@ export interface ReviewStorePort {
 
 /** The model call. The input has one item id and one text per item, and the output still needs validation. */
 export interface ReviewModelPort {
-  reviewBatch(input: AiBatchInput): Promise<unknown>;
+  reviewBatch(input: ReviewBatchInput): Promise<unknown>;
 }
 
 /** Human review list. A BLOCK settlement appends one record in the same transaction as the verdict. */
