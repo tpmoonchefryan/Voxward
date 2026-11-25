@@ -149,11 +149,11 @@ describe("VOXWARD-SUB-047: sandbox fail-closed isolation and limited demo roles"
         ],
       })]);
       await expect.poll(() => nativeFrames).toContainEqual(expect.objectContaining({
-        type: "DELIVER", display: expect.objectContaining({ label: "SC €25.00", translation: primary,
+        type: "DELIVER", display: expect.objectContaining({ label: null, amountDisplay: "€25.00", translation: primary,
           payment: { amountMicros: 25_000_000, currency: "EUR" } }),
       }));
       await expect.poll(() => bliveFrames).toContainEqual(expect.objectContaining({
-        cmd: BLIVECHAT_CMD.ADD_TEXT, data: expect.objectContaining({ translation: primary }),
+        cmd: BLIVECHAT_CMD.ADD_TEXT, data: expect.objectContaining({ translation: primary, authorName: "" }),
       }));
 
       const toggle = await app.inject({ method: "PUT", url: `${channel}/sc-translation`, headers, payload: { enabled: false } });

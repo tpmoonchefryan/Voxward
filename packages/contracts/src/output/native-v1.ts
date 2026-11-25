@@ -47,14 +47,14 @@ export interface HelloFrame {
 }
 
 /**
- * Display content of an ALLOW delivery. `label` can carry a paid-message display amount, prefixed with "SC ".
- * It is otherwise null; the output does not guess a subject alias.
+ * Display content of an ALLOW delivery. The output does not guess a subject alias.
  */
 export interface DisplayPayload {
   readonly label: string | null;
   readonly text: string;
   readonly translation: string | null;
   readonly payment?: ScPayment;
+  readonly amountDisplay?: string;
 }
 
 interface DeliveryFields {
@@ -79,7 +79,7 @@ export interface WardBlockedFrame extends DeliveryFields {
 
 export type NativeFrame = HelloFrame | DeliverFrame | WardBlockedFrame;
 
-/** Required keys. DISPLAY may additionally carry payment. */
+/** Required keys. DISPLAY may additionally carry payment and amountDisplay. */
 export const NATIVE_FRAME_FIELDS = {
   HELLO: ["type", "version", "protocol", "heartbeatMs"],
   DELIVER: ["type", "version", "deliveryId", "deliverySequence", "platformOrder", "validUntil", "display"],

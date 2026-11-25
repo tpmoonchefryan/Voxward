@@ -117,6 +117,7 @@ export interface ActiveDeliverItem {
   readonly text: string;
   readonly translation: string | null;
   readonly payment?: ScPayment;
+  readonly amountDisplay?: string;
 }
 
 export interface WardBlockedEvent {
@@ -185,6 +186,7 @@ function toDeliverItem(frame: DeliverFrame, validUntilMs: number): ActiveDeliver
     text: frame.display.text,
     translation: frame.display.translation,
     ...(payment === null ? {} : { payment }),
+    ...(typeof frame.display.amountDisplay === "string" ? { amountDisplay: frame.display.amountDisplay } : {}),
   };
 }
 

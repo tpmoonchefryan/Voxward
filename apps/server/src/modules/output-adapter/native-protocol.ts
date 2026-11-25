@@ -34,10 +34,11 @@ export function deliverFrame(delivery: SendableDelivery, content: ApprovedConten
     platformOrder: delivery.platformOrder,
     validUntil: delivery.validUntil,
     display: {
-      label: content.amountDisplay === undefined ? null : `SC ${content.amountDisplay}`,
+      label: null,
       text: content.text,
       translation: content.translation,
       ...(content.payment === undefined ? {} : { payment: content.payment }),
+      ...(content.amountDisplay === undefined ? {} : { amountDisplay: content.amountDisplay }),
     },
   };
 }

@@ -53,7 +53,7 @@ describe("overlay pure protocol and StageView rendering (VW-Draft-01)", () => {
       deliverySequence: 1,
       platformOrder: 1,
       validUntil: new Date(Date.now() + 60_000).toISOString(),
-      display: { label: "SC €25.00", text: "Merci !", translation: null },
+      display: { label: null, amountDisplay: "€25.00", text: "Merci !", translation: null },
     }, Date.now());
     const html = renderToStaticMarkup(<StageView state={state} />);
     expect(html).toContain('data-stream-kind="sc"');

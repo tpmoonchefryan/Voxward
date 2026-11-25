@@ -82,7 +82,7 @@ export function mapDeliverToAddText(frame: DeliverFrame, timestamp: string): Bli
     cmd: BLIVECHAT_CMD.ADD_TEXT,
     data: {
       id: frame.deliveryId,
-      authorName: frame.display.label ?? "",
+      authorName: "",
       content: frame.display.text,
       translation: frame.display.translation,
       timestamp,
@@ -104,7 +104,7 @@ export function mapDeliverToSuperChat(
     cmd: BLIVECHAT_CMD.ADD_SUPER_CHAT,
     data: {
       id: frame.deliveryId,
-      authorName: frame.display.label ?? "",
+      authorName: "",
       content: frame.display.text,
       translation: frame.display.translation,
       price,

@@ -27,7 +27,7 @@ export interface StageViewProps {
 }
 
 function isSuperChatItem(item: ActiveDeliverItem): boolean {
-  if (item.payment !== undefined) return true;
+  if (item.payment !== undefined || item.amountDisplay !== undefined) return true;
   if (item.label === null) return false;
   return item.label.includes("$") || item.label.includes("SC") || item.label.includes("¥");
 }
@@ -39,6 +39,9 @@ function parseObsScDisplay(
   readonly author: string;
   readonly amountText: string | null;
 } {
+  if (item.payment !== undefined || item.amountDisplay !== undefined) {
+    return { author: item.label ?? anonAlias, amountText: item.amountDisplay ?? null };
+  }
   const raw = item.label ?? anonAlias;
   if (raw.includes(" · ")) {
     const [firstPart, ...rest] = raw.split(" · ");

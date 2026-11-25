@@ -246,6 +246,7 @@ function toSandboxStageState(dockSnap: DockSnapshot): StageState {
       readonly text: string;
       readonly translation: string | null;
       readonly payment?: ScPayment;
+      readonly amountDisplay?: string;
     }
   >();
 
@@ -264,7 +265,8 @@ function toSandboxStageState(dockSnap: DockSnapshot): StageState {
     merged.set(sc.eventId, {
       deliveryId: `stage-sc-${sc.eventId}`,
       decidedAtMs: Date.parse(sc.decidedAt) || 0,
-      label: `${sc.safeAlias ?? sc.subjectRef} · ${sc.amountDisplay ?? "$20"}`,
+      label: sc.safeAlias ?? sc.subjectRef,
+      amountDisplay: sc.amountDisplay ?? "$20",
       text: sc.originalText ?? "",
       translation: sc.translation,
       ...(sc.payment === undefined ? {} : { payment: sc.payment }),
@@ -284,6 +286,7 @@ function toSandboxStageState(dockSnap: DockSnapshot): StageState {
       text: item.text,
       translation: item.translation,
       ...(item.payment === undefined ? {} : { payment: item.payment }),
+      ...(item.amountDisplay === undefined ? {} : { amountDisplay: item.amountDisplay }),
     }));
 
   return {

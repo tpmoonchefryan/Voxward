@@ -33,6 +33,12 @@ const SAMPLE_BLOCKED: WardBlockedFrame = {
 };
 
 describe("blivechat frames & session adapter", () => {
+  it("does not use a native display label or paid amount as the sender", () => {
+    const paid = { ...SAMPLE_DELIVER, display: { ...SAMPLE_DELIVER.display, label: "SC $10.00", amountDisplay: "$10.00" } };
+    expect(mapDeliverToAddText(paid, "2026-11-14T00:00:00.000Z").data.authorName).toBe("");
+    expect(mapDeliverToSuperChat(paid, "2026-11-14T00:00:00.000Z").data.authorName).toBe("");
+  });
+
   it("maps DELIVER to ADD_TEXT with text and translation and without identity or internal scores", () => {
     const frame = mapDeliverToAddText(SAMPLE_DELIVER, "2026-11-14T00:00:00.000Z");
     expect(frame).toEqual({
