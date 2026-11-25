@@ -322,11 +322,12 @@ function UsersSurface({
 
   const handleSaveRolePermissions = async () => {
     if (editingRoleId === null || !roleName.trim()) return;
+    const storedRole = storedRoles.find((role) => role.id === editingRoleId);
     setBusy(true);
     setNotice(null);
     try {
       await client.updateRole(channelId, editingRoleId, {
-        name: roleName.trim(),
+        name: storedRole?.systemPreset ? storedRole.name : roleName.trim(),
         description: roleDescription.trim(),
         permissions: rolePermissions,
       });

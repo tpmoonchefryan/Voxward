@@ -4,8 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 import { UsersPage } from "../UsersPage";
 import { previewEffectivePermissions, type RbacRoleView } from "../api";
 import { route } from "../route";
+import { localizeRole } from "../preset-copy";
 
 describe("Users & RBAC Page (VW-Draft-04C)", () => {
+  it("localizes the preset name without replacing a saved description", () => {
+    const role: RbacRoleView = { id: "role-owner", name: "频道所有者", description: "Manage our weekend streams", systemPreset: true, permissions: {} };
+    expect(localizeRole(role, "fr")).toMatchObject({ name: "Propriétaire de la chaîne", description: role.description });
+  });
+
   it("exports /users/:channelId? route", () => {
     expect(route.path).toBe("/users/:channelId?");
   });
