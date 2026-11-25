@@ -457,6 +457,33 @@
 | `ck_channel_events_settlement` | CHECK | `settlement_state` 只能取上列四个值。 |
 | `ck_channel_events_exception` | CHECK | `exception_marked` 只能是 0 或 1。 |
 
+### `event_payments`
+
+- 用途：结构化的付费消息（如 Super Chat）金额与档位元数据，避免从审计日志正文中解析金额。
+- 内容分类：无用户正文（仅货币金额与展示标签）。
+- 保留：随事件清理。
+
+#### 列
+
+| 列 | 类型 | 可空 | 说明 |
+| --- | --- | --- | --- |
+| `event_id` | TEXT | 否 | 主键及外键，指向 `channel_events.id`。 |
+| `channel_id` | TEXT | 否 | 外键，指向 `channels.id`。 |
+| `amount_micros` | INTEGER | 否 | 最小货币微单位金额，不小于 0。 |
+| `currency` | TEXT | 否 | 货币代码，长度 3 至 8。 |
+| `amount_display` | TEXT | 是 | 平台原始或格式化的金额展示文本。 |
+| `tier` | INTEGER | 是 | 平台档位（1 至 7），未知时可为空。 |
+| `created_at` | TEXT | 否 | 记录时间。 |
+
+#### 索引与约束
+
+| 名称 | 类别 | 说明 |
+| --- | --- | --- |
+| `event_payments_channel_created_idx` | 索引 | `(channel_id, created_at)`。 |
+| `ck_event_payments_amount_micros` | CHECK | `amount_micros >= 0`。 |
+| `ck_event_payments_currency` | CHECK | `length(currency) BETWEEN 3 AND 8`。 |
+| `ck_event_payments_tier` | CHECK | `tier IS NULL OR tier BETWEEN 1 AND 7`。 |
+
 ### `tasks`
 
 - 用途：绑定事件版本与数据处理代次的处理任务（提案 §7.2）。

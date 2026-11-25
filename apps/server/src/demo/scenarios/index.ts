@@ -4,6 +4,7 @@ import {
   toDownstreamVerdict,
   type ChannelEvent,
   type InternalClassification,
+  type ScPayment,
   type SubjectCacheHub,
   type Verdict,
 } from "@voxward/contracts";
@@ -16,6 +17,7 @@ import type { VoxwardDatabase } from "../../db/client.js";
 import { createDataRequestPort } from "../../db/data-request-store.js";
 import { createDecisionStorePort } from "../../db/decision-store.js";
 import { createApprovedContentPort } from "../../db/output-store.js";
+import { EventPaymentStore } from "../../db/repository.js";
 import {
   channelEvents,
   deliveries,
@@ -65,6 +67,7 @@ export interface SandboxApprovedStageItem {
   readonly correlationId: string;
   readonly subjectKey: string;
   readonly text: string;
+  readonly payment: ScPayment | null;
   readonly amountDisplay: string | null;
   readonly translation: string | null;
   readonly decidedAt: string;
@@ -278,6 +281,14 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
           createdAt: nowIso,
         })
         .run();
+      if (ev.payment !== null) {
+        EventPaymentStore.record(tx, {
+          eventId,
+          channelId: SANDBOX_CHANNEL_ID,
+          payment: ev.payment,
+          createdAt: nowIso,
+        });
+      }
     });
 
     const evidence: { id: string; kind: "MESSAGE_TEXT" | "TRANSLATION"; payload: string; expiresAt: string }[] = [
@@ -576,23 +587,10 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
         .limit(20)
         .all();
 
-      const amountByCorrelation = new Map<string, string>();
-      const techRows = database.orm
-        .select({ correlationId: technicalLogs.correlationId, dataJson: technicalLogs.dataJson })
-        .from(technicalLogs)
-        .where(eq(technicalLogs.channelId, SANDBOX_CHANNEL_ID))
-        .all();
-      for (const row of techRows) {
-        if (row.dataJson === null) continue;
-        try {
-          const parsed = JSON.parse(row.dataJson) as Record<string, unknown>;
-          if (typeof parsed.amountDisplay === "string" && parsed.amountDisplay.trim() !== "") {
-            amountByCorrelation.set(row.correlationId, parsed.amountDisplay);
-          }
-        } catch {
-          // Ignore non-JSON data rows.
-        }
-      }
+      const paymentsByEvent = EventPaymentStore.listByEventIds(
+        database,
+        approvedRows.map((row) => row.eventId),
+      );
 
       const approvedStage: SandboxApprovedStageItem[] = [];
       for (const row of approvedRows) {
@@ -602,12 +600,14 @@ export function createSandboxRuntime(database: VoxwardDatabase, now: () => Date 
           nowIso,
         });
         if (content !== undefined) {
+          const payment = paymentsByEvent.get(row.eventId) ?? null;
           approvedStage.push({
             eventId: row.eventId,
             correlationId: row.correlationId,
             subjectKey: row.subjectKey,
             text: content.text,
-            amountDisplay: amountByCorrelation.get(row.correlationId) ?? null,
+            payment,
+            amountDisplay: payment?.amountDisplay ?? null,
             translation: content.translation,
             decidedAt: row.decidedAt,
           });

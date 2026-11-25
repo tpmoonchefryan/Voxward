@@ -27,6 +27,7 @@ export interface StageViewProps {
 }
 
 function isSuperChatItem(item: ActiveDeliverItem): boolean {
+  if (item.payment !== undefined && item.payment !== null) return true;
   if (item.label === null) return false;
   return item.label.includes("$") || item.label.includes("SC") || item.label.includes("¥");
 }
@@ -126,10 +127,12 @@ export function StageView({
                     item={{
                       id: item.deliveryId,
                       author: scDisplay.author,
-                      amountText: scDisplay.amountText,
+                      payment: item.payment ?? null,
+                      amountText: item.payment ? null : scDisplay.amountText,
                       text: item.text,
                       translation: item.translation,
                     }}
+                    locale={locale}
                   />
                 </div>
               );

@@ -6,6 +6,7 @@ import {
   outputSecretRef,
   revokeOutputGrant,
 } from "../../src/db/output-store.js";
+import { ChannelEventStore, EventPaymentStore, SubjectStore } from "../../src/db/repository.js";
 import { credentialRefs, outputGrants, technicalLogEvidence, technicalLogs } from "../../src/db/schema/index.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { countWhere, openDecisionDatabase, seedChannel, type OpenDatabase } from "../decision-service/fixtures.js";
@@ -126,6 +127,40 @@ describe("output grants and approved content (Q18)", () => {
 
       seedLog("log-validated", 2, LATER, [{ kind: "VALIDATED_JSON", payload: "{}" }]);
       expect(port.readApproved({ channelId: "channel-a", correlationId: "corr-1", nowIso: NOW })).toBeUndefined();
+    });
+
+    it("includes structured payment metadata from event_payments without reading log payloads", () => {
+      runShortTransaction(db.database, (tx) => {
+        SubjectStore.create(tx, { id: "sub-pay-1", channelId: "channel-a", platformSubjectKey: "viewer-p1", createdAt: NOW });
+        ChannelEventStore.recordIfNew(tx, {
+          id: "ev-pay-1",
+          channelId: "channel-a",
+          subjectId: "sub-pay-1",
+          platformMessageRef: "pm-pay-1",
+          platformOrder: 1,
+          receivedAt: NOW,
+          correlationId: "corr-1",
+          exceptionMarked: false,
+          createdAt: NOW,
+        });
+        EventPaymentStore.record(tx, {
+          eventId: "ev-pay-1",
+          channelId: "channel-a",
+          payment: { amountMicros: 20_000_000, currency: "USD", amountDisplay: "$20.00", tier: 5 },
+          createdAt: NOW,
+        });
+      });
+      seedLog("log-pay", 1, LATER, [{ kind: "MESSAGE_TEXT", payload: "paid cheer" }]);
+      const content = createApprovedContentPort(db.database).readApproved({
+        channelId: "channel-a",
+        correlationId: "corr-1",
+        nowIso: NOW,
+      });
+      expect(content).toEqual({
+        text: "paid cheer",
+        translation: null,
+        payment: { amountMicros: 20_000_000, currency: "USD", amountDisplay: "$20.00", tier: 5 },
+      });
     });
   });
 });

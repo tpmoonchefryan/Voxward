@@ -111,4 +111,34 @@ describe("blivechat frames & session adapter", () => {
     );
     expect(uploadAttempt.kind).toBe("reject");
   });
+
+  it("maps DELIVER with display.payment to ADD_SUPER_CHAT while keeping authorName empty", () => {
+    const adapter = createBlivechatAdapter();
+    const session = adapter.createSession();
+    session.handleClientMessage(
+      JSON.stringify({ cmd: BLIVECHAT_CMD.JOIN_ROOM, data: { roomId: "channel-a" } }),
+      "2026-11-14T00:00:00.000Z",
+    );
+    const frame = session.mapNativeFrame(
+      {
+        ...SAMPLE_DELIVER,
+        display: {
+          ...SAMPLE_DELIVER.display,
+          payment: { amountMicros: 10_000_000, currency: "USD", amountDisplay: "$10.00", tier: 4 },
+        },
+      },
+      "2026-11-14T00:00:02.000Z",
+    );
+    expect(frame).toEqual({
+      cmd: BLIVECHAT_CMD.ADD_SUPER_CHAT,
+      data: {
+        id: "del-101",
+        authorName: "",
+        content: "Hello stream!",
+        translation: "你好直播间！",
+        price: 10,
+        timestamp: "2026-11-14T00:00:02.000Z",
+      },
+    });
+  });
 });

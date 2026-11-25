@@ -3,6 +3,7 @@ import {
   BLIVECHAT_CMD,
   heartbeatReplyFrame,
   mapDeliverToAddText,
+  mapDeliverToSuperChat,
   mapWardBlockedToBlivechat,
   type BlivechatServerFrame,
 } from "./frames.js";
@@ -60,6 +61,11 @@ export function createBlivechatAdapter(): BlivechatProtocolAdapter {
         mapNativeFrame(frame: NativeFrame, nowIso: string): BlivechatServerFrame | null {
           if (!joined) return null;
           if (frame.type === "DELIVER") {
+            const payment = frame.display.payment;
+            if (payment !== undefined) {
+              const price = Math.max(0, Math.round((payment.amountMicros / 1_000_000) * 100) / 100);
+              return mapDeliverToSuperChat(frame, nowIso, price);
+            }
             return mapDeliverToAddText(frame, nowIso);
           }
           if (frame.type === "WARD_BLOCKED") {

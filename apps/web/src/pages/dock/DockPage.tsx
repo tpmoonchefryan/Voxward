@@ -98,7 +98,8 @@ export function PureDockSurface({
       (snapshot?.feed.approvedSc ?? []).map((sc) => ({
         id: sc.eventId,
         author: sc.safeAlias ?? sc.subjectRef,
-        amountText: sc.notes ?? sc.acknowledgement ?? "$5",
+        payment: sc.payment ?? null,
+        amountText: sc.payment?.amountDisplay ?? sc.notes ?? sc.acknowledgement ?? null,
         text: sc.originalText,
         translation: sc.translation,
         decidedAtMs: Date.parse(sc.decidedAt) || Date.now(),

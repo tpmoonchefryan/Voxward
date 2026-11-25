@@ -33,7 +33,12 @@ export function deliverFrame(delivery: SendableDelivery, content: ApprovedConten
     deliverySequence: delivery.deliverySequence,
     platformOrder: delivery.platformOrder,
     validUntil: delivery.validUntil,
-    display: { label: null, text: content.text, translation: content.translation },
+    display: {
+      label: null,
+      text: content.text,
+      translation: content.translation,
+      ...(content.payment !== undefined ? { payment: content.payment } : {}),
+    },
   };
 }
 

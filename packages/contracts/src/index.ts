@@ -1,5 +1,6 @@
 export * from "./version.js";
 export * from "./events/channel-event.js";
+export * from "./events/sc-payment.js";
 export * from "./tasks/task-ref.js";
 export * from "./decisions/verdict.js";
 export * from "./delivery/delivery-intent.js";

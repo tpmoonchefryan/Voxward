@@ -1,3 +1,5 @@
+import type { ScPayment } from "../events/sc-payment.js";
+
 /**
  * Native read-only output protocol, version 1. A downstream consumer subscribes to one room with a revocable credential
  * and receives approved display events as JSON text messages. The consumer sends no content. Its only client messages are
@@ -21,6 +23,8 @@ export const NATIVE_OUTPUT_PATH = "/output/v1/room";
 
 /** Values an output grant must carry. They match the scope CHECK in the schema. The kind names this protocol. */
 export const NATIVE_OUTPUT_KIND = "NATIVE_V1";
+export const OUTPUT_GRANT_KINDS = [NATIVE_OUTPUT_KIND, "OBS_OVERLAY", "BLIVECHAT"] as const;
+export type OutputGrantKind = (typeof OUTPUT_GRANT_KINDS)[number];
 export const NATIVE_OUTPUT_SCOPE = "ROOM_READ_ONLY";
 
 /** Heartbeat settings in milliseconds (自定, not measured). */
@@ -52,6 +56,7 @@ export interface DisplayPayload {
   readonly label: string | null;
   readonly text: string;
   readonly translation: string | null;
+  readonly payment?: ScPayment;
 }
 
 interface DeliveryFields {

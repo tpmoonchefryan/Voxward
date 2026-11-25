@@ -115,6 +115,46 @@ describe("Pure Streamer Dock (VW-Draft-02)", () => {
     expect(html).not.toContain("tcrn-product-shell");
   });
 
+  it("renders neutral unknown tier when an SC has unknown currency payment without fabricating $5", () => {
+    const nowIso = new Date().toISOString();
+    const html = renderToStaticMarkup(
+      <PureDockSurface
+        channelId="ch-1"
+        initialSnapshot={{
+          channel: { channelId: "ch-1", displayName: "Room", platform: "youtube" },
+          capabilities: [],
+          scTranslationEnabled: true,
+          modelIssues: [],
+          faults: { platformFault: null, modelFault: null },
+          feed: {
+            approvedSc: [
+              {
+                eventId: "ev-sc-unk",
+                correlationId: "corr-sc-unk",
+                subjectRef: "ViewerX",
+                originalText: "Hello!",
+                translation: "你好！",
+                payment: { amountMicros: 50_000_000, currency: "XYZ", amountDisplay: "XYZ 50", tier: null },
+                notes: null,
+                acknowledgement: null,
+                safeAlias: null,
+                decidedAt: nowIso,
+                deliveryId: null,
+                deliveryStatus: null,
+              },
+            ],
+            reviewQueue: [],
+            blockedItems: [],
+            liveStream: [],
+          },
+        }}
+      />,
+    );
+    expect(html).toContain("vw-sc-card");
+    expect(html).not.toContain("$5");
+    expect(html).toContain("XYZ 50");
+  });
+
   it("keeps DockPage mountable at /dock/:roomId without shell chrome", () => {
     const stubApi: DockApi = {
       getDock: async () => ({

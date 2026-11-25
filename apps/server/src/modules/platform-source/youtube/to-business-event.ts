@@ -44,6 +44,7 @@ export function toBusinessEvent(accepted: AcceptedStreamMessage, deps: BusinessE
     correlationId: deps.newId(),
     body: message.text ?? "",
     sender: { contractVersion: CONTRACT_VERSION, senderRef },
+    ...(message.scPayment !== undefined ? { scPayment: message.scPayment } : {}),
   };
   const identityChange = deps.identities.observe({
     channelId: deps.channelId,

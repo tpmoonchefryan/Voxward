@@ -1,4 +1,4 @@
-import type { IdentityKind } from "@voxward/contracts";
+import type { IdentityKind, ScPayment } from "@voxward/contracts";
 
 export const SANDBOX_CHANNEL_ID = "sandbox-ch-01";
 export const SANDBOX_BANNER = "SYNTHETIC SANDBOX · 合成演示环境（非真实平台数据）";
@@ -19,6 +19,7 @@ export interface SyntheticChatEvent {
   readonly identityKind: IdentityKind;
   readonly text: string;
   readonly isPaid: boolean;
+  readonly payment: ScPayment | null;
   readonly amountDisplay: string | null;
   readonly translationText: string | null;
   readonly receivedAt: string;
@@ -79,6 +80,7 @@ export function buildScenarioEvent(
         identityKind: "VERIFIED_ACCOUNT",
         text: "Hello streamer! Great stream today, keep it up!",
         isPaid: false,
+        payment: null,
         amountDisplay: null,
         translationText: null,
         receivedAt: nowIso,
@@ -93,6 +95,7 @@ export function buildScenarioEvent(
         identityKind: "UNKNOWN",
         text: "Click free crypto spam-link-xyz toxic-abuse now!",
         isPaid: false,
+        payment: null,
         amountDisplay: null,
         translationText: null,
         receivedAt: nowIso,
@@ -107,6 +110,7 @@ export function buildScenarioEvent(
         identityKind: "PAID_MEMBER",
         text: "神回ありがとう！これからも応援しています",
         isPaid: true,
+        payment: { amountMicros: 10_000_000, currency: "USD", amountDisplay: "$10.00", tier: 4 },
         amountDisplay: "$10.00",
         translationText: "Thanks for the awesome stream! Supporting you always!",
         receivedAt: nowIso,
@@ -121,6 +125,7 @@ export function buildScenarioEvent(
         identityKind: "VERIFIED_ACCOUNT",
         text: "Wait check this link maybe for fanart?",
         isPaid: false,
+        payment: null,
         amountDisplay: null,
         translationText: null,
         receivedAt: nowIso,
@@ -134,12 +139,24 @@ export function buildCustomSyntheticEvent(
     readonly subjectKey: string;
     readonly text: string;
     readonly isPaid?: boolean;
+    readonly payment?: ScPayment | null;
     readonly amountDisplay?: string | null;
     readonly translationText?: string | null;
   },
   seq: number,
   nowIso: string,
 ): SyntheticChatEvent {
+  const isPaid = input.isPaid ?? false;
+  const payment =
+    input.payment ??
+    (isPaid
+      ? {
+          amountMicros: 5_000_000,
+          currency: "USD",
+          amountDisplay: input.amountDisplay ?? "$5.00",
+          tier: 3,
+        }
+      : null);
   return {
     messageId: `sbx-msg-custom-${seq}`,
     channelId: SANDBOX_CHANNEL_ID,
@@ -147,8 +164,9 @@ export function buildCustomSyntheticEvent(
     displayName: input.subjectKey,
     identityKind: "UNKNOWN",
     text: input.text,
-    isPaid: input.isPaid ?? false,
-    amountDisplay: input.amountDisplay !== undefined ? input.amountDisplay : input.isPaid ? "$5.00" : null,
+    isPaid,
+    payment,
+    amountDisplay: payment?.amountDisplay ?? input.amountDisplay ?? null,
     translationText: input.translationText ?? null,
     receivedAt: nowIso,
     scenarioTag: "custom",

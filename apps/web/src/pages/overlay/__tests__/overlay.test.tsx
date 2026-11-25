@@ -162,6 +162,31 @@ describe("overlay pure protocol and StageView rendering (VW-Draft-01)", () => {
     expect(retractedHtml).not.toContain("静音");
   });
 
+  it("renders unknown currency structured payment in neutral vw-sc-tier--unknown without falling back to Tier 3", () => {
+    const unknownState = reduceStageFrame(
+      createInitialStageState("connected"),
+      {
+        type: "DELIVER",
+        version: NATIVE_OUTPUT_VERSION,
+        deliveryId: "del-unk",
+        deliverySequence: 1,
+        platformOrder: 1,
+        validUntil: new Date(Date.now() + 60_000).toISOString(),
+        display: {
+          label: "Guest",
+          text: "Greetings!",
+          translation: null,
+          payment: { amountMicros: 15_000_000, currency: "XYZ", amountDisplay: "15 XYZ", tier: null },
+        },
+      },
+      1_000,
+    );
+    const html = renderToStaticMarkup(<StageView state={unknownState} />);
+    expect(html).toContain("vw-sc-tier--unknown");
+    expect(html).not.toContain("vw-sc-tier--t3");
+    expect(html).toContain("15 XYZ");
+  });
+
   it("supports all 5 locales for credential errors, close messages, and anonymous alias", () => {
     expect(safeAnonymousAliasFor("en")).toBe("Viewer");
     expect(safeAnonymousAliasFor("zh-CN")).toBe("匿名观众");

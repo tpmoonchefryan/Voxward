@@ -203,9 +203,10 @@ function startNativeOutput(
   subscribers: OutputSubscriberRegistry,
   settings: NativeOutputSettings | undefined,
 ): void {
-  const grants = createOutputGrantPort(database);
+  const nativeGrants = createOutputGrantPort(database, ["NATIVE_V1", "OBS_OVERLAY"]);
+  const blivechatGrants = createOutputGrantPort(database, ["NATIVE_V1", "BLIVECHAT"]);
   const endpoint = attachNativeOutput(app.server, {
-    grants,
+    grants: nativeGrants,
     subscribers,
     timing: settings?.timing,
     ignoredPaths: new Set([BLIVECHAT_OUTPUT_PATH]),
@@ -215,7 +216,7 @@ function startNativeOutput(
   const blivechatEndpoint = attachBlivechatOutput(app.server, {
     path: BLIVECHAT_OUTPUT_PATH,
     protocolVersion: BLIVECHAT_PROTOCOL_VERSION,
-    grants,
+    grants: blivechatGrants,
     subscribers,
     protocol: createBlivechatAdapter(),
     timing: settings?.timing,

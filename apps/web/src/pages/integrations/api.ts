@@ -1,3 +1,4 @@
+import type { OutputGrantKind } from "@voxward/contracts";
 import type { OutputsSummaryView } from "../admin/api";
 
 export type AdapterCategory = "LIVE_PLATFORM" | "AI_PROVIDER" | "OUTPUT_TARGET";
@@ -82,7 +83,10 @@ export interface IntegrationsApi {
   getOutputs(channelId: string): Promise<OutputsSummaryView>;
   issueOutputToken(channelId: string): Promise<{ readonly id?: string; readonly token?: string }>;
   revokeOutputToken(channelId: string, tokenId: string): Promise<void>;
-  issueOutputGrant(channelId: string): Promise<{ readonly grantId?: string; readonly credential?: string }>;
+  issueOutputGrant(
+    channelId: string,
+    outputKind?: OutputGrantKind,
+  ): Promise<{ readonly grantId?: string; readonly outputKind?: OutputGrantKind; readonly credential?: string }>;
   revokeOutputGrant(channelId: string, grantId: string): Promise<void>;
 }
 
@@ -197,8 +201,12 @@ export function createIntegrationsApi(
         "DELETE",
         `/channels/${encodeURIComponent(channelId)}/output-tokens/${encodeURIComponent(tokenId)}`,
       ),
-    issueOutputGrant: (channelId) =>
-      mutateJson("POST", `/channels/${encodeURIComponent(channelId)}/output-grants`),
+    issueOutputGrant: (channelId, outputKind) =>
+      mutateJson(
+        "POST",
+        `/channels/${encodeURIComponent(channelId)}/output-grants`,
+        outputKind === undefined ? undefined : { outputKind },
+      ),
     revokeOutputGrant: (channelId, grantId) =>
       mutateJson(
         "DELETE",

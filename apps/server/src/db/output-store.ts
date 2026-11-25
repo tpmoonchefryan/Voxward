@@ -2,10 +2,13 @@ import { createHash } from "node:crypto";
 import {
   NATIVE_OUTPUT_KIND,
   NATIVE_OUTPUT_SCOPE,
+  OUTPUT_GRANT_KINDS,
   type ApprovedContentPort,
   type DownstreamVerdict,
   type OutputDeliveryPort,
+  type OutputGrantKind,
   type OutputGrantPort,
+  type ScPayment,
   type SendableDelivery,
   type SendFailureOutcome,
 } from "@voxward/contracts";
@@ -15,6 +18,7 @@ import {
   channelEvents,
   credentialRefs,
   deliveries,
+  eventPayments,
   outputGrants,
   technicalLogEvidence,
   technicalLogs,
@@ -35,11 +39,13 @@ export interface NewOutputGrant {
   readonly credentialRefId: string;
   readonly channelId: string;
   readonly credential: string;
+  readonly outputKind?: OutputGrantKind;
   readonly nowIso: string;
 }
 
 /** Writes the credential reference and the grant inside the caller's short transaction. The credential is not stored. */
 export function insertOutputGrant(tx: ShortTransaction, input: NewOutputGrant): void {
+  const outputKind = input.outputKind ?? NATIVE_OUTPUT_KIND;
   tx.insert(credentialRefs)
     .values({
       id: input.credentialRefId,
@@ -53,7 +59,7 @@ export function insertOutputGrant(tx: ShortTransaction, input: NewOutputGrant): 
     .values({
       id: input.grantId,
       channelId: input.channelId,
-      outputKind: NATIVE_OUTPUT_KIND,
+      outputKind,
       credentialRefId: input.credentialRefId,
       scope: NATIVE_OUTPUT_SCOPE,
       createdAt: input.nowIso,
@@ -88,11 +94,12 @@ export function revokeOutputGrant(
  * The rule every output grant must meet to open the room. It is shared by credential resolution and by the periodic check,
  * so a grant that stops meeting it stops serving.
  */
-function openableGrant() {
+function openableGrant(allowedKinds: readonly OutputGrantKind[]) {
+  const kinds = allowedKinds.length > 0 ? [...allowedKinds] : [...OUTPUT_GRANT_KINDS];
   return and(
     eq(credentialRefs.purpose, "OUTPUT_GRANT"),
     isNull(credentialRefs.revokedAt),
-    eq(outputGrants.outputKind, NATIVE_OUTPUT_KIND),
+    inArray(outputGrants.outputKind, kinds),
     eq(outputGrants.scope, NATIVE_OUTPUT_SCOPE),
     isNull(outputGrants.revokedAt),
     eq(outputGrants.channelId, credentialRefs.channelId),
@@ -100,14 +107,17 @@ function openableGrant() {
 }
 
 /** Output grant port over the credential reference and grant tables. Each call is one read. */
-export function createOutputGrantPort(database: VoxwardDatabase): OutputGrantPort {
+export function createOutputGrantPort(
+  database: VoxwardDatabase,
+  allowedKinds: readonly OutputGrantKind[] = [NATIVE_OUTPUT_KIND],
+): OutputGrantPort {
   return {
     resolveCredential(credential) {
       const row = database.orm
         .select({ grantId: outputGrants.id, channelId: outputGrants.channelId })
         .from(credentialRefs)
         .innerJoin(outputGrants, eq(outputGrants.credentialRefId, credentialRefs.id))
-        .where(and(eq(credentialRefs.secretRef, outputSecretRef(credential)), openableGrant()))
+        .where(and(eq(credentialRefs.secretRef, outputSecretRef(credential)), openableGrant(allowedKinds)))
         .get();
       return row === undefined ? undefined : { grantId: row.grantId, channelId: row.channelId };
     },
@@ -117,7 +127,7 @@ export function createOutputGrantPort(database: VoxwardDatabase): OutputGrantPor
         .select({ grantId: outputGrants.id })
         .from(credentialRefs)
         .innerJoin(outputGrants, eq(outputGrants.credentialRefId, credentialRefs.id))
-        .where(and(eq(outputGrants.id, grantId), openableGrant()))
+        .where(and(eq(outputGrants.id, grantId), openableGrant(allowedKinds)))
         .get();
       return row !== undefined;
     },
@@ -125,8 +135,8 @@ export function createOutputGrantPort(database: VoxwardDatabase): OutputGrantPor
 }
 
 /**
- * Approved text of a message, read from its Technical Log evidence. Only unexpired evidence counts, because the text has
- * its own retention. A message with no MESSAGE_TEXT evidence has no approved text.
+ * Approved text of a message, read from its Technical Log evidence and structured payment table.
+ * Only unexpired evidence counts, because the text has its own retention.
  */
 export function createApprovedContentPort(database: VoxwardDatabase): ApprovedContentPort {
   return {
@@ -149,7 +159,31 @@ export function createApprovedContentPort(database: VoxwardDatabase): ApprovedCo
       const text = rows.find((row) => row.kind === "MESSAGE_TEXT");
       if (text === undefined) return undefined;
       const translation = rows.find((row) => row.kind === "TRANSLATION");
-      return { text: text.payload, translation: translation?.payload ?? null };
+      const paymentRow = database.orm
+        .select({
+          amountMicros: eventPayments.amountMicros,
+          currency: eventPayments.currency,
+          amountDisplay: eventPayments.amountDisplay,
+          tier: eventPayments.tier,
+        })
+        .from(eventPayments)
+        .innerJoin(channelEvents, eq(channelEvents.id, eventPayments.eventId))
+        .where(and(eq(channelEvents.channelId, channelId), eq(channelEvents.correlationId, correlationId)))
+        .get();
+      const payment: ScPayment | undefined =
+        paymentRow === undefined
+          ? undefined
+          : {
+              amountMicros: paymentRow.amountMicros,
+              currency: paymentRow.currency,
+              amountDisplay: paymentRow.amountDisplay,
+              tier: paymentRow.tier,
+            };
+      return {
+        text: text.payload,
+        translation: translation?.payload ?? null,
+        ...(payment !== undefined ? { payment } : {}),
+      };
     },
   };
 }
