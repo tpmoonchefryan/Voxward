@@ -81,6 +81,33 @@ describe("run stream", () => {
     expect(readRunStream([flagged, agentText("x", "sess-7")].join("\n")).sessionId).toBe("sess-7");
     expect(readRunStream(flagged).sessionId).toBeUndefined();
   });
+
+  it("parses kiro-cli 3.4.0 stream-json envelopes carrying sessionId and update under event.data", () => {
+    const stdout = [
+      JSON.stringify({ type: "runStarted", data: { payloadSchema: "acp", acpProtocolVersion: 1, engine: "v2" } }),
+      JSON.stringify({ type: "metadata", data: { sessionId: "f449bd15-f01a-42ab-8f10-04ebeb9ca804" } }),
+      JSON.stringify({
+        type: "sessionUpdate",
+        data: {
+          sessionId: "f449bd15-f01a-42ab-8f10-04ebeb9ca804",
+          update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: '{"items":[' } },
+        },
+      }),
+      JSON.stringify({
+        type: "sessionUpdate",
+        data: {
+          sessionId: "f449bd15-f01a-42ab-8f10-04ebeb9ca804",
+          update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: "]}" } },
+        },
+      }),
+      JSON.stringify({ type: "runFinished", data: { sessionId: "f449bd15-f01a-42ab-8f10-04ebeb9ca804", status: "success" } }),
+    ].join("\n");
+    const summary = readRunStream(stdout);
+    expect(summary.sessionId).toBe("f449bd15-f01a-42ab-8f10-04ebeb9ca804");
+    expect(summary.businessText).toBe('{"items":[]}');
+    expect(summary.malformedLines).toBe(0);
+    expect(scanInPieces(stdout, 17)).toEqual(["f449bd15-f01a-42ab-8f10-04ebeb9ca804"]);
+  });
 });
 
 describe("business JSON", () => {

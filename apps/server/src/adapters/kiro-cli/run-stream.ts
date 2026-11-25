@@ -104,12 +104,17 @@ function parseEvent(line: string): JsonObject | undefined {
 }
 
 function sessionIdOf(event: JsonObject): string | undefined {
-  const candidates: unknown[] = [recordOf(event.params)?.sessionId, recordOf(event.result)?.sessionId, event.sessionId];
+  const candidates: unknown[] = [
+    recordOf(event.data)?.sessionId,
+    recordOf(event.params)?.sessionId,
+    recordOf(event.result)?.sessionId,
+    event.sessionId,
+  ];
   return candidates.find((value): value is string => typeof value === "string" && isAcceptedSessionId(value));
 }
 
 function agentTextOf(event: JsonObject): string | undefined {
-  const update = recordOf(recordOf(event.params)?.update);
+  const update = recordOf(recordOf(event.data)?.update) ?? recordOf(recordOf(event.params)?.update);
   if (update?.sessionUpdate !== AGENT_TEXT_UPDATE) return undefined;
   const content = recordOf(update.content);
   if (content?.type !== "text" || typeof content.text !== "string") return undefined;
