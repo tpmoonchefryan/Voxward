@@ -1,6 +1,8 @@
+import type { ScPayment } from "@voxward/contracts";
 import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { readPlatformDeleteStatusMap, type PlatformDeleteUiStatus } from "./channel-settings-store.js";
 import type { VoxwardDatabase } from "./client.js";
+import { EventPaymentStore } from "./repository.js";
 import {
   authOutputTokens,
   channelEvents,
@@ -28,6 +30,7 @@ export interface ScFeedItem {
   readonly subjectRef: string;
   readonly originalText: string | null;
   readonly translation: string | null;
+  readonly payment: ScPayment | null;
   readonly notes: string | null;
   readonly acknowledgement: string | null;
   readonly safeAlias: string | null;
@@ -201,6 +204,7 @@ export function readDockAndModerationFeed(
           .where(and(inArray(tasks.eventId, eventIds), eq(tasks.kind, "PAID_TEXT_REVIEW")))
           .all();
   const paidEventIds = new Set(paidTaskRows.map((t) => t.eventId));
+  const paymentsByEvent = EventPaymentStore.listByEventIds(database, eventIds);
 
   const queueRows = database.orm
     .select({
@@ -260,7 +264,7 @@ export function readDockAndModerationFeed(
     liveStream.push(item);
     if (isBlocked) {
       blockedItems.push(item);
-    } else if (!isBlocked && (paidEventIds.has(ev.eventId) || evEvidence?.translationJson != null)) {
+    } else if (!isBlocked && (paidEventIds.has(ev.eventId) || paymentsByEvent.has(ev.eventId) || evEvidence?.translationJson != null)) {
       const sc = parseTranslationPayload(evEvidence?.translationJson ?? null);
       approvedSc.push({
         eventId: ev.eventId,
@@ -268,6 +272,7 @@ export function readDockAndModerationFeed(
         subjectRef: ev.subjectKey,
         originalText: evEvidence?.messageText ?? null,
         translation: sc.translation,
+        payment: paymentsByEvent.get(ev.eventId) ?? null,
         notes: sc.notes,
         acknowledgement: sc.acknowledgement,
         safeAlias: sc.safeAlias,

@@ -60,11 +60,12 @@ describe("native output grant routes (VW-SUB039-AC001, Q18)", () => {
     return { cookie, csrf: body.csrfToken };
   }
 
-  async function issue(session: Session, channelId: string) {
+  async function issue(session: Session, channelId: string, outputKind?: "NATIVE_V1" | "OBS_OVERLAY" | "BLIVECHAT") {
     return app.inject({
       method: "POST",
       url: `/channels/${channelId}/output-grants`,
       headers: { cookie: session.cookie, "x-csrf-token": session.csrf },
+      ...(outputKind === undefined ? {} : { payload: { outputKind } }),
     });
   }
 
@@ -121,5 +122,25 @@ describe("native output grant routes (VW-SUB039-AC001, Q18)", () => {
     });
     expect(again.statusCode).toBe(404);
     expect(again.json()).toEqual({ error: "GRANT_NOT_FOUND" });
+  });
+
+  it("issues scoped OBS_OVERLAY and BLIVECHAT grants enforced per output port", async () => {
+    const owner = await signIn("owner");
+    const obsRes = await issue(owner, "channel-1", "OBS_OVERLAY");
+    const bliveRes = await issue(owner, "channel-1", "BLIVECHAT");
+    expect(obsRes.statusCode).toBe(201);
+    expect(bliveRes.statusCode).toBe(201);
+
+    const obsBody = obsRes.json() as { grantId: string; outputKind: string; credential: string };
+    const bliveBody = bliveRes.json() as { grantId: string; outputKind: string; credential: string };
+    expect(obsBody.outputKind).toBe("OBS_OVERLAY");
+    expect(bliveBody.outputKind).toBe("BLIVECHAT");
+
+    const nativePort = createOutputGrantPort(database, ["NATIVE_V1", "OBS_OVERLAY"]);
+    const blivePort = createOutputGrantPort(database, ["NATIVE_V1", "BLIVECHAT"]);
+    expect(nativePort.resolveCredential(obsBody.credential)?.grantId).toBe(obsBody.grantId);
+    expect(nativePort.resolveCredential(bliveBody.credential)).toBeUndefined();
+    expect(blivePort.resolveCredential(bliveBody.credential)?.grantId).toBe(bliveBody.grantId);
+    expect(blivePort.resolveCredential(obsBody.credential)).toBeUndefined();
   });
 });

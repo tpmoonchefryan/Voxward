@@ -5,6 +5,7 @@ import {
   NATIVE_OUTPUT_PROTOCOL,
   type DeliverFrame,
   type NativeFrame,
+  type ScPayment,
   type WardBlockedFrame,
 } from "@voxward/contracts";
 import { DEFAULT_VOXWARD_LOCALE, OVERLAY_COPY, pickLocale, type VoxWardLocale } from "../../i18n";
@@ -114,6 +115,7 @@ export interface ActiveDeliverItem {
   readonly label: string | null;
   readonly text: string;
   readonly translation: string | null;
+  readonly payment?: ScPayment | null;
 }
 
 export interface WardBlockedEvent {
@@ -180,6 +182,7 @@ function toDeliverItem(frame: DeliverFrame, validUntilMs: number): ActiveDeliver
     label: frame.display.label,
     text: frame.display.text,
     translation: frame.display.translation,
+    ...(frame.display.payment !== undefined ? { payment: frame.display.payment } : {}),
   };
 }
 

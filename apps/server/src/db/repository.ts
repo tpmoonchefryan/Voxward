@@ -1,7 +1,9 @@
-import { toDownstreamVerdict, type InternalClassification } from "@voxward/contracts";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { toDownstreamVerdict, type InternalClassification, type ScPayment } from "@voxward/contracts";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import type { VoxwardDatabase } from "./client.js";
 import {
   channelEvents,
+  eventPayments,
   scoreExceptions,
   scoreLedger,
   subjectScores,
@@ -410,5 +412,79 @@ export const ScoreExceptionStore = {
       })
       .run();
     return { status: "created", id: input.id };
+  },
+};
+
+// ---------------------------------------------------------------- event payments
+
+export interface RecordEventPaymentInput {
+  readonly eventId: string;
+  readonly channelId: string;
+  readonly payment: ScPayment;
+  readonly createdAt: string;
+}
+
+export const EventPaymentStore = {
+  /** Persists structured payment metadata for one event, idempotently on `event_id`. */
+  record(tx: ShortTransaction, input: RecordEventPaymentInput): void {
+    tx.insert(eventPayments)
+      .values({
+        eventId: input.eventId,
+        channelId: input.channelId,
+        amountMicros: input.payment.amountMicros,
+        currency: input.payment.currency,
+        amountDisplay: input.payment.amountDisplay,
+        tier: input.payment.tier ?? null,
+        createdAt: input.createdAt,
+      })
+      .onConflictDoUpdate({
+        target: eventPayments.eventId,
+        set: {
+          amountMicros: input.payment.amountMicros,
+          currency: input.payment.currency,
+          amountDisplay: input.payment.amountDisplay,
+          tier: input.payment.tier ?? null,
+        },
+      })
+      .run();
+  },
+
+  findByEventId(tx: ShortTransaction, eventId: string): ScPayment | null {
+    const row = tx
+      .select({
+        amountMicros: eventPayments.amountMicros,
+        currency: eventPayments.currency,
+        amountDisplay: eventPayments.amountDisplay,
+        tier: eventPayments.tier,
+      })
+      .from(eventPayments)
+      .where(eq(eventPayments.eventId, eventId))
+      .get();
+    return row === undefined ? null : row;
+  },
+
+  listByEventIds(database: VoxwardDatabase, eventIds: readonly string[]): Map<string, ScPayment> {
+    const result = new Map<string, ScPayment>();
+    if (eventIds.length === 0) return result;
+    const rows = database.orm
+      .select({
+        eventId: eventPayments.eventId,
+        amountMicros: eventPayments.amountMicros,
+        currency: eventPayments.currency,
+        amountDisplay: eventPayments.amountDisplay,
+        tier: eventPayments.tier,
+      })
+      .from(eventPayments)
+      .where(inArray(eventPayments.eventId, [...eventIds]))
+      .all();
+    for (const row of rows) {
+      result.set(row.eventId, {
+        amountMicros: row.amountMicros,
+        currency: row.currency,
+        amountDisplay: row.amountDisplay,
+        tier: row.tier,
+      });
+    }
+    return result;
   },
 };

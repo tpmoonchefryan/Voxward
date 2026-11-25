@@ -1,3 +1,4 @@
+import { resolveScTierFromPayment, type ScPayment } from "@voxward/contracts";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type WheelEvent } from "react";
 import { DEFAULT_VOXWARD_LOCALE, pickLocale, YOUTUBE_SC_COPY, type VoxWardLocale } from "../../i18n";
 import { UntrustedText } from "../untrusted-text/UntrustedText";
@@ -21,14 +22,15 @@ function readTranslateY(el: HTMLElement): number {
 }
 
 export interface ScTierDescriptor {
-  readonly id: "t1" | "t2" | "t3" | "t4" | "t5" | "t6" | "t7";
-  readonly tierNumber: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  readonly id: "t1" | "t2" | "t3" | "t4" | "t5" | "t6" | "t7" | "unknown";
+  readonly tierNumber: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
   readonly label: string;
   readonly durationSeconds: number;
   readonly showsBody: boolean;
   readonly darkInk: boolean;
 }
 
+const TIER_UNKNOWN: ScTierDescriptor = { id: "unknown", tierNumber: 0, label: "", durationSeconds: 0, showsBody: true, darkInk: false };
 const TIER_1: ScTierDescriptor = { id: "t1", tierNumber: 1, label: "$1–$1.99", durationSeconds: 0, showsBody: false, darkInk: false };
 const TIER_2: ScTierDescriptor = { id: "t2", tierNumber: 2, label: "$2–$4.99", durationSeconds: 0, showsBody: true, darkInk: true };
 const TIER_3: ScTierDescriptor = { id: "t3", tierNumber: 3, label: "$5–$9.99", durationSeconds: 120, showsBody: true, darkInk: true };
@@ -38,10 +40,19 @@ const TIER_6: ScTierDescriptor = { id: "t6", tierNumber: 6, label: "$50–$99.99
 const TIER_7: ScTierDescriptor = { id: "t7", tierNumber: 7, label: "$100–$500+", durationSeconds: 3600, showsBody: true, darkInk: false };
 
 const TIERS_BY_NUM: readonly ScTierDescriptor[] = [TIER_1, TIER_2, TIER_3, TIER_4, TIER_5, TIER_6, TIER_7];
+const TIERS_BY_ID: Readonly<Record<string, ScTierDescriptor>> = {
+  t1: TIER_1,
+  t2: TIER_2,
+  t3: TIER_3,
+  t4: TIER_4,
+  t5: TIER_5,
+  t6: TIER_6,
+  t7: TIER_7,
+};
 
 export function resolveScTier(amountHint: string | null | undefined): ScTierDescriptor {
   if (amountHint === null || amountHint === undefined || amountHint.trim() === "") {
-    return TIER_3;
+    return TIER_UNKNOWN;
   }
   const usdMatch = /(?:\$|USD\s*)(\d+(?:\.\d+)?)/i.exec(amountHint);
   if (usdMatch !== null && usdMatch[1] !== undefined) {
@@ -69,9 +80,42 @@ export function resolveScTier(amountHint: string | null | undefined): ScTierDesc
   const tierMatch = /t([1-7])/i.exec(amountHint);
   if (tierMatch !== null && tierMatch[1] !== undefined) {
     const index = Number.parseInt(tierMatch[1], 10) - 1;
-    return TIERS_BY_NUM[index] ?? TIER_3;
+    return TIERS_BY_NUM[index] ?? TIER_UNKNOWN;
   }
-  return TIER_3;
+  return TIER_UNKNOWN;
+}
+
+export function resolveScTierForItem(
+  item: Pick<SuperChatItemDisplay, "payment" | "amountText">,
+): ScTierDescriptor {
+  if (item.payment !== undefined && item.payment !== null) {
+    const tierId = resolveScTierFromPayment(item.payment);
+    if (tierId === null) return TIER_UNKNOWN;
+    if (tierId === "t7" && item.payment.currency === "USD" && item.payment.amountMicros >= 500_000_000) {
+      return { ...TIER_7, durationSeconds: 18000 };
+    }
+    return TIERS_BY_ID[tierId] ?? TIER_UNKNOWN;
+  }
+  return resolveScTier(item.amountText);
+}
+
+export function formatScAmountDisplay(
+  item: Pick<SuperChatItemDisplay, "payment" | "amountText">,
+  locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+): string {
+  const payment = item.payment;
+  if (payment !== undefined && payment !== null) {
+    if (payment.amountDisplay !== null && payment.amountDisplay.trim() !== "") {
+      return payment.amountDisplay;
+    }
+    const major = payment.amountMicros / 1_000_000;
+    try {
+      return new Intl.NumberFormat(locale, { style: "currency", currency: payment.currency }).format(major);
+    } catch {
+      return `${payment.currency} ${major.toFixed(2)}`;
+    }
+  }
+  return item.amountText ?? "";
 }
 
 export function formatTickerCountdown(remainingSeconds: number): string {
@@ -88,6 +132,7 @@ export function formatTickerCountdown(remainingSeconds: number): string {
 export interface SuperChatItemDisplay {
   readonly id: string;
   readonly author: string;
+  readonly payment?: ScPayment | null;
   readonly amountText: string | null;
   readonly text: string | null;
   readonly translation: string | null;
@@ -97,7 +142,7 @@ export interface SuperChatItemDisplay {
 function computeActiveScTickers(items: readonly SuperChatItemDisplay[], nowMs: number) {
   return items
     .map((item) => {
-      const tier = resolveScTier(item.amountText);
+      const tier = resolveScTierForItem(item);
       if (tier.durationSeconds <= 0) {
         return null;
       }
@@ -160,7 +205,7 @@ export function SuperChatTicker({
             <span>
               <UntrustedText text={item.author} />
             </span>
-            <span>{item.amountText ?? tier.label}</span>
+            <span>{formatScAmountDisplay(item, locale)}</span>
             <span className="vw-sc-ticker__countdown">{formatTickerCountdown(remainingSec)}</span>
             <progress
               className="vw-sc-ticker__progress"
@@ -395,8 +440,15 @@ export function useLiveStreamAutoScroll(
   return { viewportRef, trackRef, handleScroll, handleWheel };
 }
 
-export function SuperChatCard({ item }: { readonly item: SuperChatItemDisplay }) {
-  const tier = resolveScTier(item.amountText);
+export function SuperChatCard({
+  item,
+  locale = DEFAULT_VOXWARD_LOCALE,
+}: {
+  readonly item: SuperChatItemDisplay;
+  readonly locale?: VoxWardLocale;
+}) {
+  const tier = resolveScTierForItem(item);
+  const amountLabel = formatScAmountDisplay(item, locale);
 
   return (
     <article
@@ -408,7 +460,7 @@ export function SuperChatCard({ item }: { readonly item: SuperChatItemDisplay })
         <span className="vw-sc-card__author">
           <UntrustedText text={item.author} />
         </span>
-        <span className="vw-sc-card__amount">{item.amountText ?? tier.label}</span>
+        {amountLabel !== "" ? <span className="vw-sc-card__amount">{amountLabel}</span> : null}
       </header>
       {tier.showsBody && (item.text || item.translation) ? (
         <div className="vw-sc-card__body">

@@ -18,7 +18,8 @@ export function ScScroll({ items }: ScScrollProps) {
           item={{
             id: item.deliveryId,
             author: item.label ?? SAFE_ANONYMOUS_ALIAS,
-            amountText: item.label,
+            payment: item.payment ?? null,
+            amountText: item.payment ? null : item.label,
             text: item.text,
             translation: item.translation,
           }}

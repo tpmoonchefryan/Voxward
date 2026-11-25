@@ -48,6 +48,30 @@ export const channelEvents = sqliteTable(
   ],
 );
 
+/** Structured paid-message payment metadata separated from log payloads and text. */
+export const eventPayments = sqliteTable(
+  "event_payments",
+  {
+    eventId: text("event_id")
+      .primaryKey()
+      .references(() => channelEvents.id),
+    channelId: text("channel_id")
+      .notNull()
+      .references(() => channels.id),
+    amountMicros: integer("amount_micros").notNull(),
+    currency: text("currency").notNull(),
+    amountDisplay: text("amount_display"),
+    tier: integer("tier"),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [
+    index("event_payments_channel_created_idx").on(t.channelId, t.createdAt),
+    check("ck_event_payments_amount_micros", sql.raw("amount_micros >= 0")),
+    check("ck_event_payments_currency", sql.raw("length(currency) BETWEEN 3 AND 8")),
+    check("ck_event_payments_tier", sql.raw("tier IS NULL OR tier BETWEEN 1 AND 7")),
+  ],
+);
+
 /** Processing task bound to one event version and one processing generation (proposal §7.2). */
 export const tasks = sqliteTable(
   "tasks",

@@ -269,7 +269,7 @@ function IntegrationsSurface({
   const handleRunAction = async (action: string) => {
     if (editingAdapterId === null) return;
     if (action === "issue-output-token") {
-      await handleIssueToken();
+      await handleIssueGrant("OBS_OVERLAY");
       return;
     }
     if (action === "issue-output-grant") {
@@ -335,35 +335,13 @@ function IntegrationsSurface({
     setManualModelName("");
   };
 
-  const handleIssueToken = async () => {
+  const handleIssueGrant = async (outputKind: "NATIVE_V1" | "OBS_OVERLAY" | "BLIVECHAT" = "NATIVE_V1") => {
     setBusy(true);
     setNotice(null);
     try {
-      const res = await client.issueOutputToken(channelId);
-      if (res.token) {
-        setIssuedSecret({ kind: "obs", secret: res.token });
-      }
-      await loadAll();
-    } catch (error) {
-      setNotice({
-        tone: "danger",
-        resolve: (c) =>
-          error instanceof IntegrationsApiError
-            ? c.messages.tokenFailedCode(error.code)
-            : c.messages.tokenFailed,
-      });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleIssueGrant = async () => {
-    setBusy(true);
-    setNotice(null);
-    try {
-      const res = await client.issueOutputGrant(channelId);
+      const res = await client.issueOutputGrant(channelId, outputKind);
       if (res.credential) {
-        setIssuedSecret({ kind: "desktop", secret: res.credential });
+        setIssuedSecret({ kind: outputKind === "OBS_OVERLAY" ? "obs" : "desktop", secret: res.credential });
       }
       await loadAll();
     } catch (error) {
@@ -920,14 +898,23 @@ function IntegrationsSurface({
                     {draftDriverId === "obs-overlay-source" ? (
                       <div className="vw-panel-card vw-panel-card--quiet">
                         <div className="vw-row-between">
-                          <strong>{copy.obsTokensHeading(outputs.tokens.length)}</strong>
+                          <strong>
+                            {copy.obsTokensHeading(
+                              outputs.grants.filter((g) => g.outputKind === "OBS_OVERLAY").length,
+                            )}
+                          </strong>
                           <div className="vw-row-wrap">
                             <a href={obsPreviewHref} target="_blank" rel="noopener noreferrer">
                               <Button size="sm" variant="quiet">
                                 {copy.openStagePreviewBtn}
                               </Button>
                             </a>
-                            <Button size="sm" variant="primary" disabled={busy} onClick={() => void handleIssueToken()}>
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              disabled={busy}
+                              onClick={() => void handleIssueGrant("OBS_OVERLAY")}
+                            >
                               {copy.issueObsTokenBtn}
                             </Button>
                           </div>
@@ -936,27 +923,56 @@ function IntegrationsSurface({
                           label={copy.obsTableLabel}
                           columns={[
                             { key: "id", label: copy.colTokenId },
-                            { key: "createdAt", label: copy.colIssuedAt },
+                            { key: "kind", label: copy.colGrantKind },
                             { key: "actions", label: copy.cols.actions, align: "end" },
                           ]}
-                          rows={outputs.tokens.map((t) => ({
-                            id: <span className="vw-mono">{t.tokenId}</span>,
-                            createdAt: new Date(t.createdAt).toLocaleString(locale),
-                            actions: (
-                              <Button
-                                size="sm"
-                                variant="danger"
-                                disabled={busy}
-                                onClick={() =>
-                                  void client.revokeOutputToken(channelId, t.tokenId).then(loadAll)
-                                }
-                              >
-                                {copy.revokeBtn}
-                              </Button>
-                            ),
-                          }))}
+                          rows={outputs.grants
+                            .filter((g) => g.outputKind === "OBS_OVERLAY")
+                            .map((g) => ({
+                              id: <span className="vw-mono">{g.grantId}</span>,
+                              kind: g.outputKind,
+                              actions: (
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void client.revokeOutputGrant(channelId, g.grantId).then(loadAll)
+                                  }
+                                >
+                                  {copy.revokeBtn}
+                                </Button>
+                              ),
+                            }))}
                           emptyState={<EmptyState title={copy.emptyObsTitle} />}
                         />
+                        {outputs.tokens.length > 0 ? (
+                          <TableShell
+                            label={copy.obsTableLabel}
+                            columns={[
+                              { key: "id", label: copy.colTokenId },
+                              { key: "createdAt", label: copy.colIssuedAt },
+                              { key: "actions", label: copy.cols.actions, align: "end" },
+                            ]}
+                            rows={outputs.tokens.map((t) => ({
+                              id: <span className="vw-mono">{t.tokenId}</span>,
+                              createdAt: new Date(t.createdAt).toLocaleString(locale),
+                              actions: (
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void client.revokeOutputToken(channelId, t.tokenId).then(loadAll)
+                                  }
+                                >
+                                  {copy.revokeBtn}
+                                </Button>
+                              ),
+                            }))}
+                            emptyState={<EmptyState title={copy.emptyObsTitle} />}
+                          />
+                        ) : null}
                       </div>
                     ) : null}
 
@@ -964,9 +980,24 @@ function IntegrationsSurface({
                       <div className="vw-panel-card vw-panel-card--quiet">
                         <div className="vw-row-between">
                           <strong>{copy.grantsHeading(outputs.grants.length)}</strong>
-                          <Button size="sm" variant="primary" disabled={busy} onClick={() => void handleIssueGrant()}>
-                            {copy.issueGrantBtn}
-                          </Button>
+                          <div className="vw-row-wrap">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={busy}
+                              onClick={() => void handleIssueGrant("BLIVECHAT")}
+                            >
+                              {copy.blivechatDesktopLabel}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              disabled={busy}
+                              onClick={() => void handleIssueGrant("NATIVE_V1")}
+                            >
+                              {copy.issueGrantBtn}
+                            </Button>
+                          </div>
                         </div>
                         <TableShell
                           label={copy.grantTableLabel}
@@ -978,7 +1009,7 @@ function IntegrationsSurface({
                           rows={outputs.grants.map((g) => ({
                             id: <span className="vw-mono">{g.grantId}</span>,
                             kind:
-                              g.outputKind === "blivechat"
+                              g.outputKind === "BLIVECHAT" || g.outputKind === "blivechat"
                                 ? copy.blivechatDesktopLabel
                                 : g.outputKind,
                             actions: (

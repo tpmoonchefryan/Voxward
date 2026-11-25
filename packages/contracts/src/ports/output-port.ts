@@ -5,6 +5,7 @@
  */
 
 import type { DownstreamVerdict } from "../decisions/verdict.js";
+import type { ScPayment } from "../events/sc-payment.js";
 import type { NativeClose, NativeFrame } from "../output/native-v1.js";
 
 /** Delivery status values. They match the `deliveries.status` CHECK in the schema. */
@@ -27,6 +28,7 @@ export interface SendableDelivery {
 export interface ApprovedContent {
   readonly text: string;
   readonly translation: string | null;
+  readonly payment?: ScPayment;
 }
 
 /** The grant a credential opens. The room is the grant's channel, and the client never chooses it. */

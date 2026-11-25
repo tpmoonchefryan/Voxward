@@ -1,4 +1,5 @@
 import type { Versioned } from "../version.js";
+import type { ScPayment } from "./sc-payment.js";
 
 /** Opaque sender reference. Platform profile data never crosses the contract. */
 export interface SenderRef extends Versioned {
@@ -22,4 +23,5 @@ export interface ChannelEvent extends Versioned {
   readonly correlationId: string;
   readonly body: string;
   readonly sender: SenderRef;
+  readonly scPayment?: ScPayment;
 }

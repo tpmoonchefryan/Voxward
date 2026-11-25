@@ -2,10 +2,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { issueOutputToken } from "../../../src/auth/downstream-tokens.js";
+import { createAccount } from "../../../src/auth/login.js";
+import { issueNativeGrant } from "../../../src/auth/output-grants.js";
 import { readDockAndModerationFeed } from "../../../src/db/channel-panel-read.js";
 import { openDatabase, type VoxwardDatabase } from "../../../src/db/client.js";
 import { runMigrations } from "../../../src/db/migrate.js";
 import { createApprovedContentPort } from "../../../src/db/output-store.js";
+import { runShortTransaction } from "../../../src/db/transaction.js";
 import { createSandboxRuntime } from "../../../src/demo/scenarios/index.js";
 import { SANDBOX_CHANNEL_ID } from "../../../src/demo/synthetic-source.js";
 
@@ -118,6 +122,16 @@ describe("VOXWARD-SUB-046: sandbox synthetic scenarios and deterministic reset",
     await runtime.runScenario("spam-toxicity-block");
     await runtime.runScenario("superchat-translation");
     await runtime.runScenario("manual-review");
+    const acc = await createAccount(db, {
+      loginName: "sbx-owner-reset",
+      displayName: "Sandbox Owner",
+      password: "reset-test-password-123",
+      now: new Date(),
+    });
+    runShortTransaction(db, (tx) => {
+      issueNativeGrant(tx, { channelId: SANDBOX_CHANNEL_ID, nowIso: new Date().toISOString(), outputKind: "OBS_OVERLAY" });
+      issueOutputToken(tx, { channelId: SANDBOX_CHANNEL_ID, createdByAccountId: acc.accountId, now: new Date() });
+    });
 
     runtime.reset();
     const snap = runtime.snapshot();

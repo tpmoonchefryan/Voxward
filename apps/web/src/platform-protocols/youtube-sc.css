@@ -224,6 +224,16 @@
   color: #ffffff;
 }
 
+.vw-sc-tier--unknown .vw-sc-card__header,
+.vw-sc-tier--unknown.vw-sc-sc-pill {
+  background: var(--surface-3, #334155);
+  color: var(--ink-1, #f8fafc);
+}
+.vw-sc-tier--unknown .vw-sc-card__body {
+  background: var(--surface-2, #1e293b);
+  color: var(--ink-1, #f8fafc);
+}
+
 /* OBS Transparent Stage Protocol Surface */
 .vw-obs-stage {
   height: 100vh;

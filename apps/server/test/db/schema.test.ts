@@ -71,8 +71,8 @@ function constraintNames(name: string): string[] {
 }
 
 describe("data dictionary matches the schema", () => {
-  it("documents exactly the 28 schema tables", () => {
-    expect(tables).toHaveLength(28);
+  it("documents exactly the 29 schema tables", () => {
+    expect(tables).toHaveLength(29);
     expect([...dictionary.keys()].sort()).toEqual([...configs.keys()].sort());
   });
 

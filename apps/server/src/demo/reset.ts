@@ -2,13 +2,17 @@ import { eq, inArray } from "drizzle-orm";
 import type { SubjectCacheHub } from "@voxward/contracts";
 import type { VoxwardDatabase } from "../db/client.js";
 import {
+  authOutputTokens,
   changeLogs,
   channelEvents,
   channels,
+  credentialRefs,
   dataRequestItems,
   dataRequests,
   deliveries,
+  eventPayments,
   listEntries,
+  outputGrants,
   ruleTerms,
   ruleVersions,
   scoreExceptions,
@@ -142,8 +146,12 @@ export function resetSandboxState(ctx: SandboxResetContext): { readonly resetAt:
       tx.delete(subjectScores).where(inArray(subjectScores.subjectId, subjectIds)).run();
     }
 
+    tx.delete(eventPayments).where(eq(eventPayments.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(channelEvents).where(eq(channelEvents.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(subjects).where(eq(subjects.channelId, SANDBOX_CHANNEL_ID)).run();
+    tx.delete(outputGrants).where(eq(outputGrants.channelId, SANDBOX_CHANNEL_ID)).run();
+    tx.delete(credentialRefs).where(eq(credentialRefs.channelId, SANDBOX_CHANNEL_ID)).run();
+    tx.delete(authOutputTokens).where(eq(authOutputTokens.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(ruleTerms).where(eq(ruleTerms.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(wordlistSnapshots).where(eq(wordlistSnapshots.channelId, SANDBOX_CHANNEL_ID)).run();
     tx.delete(ruleVersions).where(eq(ruleVersions.channelId, SANDBOX_CHANNEL_ID)).run();

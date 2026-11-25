@@ -4,6 +4,7 @@
  * - runStreamList performs those decisions. The transport, the sink, the clock and the connect gate are injected.
  * The transport is the only part that talks to the platform. It yields the platform's answers as events, nothing else.
  */
+import { type ScPayment } from "@voxward/contracts";
 import { type YouTubeStreamConfig } from "./config.js";
 import { claimMessageId, type MessageIdStore } from "./dedup.js";
 import { classifyReplay } from "./replay-age.js";
@@ -56,6 +57,7 @@ export interface StreamMessage {
   readonly text: string | null;
   readonly authorChannelId: string;
   readonly authorFlags: AuthorFlags;
+  readonly scPayment?: ScPayment;
 }
 
 const OFFICIAL_MESSAGE_KIND = "youtube#liveChatMessage";
@@ -85,6 +87,30 @@ function stringFieldOf(details: unknown, key: string): string | null {
   return typeof value === "string" ? value : null;
 }
 
+function superChatPaymentOf(type: string, snippet: Readonly<Record<string, unknown>>): ScPayment | undefined {
+  if (type !== "superChatEvent" || !isRecord(snippet.superChatDetails)) return undefined;
+  const details = snippet.superChatDetails;
+  const rawMicros = details.amountMicros;
+  const amountMicros =
+    typeof rawMicros === "number"
+      ? rawMicros
+      : typeof rawMicros === "string" && /^\d+$/.test(rawMicros)
+        ? Number(rawMicros)
+        : Number.NaN;
+  const currency = details.currency;
+  if (!Number.isSafeInteger(amountMicros) || amountMicros < 0) return undefined;
+  if (typeof currency !== "string" || !/^[A-Z]{3,8}$/.test(currency)) return undefined;
+  const amountDisplay = typeof details.amountDisplayString === "string" ? details.amountDisplayString : null;
+  const rawTier = details.tier;
+  const tier = typeof rawTier === "number" && Number.isInteger(rawTier) && rawTier >= 1 && rawTier <= 7 ? rawTier : null;
+  return {
+    amountMicros,
+    currency,
+    amountDisplay,
+    ...(tier !== null ? { tier } : {}),
+  };
+}
+
 /**
  * Returns the message, or null when the item is not an official chat message or lacks a field the intake needs. A field
  * that is absent stays absent. It is never filled in with a guess.
@@ -99,6 +125,7 @@ export function parseStreamItem(raw: unknown): StreamMessage | null {
   if (Number.isNaN(publishedAtMs)) return null;
   const { channelId } = authorDetails;
   if (typeof channelId !== "string" || channelId === "") return null;
+  const scPayment = superChatPaymentOf(snippet.type, snippet);
   return {
     platformMessageId: id,
     type: snippet.type,
@@ -111,6 +138,7 @@ export function parseStreamItem(raw: unknown): StreamMessage | null {
       isChatSponsor: flagOf(authorDetails.isChatSponsor),
       isVerified: flagOf(authorDetails.isVerified),
     },
+    ...(scPayment !== undefined ? { scPayment } : {}),
   };
 }
 

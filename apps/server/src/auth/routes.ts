@@ -1,3 +1,4 @@
+import { OUTPUT_GRANT_KINDS, type OutputGrantKind } from "@voxward/contracts";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -297,12 +298,24 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
     },
   );
 
+const OUTPUT_GRANT_BODY = z
+  .object({
+    outputKind: z.enum(OUTPUT_GRANT_KINDS).optional(),
+  })
+  .strict()
+  .optional();
+
   app.post<{ Params: { channelId: string } }>("/channels/:channelId/output-grants", async (request, reply) => {
     const allowed = principalOf(database, request);
     const { channelId } = request.params;
     requireCapability(database, allowed, channelId, "tokens.manage");
+    let outputKind: OutputGrantKind | undefined;
+    if (request.body !== undefined && request.body !== null) {
+      const parsed = parseBody(OUTPUT_GRANT_BODY, request.body);
+      outputKind = parsed?.outputKind;
+    }
     const issued = runShortTransaction(database, (tx) =>
-      issueNativeGrant(tx, { channelId, nowIso: new Date().toISOString() }),
+      issueNativeGrant(tx, { channelId, nowIso: new Date().toISOString(), outputKind }),
     );
     return reply.code(201).header("cache-control", "no-store").send(issued);
   });

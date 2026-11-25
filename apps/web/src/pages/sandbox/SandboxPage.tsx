@@ -102,17 +102,19 @@ function toDockSnapshot(
   const scMap = new Map<string, DockSnapshot["feed"]["approvedSc"][number]>();
 
   for (const item of snap?.approvedStage ?? []) {
-    const hasAmount = item.amountDisplay !== undefined && item.amountDisplay !== null;
+    const payment = item.payment ?? null;
+    const notes = payment?.amountDisplay ?? item.amountDisplay ?? null;
+    const hasAmount = payment !== null || (notes !== null && notes.trim() !== "");
     if (!hasAmount && item.translation === null) {
       continue;
     }
-    const notes = item.amountDisplay ?? "$10";
     scMap.set(item.eventId, {
       eventId: item.eventId,
       correlationId: item.correlationId,
       subjectRef: item.subjectKey,
       originalText: item.text,
       translation: item.translation,
+      payment,
       notes,
       acknowledgement: notes,
       safeAlias: item.subjectKey,
@@ -239,9 +241,10 @@ function toSandboxStageState(dockSnap: DockSnapshot): StageState {
     {
       readonly deliveryId: string;
       readonly decidedAtMs: number;
-      readonly label: string;
+      readonly label: string | null;
       readonly text: string;
       readonly translation: string | null;
+      readonly payment?: DockSnapshot["feed"]["approvedSc"][number]["payment"];
     }
   >();
 
@@ -257,12 +260,14 @@ function toSandboxStageState(dockSnap: DockSnapshot): StageState {
   }
 
   for (const sc of dockSnap.feed.approvedSc) {
+    const amountLabel = sc.payment?.amountDisplay ?? sc.notes;
     merged.set(sc.eventId, {
       deliveryId: `stage-sc-${sc.eventId}`,
       decidedAtMs: Date.parse(sc.decidedAt) || 0,
-      label: `${sc.safeAlias ?? sc.subjectRef} · ${sc.notes ?? "$20"}`,
+      label: amountLabel ? `${sc.safeAlias ?? sc.subjectRef} · ${amountLabel}` : (sc.safeAlias ?? sc.subjectRef),
       text: sc.originalText ?? "",
       translation: sc.translation,
+      payment: sc.payment,
     });
   }
 
@@ -278,6 +283,7 @@ function toSandboxStageState(dockSnap: DockSnapshot): StageState {
       label: item.label,
       text: item.text,
       translation: item.translation,
+      ...(item.payment ? { payment: item.payment } : {}),
     }));
 
   return {

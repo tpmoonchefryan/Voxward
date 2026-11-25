@@ -1,3 +1,5 @@
+import type { ScPayment } from "@voxward/contracts";
+
 export type DemoRole =
   | "DEMO_STREAMER"
   | "DEMO_MODERATOR"
@@ -43,6 +45,7 @@ export interface SandboxApprovedStageItem {
   readonly correlationId: string;
   readonly subjectKey: string;
   readonly text: string;
+  readonly payment?: ScPayment | null;
   readonly amountDisplay?: string | null;
   readonly translation: string | null;
   readonly decidedAt: string;
