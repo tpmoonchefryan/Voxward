@@ -106,15 +106,15 @@ function toDockSnapshot(
     if (!hasAmount && item.translation === null) {
       continue;
     }
-    const notes = item.amountDisplay ?? "$10";
     scMap.set(item.eventId, {
       eventId: item.eventId,
       correlationId: item.correlationId,
       subjectRef: item.subjectKey,
       originalText: item.text,
       translation: item.translation,
-      notes,
-      acknowledgement: notes,
+      amountDisplay: item.amountDisplay ?? "$10",
+      notes: null,
+      acknowledgement: null,
       safeAlias: item.subjectKey,
       decidedAt: item.decidedAt,
       deliveryId: item.eventId,
@@ -129,8 +129,9 @@ function toDockSnapshot(
       subjectRef: sc.author,
       originalText: sc.text,
       translation: sc.translation,
-      notes: sc.amountText,
-      acknowledgement: sc.amountText,
+      amountDisplay: sc.amountText,
+      notes: null,
+      acknowledgement: null,
       safeAlias: sc.author,
       decidedAt: sc.decidedAt,
       deliveryId: sc.id,
@@ -260,7 +261,7 @@ function toSandboxStageState(dockSnap: DockSnapshot): StageState {
     merged.set(sc.eventId, {
       deliveryId: `stage-sc-${sc.eventId}`,
       decidedAtMs: Date.parse(sc.decidedAt) || 0,
-      label: `${sc.safeAlias ?? sc.subjectRef} · ${sc.notes ?? "$20"}`,
+      label: `${sc.safeAlias ?? sc.subjectRef} · ${sc.amountDisplay ?? "$20"}`,
       text: sc.originalText ?? "",
       translation: sc.translation,
     });

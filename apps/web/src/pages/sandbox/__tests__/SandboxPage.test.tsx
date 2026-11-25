@@ -108,7 +108,10 @@ describe("SandboxView & SandboxPage (VW-Draft-07)", () => {
         <SandboxView
           role="DEMO_STAGE_VIEWER"
           capabilities={["stage.read"]}
-          snapshot={SNAPSHOT}
+          snapshot={{
+            ...SNAPSHOT,
+            approvedStage: SNAPSHOT.approvedStage.map((sc) => ({ ...sc, amountDisplay: "$10.00", decidedAt: new Date().toISOString() })),
+          }}
           loading={false}
           error={null}
           onSelectRole={() => {}}
@@ -121,6 +124,9 @@ describe("SandboxView & SandboxPage (VW-Draft-07)", () => {
 
     expect(html).toContain("Backend modules hidden by Stage Visitor policy");
     expect(html).toContain("Pure Danmaku Dock");
+    expect(html).toContain("$10.00");
+    expect(html).toContain("vw-sc-ticker__countdown");
+    expect(html).not.toContain("Slang note:");
     expect(html).not.toContain("Review Queue (");
   });
 

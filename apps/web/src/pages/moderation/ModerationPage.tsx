@@ -119,8 +119,8 @@ export function ModerationWorkbench({
       (snapshot?.feed.approvedSc ?? []).map((sc) => ({
         id: sc.eventId,
         author: sc.safeAlias ?? sc.subjectRef,
-        amountText: null,
-        payment: sc.payment ?? null,
+        amountText: sc.amountDisplay ?? null,
+        payment: sc.payment ?? (sc.amountDisplay === undefined ? null : undefined),
         text: sc.originalText,
         translation: sc.translation,
         translationDetails: sc,

@@ -10,6 +10,7 @@ export interface ScFeedItemView {
   readonly notes: string | null;
   readonly acknowledgement: string | null;
   readonly safeAlias: string | null;
+  readonly amountDisplay?: string;
   readonly payment?: ScPayment;
   readonly sourceLanguage?: string;
   readonly translations?: readonly LocalizedScTranslation[];
