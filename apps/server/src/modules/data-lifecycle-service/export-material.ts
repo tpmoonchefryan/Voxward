@@ -36,6 +36,8 @@ export function buildControlledMaterial(deps: DataDeps, actor: DataActor, reques
       channelId: actor.channelId,
       actorRef: actor.accountId,
       summary: `CONTROLLED_MATERIAL_GENERATED kind=${record.kind} request=${record.id}`,
+      summaryCode: "CONTROLLED_MATERIAL_GENERATED",
+      summaryParams: { kind: record.kind, requestId: record.id },
       at,
     }),
   );

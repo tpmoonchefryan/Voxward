@@ -40,7 +40,7 @@
 { "type": "HELLO", "version": 1, "protocol": "vw-output.v1", "heartbeatMs": 15000 }
 ```
 
-`DELIVER`（ALLOW，展示已批准文本）：
+`DELIVER`（ALLOW，展示已批准文本；可选附带多语种精翻列表与付费 SC 结构化金额/档位）：
 
 ```json
 {
@@ -50,9 +50,25 @@
   "deliverySequence": 1,
   "platformOrder": 7,
   "validUntil": "2026-11-10T10:05:00.000Z",
-  "display": { "label": null, "text": "<已批准文本>", "translation": "<译文或 null>" }
+  "display": {
+    "label": null,
+    "text": "<已批准文本>",
+    "translation": "<主译文或 null>",
+    "translations": [
+      { "language": "zh-Hans", "translatedText": "<多语种译文>" }
+    ],
+    "payment": {
+      "amountMicros": 5000000,
+      "currency": "USD",
+      "amountDisplay": "$5.00",
+      "tier": 3
+    }
+  }
 }
 ```
+
+- `display.translations`（可选）：多语种 SC 精翻结果列表（每项含 `language` BCP 47 标签与 `translatedText`）。
+- `display.payment`（可选）：仅当上游事件携带已确认的付费金额事实时出现（含 `amountMicros`、`currency`、`amountDisplay`、`tier`）；缺省金额映射时由展示端使用中性样式，绝不凭空估算金额或档位。
 
 `WARD_BLOCKED`（BLOCK，拦截舞台事件）：
 
@@ -133,7 +149,7 @@
 
 ## 8. 撤销
 
-- 签发：`POST /channels/:channelId/output-grants`，需要频道所有者的 `tokens.manage` 能力。响应 201，`cache-control: no-store`，
+- 签发：`POST /channels/:channelId/output-grants`，需要频道所有者的 `tokens.manage` 能力（支持按 `outputKind` 隔离签发 `NATIVE_V1`、`OBS_OVERLAY` 或 `BLIVECHAT` 凭据）。响应 201，`cache-control: no-store`，
   凭据只返回一次。
 - 撤销：`DELETE /channels/:channelId/output-grants/:grantId`，返回 204。凭据立即失效，该授权名下的连接以 4403 断开。
   撤销后的重连返回 401。
@@ -142,7 +158,7 @@
 
 - 消费者网络之间的严格"只展示一次"。
 - 显示昵称或安全称呼（`label` 为 `null`）。
-- 付费展示信息（没有来源字段）。
+- 未由上游平台提供付费事实时不伪造或估算付费金额与档位（无来源时省略 `display.payment`）。
 - 送达确认。服务端不接收消费者的确认。
 
 ## 10. 来源缺口与自定选择
@@ -151,5 +167,5 @@
   而不是保险库条目（自定，见 `apps/server/src/db/output-store.ts`）。
 - 心跳、积压限制、失败次数、每轮批量、投递泵运行间隔都是自定值，未经负载测量。补发有效期取决策服务的默认值。
 - 旧的 Bearer 只读令牌（S003 的 `auth_output_tokens`）与原生凭据共用 `vwo_` 前缀，当前没有任何 HTTP 路由要求 `output.feed` 权限，也不能订阅原生端点。
-- 显示昵称与付费信息没有来源，`display.label` 恒为 `null`。
-- 本机复现：见 `examples/consumer-dedup/README.md`。证据见 `.kiro/specs/voxward-s021-output/evidence/self-check.md`。
+- 显示昵称没有来源，`display.label` 恒为 `null`；付费展示信息仅透传已入库的结构化 `event_payments` 事实。
+- 英文对照指南见 [`output-native-v1.en.md`](./output-native-v1.en.md)。本机复现见 `examples/consumer-dedup/README.md`，证据见 `.kiro/specs/voxward-s021-output/evidence/self-check.md`。

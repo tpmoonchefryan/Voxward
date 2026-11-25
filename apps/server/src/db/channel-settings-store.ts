@@ -321,6 +321,8 @@ export function publishConfirmedCandidateTerm(
         actorRef: input.actorRef,
         changeKind: "TERM_CHANGED",
         summary: "词条变更：确认候选词条入库",
+        summaryCode: "TERM_CANDIDATE_CONFIRMED",
+        summaryParamsJson: null,
         outcome: "SUCCEEDED",
         correlationId: null,
         expiresAt,
@@ -407,13 +409,14 @@ export interface TermCategoryItem {
   readonly listKind: "BLACKLIST" | "WHITELIST";
   readonly description: string;
   readonly createdAt: string;
+  readonly builtIn?: boolean;
 }
 
 const DEFAULT_TERM_CATEGORIES: readonly TermCategoryItem[] = [
-  { code: "spam", label: "垃圾刷屏", listKind: "BLACKLIST", description: "高频重复、外链导流或广告垃圾信息", createdAt: "2026-11-18T00:00:00.000Z" },
-  { code: "abuse", label: "人身攻击", listKind: "BLACKLIST", description: "辱骂、恶意骚扰与仇恨言论", createdAt: "2026-11-18T00:00:00.000Z" },
-  { code: "sensitive", label: "高敏禁词", listKind: "BLACKLIST", description: "违禁词与规避变形表达", createdAt: "2026-11-18T00:00:00.000Z" },
-  { code: "friendly", label: "常用热梗", listKind: "WHITELIST", description: "已确认安全的社区友好高频词", createdAt: "2026-11-18T00:00:00.000Z" },
+  { code: "spam", label: "垃圾刷屏", listKind: "BLACKLIST", description: "高频重复、外链导流或广告垃圾信息", createdAt: "2026-11-18T00:00:00.000Z", builtIn: true },
+  { code: "abuse", label: "人身攻击", listKind: "BLACKLIST", description: "辱骂、恶意骚扰与仇恨言论", createdAt: "2026-11-18T00:00:00.000Z", builtIn: true },
+  { code: "sensitive", label: "高敏禁词", listKind: "BLACKLIST", description: "违禁词与规避变形表达", createdAt: "2026-11-18T00:00:00.000Z", builtIn: true },
+  { code: "friendly", label: "常用热梗", listKind: "WHITELIST", description: "已确认安全的社区友好高频词", createdAt: "2026-11-18T00:00:00.000Z", builtIn: true },
 ];
 
 export function readTermCategories(database: VoxwardDatabase, channelId: string): TermCategoryItem[] {
@@ -584,6 +587,8 @@ export function publishTermList(
         actorRef: input.actorRef,
         changeKind: "TERM_CHANGED",
         summary: "词条变更：已发布词表版本",
+        summaryCode: "TERM_LIST_PUBLISHED",
+        summaryParamsJson: JSON.stringify({ version: synced.version }),
         outcome: "SUCCEEDED",
         correlationId: null,
         expiresAt,
@@ -735,6 +740,15 @@ export interface AdapterModelPoolItem {
   readonly source: "remote" | "manual";
 }
 
+export const ADAPTER_STATUS_CODES = [
+  "CONFIG_SAVED",
+  "ACTION_EXECUTED",
+  "OBS_OVERLAY_READY",
+  "NATIVE_OUTPUT_READY",
+  "MODELS_FETCHED",
+] as const;
+export type AdapterStatusCode = (typeof ADAPTER_STATUS_CODES)[number];
+
 export interface ChannelAdapterRecord {
   readonly id: string;
   readonly category: AdapterCategory;
@@ -744,6 +758,8 @@ export interface ChannelAdapterRecord {
   readonly config: Readonly<Record<string, string | number | boolean | null>>;
   readonly models: readonly AdapterModelPoolItem[];
   readonly lastStatus: string;
+  readonly lastStatusCode?: AdapterStatusCode;
+  readonly lastStatusParams?: Readonly<Record<string, string | number>>;
   readonly updatedAt: string;
 }
 
@@ -838,6 +854,7 @@ export interface StoredRbacRole {
   readonly name: string;
   readonly description: string;
   readonly systemPreset: boolean;
+  readonly builtIn?: boolean;
   readonly permissions: Readonly<Record<string, "GRANT" | "DENY" | "NOT_SET">>;
 }
 
@@ -856,6 +873,7 @@ const DEFAULT_RBAC_ROLES: readonly StoredRbacRole[] = [
     name: "频道所有者",
     description: "拥有审核、配置、集成与成员完全管理权。",
     systemPreset: true,
+    builtIn: true,
     permissions: {
       "queue.read": "GRANT",
       "review.decide": "GRANT",
@@ -875,6 +893,7 @@ const DEFAULT_RBAC_ROLES: readonly StoredRbacRole[] = [
     name: "房管",
     description: "负责实时审核队列、拦截重判、词条与手动黑名单管理。",
     systemPreset: true,
+    builtIn: true,
     permissions: {
       "queue.read": "GRANT",
       "review.decide": "GRANT",
@@ -894,6 +913,7 @@ const DEFAULT_RBAC_ROLES: readonly StoredRbacRole[] = [
     name: "隐私与数据管理员",
     description: "专责处理观众数据查询、核验与两阶段删除请求。",
     systemPreset: true,
+    builtIn: true,
     permissions: {
       "queue.read": "NOT_SET",
       "review.decide": "DENY",
@@ -909,6 +929,7 @@ const DEFAULT_RBAC_ROLES: readonly StoredRbacRole[] = [
     name: "只读日志审计员",
     description: "仅查看技术日志、变更日志与外部集成日志，禁止改判与修改配置。",
     systemPreset: false,
+    builtIn: true,
     permissions: {
       "queue.read": "GRANT",
       "logs.view": "GRANT",

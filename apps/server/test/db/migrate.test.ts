@@ -121,6 +121,42 @@ describe("migrations", () => {
     expect(countRows(database, "subjects")).toBe(1);
     expect(countRows(database, "__drizzle_migrations")).toBe(MIGRATION_COUNT);
   });
+
+  it("upgrades cleanly from 0009 to 0010 while preserving existing change_logs rows", () => {
+    const earlier = join(directory, "earlier-0009");
+    mkdirSync(join(earlier, "meta"), { recursive: true });
+    const earlierEntries = JOURNAL_ENTRIES.slice(0, JOURNAL_ENTRIES.findIndex((entry) => entry.tag.startsWith("0010_")));
+    for (const entry of earlierEntries) {
+      copyFileSync(join(DEFAULT_MIGRATIONS_FOLDER, `${entry.tag}.sql`), join(earlier, `${entry.tag}.sql`));
+    }
+    writeFileSync(
+      join(earlier, "meta", "_journal.json"),
+      JSON.stringify({ ...journalHeader(), entries: earlierEntries.map((entry, idx) => ({ ...entry, idx })) }),
+    );
+
+    const filePath = join(directory, "upgrade-0010.sqlite3");
+    const before = openDatabase({ filePath });
+    runMigrations(before, earlier);
+    const seed = seedChannelAndSubject(before);
+    before.sqlite
+      .prepare(
+        "insert into change_logs (id, channel_id, occurred_at, actor_kind, actor_ref, change_kind, summary, outcome, correlation_id, expires_at) values ('cl-legacy', ?, ?, 'SYSTEM', 'sys', 'CONFIG_CHANGED', 'legacy summary', 'SUCCEEDED', null, ?)",
+      )
+      .run(seed.channelId, T0, T0);
+    before.close();
+
+    database = openDatabase({ filePath });
+    runMigrations(database);
+
+    const row = database.sqlite
+      .prepare("select summary, summary_code, summary_params_json from change_logs where id = 'cl-legacy'")
+      .get() as { summary: string; summary_code: string | null; summary_params_json: string | null };
+    expect(row).toEqual({
+      summary: "legacy summary",
+      summary_code: null,
+      summary_params_json: null,
+    });
+  });
 });
 
 function journalHeader(): { version: string; dialect: string } {

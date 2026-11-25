@@ -4,6 +4,8 @@ import type {
   ChangeKind,
   ChangeLogRow,
   ChangeOutcome,
+  ChangeSummaryCode,
+  ChangeSummaryParams,
   EvidenceKind,
   EvidenceRow,
   StoredTechnicalLog,
@@ -38,7 +40,7 @@ export function createAuditLogPort(database: VoxwardDatabase): AuditLogPort {
   return {
     insertChangeLog(row) {
       runShortTransaction(database, (tx) => {
-        tx.insert(changeLogs).values(row).run();
+        tx.insert(changeLogs).values(toChangeLogValues(row)).run();
       });
     },
 
@@ -153,7 +155,7 @@ export function createAuditLogPort(database: VoxwardDatabase): AuditLogPort {
         }
         if (scope.changeLogIds.length > 0) {
           tx.update(changeLogs)
-            .set({ summary: certificateSummary })
+            .set({ summary: certificateSummary, summaryCode: "DATA_REQUEST_CERTIFICATE", summaryParamsJson: null })
             .where(inArray(changeLogs.id, [...scope.changeLogIds]))
             .run();
         }
@@ -189,7 +191,7 @@ export function createAuditLogPort(database: VoxwardDatabase): AuditLogPort {
         const scope = locateScope(tx, subjectId, certificateSummary);
         if (scope.changeLogIds.length > 0) {
           tx.update(changeLogs)
-            .set({ summary: certificateSummary })
+            .set({ summary: certificateSummary, summaryCode: "DATA_REQUEST_CERTIFICATE", summaryParamsJson: null })
             .where(inArray(changeLogs.id, [...scope.changeLogIds]))
             .run();
         }
@@ -294,6 +296,23 @@ function toEvidenceRow(row: EvidenceRecord): EvidenceRow {
   return { id: row.id, kind: row.evidenceKind as EvidenceKind, payload: row.payload, expiresAt: row.expiresAt };
 }
 
+export function toChangeLogValues(row: ChangeLogRow) {
+  return {
+    id: row.id,
+    channelId: row.channelId,
+    occurredAt: row.occurredAt,
+    actorKind: row.actorKind,
+    actorRef: row.actorRef,
+    changeKind: row.changeKind,
+    summary: row.summary,
+    summaryCode: row.summaryCode ?? null,
+    summaryParamsJson: row.summaryParams != null ? JSON.stringify(row.summaryParams) : null,
+    outcome: row.outcome,
+    correlationId: row.correlationId,
+    expiresAt: row.expiresAt,
+  };
+}
+
 function toChangeLogRow(row: ChangeLogRecord): ChangeLogRow {
   return {
     id: row.id,
@@ -303,6 +322,10 @@ function toChangeLogRow(row: ChangeLogRecord): ChangeLogRow {
     actorRef: row.actorRef,
     changeKind: row.changeKind as ChangeKind,
     summary: row.summary,
+    ...(row.summaryCode !== null ? { summaryCode: row.summaryCode as ChangeSummaryCode } : {}),
+    ...(row.summaryParamsJson !== null
+      ? { summaryParams: JSON.parse(row.summaryParamsJson) as ChangeSummaryParams }
+      : {}),
     outcome: row.outcome as ChangeOutcome,
     correlationId: row.correlationId,
     expiresAt: row.expiresAt,

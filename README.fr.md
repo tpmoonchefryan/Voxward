@@ -1,4 +1,4 @@
-> Remarque : la [version anglaise](./README.md) fait foi · `synced-to: 3f5c65f612537959611e4bdfb684ed7542ef3a8f945f802921244f1fee92951a`
+> Remarque : la [version anglaise](./README.md) fait foi · `synced-to: 27d8f9ec0339989539fa4558b628adbdb6f524883ba786a9e036639497e3f3f9`
 
 <div align="center">
 
@@ -116,11 +116,11 @@ flowchart LR
 
 | Domaine | Points clés | Emplacements |
 | --- | --- | --- |
-| **Interface 5 langues & thèmes** | Thème `halloween` + `en` par défaut sur `/login`, `/sandbox` et nouveaux comptes ; persistance via `/auth/shell-preferences` | [`apps/web/src/i18n/`](./apps/web/src/i18n/), [`VoxWardShell.tsx`](./apps/web/src/shell/VoxWardShell.tsx) |
-| **Modération en direct** | Vue scindée, verdicts groupés, promotion de mots-clés candidats, réévaluation du score | [`ModerationPage.tsx`](./apps/web/src/pages/moderation/ModerationPage.tsx) |
-| **Dock pur & Overlay OBS** | Flux épuré (`/dock/:channelId`) et scène WebSocket OBS authentifiée uniquement par fragment `#cred=vwo_...` (`/overlay/:channelId`) | [`DockPage.tsx`](./apps/web/src/pages/dock/DockPage.tsx), [`Stage.tsx`](./apps/web/src/pages/overlay/Stage.tsx), [`output-native-v1.md`](./docs/protocol/output-native-v1.md) |
-| **Listes & Import CSV** | Dictionnaire de catégories en ajout seul, validation regex, modèle CSV téléchargeable et import | [`AdminPage.tsx`](./apps/web/src/pages/admin/AdminPage.tsx) |
-| **RBAC tri-état & Journaux** | Synthèse `Deny > Grant > Not Set`, corrélation bidirectionnelle et isolation `<bdi>` des textes non fiables | [`UsersPage.tsx`](./apps/web/src/pages/users/UsersPage.tsx), [`LogViewer.tsx`](./apps/web/src/pages/logs/LogViewer.tsx) |
+| **Interface 5 langues & thèmes** | Thème `halloween` + `en` par défaut ; balise `zh-Hans` et formateurs strictement typés en 5 langues | [`apps/web/src/i18n/`](./apps/web/src/i18n/), [`VoxWardShell.tsx`](./apps/web/src/shell/VoxWardShell.tsx) |
+| **Modération en direct** | Vue scindée, verdicts groupés, promotion de mots-clés candidats, réévaluation et traductions SC multilingues | [`ModerationPage.tsx`](./apps/web/src/pages/moderation/ModerationPage.tsx) |
+| **Dock pur & Overlay OBS** | Flux avec paiements `ScPayment` (`/dock/:channelId`) et scène OBS `/overlay/:channelId` isolée par type (`OBS_OVERLAY`/`BLIVECHAT`) | [`DockPage.tsx`](./apps/web/src/pages/dock/DockPage.tsx), [`Stage.tsx`](./apps/web/src/pages/overlay/Stage.tsx), [`output-native-v1.en.md`](./docs/protocol/output-native-v1.en.md) |
+| **Listes & Import CSV** | `rule_terms` scopé par langue + rollback de snapshot, catégories ajout seul, import CSV RFC-4180 multi-encodage/séparateur | [`AdminPage.tsx`](./apps/web/src/pages/admin/AdminPage.tsx), [`term-csv.ts`](./apps/server/src/auth/term-csv.ts) |
+| **RBAC tri-état & Journaux** | Synthèse `Deny > Grant > Not Set`, `change_logs` structurés (`summary_code`) et isolation `<bdi>` des textes non fiables | [`UsersPage.tsx`](./apps/web/src/pages/users/UsersPage.tsx), [`LogViewer.tsx`](./apps/web/src/pages/logs/LogViewer.tsx) |
 | **Conformité & Suppression** | Recherche par sujet, enregistrement `DELETE_DATA_ONLY` / `DELETE_AND_EXCEPT`, vérification et exécution asynchrone | [`DataPanel.tsx`](./apps/web/src/pages/data/DataPanel.tsx) |
 
 ---
@@ -154,7 +154,7 @@ Le déploiement en production cible un serveur Linux derrière un proxy inverse 
 - Modèles Linux systemd & proxy inverse : [`deploy/server/README.md`](./deploy/server/README.md)
 - Conteneur & manifestes k3s (`/sandbox` + production) : [`deploy/k3s/README.md`](./deploy/k3s/README.md)
 - Guide de déploiement complet : [`docs/deployment/remote-deploy.md`](./docs/deployment/remote-deploy.md)
-- Configuration OBS & YouTube : [`docs/obs/setup.md`](./docs/obs/setup.md), [`docs/deployment/youtube-credentials.md`](./docs/deployment/youtube-credentials.md)
+- Configuration OBS & YouTube : [`docs/obs/setup.en.md`](./docs/obs/setup.en.md) ([zh-CN](./docs/obs/setup.md)), [`docs/deployment/youtube-credentials.en.md`](./docs/deployment/youtube-credentials.en.md) ([zh-CN](./docs/deployment/youtube-credentials.md))
 
 ### Vérifications et limites externes
 
@@ -181,6 +181,11 @@ Déploiement conteneurisé vérifié en direct : le [`Dockerfile`](./Dockerfile)
 | Document | Portée | Langues |
 | --- | --- | --- |
 | [`docs/KIROWEEN.md`](./docs/KIROWEEN.md) | Dossier Kiroween 2026 Frankenstein et intégration Kiro | English |
+| [`docs/multilingual.md`](./docs/multilingual.md) | Balises BCP 47, traduction SC v2, import CSV & i18n typé | English |
+| [`docs/protocol/output-native-v1.en.md`](./docs/protocol/output-native-v1.en.md) | Protocole WebSocket de sortie lecture seule (`vw-output.v1`) | [EN](./docs/protocol/output-native-v1.en.md) · [zh-CN](./docs/protocol/output-native-v1.md) |
+| [`docs/obs/setup.en.md`](./docs/obs/setup.en.md) | Guide OBS Browser Source (`#cred`) & Custom Dock | [EN](./docs/obs/setup.en.md) · [zh-CN](./docs/obs/setup.md) |
+| [`docs/deployment/youtube-credentials.en.md`](./docs/deployment/youtube-credentials.en.md) | Portées OAuth YouTube API, URI de redirection & quotas | [EN](./docs/deployment/youtube-credentials.en.md) · [zh-CN](./docs/deployment/youtube-credentials.md) / [Troubleshooting (EN)](./docs/deployment/troubleshooting-and-quotas.en.md) |
+| [`docs/integrations/support-matrix.en.md`](./docs/integrations/support-matrix.en.md) | Matrice de support et limites de boucle locale | [EN](./docs/integrations/support-matrix.en.md) · [zh-CN](./docs/integrations/support-matrix.md) |
 | [`SECURITY.md`](./SECURITY.md) | Versions supportées, signalement privé des failles et frontières de confiance | [EN](./SECURITY.md) · [zh-CN](./docs/i18n/zh-CN/SECURITY.md) · [JA](./docs/i18n/ja/SECURITY.md) · [KO](./docs/i18n/ko/SECURITY.md) · [FR](./docs/i18n/fr/SECURITY.md) |
 | [`PRIVACY.md`](./PRIVACY.md) | Flux de données auto-hébergés, minimisation IA et copies externes | [EN](./PRIVACY.md) · [zh-CN](./docs/i18n/zh-CN/PRIVACY.md) · [JA](./docs/i18n/ja/PRIVACY.md) · [KO](./docs/i18n/ko/PRIVACY.md) · [FR](./docs/i18n/fr/PRIVACY.md) |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Prérequis, portes de validation et synchronisation multilingue | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |

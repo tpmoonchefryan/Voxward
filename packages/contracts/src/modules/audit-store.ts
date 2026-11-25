@@ -4,6 +4,8 @@ import type {
   ActorKind,
   ChangeKind,
   ChangeOutcome,
+  ChangeSummaryCode,
+  ChangeSummaryParams,
   EvidenceKind,
   TechnicalData,
   TechnicalLevel,
@@ -27,6 +29,8 @@ export interface ChangeLogEntry extends Versioned {
   readonly changeKind: ChangeKind;
   readonly outcome: ChangeOutcome;
   readonly summary: string;
+  readonly summaryCode?: ChangeSummaryCode | null;
+  readonly summaryParams?: ChangeSummaryParams | null;
   readonly correlationId: string | null;
 }
 

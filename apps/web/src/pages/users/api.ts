@@ -22,6 +22,7 @@ export interface RbacRoleView {
   readonly name: string;
   readonly description: string;
   readonly systemPreset: boolean;
+  readonly builtIn?: boolean;
   readonly permissions: Readonly<Record<string, RbacTriState>>;
 }
 

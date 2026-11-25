@@ -14,7 +14,7 @@ import {
 import { BannerNotice } from "../../components/banner-notice";
 import { SectionTabs } from "../../components/section-tabs";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
-import { LOGS_COPY, pickLocale, type LogsCopy } from "../../i18n";
+import { formatChangeLogSummary, LOGS_COPY, pickLocale, type LogsCopy } from "../../i18n";
 import { VoxWardShell, useVoxWardShell } from "../../shell";
 import {
   describeLogError,
@@ -288,7 +288,7 @@ function LogViewerSurface({
                       </Badge>
                     ),
                     actor: <UntrustedText text={item.actor.ref} />,
-                    summary: <UntrustedText text={item.summary} />,
+                    summary: <UntrustedText text={formatChangeLogSummary(item, locale)} />,
                     actions: item.correlationId ? (
                       <Button
                         size="sm"

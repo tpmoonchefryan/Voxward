@@ -35,6 +35,11 @@ export function startDeletionRequest(deps: DataDeps, actor: DataActor, requestId
             actorRef: actor.accountId,
             subjectId,
             summary: `记分例外已加入（${preferenceMarkerOf(subjectId, iso).purpose}），请求 ${requestId}`,
+            summaryCode: "SCORE_EXCEPTION_ENROLLED",
+            summaryParams: {
+              purpose: preferenceMarkerOf(subjectId, iso).purpose,
+              requestId,
+            },
             at,
           })
         : null,
@@ -43,6 +48,8 @@ export function startDeletionRequest(deps: DataDeps, actor: DataActor, requestId
       channelId: actor.channelId,
       actorRef: actor.accountId,
       summary: `DATA_REQUEST deletion started mode=${mode} request=${requestId}`,
+      summaryCode: "DATA_REQUEST_DELETION_STARTED",
+      summaryParams: { mode, requestId },
       at,
     }),
   };

@@ -14,6 +14,7 @@ import type {
   VerificationState,
 } from "@voxward/contracts";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { toChangeLogValues } from "./audit-log.js";
 import type { VoxwardDatabase } from "./client.js";
 import { changeLogs, dataRequestItems, dataRequests, scoreExceptions } from "./schema/index.js";
 import { ScoreExceptionStore, SubjectStore } from "./repository.js";
@@ -240,7 +241,7 @@ export function createDataRequestPort(database: VoxwardDatabase): DataRequestPor
 }
 
 function writeChange(tx: ShortTransaction, change: ChangeLogRow): void {
-  tx.insert(changeLogs).values(change).run();
+  tx.insert(changeLogs).values(toChangeLogValues(change)).run();
 }
 
 function toRequestValues(record: DataRequestRecord) {

@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import {
   CONTRACT_VERSION,
   toDownstreamVerdict,
+  type ChangeSummaryCode,
+  type ChangeSummaryParams,
   type CommitVerdictInput,
   type CommitVerdictStoreResult,
   type CurrentDecision,
@@ -179,6 +181,8 @@ function commitVerdictInTransaction(
       actorRef: input.changeActorRef,
       changeKind: "MANUAL_VERDICT",
       summary: manualVerdictSummary(input.verdict.downstream),
+      summaryCode: "MANUAL_VERDICT_DECIDED",
+      summaryParams: { downstream: input.verdict.downstream },
       correlationId: event.correlationId,
       expiresAt: options.changeLogExpiresAt(input.decidedAt),
     });
@@ -337,13 +341,16 @@ function commitOverturnInTransaction(
     compensation = scoringStatus(result);
   }
 
+  const afterDownstream = toDownstreamVerdict(input.verdict.classification);
   insertChangeLog(tx, {
     id: newId(),
     channelId: event.channelId,
     occurredAt: input.decidedAt,
     actorRef: input.actorRef,
     changeKind: "MANUAL_VERDICT",
-    summary: overturnSummary(current.downstream, toDownstreamVerdict(input.verdict.classification)),
+    summary: overturnSummary(current.downstream, afterDownstream),
+    summaryCode: "MANUAL_VERDICT_OVERTURNED",
+    summaryParams: { before: current.downstream, after: afterDownstream },
     correlationId: event.correlationId,
     expiresAt: options.changeLogExpiresAt(input.decidedAt),
   });
@@ -355,6 +362,8 @@ function commitOverturnInTransaction(
       actorRef: input.actorRef,
       changeKind: "SCORE_CHANGED",
       summary: "纠正计分（依据账本记录）",
+      summaryCode: "SCORE_ADJUSTED",
+      summaryParams: { kind: "LEDGER_COMPENSATION" },
       correlationId: event.correlationId,
       expiresAt: options.changeLogExpiresAt(input.decidedAt),
     });
@@ -372,6 +381,8 @@ function commitOverturnInTransaction(
       actorRef: input.actorRef,
       changeKind: "SCORE_CHANGED",
       summary: "纠分需人工调整：其后有条目触及上下限",
+      summaryCode: "SCORE_ADJUSTED",
+      summaryParams: { kind: "MANUAL_LIMIT_REVIEW" },
       correlationId: event.correlationId,
       expiresAt: options.changeLogExpiresAt(input.decidedAt),
     });
@@ -439,6 +450,8 @@ function commitResendInTransaction(
     actorRef: input.actorRef,
     changeKind: "MANUAL_VERDICT",
     summary: "人工补发：过期消息重新投递",
+    summaryCode: "MANUAL_RESEND_QUEUED",
+    summaryParams: null,
     correlationId: event.correlationId,
     expiresAt: options.changeLogExpiresAt(input.decidedAt),
   });
@@ -478,7 +491,10 @@ function applySubjectListInTransaction(
   if (input.listKind === null) {
     if (active === undefined) return { status: "unchanged", subjectId: subject.id };
     tx.update(listEntries).set({ removedAt: input.changedAt }).where(eq(listEntries.id, active.id)).run();
-    insertChangeLog(tx, changeRow(newId(), input, "LIST_CHANGED", "名单变更：移出名单", correlationId, options));
+    insertChangeLog(
+      tx,
+      changeRow(newId(), input, "LIST_CHANGED", "名单变更：移出名单", correlationId, options, "LIST_ENTRY_REMOVED", null),
+    );
     return { status: "applied", subjectId: subject.id };
   }
 
@@ -499,7 +515,19 @@ function applySubjectListInTransaction(
     })
     .run();
   const summary = input.listKind === "BLACKLIST" ? "名单变更：加入黑名单" : "名单变更：加入白名单";
-  insertChangeLog(tx, changeRow(newId(), input, "LIST_CHANGED", summary, correlationId, options));
+  insertChangeLog(
+    tx,
+    changeRow(
+      newId(),
+      input,
+      "LIST_CHANGED",
+      summary,
+      correlationId,
+      options,
+      "LIST_ENTRY_ADDED",
+      { listKind: input.listKind },
+    ),
+  );
   return { status: "applied", subjectId: subject.id };
 }
 
@@ -546,7 +574,10 @@ function applyTermInTransaction(
       actorRef: input.actorRef,
       nowIso: input.changedAt,
     });
-    insertChangeLog(tx, changeRow(newId(), input, "TERM_CHANGED", "词条变更：词条入库", null, options));
+    insertChangeLog(
+      tx,
+      changeRow(newId(), input, "TERM_CHANGED", "词条变更：词条入库", null, options, "TERM_ADDED", null),
+    );
     return { status: "applied" };
   }
 
@@ -557,7 +588,10 @@ function applyTermInTransaction(
     actorRef: input.actorRef,
     nowIso: input.changedAt,
   });
-  insertChangeLog(tx, changeRow(newId(), input, "TERM_CHANGED", "词条变更：词条停用", null, options));
+  insertChangeLog(
+    tx,
+    changeRow(newId(), input, "TERM_CHANGED", "词条变更：词条停用", null, options, "TERM_DISABLED", null),
+  );
   return { status: "applied" };
 }
 
@@ -570,6 +604,8 @@ interface ChangeRowInput {
   readonly actorRef: string;
   readonly changeKind: "MANUAL_VERDICT" | "SCORE_CHANGED" | "LIST_CHANGED" | "TERM_CHANGED";
   readonly summary: string;
+  readonly summaryCode: ChangeSummaryCode;
+  readonly summaryParams: ChangeSummaryParams | null;
   readonly correlationId: string | null;
   readonly expiresAt: string;
 }
@@ -584,6 +620,8 @@ function insertChangeLog(tx: ShortTransaction, row: ChangeRowInput): void {
       actorRef: row.actorRef,
       changeKind: row.changeKind,
       summary: row.summary,
+      summaryCode: row.summaryCode,
+      summaryParamsJson: row.summaryParams !== null ? JSON.stringify(row.summaryParams) : null,
       outcome: "SUCCEEDED",
       correlationId: row.correlationId,
       expiresAt: row.expiresAt,
@@ -598,6 +636,8 @@ function changeRow(
   summary: string,
   correlationId: string | null,
   options: DecisionStoreOptions,
+  summaryCode: ChangeSummaryCode,
+  summaryParams: ChangeSummaryParams | null,
 ): ChangeRowInput {
   return {
     id,
@@ -606,6 +646,8 @@ function changeRow(
     actorRef: input.actorRef,
     changeKind,
     summary,
+    summaryCode,
+    summaryParams,
     correlationId,
     expiresAt: options.changeLogExpiresAt(input.changedAt),
   };

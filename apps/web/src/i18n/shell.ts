@@ -3,7 +3,7 @@ import type { VoxWardLocale } from "./types";
 
 export const SHELL_LOCALES: readonly ShellLocaleOption[] = [
   { locale: "en", nativeName: "English", lang: "en" },
-  { locale: "zh-CN", nativeName: "简体中文", lang: "zh-CN" },
+  { locale: "zh-CN", nativeName: "简体中文", lang: "zh-Hans" },
   { locale: "ja", nativeName: "日本語", lang: "ja" },
   { locale: "ko", nativeName: "한국어", lang: "ko" },
   { locale: "fr", nativeName: "Français", lang: "fr" },

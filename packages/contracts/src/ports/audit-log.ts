@@ -25,6 +25,38 @@ export type ChangeKind = (typeof CHANGE_KINDS)[number];
 export const CHANGE_OUTCOMES = ["SUCCEEDED", "FAILED", "PARTIAL"] as const;
 export type ChangeOutcome = (typeof CHANGE_OUTCOMES)[number];
 
+/** Structured templates for localized Change Log rendering without storing user content or reverse-parsing display text. */
+export const CHANGE_SUMMARY_CODES = [
+  "MANUAL_VERDICT_DECIDED",
+  "MANUAL_VERDICT_OVERTURNED",
+  "MANUAL_RESEND_QUEUED",
+  "SCORE_ADJUSTED",
+  "LIST_ENTRY_ADDED",
+  "LIST_ENTRY_REMOVED",
+  "TERM_CANDIDATE_CONFIRMED",
+  "TERM_LIST_PUBLISHED",
+  "TERM_ADDED",
+  "TERM_DISABLED",
+  "DATA_REQUEST_REGISTERED",
+  "DATA_REQUEST_VERIFIED",
+  "DATA_REQUEST_DELETION_STARTED",
+  "DATA_REQUEST_DELETION_FINISHED",
+  "CONTROLLED_MATERIAL_GENERATED",
+  "SCORE_EXCEPTION_ENROLLED",
+  "SCORE_EXCEPTION_RESUMED",
+  "DATA_REQUEST_CERTIFICATE",
+  "SANDBOX_RESET",
+  "SANDBOX_EVENT_PROCESSED",
+  "SANDBOX_PRIVACY_REQUEST",
+] as const;
+export type ChangeSummaryCode = (typeof CHANGE_SUMMARY_CODES)[number];
+
+export type ChangeSummaryParamValue = string | number | boolean | null;
+export type ChangeSummaryParams = Readonly<Record<string, ChangeSummaryParamValue>>;
+
+/** Upper bound on serialized Change Log structured summary params, in UTF-8 bytes. */
+export const CHANGE_SUMMARY_PARAMS_MAX_BYTES = 1000;
+
 export const TECHNICAL_STAGES = [
   "INGEST",
   "BASE_RULE",
@@ -77,6 +109,8 @@ export interface ChangeLogRow {
   readonly actorRef: string;
   readonly changeKind: ChangeKind;
   readonly summary: string;
+  readonly summaryCode?: ChangeSummaryCode | null;
+  readonly summaryParams?: ChangeSummaryParams | null;
   readonly outcome: ChangeOutcome;
   readonly correlationId: string | null;
   readonly expiresAt: string;

@@ -1,6 +1,7 @@
 import {
   DELETION_TARGET_KINDS,
   EVIDENCE_KINDS,
+  type ChangeSummaryParams,
   type CleanupFacts,
   type DataRequestItemRecord,
   type DataRequestRecord,
@@ -79,11 +80,22 @@ function runCleanup(deps: DataDeps, actor: DataActor, requestId: string): RouteR
 
   const unfinished = deps.requests.readItems(requestId).filter((item) => item.itemState !== "DONE");
   if (unfinished.length > 0) {
-    finish(deps, actor, record, "PARTIAL_FAILED", `DATA_REQUEST cleanup incomplete, unfinished=${unfinished.length}`);
+    finish(deps, actor, record, "PARTIAL_FAILED", `DATA_REQUEST cleanup incomplete, unfinished=${unfinished.length}`, {
+      requestId: record.id,
+      state: "PARTIAL_FAILED",
+      unfinished: unfinished.length,
+    });
   } else if (record.mode === "DELETE_AND_EXCEPT" && !exceptionInEffect(deps, record)) {
-    finish(deps, actor, record, "PARTIAL_FAILED", `DATA_REQUEST ${EXCEPTION_NOT_CONFIRMED}`);
+    finish(deps, actor, record, "PARTIAL_FAILED", `DATA_REQUEST ${EXCEPTION_NOT_CONFIRMED}`, {
+      requestId: record.id,
+      state: "PARTIAL_FAILED",
+      reason: EXCEPTION_NOT_CONFIRMED,
+    });
   } else {
-    finish(deps, actor, record, "COMPLETED", "DATA_REQUEST cleanup completed");
+    finish(deps, actor, record, "COMPLETED", "DATA_REQUEST cleanup completed", {
+      requestId: record.id,
+      state: "COMPLETED",
+    });
     recordTombstone(deps, record, "DONE");
   }
   return viewOf(deps, record);
@@ -217,6 +229,7 @@ function finish(
   record: DataRequestRecord,
   executionState: "COMPLETED" | "PARTIAL_FAILED",
   summary: string,
+  summaryParams: ChangeSummaryParams,
 ): void {
   const at = deps.now();
   deps.requests.finishExecution({
@@ -228,6 +241,8 @@ function finish(
       channelId: record.channelId,
       actorRef: actor.accountId,
       summary,
+      summaryCode: "DATA_REQUEST_DELETION_FINISHED",
+      summaryParams,
       at,
       outcome: executionState === "COMPLETED" ? "SUCCEEDED" : "PARTIAL",
     }),

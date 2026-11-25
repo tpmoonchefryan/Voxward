@@ -130,6 +130,7 @@ export interface TermCategoryView {
   readonly listKind: "BLACKLIST" | "WHITELIST";
   readonly description: string;
   readonly createdAt: string;
+  readonly builtIn?: boolean;
 }
 
 export interface ExtendedTermEntryView {
@@ -156,9 +157,16 @@ export interface WordlistPreviewView {
   readonly action: "BLOCK" | "REVIEW" | null;
 }
 
+export interface CsvImportErrorView {
+  readonly line: number;
+  readonly code?: string;
+  readonly message: string;
+  readonly detail?: string;
+}
+
 export interface CsvImportResultView {
   readonly imported: number;
-  readonly errors: readonly { readonly line: number; readonly message: string }[];
+  readonly errors: readonly CsvImportErrorView[];
   readonly entries: readonly ExtendedTermEntryView[];
   readonly version?: number;
 }
@@ -206,7 +214,12 @@ export interface AdminApi {
   previewTermList(channelId: string, text: string, language?: string): Promise<WordlistPreviewView>;
   restoreTermList(channelId: string, version: number): Promise<{ readonly version: number; readonly createdAt: string; readonly entries: readonly ExtendedTermEntryView[] }>;
   saveTermEntries(channelId: string, entries: readonly ExtendedTermEntryView[]): Promise<readonly ExtendedTermEntryView[]>;
-  importTermEntriesCsv(channelId: string, listKind: "BLACKLIST" | "WHITELIST", csvText: string): Promise<CsvImportResultView>;
+  importTermEntriesCsv(
+    channelId: string,
+    listKind: "BLACKLIST" | "WHITELIST",
+    csvText: string,
+    delimiter?: "," | ";" | "\t",
+  ): Promise<CsvImportResultView>;
   listCandidates(channelId: string): Promise<readonly CandidateCardView[]>;
   confirmCandidate(channelId: string, cardId: string): Promise<{ readonly card: CandidateCardView }>;
   rejectCandidate(channelId: string, cardId: string): Promise<{ readonly card: CandidateCardView }>;
@@ -311,8 +324,12 @@ export function createAdminApi(fetcher: FetchLike = (input, init) => fetch(input
       mutateJson("POST", `/channels/${encodeURIComponent(channelId)}/term-entries/rollback`, { version }),
     saveTermEntries: async (channelId, entries) =>
       (await mutateJson<{ entries: ExtendedTermEntryView[] }>("PUT", `/channels/${encodeURIComponent(channelId)}/term-entries`, { entries })).entries,
-    importTermEntriesCsv: (channelId, listKind, csvText) =>
-      mutateJson("POST", `/channels/${encodeURIComponent(channelId)}/term-entries/import-csv`, { listKind, csvText }),
+    importTermEntriesCsv: (channelId, listKind, csvText, delimiter) =>
+      mutateJson("POST", `/channels/${encodeURIComponent(channelId)}/term-entries/import-csv`, {
+        listKind,
+        csvText,
+        ...(delimiter !== undefined ? { delimiter } : {}),
+      }),
     listCandidates: async (channelId) =>
       (await getJson<{ cards: CandidateCardView[] }>(`/channels/${encodeURIComponent(channelId)}/candidates`)).cards,
     confirmCandidate: (channelId, cardId) =>
