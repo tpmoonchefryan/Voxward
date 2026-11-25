@@ -14,11 +14,11 @@ export function readScPayment(value: unknown): ScPayment | null {
 }
 
 export function readLegacyScPayment(display: string): ScPayment | null {
-  const match = /^(US\$|CA\$|A\$|NZ\$|[A-Z]{3}|[$¥￥€£₩])\s*(\d{1,3}(?:[,\u00a0\u202f ]\d{3})+|\d+)(?:\.(\d{1,6}))?$/iu.exec(display.trim());
+  const match = /^(US\$|CA\$|A\$|NZ\$|[A-Z]{3}|[$¥€£₩])\s*(\d{1,3}(?:[,\u00a0\u202f ]\d{3})+|\d+)(?:\.(\d{1,6}))?$/iu.exec(display.trim());
   if (match?.[1] === undefined || match[2] === undefined) return null;
   const prefix = match[1].toUpperCase();
   const currency = ({ "$": "USD", "US$": "USD", "CA$": "CAD", "A$": "AUD", "NZ$": "NZD",
-    "¥": "JPY", "￥": "JPY", "€": "EUR", "£": "GBP", "₩": "KRW" } as Readonly<Record<string, string>>)[prefix] ?? prefix;
+    "¥": "JPY", "€": "EUR", "£": "GBP", "₩": "KRW" } as Readonly<Record<string, string>>)[prefix] ?? prefix;
   const amountMicros = Number(match[2].replace(/[,\s]/gu, "")) * 1_000_000 + Number((match[3] ?? "").padEnd(6, "0"));
   return readScPayment({ amountMicros, currency });
 }

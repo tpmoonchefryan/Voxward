@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { NATIVE_OUTPUT_PROTOCOL, NATIVE_OUTPUT_VERSION } from "@voxward/contracts";
+import { NATIVE_OUTPUT_PROTOCOL, NATIVE_OUTPUT_VERSION, readLegacyScPayment } from "@voxward/contracts";
 import { StageView } from "../Stage";
 import {
   buildOverlaySubprotocols,
@@ -14,6 +14,24 @@ import {
 } from "../api";
 
 describe("overlay pure protocol and StageView rendering (VW-Draft-01)", () => {
+  it("preserves an ambiguous fullwidth yen/yuan price and keeps the body visible", () => {
+    const amountDisplay = "￥100.50";
+    expect(readLegacyScPayment(amountDisplay)).toBeNull();
+    const state = reduceStageFrame(createInitialStageState("connected"), {
+      type: "DELIVER",
+      version: NATIVE_OUTPUT_VERSION,
+      deliveryId: "ambiguous-currency-sc",
+      deliverySequence: 1,
+      platformOrder: 1,
+      validUntil: new Date(Date.now() + 60_000).toISOString(),
+      display: { label: null, amountDisplay, text: "Keep the original price and message", translation: null },
+    });
+    const html = renderToStaticMarkup(<StageView state={state} />);
+    expect(html).toContain('<span class="vw-sc-card__amount">￥100.50</span>');
+    expect(html).toContain("Keep the original price and message");
+    expect(html).not.toContain('data-sc-tier="t1"');
+  });
+
   it.each(["¥1,400", "¥1400"])("shows the body and the same tier for legacy OBS amount %s", (amount) => {
     const state = reduceStageFrame(createInitialStageState("connected"), {
       type: "DELIVER",
