@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { inArray } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
-import { canonicalLanguageTag, CONTRACT_VERSION, type DecisionActor, type InferenceCapabilities } from "@voxward/contracts";
+import { CONTRACT_VERSION, parseTermLanguage, type DecisionActor, type InferenceCapabilities } from "@voxward/contracts";
 import { z } from "zod";
 import {
   readDockAndModerationFeed,
@@ -163,7 +163,12 @@ const TERM_CATEGORY_BODY = z
   })
   .strict();
 
-const TERM_LANGUAGE = z.string().max(63).transform(canonicalLanguageTag).pipe(z.string().refine((tag) => tag !== "auto"));
+const TERM_LANGUAGE = z.string().max(63).transform((value, context) => {
+  const language = parseTermLanguage(value);
+  if (language !== null) return language;
+  context.addIssue({ code: "custom", message: "Unsupported language" });
+  return z.NEVER;
+});
 const TERM_ENTRY_SCHEMA = z
   .object({
     id: z.string().min(1).max(64),
@@ -758,7 +763,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
         }
         const [term = "", categoryCode = "", rawKind = "", languageTag = ""] = fields;
         const matchKind = (rawKind || "EXACT").toUpperCase();
-        const language = canonicalLanguageTag(languageTag || "und");
+        const language = parseTermLanguage(languageTag || "und");
         if (!term || term.length > (parsed.data.listKind === "BLACKLIST" ? 100 : 200) || categoryCode.length > 48) {
           errors.push({ line, code: "CSV_INVALID_TERM" });
           continue;
@@ -767,7 +772,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
           errors.push({ line, code: "CSV_INVALID_MATCH_KIND" });
           continue;
         }
-        if (language === null || language === "auto") {
+        if (language === null) {
           errors.push({ line, code: "CSV_INVALID_LANGUAGE" });
           continue;
         }

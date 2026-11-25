@@ -37,14 +37,23 @@ describe("writing the settings", () => {
     const store = createInMemoryModelSettingsStore();
     const deps = { store, describe: () => REPORT_WITH_MODELS };
     const response = await writeModelSettings(deps, withBody({
-      scLanguages: { sourceLanguage: "auto", targetLanguages: ["FR-ca", "ja"] },
+      scLanguages: { sourceLanguage: "auto", targetLanguages: ["FR", "ja"] },
     }));
     expect(response).toMatchObject({ status: 200 });
+    for (const scLanguages of [
+      { sourceLanguage: "zh-Hant", targetLanguages: ["en"] },
+      { sourceLanguage: "en", targetLanguages: ["zh-TW"] },
+      { sourceLanguage: "en", targetLanguages: ["fr-CA"] },
+      { sourceLanguage: "und", targetLanguages: ["en"] },
+      { sourceLanguage: "auto", targetLanguages: ["und"] },
+    ]) {
+      expect(await writeModelSettings(deps, withBody({ scLanguages }))).toMatchObject({ status: 400 });
+    }
     expect(await writeModelSettings(deps, withBody({
-      scLanguages: { sourceLanguage: "auto", targetLanguages: ["fr-ca", "fr-CA"] },
+      scLanguages: { sourceLanguage: "auto", targetLanguages: ["fr", "FR"] },
     }))).toEqual({ status: 400, body: { error: "SETTINGS_INVALID", issues: [{ code: "VALUE_INVALID", path: "/scLanguages" }] } });
     expect((await readModelSettings(deps)).body.settings.scLanguages).toEqual({
-      sourceLanguage: "auto", targetLanguages: ["fr-CA", "ja"],
+      sourceLanguage: "auto", targetLanguages: ["fr", "ja"],
     });
   });
 

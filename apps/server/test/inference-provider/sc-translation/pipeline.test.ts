@@ -36,7 +36,7 @@ describe("cue sheet entries with translation on", () => {
         ],
       })),
     }));
-    const languages = { sourceLanguage: "auto", targetLanguages: ["fr", "ja"] };
+    const languages = { sourceLanguage: "auto", targetLanguages: ["fr", "ja"] } as const;
     const choices = scRunChoicesFromSettings({
       realtimeModeration: null, review: null, scTranslationEnabled: true, scTranslation: SC_SELECTION, scLanguages: languages,
     });

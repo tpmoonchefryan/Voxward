@@ -5,7 +5,7 @@ import { buildApp } from "../../src/app.js";
 import { createAccount } from "../../src/auth/login.js";
 import { grantMembership } from "../../src/auth/members.js";
 import { createSession } from "../../src/auth/session.js";
-import { publishConfirmedCandidateTerm } from "../../src/db/channel-settings-store.js";
+import { publishConfirmedCandidateTerm, writeChannelSetting } from "../../src/db/channel-settings-store.js";
 import type { VoxwardDatabase } from "../../src/db/client.js";
 import { channels } from "../../src/db/schema/index.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
@@ -164,7 +164,7 @@ describe("S022 Admin HTTP routes & RBAC (VOXWARD-SUB-042)", () => {
     expect(badModel.statusCode).toBe(422);
 
     const settingsUrl = `/channels/${CH1}/model-settings`;
-    const languagePolicy = { sourceLanguage: "auto", targetLanguages: ["ja", "fr-CA"] };
+    const languagePolicy = { sourceLanguage: "auto", targetLanguages: ["ja", "fr"] };
     const saveLanguages = await app.inject({
       method: "PUT", url: settingsUrl,
       headers: { cookie: owner1.cookie, "x-csrf-token": owner1.csrf },
@@ -173,6 +173,12 @@ describe("S022 Admin HTTP routes & RBAC (VOXWARD-SUB-042)", () => {
     expect(saveLanguages.statusCode).toBe(200);
     const reread = await app.inject({ method: "GET", url: settingsUrl, headers: { cookie: owner1.cookie } });
     expect(reread.json()).toMatchObject({ settings: { scLanguages: languagePolicy } });
+    writeChannelSetting(db, CH1, "model-settings", {
+      ...reread.json().settings,
+      scLanguages: { sourceLanguage: "zh-TW", targetLanguages: ["ja", "fr-CA", "fr"] },
+    });
+    const legacy = await app.inject({ method: "GET", url: settingsUrl, headers: { cookie: owner1.cookie } });
+    expect(legacy.json()).toMatchObject({ settings: { scLanguages: languagePolicy } });
 
     // Owner updates admin-settings
     const saveAdmin = await app.inject({

@@ -1,27 +1,38 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
-import { ADMIN_COPY } from "../../../i18n";
 import { AdminPage, buildTermCsvTemplate } from "../AdminPage";
 import { csvCopy, decodeTermCsv } from "../csv";
 import { routes } from "../route";
 import { localizeTermCategory } from "../term-category-copy";
-import { DEFAULT_TERM_LANGUAGE, selectedTermLanguage, TermLanguageSelect } from "../TermLanguageSelect";
+import { DEFAULT_TERM_LANGUAGE, TermLanguageSelect } from "../TermLanguageSelect";
+import { moveScTarget, ScLanguageSelects } from "../ScLanguageSelects";
 
 describe("Admin & Settings Page (VW-Draft-04)", () => {
-  it("offers a localized manual term language selector with an unrestricted default and custom tags", () => {
-    const render = (selection: string) => renderToStaticMarkup(
-      <TermLanguageSelect copy={ADMIN_COPY.fr} locale="fr" selection={selection} tag="pt-br"
-        onSelect={() => {}} onTag={() => {}} />,
+  it("offers only supported term languages plus the unrestricted default", () => {
+    const defaultHtml = renderToStaticMarkup(
+      <TermLanguageSelect id="new-term-language" locale="fr" value={DEFAULT_TERM_LANGUAGE} onSelect={() => {}} />,
     );
-    const defaultHtml = render(DEFAULT_TERM_LANGUAGE);
     expect(defaultHtml).toContain('<option value="und" selected="">Toutes les langues</option>');
     expect(defaultHtml).toContain('<option value="fr">français</option>');
-    expect(render("other")).toContain('id="new-term-language-tag"');
-    expect(selectedTermLanguage(DEFAULT_TERM_LANGUAGE, "")).toBe("und");
-    expect(selectedTermLanguage("fr", "")).toBe("fr");
-    expect(selectedTermLanguage("other", " pt-br ")).toBe("pt-BR");
-    expect(selectedTermLanguage("other", "auto")).toBeNull();
+    expect([...defaultHtml.matchAll(/<option value="([^"]+)"/g)].map((match) => match[1]))
+      .toEqual(["und", "en", "zh-CN", "ja", "ko", "fr"]);
+    expect(defaultHtml).not.toContain("<input");
+  });
+
+  it("renders saved SC target order and hides targets already selected in other rows", () => {
+    const html = renderToStaticMarkup(<ScLanguageSelects locale="en" source="auto" targets={["fr", "ja"]}
+      onSource={() => {}} onTargets={() => {}} />);
+    const [source, first, second] = [...html.matchAll(/<select\b[^>]*>([\s\S]*?)<\/select>/g)].map((match) => match[1]);
+    expect(source).toContain('<option value="auto" selected="">');
+    expect(first).toContain('<option value="fr" selected="">');
+    expect(first).not.toContain('<option value="ja"');
+    expect(second).toContain('<option value="ja" selected="">');
+    expect(second).not.toContain('<option value="fr"');
+    expect(moveScTarget(["fr", "ja"], 0, 1)).toEqual(["ja", "fr"]);
+    expect(moveScTarget(["fr", "ja"], 0, -1)).toEqual(["fr", "ja"]);
+    expect(html).toContain("Add target");
+    expect(html).toContain("Remove");
   });
 
   it("localizes only built-in categories and preserves operator copy", () => {
@@ -52,6 +63,7 @@ describe("Admin & Settings Page (VW-Draft-04)", () => {
     expect(html).toContain("data-download-csv-template");
     expect(html).toContain("Scoring &amp; Runtime");
     expect(html).toContain("Data Retention");
+    expect(html).toMatch(/<select[^>]*id="wordlist-language"/);
   });
 
   it("builds valid CSV templates for both blacklist and whitelist term libraries", () => {

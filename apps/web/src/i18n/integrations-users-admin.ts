@@ -1768,8 +1768,6 @@ export interface AdminCopy {
   readonly newTermCatLabel: string;
   readonly termLanguageLabel: string;
   readonly termLanguageAny: string;
-  readonly termLanguageOther: string;
-  readonly termLanguageTag: string;
   readonly matchKindLabel: string;
   readonly confirmAddTermBtn: string;
   readonly regexNote: string;
@@ -1797,6 +1795,12 @@ export interface AdminCopy {
   readonly scToggleDesc: string;
   readonly scSourceLanguage: string;
   readonly scTargetLanguages: string;
+  readonly scSourceAuto: string;
+  readonly scTargetItem: (position: number) => string;
+  readonly scTargetAdd: string;
+  readonly scTargetRemove: string;
+  readonly scTargetUp: string;
+  readonly scTargetDown: string;
   readonly scLanguageHelp: string;
   readonly scLanguageInvalid: string;
   readonly modelRealtimeLabel: string;
@@ -1913,8 +1917,6 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermCatLabel: "Category",
     termLanguageLabel: "Language",
     termLanguageAny: "Any language",
-    termLanguageOther: "Other language",
-    termLanguageTag: "Language tag",
     matchKindLabel: "Match Mode",
     confirmAddTermBtn: "Add Term",
     regexNote: "Safe Bounded Regex: supports character classes, fixed counts, and top-level alternation; rejects lookarounds/backreferences.",
@@ -1942,8 +1944,14 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     scToggleDesc: "Translates incoming paid Super Chats with AI before delivering to OBS and Pure Danmaku Dock.",
     scSourceLanguage: "Source language",
     scTargetLanguages: "Target languages",
-    scLanguageHelp: "Set a source language or enter auto to detect it. Enter up to five language tags separated by commas. OBS and blivechat show the first available translation in that order. Leave both fields blank to keep the legacy behavior. These settings apply to the channel, not the interface.",
-    scLanguageInvalid: "Enter valid language tags and one to five distinct target languages.",
+    scSourceAuto: "Auto-detect",
+    scTargetItem: (n) => `Target language ${n}`,
+    scTargetAdd: "Add target",
+    scTargetRemove: "Remove",
+    scTargetUp: "Move up",
+    scTargetDown: "Move down",
+    scLanguageHelp: "Choose a source and up to five distinct targets in order. OBS and blivechat show the first available translation. Leave the target list empty to keep legacy behavior. These settings apply to the channel, not the interface.",
+    scLanguageInvalid: "Choose supported languages and distinct targets.",
     modelRealtimeLabel: "Primary Live Moderation Model",
     modelScLabel: "Super Chat Translation Model",
     modelReviewLabel: "Manual Review Assistant Model",
@@ -2056,8 +2064,6 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermCatLabel: "所属分类",
     termLanguageLabel: "语言",
     termLanguageAny: "任意语言",
-    termLanguageOther: "其他语言",
-    termLanguageTag: "语言标签",
     matchKindLabel: "匹配模式",
     confirmAddTermBtn: "确认增添",
     regexNote: "安全规范（受限正则）：支持基础字符组、固定次数量词及线性选择；不允许环视断言（如前瞻/后顾）、反向引用或嵌套量词导致回溯爆炸。",
@@ -2085,8 +2091,14 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     scToggleDesc: "启用后，付费醒目留言将先由 AI 精翻再呈现至 OBS 投屏与纯净弹幕姬（审核控制台只读展示此状态）。",
     scSourceLanguage: "源语言",
     scTargetLanguages: "目标语言",
-    scLanguageHelp: "填写源语言标签，或输入 auto 自动识别。最多填写五个目标语言标签，用逗号分隔。OBS 和 blivechat 按顺序显示第一条可用译文。两栏留空则保留原有行为。此设置适用于当前频道，与界面语言无关。",
-    scLanguageInvalid: "请输入有效的语言标签，以及一至五个不重复的目标语言。",
+    scSourceAuto: "自动识别",
+    scTargetItem: (n) => `目标语言 ${n}`,
+    scTargetAdd: "添加目标",
+    scTargetRemove: "移除",
+    scTargetUp: "上移",
+    scTargetDown: "下移",
+    scLanguageHelp: "选择源语言并按顺序设置最多五种不同的目标语言。OBS 和 blivechat 显示第一条可用译文。目标列表留空时保留原有行为。此设置适用于当前频道，与界面语言无关。",
+    scLanguageInvalid: "请选择受支持的语言，目标语言不得重复。",
     modelRealtimeLabel: "实时审核主模型",
     modelScLabel: "Super Chat 精翻模型",
     modelReviewLabel: "待审复核辅助模型",
@@ -2199,8 +2211,6 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermCatLabel: "カテゴリ",
     termLanguageLabel: "言語",
     termLanguageAny: "すべての言語",
-    termLanguageOther: "その他の言語",
-    termLanguageTag: "言語タグ",
     matchKindLabel: "一致方式",
     confirmAddTermBtn: "追加を確定",
     regexNote: "制限付き正規表現：文字クラス・固定回数・トップレベル選択のみ対応し、ReDoS 原因となる後読みや後方参照を禁止します。",
@@ -2228,8 +2238,14 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     scToggleDesc: "有効にすると有料 Super Chat を AI 翻訳して OBS 等へ配信します。",
     scSourceLanguage: "翻訳元の言語",
     scTargetLanguages: "翻訳先の言語",
-    scLanguageHelp: "翻訳元の言語タグを入力するか、auto で自動検出します。翻訳先はカンマ区切りで最大 5 件まで入力できます。OBS と blivechat はこの順序で最初の利用可能な翻訳を表示します。両方を空欄にすると従来の動作を維持します。設定はチャンネルに適用され、表示言語とは無関係です。",
-    scLanguageInvalid: "有効な言語タグで、重複しない翻訳先を 1〜5 件入力してください。",
+    scSourceAuto: "自動検出",
+    scTargetItem: (n) => `翻訳先 ${n}`,
+    scTargetAdd: "翻訳先を追加",
+    scTargetRemove: "削除",
+    scTargetUp: "上へ",
+    scTargetDown: "下へ",
+    scLanguageHelp: "翻訳元と、重複しない翻訳先を優先順に最大 5 件選びます。OBS と blivechat は最初の利用可能な翻訳を表示します。翻訳先が空の場合は従来の動作を維持します。この設定はチャンネル単位です。",
+    scLanguageInvalid: "対応言語を選び、翻訳先が重複しないようにしてください。",
     modelRealtimeLabel: "リアルタイム審査メインモデル",
     modelScLabel: "Super Chat 翻訳モデル",
     modelReviewLabel: "再確認補助モデル",
@@ -2342,8 +2358,6 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermCatLabel: "소속 분류",
     termLanguageLabel: "언어",
     termLanguageAny: "모든 언어",
-    termLanguageOther: "기타 언어",
-    termLanguageTag: "언어 태그",
     matchKindLabel: "일치 방식",
     confirmAddTermBtn: "추가 확인",
     regexNote: "제한 정규식: 문자 클래스, 고정 반복 및 최상위 분기만 허용되며 ReDoS 위험 구문은 거부됩니다.",
@@ -2371,8 +2385,14 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     scToggleDesc: "활성화 시 유료 Super Chat을 AI 번역하여 OBS 및 클린 채팅 독으로 전달합니다.",
     scSourceLanguage: "원문 언어",
     scTargetLanguages: "번역 언어",
-    scLanguageHelp: "원문 언어 태그를 입력하거나 자동 감지를 위해 auto를 입력하세요. 번역 언어는 쉼표로 구분해 최대 5개까지 입력하세요. OBS와 blivechat은 입력 순서대로 사용 가능한 첫 번역을 표시합니다. 두 칸을 비워 두면 기존 동작이 유지됩니다. 이 설정은 채널에 적용되며 화면 언어와는 별개입니다.",
-    scLanguageInvalid: "유효한 언어 태그와 중복되지 않는 번역 언어 1~5개를 입력하세요.",
+    scSourceAuto: "자동 감지",
+    scTargetItem: (n) => `번역 언어 ${n}`,
+    scTargetAdd: "번역 언어 추가",
+    scTargetRemove: "삭제",
+    scTargetUp: "위로 이동",
+    scTargetDown: "아래로 이동",
+    scLanguageHelp: "원문 언어와 서로 다른 번역 언어를 우선순위대로 최대 5개 선택하세요. OBS와 blivechat은 사용 가능한 첫 번역을 표시합니다. 번역 언어 목록을 비워 두면 기존 동작이 유지됩니다. 이 설정은 채널에 적용됩니다.",
+    scLanguageInvalid: "지원하는 언어를 선택하고 번역 언어가 중복되지 않게 하세요.",
     modelRealtimeLabel: "실시간 검토 주 모델",
     modelScLabel: "Super Chat 번역 모델",
     modelReviewLabel: "대기열 재확인 보조 모델",
@@ -2485,8 +2505,6 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     newTermCatLabel: "Catégorie",
     termLanguageLabel: "Langue",
     termLanguageAny: "Toutes les langues",
-    termLanguageOther: "Autre langue",
-    termLanguageTag: "Code de langue",
     matchKindLabel: "Mode",
     confirmAddTermBtn: "Ajouter",
     regexNote: "Regex bornée sûre : classes de caractères, répétitions fixes ; lookarounds interdits.",
@@ -2514,8 +2532,14 @@ export const ADMIN_COPY: Readonly<Record<VoxWardLocale, AdminCopy>> = {
     scToggleDesc: "Traduit les Super Chats via l'IA avant diffusion sur OBS et le Dock.",
     scSourceLanguage: "Langue source",
     scTargetLanguages: "Langues cibles",
-    scLanguageHelp: "Indiquez la langue source ou saisissez auto pour la détecter. Saisissez jusqu’à cinq codes de langue séparés par des virgules. OBS et blivechat affichent la première traduction disponible dans cet ordre. Laissez les deux champs vides pour conserver le comportement antérieur. Ce réglage s’applique à la chaîne, pas à la langue de l’interface.",
-    scLanguageInvalid: "Saisissez des codes de langue valides et une à cinq langues cibles distinctes.",
+    scSourceAuto: "Détection automatique",
+    scTargetItem: (n) => `Langue cible ${n}`,
+    scTargetAdd: "Ajouter une langue cible",
+    scTargetRemove: "Retirer",
+    scTargetUp: "Monter",
+    scTargetDown: "Descendre",
+    scLanguageHelp: "Choisissez la langue source et jusqu’à cinq langues cibles distinctes, par ordre de priorité. OBS et blivechat affichent la première traduction disponible. Laissez la liste vide pour conserver le comportement antérieur. Ce réglage s’applique à la chaîne.",
+    scLanguageInvalid: "Choisissez des langues prises en charge et des cibles distinctes.",
     modelRealtimeLabel: "Modèle principal modération",
     modelScLabel: "Modèle traduction Super Chat",
     modelReviewLabel: "Modèle assistance revue",

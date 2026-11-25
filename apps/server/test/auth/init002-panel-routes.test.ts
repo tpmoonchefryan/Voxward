@@ -160,6 +160,12 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     })).json();
     expect(await preview("fr")).toEqual({ hits: [entry.id], language: "fr", action: "REVIEW" });
     expect(await preview("ko")).toEqual({ hits: [], language: "ko", action: null });
+    for (const language of ["zh-Hant", "zh-TW", "fr-CA", "pt-BR", "auto"]) {
+      expect((await app.inject({ method: "POST", url: `${url}/preview`, headers, payload: { text: "FLARPON", language } })).statusCode)
+        .toBe(400);
+      expect((await app.inject({ method: "PUT", url, headers, payload: { entries: [{ ...entry, language }] } })).statusCode)
+        .toBe(400);
+    }
     const second = await app.inject({ method: "PUT", url, headers, payload: { entries: [] } });
     expect(second.statusCode).toBe(200);
     expect(await preview("fr")).toMatchObject({ hits: [] });
@@ -248,15 +254,16 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
       headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
       payload: {
         listKind: "BLACKLIST",
-        csvText: '\uFEFFterm;category;matchKind;language\r\n"bonjour; ""voisin""\r\nà bientôt";scam-links;NORMALIZED;fr-ca\r\nbad;scam-links;EXACT;en;extra\r\n\u200B;scam-links;NORMALIZED;fr\r\n"unclosed;scam-links;EXACT;en',
+        csvText: '\uFEFFterm;category;matchKind;language\r\n"bonjour; ""voisin""\r\nà bientôt";scam-links;NORMALIZED;FR\r\nbad;scam-links;EXACT;en;extra\r\n\u200B;scam-links;NORMALIZED;fr\r\nregional;scam-links;EXACT;zh-TW\r\n"unclosed;scam-links;EXACT;en',
       },
     });
     expect(localizedCsv.statusCode).toBe(200);
     expect(localizedCsv.json()).toMatchObject({
       imported: 1,
-      errors: [{ line: 4, code: "CSV_EXTRA_COLUMNS" }, { line: 5, code: "CSV_INVALID_TERM" }, { line: 6, code: "CSV_INVALID_QUOTING" }],
+      errors: [{ line: 4, code: "CSV_EXTRA_COLUMNS" }, { line: 5, code: "CSV_INVALID_TERM" },
+        { line: 6, code: "CSV_INVALID_LANGUAGE" }, { line: 7, code: "CSV_INVALID_QUOTING" }],
       entries: expect.arrayContaining([
-        expect.objectContaining({ term: 'bonjour; "voisin"\nà bientôt', matchKind: "NORMALIZED", language: "fr-CA" }),
+        expect.objectContaining({ term: 'bonjour; "voisin"\nà bientôt', matchKind: "NORMALIZED", language: "fr" }),
       ]),
     });
 

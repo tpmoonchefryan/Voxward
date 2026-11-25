@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
-import { parseScLanguagePolicy } from "@voxward/contracts";
+import { parseScLanguagePolicy, type ScSourceLanguage, type SupportedLanguage, type TermLanguage } from "@voxward/contracts";
 import {
   Badge,
   Button,
@@ -33,8 +33,9 @@ import {
   type TermCategoryView,
 } from "./api";
 import { CSV_ENCODINGS, csvCopy, decodeTermCsv, type CsvEncoding } from "./csv";
+import { ScLanguageSelects } from "./ScLanguageSelects";
 import { localizeTermCategory } from "./term-category-copy";
-import { DEFAULT_TERM_LANGUAGE, selectedTermLanguage, TermLanguageSelect } from "./TermLanguageSelect";
+import { DEFAULT_TERM_LANGUAGE, TermLanguageSelect } from "./TermLanguageSelect";
 import { WordlistTools } from "./WordlistTools";
 
 type SettingsSectionId = "blacklist" | "whitelist" | "scoring" | "retention";
@@ -165,9 +166,7 @@ function AdminSurface({
   const [newTermText, setNewTermText] = useState("");
   const [newTermCategory, setNewTermCategory] = useState("");
   const [newTermMatchKind, setNewTermMatchKind] = useState<"EXACT" | "CONTAINS" | "REGEX">("EXACT");
-  const [newTermLanguageSelection, setNewTermLanguageSelection] = useState(DEFAULT_TERM_LANGUAGE);
-  const [newTermLanguageTag, setNewTermLanguageTag] = useState("");
-  const newTermLanguage = selectedTermLanguage(newTermLanguageSelection, newTermLanguageTag);
+  const [newTermLanguage, setNewTermLanguage] = useState<TermLanguage>(DEFAULT_TERM_LANGUAGE);
   const [csvText, setCsvText] = useState("");
   const [csvEncoding, setCsvEncoding] = useState<CsvEncoding>("utf-8");
   const [editingEntry, setEditingEntry] = useState<ExtendedTermEntryView | null>(null);
@@ -175,8 +174,8 @@ function AdminSurface({
   // Scoring, model, retention state
   const [modelResp, setModelResp] = useState<ModelSettingsResponseView | null>(null);
   const [modelForm, setModelForm] = useState<ModelSettingsView | null>(null);
-  const [scSource, setScSource] = useState("");
-  const [scTargets, setScTargets] = useState("");
+  const [scSource, setScSource] = useState<ScSourceLanguage>("auto");
+  const [scTargets, setScTargets] = useState<readonly SupportedLanguage[]>([]);
   const [adminForm, setAdminForm] = useState<AdminSettingsView | null>(null);
 
   const [busy, setBusy] = useState(false);
@@ -194,8 +193,8 @@ function AdminSurface({
       setEntries(entList);
       setModelResp(mod);
       setModelForm(mod.settings);
-      setScSource(mod.settings.scLanguages?.sourceLanguage ?? "");
-      setScTargets(mod.settings.scLanguages?.targetLanguages.join(", ") ?? "");
+      setScSource(mod.settings.scLanguages?.sourceLanguage ?? "auto");
+      setScTargets(mod.settings.scLanguages?.targetLanguages ?? []);
       setAdminForm(adm);
     } catch (error) {
       if (error instanceof AdminApiFailure && error.status === 401) {
@@ -303,7 +302,7 @@ function AdminSurface({
 
   const handleAddTerm = async () => {
     const trimmed = newTermText.trim();
-    if (!trimmed || newTermLanguage === null) return;
+    if (!trimmed) return;
     const item: ExtendedTermEntryView = {
       id: `term-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       listKind: activeListKind,
@@ -315,8 +314,7 @@ function AdminSurface({
     };
     await persistEntries([item, ...entries], (c) => c.messages.termAdded);
     setNewTermText("");
-    setNewTermLanguageSelection(DEFAULT_TERM_LANGUAGE);
-    setNewTermLanguageTag("");
+    setNewTermLanguage(DEFAULT_TERM_LANGUAGE);
     setShowAddTermForm(false);
   };
 
@@ -389,11 +387,9 @@ function AdminSurface({
 
   const handleSaveModels = async () => {
     if (modelForm === null) return;
-    const source = scSource.trim();
-    const targets = scTargets.trim();
-    const languages = source === "" && targets === "" ? undefined : parseScLanguagePolicy({
-      sourceLanguage: source || "auto",
-      targetLanguages: targets.split(",").map((tag) => tag.trim()),
+    const languages = scTargets.length === 0 ? undefined : parseScLanguagePolicy({
+      sourceLanguage: scSource,
+      targetLanguages: scTargets,
     });
     if (languages === null) {
       setNotice({ tone: "danger", resolve: (c) => c.scLanguageInvalid });
@@ -409,8 +405,8 @@ function AdminSurface({
       });
       setModelResp(saved);
       setModelForm(saved.settings);
-      setScSource(saved.settings.scLanguages?.sourceLanguage ?? "");
-      setScTargets(saved.settings.scLanguages?.targetLanguages.join(", ") ?? "");
+      setScSource(saved.settings.scLanguages?.sourceLanguage ?? "auto");
+      setScTargets(saved.settings.scLanguages?.targetLanguages ?? []);
       setNotice({ tone: "positive", resolve: (c) => c.messages.modelsSaved });
     } catch (error) {
       setNotice({
@@ -768,11 +764,10 @@ function AdminSurface({
                         ]}
                       />
                     </div>
-                    <TermLanguageSelect copy={copy} locale={locale} selection={newTermLanguageSelection} tag={newTermLanguageTag}
-                      onSelect={setNewTermLanguageSelection} onTag={setNewTermLanguageTag} />
+                    <TermLanguageSelect id="new-term-language" locale={locale} value={newTermLanguage} onSelect={setNewTermLanguage} />
                     <Button
                       variant="primary"
-                      disabled={busy || !newTermText.trim() || newTermLanguage === null}
+                      disabled={busy || !newTermText.trim()}
                       onClick={() => void handleAddTerm()}
                     >
                       {copy.confirmAddTermBtn}
@@ -922,23 +917,8 @@ function AdminSurface({
                       })
                     }
                   />
-                  <div className="vw-row-wrap">
-                    <div className="vw-field-col--compact">
-                      <label className="vw-field-label" htmlFor="sc-source-language">{copy.scSourceLanguage}</label>
-                      <Input id="sc-source-language" placeholder="auto" value={scSource} onChange={(event) => setScSource(event.target.value)} />
-                    </div>
-                    <div className="vw-field-col--compact">
-                      <label className="vw-field-label" htmlFor="sc-target-languages">{copy.scTargetLanguages}</label>
-                      <Input
-                        id="sc-target-languages"
-                        placeholder="en, fr-CA, ja"
-                        aria-describedby="sc-language-help"
-                        value={scTargets}
-                        onChange={(event) => setScTargets(event.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <p id="sc-language-help">{copy.scLanguageHelp}</p>
+                  <ScLanguageSelects locale={locale} source={scSource} targets={scTargets}
+                    onSource={setScSource} onTargets={setScTargets} />
                   {modelResp?.modelFault ? (
                     <BannerNotice tone="warning">{modelResp.modelFault.message}</BannerNotice>
                   ) : null}

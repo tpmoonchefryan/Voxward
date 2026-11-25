@@ -4,7 +4,7 @@ VoxWard's interface languages are English, Simplified Chinese, Japanese, Korean 
 
 ## Super Chat
 
-In **Settings → Scoring & Runtime**, configure a language tag for the source or enter `auto`, then enter one to five comma-separated target tags (for example `en, fr-CA, ja`). The setting belongs to the channel, not the viewer or the operator's interface. An empty source with a target is automatic; leaving both fields blank keeps legacy behavior. The provider is responsible for detecting the source when requested; `und` indicates it could not determine it. Providers may support only a subset of tags. The default server ships with synthetic bindings, not an active live YouTube or AI connection.
+In **Settings → Scoring & Runtime**, choose a source language or automatic detection (`auto`), then add up to five distinct target languages and arrange them in priority order. The selectors offer English (`en`), Simplified Chinese (`zh-CN`), Japanese (`ja`), Korean (`ko`) and French (`fr`). An empty target list keeps legacy behavior. This policy belongs to the channel, not the viewer or the operator’s interface. If automatic detection cannot determine the source, the provider may return `und`. The default server ships with synthetic bindings, not an active live YouTube or AI connection.
 
 Dock and Moderation show the original and all available approved translations with separate slang, reply and pronunciation fields. OBS and blivechat keep a single translated text field: the first available translation in the channel's target order. Unavailable or rejected translations are not replaced with another channel's settings or the UI locale. Historical text-only evidence remains readable. Amounts come from numeric metadata, display in the interface locale, and do not imply a ticker when there is no reliable tier.
 
@@ -16,9 +16,9 @@ Normalization folds width and case, composes Hangul Jamo and preserves kana voic
 
 ## Import wordlists
 
-Download a template or paste a file with columns `term,category,matchKind,language`. Both commas and semicolons are accepted, including quoted fields, escaped quotes and newlines inside quoted text. Select UTF-8 (BOM accepted), Shift_JIS, or EUC-KR before loading a file. Missing language uses `und`; accepted match types include EXACT, CONTAINS, NORMALIZED and admitted REGEX. Valid rows are imported and invalid rows are reported by their starting line.
+Download a template or paste a file with columns `term,category,matchKind,language`. Both commas and semicolons are accepted, including quoted fields, escaped quotes and newlines inside quoted text. Select UTF-8 (BOM accepted), Shift_JIS, or EUC-KR before loading a file. The language column accepts `en`, `zh-CN`, `ja`, `ko`, `fr`, or `und` (the default for a blank cell). Accepted match types include EXACT, CONTAINS, NORMALIZED and admitted REGEX. Valid rows are imported and invalid rows are reported by their starting line.
 
-Saving or importing terms publishes the channel's blacklist rule group for review. Use **Wordlist history and preview** to test a sample without saving the text. Enter a language tag to check a specific scope. Loading history and restoring a previous list publishes a new version; it leaves other rule groups unchanged.
+Saving or importing terms publishes the channel's blacklist rule group for review. The manual term and **Wordlist history and preview** dropdowns offer the same five languages and an unscoped option. Use preview to test a sample without saving the text. Loading history and restoring a previous list publishes a new version; it leaves other rule groups unchanged.
 
 In the local synthetic sandbox, select `synthetic-demo` for Super Chat and configure target languages to exercise the approved output path. The output contains clearly marked synthetic text, not a machine translation.
 

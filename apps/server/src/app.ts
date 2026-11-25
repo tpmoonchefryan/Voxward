@@ -45,6 +45,7 @@ import {
 import { createDecisionRoutes } from "./modules/decision-service/routes.js";
 import {
   DEFAULT_MODEL_SETTINGS,
+  keepSupportedScLanguages,
   readModelSettings,
   writeModelSettings,
   type ModelSettings,
@@ -380,7 +381,7 @@ function channelPanelOptionsFor(
       }),
   );
   const modelStore = (channelId: string): ModelSettingsStore => ({
-    read: async () => readChannelSetting<ModelSettings>(database, channelId, "model-settings", DEFAULT_MODEL_SETTINGS),
+    read: async () => keepSupportedScLanguages(readChannelSetting<ModelSettings>(database, channelId, "model-settings", DEFAULT_MODEL_SETTINGS)),
     write: async (next) => writeChannelSetting(database, channelId, "model-settings", next),
   });
   const describe = () => modules.inferenceProvider.describe();

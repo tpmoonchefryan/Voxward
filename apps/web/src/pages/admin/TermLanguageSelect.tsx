@@ -1,41 +1,35 @@
-import { canonicalLanguageTag } from "@voxward/contracts";
-import { Input, Select } from "@tcrn/ui-react/approved";
-import type { AdminCopy, VoxWardLocale } from "../../i18n";
+import { parseTermLanguage, SUPPORTED_LANGUAGES, type TermLanguage } from "@voxward/contracts";
+import { Select } from "@tcrn/ui-react/approved";
+import { ADMIN_COPY, type VoxWardLocale } from "../../i18n";
 
-const COMMON_LANGUAGES = ["en", "fr", "ja", "ko", "zh", "zh-CN", "zh-TW"] as const;
 export const DEFAULT_TERM_LANGUAGE = "und";
 
-export function selectedTermLanguage(selection: string, tag: string): string | null {
-  const language = canonicalLanguageTag(selection === "other" ? tag.trim() : selection);
-  return language === "auto" ? null : language;
+export function supportedLanguageOptions(locale: VoxWardLocale) {
+  const names = new Intl.DisplayNames(locale, { type: "language", languageDisplay: "standard" });
+  return SUPPORTED_LANGUAGES.map((language) => ({
+    value: language,
+    label: names.of(language === "zh-CN" ? "zh-Hans" : language) ?? language,
+  }));
 }
 
-export function TermLanguageSelect({ copy, locale, selection, tag, onSelect, onTag }: {
-  readonly copy: AdminCopy;
+export function TermLanguageSelect({ id, label, locale, value, onSelect }: {
+  readonly id: string;
+  readonly label?: string;
   readonly locale: VoxWardLocale;
-  readonly selection: string;
-  readonly tag: string;
-  readonly onSelect: (selection: string) => void;
-  readonly onTag: (tag: string) => void;
+  readonly value: TermLanguage;
+  readonly onSelect: (language: TermLanguage) => void;
 }) {
-  const names = new Intl.DisplayNames(locale, { type: "language" });
+  const copy = ADMIN_COPY[locale];
   return (
-    <>
-      <div className="vw-field-col--compact">
-        <label className="vw-field-label" htmlFor="new-term-language">{copy.termLanguageLabel}</label>
-        <Select id="new-term-language" value={selection} onChange={(event) => onSelect(event.target.value)} options={[
-          { value: DEFAULT_TERM_LANGUAGE, label: copy.termLanguageAny },
-          ...COMMON_LANGUAGES.map((language) => ({ value: language, label: names.of(language) ?? language })),
-          { value: "other", label: copy.termLanguageOther },
-        ]} />
-      </div>
-      {selection === "other" ? (
-        <div className="vw-field-col--compact">
-          <label className="vw-field-label" htmlFor="new-term-language-tag">{copy.termLanguageTag}</label>
-          <Input id="new-term-language-tag" value={tag} maxLength={63} placeholder="pt-BR"
-            onChange={(event) => onTag(event.target.value)} />
-        </div>
-      ) : null}
-    </>
+    <div className="vw-field-col--compact">
+      <label className="vw-field-label" htmlFor={id}>{label ?? copy.termLanguageLabel}</label>
+      <Select id={id} value={value} onChange={(event) => {
+        const language = parseTermLanguage(event.target.value);
+        if (language !== null) onSelect(language);
+      }} options={[
+        { value: DEFAULT_TERM_LANGUAGE, label: copy.termLanguageAny },
+        ...supportedLanguageOptions(locale),
+      ]} />
+    </div>
   );
 }

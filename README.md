@@ -123,7 +123,7 @@ flowchart LR
 
 ---
 
-**Language support.** The interface supports English, Simplified Chinese, Japanese, Korean and French (left-to-right layouts). In **Settings → Scoring & Runtime**, a channel can configure a source language or `auto` and up to five ordered translation targets using language tags. Dock and Moderation can show all available translations; OBS and blivechat show the first available target. This setting is separate from the interface language. Rule evaluation, language detection, translation and platform access have different limits; see the [multilingual operator guide](./docs/multilingual.md). The default runtime still uses synthetic adapters, not live YouTube or a real translation provider.
+**Language support.** The interface supports English, Simplified Chinese, Japanese, Korean and French (left-to-right layouts). In **Settings → Scoring & Runtime**, choose a channel’s source language or automatic detection and up to five distinct, ordered targets from the same five languages. Dock and Moderation can show all available translations; OBS and blivechat show the first available target. This setting is separate from the interface language. Rule evaluation, language detection, translation and platform access have different limits; see the [multilingual operator guide](./docs/multilingual.md). The default runtime still uses synthetic adapters, not live YouTube or a real translation provider.
 
 ## Built with Kiro
 

@@ -1,4 +1,4 @@
-import { canonicalLanguageTag } from "@voxward/contracts";
+import { parseTermLanguage } from "@voxward/contracts";
 
 export interface CsvRecord {
   readonly line: number;
@@ -83,8 +83,7 @@ function delimiterFit(records: readonly CsvRecord[]): readonly [
   const multiColumn = records.filter(({ invalid, fields }) =>
     !invalid && fields.length >= 2 && fields.length <= 4 && Boolean(fields[0]));
   const validRows = multiColumn.filter(({ fields }) => {
-    const language = canonicalLanguageTag(fields[3] || "und");
-    return language !== null && language !== "auto" &&
+    return parseTermLanguage(fields[3] || "und") !== null &&
       /^(EXACT|CONTAINS|NORMALIZED|REGEX)$/i.test(fields[2] || "EXACT");
   });
   return [Number(header), validRows.length, validRows.filter(({ fields }) => Boolean(fields[2])).length, multiColumn.length];

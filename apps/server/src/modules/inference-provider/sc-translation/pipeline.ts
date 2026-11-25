@@ -220,7 +220,7 @@ function matchesLanguagePolicy(item: ScItemResult, languages: ScLanguagePolicy):
   if (item.verdict === "BLOCK") return true;
   if (item.sourceLanguage === undefined || item.translations === undefined) return false;
   if (languages.sourceLanguage !== "auto" && item.sourceLanguage !== languages.sourceLanguage) return false;
-  return item.translations.every((entry) => languages.targetLanguages.includes(entry.targetLanguage));
+  return item.translations.every((entry) => languages.targetLanguages.some((language) => language === entry.targetLanguage));
 }
 
 function orderTranslations(item: ScItemResult, languages: ScLanguagePolicy): ScItemResult {

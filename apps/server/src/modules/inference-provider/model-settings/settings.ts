@@ -1,4 +1,4 @@
-import { parseScLanguagePolicy, type ScLanguagePolicy } from "@voxward/contracts";
+import { parseScLanguagePolicy, parseSupportedLanguage, type ScLanguagePolicy, type SupportedLanguage } from "@voxward/contracts";
 
 /**
  * Model settings for the three AI tasks (proposal section 9.1). Nothing here picks a model. The user chooses one from what
@@ -64,6 +64,24 @@ export interface SettingsIssue {
 export type ParsedModelSettings =
   | { readonly ok: true; readonly settings: ModelSettings }
   | { readonly ok: false; readonly issues: readonly SettingsIssue[] };
+
+export function keepSupportedScLanguages(settings: ModelSettings): ModelSettings {
+  const { scLanguages, ...otherSettings } = settings;
+  if (scLanguages === undefined) return settings;
+  const targetLanguages = new Set<SupportedLanguage>();
+  for (const value of scLanguages.targetLanguages) {
+    const language = parseSupportedLanguage(value);
+    if (language !== null) targetLanguages.add(language);
+  }
+  if (targetLanguages.size === 0) return otherSettings;
+  return {
+    ...otherSettings,
+    scLanguages: {
+      sourceLanguage: parseSupportedLanguage(scLanguages.sourceLanguage) ?? "auto",
+      targetLanguages: [...targetLanguages],
+    },
+  };
+}
 
 /**
  * Reads a replacement settings body. The translation language policy is optional for legacy callers and stored settings.
