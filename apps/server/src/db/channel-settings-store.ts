@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import { messageLanguageOf } from "@voxward/contracts";
+import { messageLanguageOf, normalizeStoredLanguage } from "@voxward/contracts";
 import type { VoxwardDatabase } from "./client.js";
 import { deploymentSettings, ruleTerms, ruleVersions } from "./schema/index.js";
 import { runShortTransaction, type ShortTransaction } from "./transaction.js";
@@ -341,9 +341,13 @@ export interface ExtendedTermEntry {
   readonly language?: string;
 }
 
+function normalizeStoredTermEntry(entry: ExtendedTermEntry): ExtendedTermEntry {
+  return { ...entry, language: normalizeStoredLanguage(entry.language) };
+}
+
 export function readTermEntries(database: VoxwardDatabase, channelId: string): ExtendedTermEntry[] {
   const saved = readChannelSetting<ExtendedTermEntry[] | null>(database, channelId, "term-entries", null);
-  if (saved !== null) return saved;
+  if (saved !== null) return saved.map(normalizeStoredTermEntry);
   return database.orm
     .select({ id: ruleTerms.id, term: ruleTerms.term, matchKind: ruleTerms.matchKind, language: ruleTerms.language, groupCode: ruleTerms.groupCode })
     .from(ruleTerms)
@@ -356,7 +360,7 @@ export function readTermEntries(database: VoxwardDatabase, channelId: string): E
       listKind: "BLACKLIST",
       categoryCode: term.groupCode || "spam",
       matchKind: term.matchKind === "REGEX" || term.matchKind === "CONTAINS" || term.matchKind === "NORMALIZED" ? term.matchKind : "EXACT",
-      language: term.language ?? "und",
+      language: normalizeStoredLanguage(term.language),
       enabled: true,
     }));
 }
@@ -380,9 +384,9 @@ export function clearTermList(tx: ShortTransaction, channelId: string): void {
 }
 
 export function readTermListVersions(database: VoxwardDatabase, channelId: string): readonly TermListVersion[] {
-  return readChannelSetting(database, channelId, "term-list-history", [
-    { version: 0, createdAt: null, entries: readTermEntries(database, channelId) },
-  ]);
+  const saved = readChannelSetting<readonly TermListVersion[] | null>(database, channelId, "term-list-history", null);
+  if (saved === null) return [{ version: 0, createdAt: null, entries: readTermEntries(database, channelId) }];
+  return saved.map((version) => ({ ...version, entries: version.entries.map(normalizeStoredTermEntry) }));
 }
 
 export function publishTermList(

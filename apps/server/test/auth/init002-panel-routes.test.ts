@@ -5,9 +5,10 @@ import { createAccount } from "../../src/auth/login.js";
 import { grantMembership } from "../../src/auth/members.js";
 import { resolveEffectivePermissions } from "../../src/auth/permissions.js";
 import { createSession } from "../../src/auth/session.js";
+import { writeChannelSetting } from "../../src/db/channel-settings-store.js";
 import type { VoxwardDatabase } from "../../src/db/client.js";
 import { ChannelEventStore, SubjectStore, TaskStore } from "../../src/db/repository.js";
-import { channels, deliveries, verdicts } from "../../src/db/schema/index.js";
+import { channels, deliveries, ruleTerms, verdicts } from "../../src/db/schema/index.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
@@ -176,6 +177,38 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     expect(restored.json().version).toBeGreaterThan(second.json().version);
     expect(restored.json().entries).toEqual([entry]);
     expect(await preview("fr")).toMatchObject({ hits: [entry.id] });
+  });
+
+  it("loads and republishes legacy term entries with supported language scopes", async () => {
+    const owner = await signIn("owner-legacy-terms", "Owner Legacy Terms");
+    runShortTransaction(db, (tx) => {
+      grantMembership(tx, { channelId: CH1, accountId: owner.accountId, role: "CHANNEL_OWNER", logAccess: true, now: NOW });
+      tx.insert(ruleTerms).values({
+        id: "legacy-rule", channelId: CH1, term: "table term", matchKind: "EXACT",
+        language: "fr-CA", groupCode: "spam", createdAt: T0, createdByRef: owner.accountId,
+      }).run();
+    });
+    const headers = { cookie: owner.cookie, "x-csrf-token": owner.csrf };
+    const url = `/channels/${CH1}/term-entries`;
+    const tableEntries = await app.inject({ url, headers });
+    expect(tableEntries.json().entries).toMatchObject([{ id: "legacy-rule", language: "fr" }]);
+
+    const tags = ["fr-CA", "en-GB", "ja-JP", "ko-KR", "zh-CN", "zh-Hans", "zh", "zh-TW", "zh-Hant", "pt-BR", "und"];
+    const entries = tags.map((language, i) => ({
+      id: `legacy-${i}`, listKind: "BLACKLIST", term: `term ${i}`, categoryCode: "spam", matchKind: "EXACT", enabled: true, language,
+    }));
+    const expected = ["fr", "en", "ja", "ko", "zh-CN", "zh-CN", "zh-CN", "und", "und", "und", "und"];
+    writeChannelSetting(db, CH1, "term-entries", entries);
+    writeChannelSetting(db, CH1, "term-list-history", [{ version: 0, createdAt: null, entries }]);
+    const loaded = await app.inject({ url, headers });
+    expect(loaded.json().entries.map((entry: { language: string }) => entry.language)).toEqual(expected);
+    const edited = loaded.json().entries.map((entry: { id: string }) => entry.id === "legacy-0" ? { ...entry, enabled: false } : entry);
+    expect((await app.inject({ method: "PUT", url, headers, payload: { entries: edited } })).statusCode).toBe(200);
+    const restored = await app.inject({ method: "POST", url: `${url}/rollback`, headers, payload: { version: 0 } });
+    expect(restored.statusCode).toBe(200);
+    expect(restored.json().entries).toEqual(entries.map((entry, i) => ({ ...entry, language: expected[i] })));
+    const rules = await app.inject({ url: `/channels/${CH1}/rules`, headers });
+    expect(rules.json().ruleSet.groups[0].rules.map((rule: { language: string }) => rule.language)).toEqual(expected);
   });
 
   it.each([

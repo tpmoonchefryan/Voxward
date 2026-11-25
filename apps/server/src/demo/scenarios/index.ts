@@ -35,7 +35,7 @@ import { RETENTION_DAYS } from "../../modules/audit-store/content-policy.js";
 import { CERTIFICATE_SUMMARY, createInvalidationBus } from "../../modules/audit-store/index.js";
 import { executeRequest, startDeletionRequest, type DataDeps } from "../../modules/data-lifecycle-service/index.js";
 import { createDecisionService, DEFAULT_DECISION_LIMITS } from "../../modules/decision-service/index.js";
-import { DEFAULT_MODEL_SETTINGS, keepSupportedScLanguages, type ModelSettings } from "../../modules/inference-provider/index.js";
+import { DEFAULT_MODEL_SETTINGS, normalizeStoredScLanguages, type ModelSettings } from "../../modules/inference-provider/index.js";
 import { encodeScTranslationEvidence } from "../../modules/inference-provider/sc-translation/cue-sheet.js";
 import { runScBatch, scRunChoicesFromSettings } from "../../modules/inference-provider/sc-translation/pipeline.js";
 import {
@@ -273,7 +273,7 @@ export function createSandboxRuntime(
     let scFailed = false;
     if (ev.isPaid && modules !== undefined) {
       const settings = readChannelSetting<ModelSettings>(database, SANDBOX_CHANNEL_ID, "model-settings", DEFAULT_MODEL_SETTINGS);
-      const choices = scRunChoicesFromSettings(keepSupportedScLanguages(settings));
+      const choices = scRunChoicesFromSettings(normalizeStoredScLanguages(settings));
       if (choices.translationEnabled || choices.selection !== null) {
         translation = null;
         if (mod.route !== "BLOCK" && mod.route !== "REVIEW" && !subject.hasException) {

@@ -179,6 +179,20 @@ describe("S022 Admin HTTP routes & RBAC (VOXWARD-SUB-042)", () => {
     });
     const legacy = await app.inject({ method: "GET", url: settingsUrl, headers: { cookie: owner1.cookie } });
     expect(legacy.json()).toMatchObject({ settings: { scLanguages: languagePolicy } });
+    writeChannelSetting(db, CH1, "model-settings", {
+      ...legacy.json().settings,
+      scLanguages: { sourceLanguage: "zh-Hans", targetLanguages: ["fr-CA", "en-GB", "fr", "ko-KR", "zh-Hant"] },
+    });
+    const migrated = await app.inject({ method: "GET", url: settingsUrl, headers: { cookie: owner1.cookie } });
+    expect(migrated.json()).toMatchObject({
+      settings: { scLanguages: { sourceLanguage: "zh-CN", targetLanguages: ["fr", "en", "ko"] } },
+    });
+    const resaved = await app.inject({
+      method: "PUT", url: settingsUrl,
+      headers: { cookie: owner1.cookie, "x-csrf-token": owner1.csrf },
+      payload: migrated.json().settings,
+    });
+    expect(resaved.statusCode).toBe(200);
 
     // Owner updates admin-settings
     const saveAdmin = await app.inject({

@@ -28,6 +28,17 @@ export function parseTermLanguage(value: unknown): TermLanguage | null {
   return tag === "und" ? tag : parseSupportedLanguage(tag);
 }
 
+export function normalizeStoredLanguage(value: unknown): TermLanguage {
+  const tag = canonicalLanguageTag(value);
+  if (tag === null) return "und";
+  const { language, script, region } = new Intl.Locale(tag);
+  if (language === "zh") {
+    if (script !== undefined) return script === "Hans" ? "zh-CN" : "und";
+    return region === "TW" || region === "HK" || region === "MO" ? "und" : "zh-CN";
+  }
+  return parseSupportedLanguage(language) ?? "und";
+}
+
 export function parseScLanguagePolicy(value: unknown): ScLanguagePolicy | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
   if (Object.keys(value).some((key) => key !== "sourceLanguage" && key !== "targetLanguages")) return null;
