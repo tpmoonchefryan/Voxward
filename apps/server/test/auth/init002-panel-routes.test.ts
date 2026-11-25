@@ -172,6 +172,33 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     expect(await preview("fr")).toMatchObject({ hits: [entry.id] });
   });
 
+  it.each([
+    ["tied separator counts", "a,b,c;spam;EXACT\nx;spam;EXACT", "a,b,c", "x"],
+    ["more commas than semicolons", "a,b,c,d,e;spam;EXACT\nx;spam;EXACT", "a,b,c,d,e", "x"],
+    ["equally plausible explicit match kinds", "a,b,EXACT,c;spam;EXACT\nx,y,EXACT,z;spam;EXACT", "a,b,EXACT,c", "x,y,EXACT,z"],
+    ["BOM with CRLF", "\uFEFFa,b,c;spam;EXACT\r\nx;spam;EXACT\r\n", "a,b,c", "x"],
+    ["quoted term and escaped quotes", '"a,b;c,""quoted""";spam;EXACT\r\nx;spam;EXACT', 'a,b;c,"quoted"', "x"],
+    ["incidental match kind inside a term", "a,b,EXACT,c;spam\nx;spam", "a,b,EXACT,c", "x"],
+  ] as const)("imports headerless semicolon CSV with %s", async (_case, csvText, first, second) => {
+    const owner = await signIn("owner-csv", "Owner CSV");
+    runShortTransaction(db, (tx) => {
+      grantMembership(tx, { channelId: CH1, accountId: owner.accountId, role: "CHANNEL_OWNER", logAccess: true, now: NOW });
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/term-entries/import-csv`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: { listKind: "BLACKLIST", csvText },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      imported: 2,
+      errors: [],
+      entries: expect.arrayContaining([first, second].map((term) =>
+        expect.objectContaining({ term, categoryCode: "spam", matchKind: "EXACT", language: "und" }))),
+    });
+  });
+
   it("handles term categories/REGEX/CSV, manual blocked users, score-only rejudge, adapters + Integration Log", async () => {
     const owner = await signIn("owner-ext", "Owner Ext");
     runShortTransaction(db, (tx) => {

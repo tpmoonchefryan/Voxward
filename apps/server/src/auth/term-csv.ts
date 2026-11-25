@@ -1,3 +1,5 @@
+import { canonicalLanguageTag } from "@voxward/contracts";
+
 export interface CsvRecord {
   readonly line: number;
   readonly fields: readonly string[];
@@ -14,7 +16,7 @@ export function readTermCsv(text: string): readonly CsvRecord[] {
     const other = commaFit[index] ?? 0;
     if (value !== other) return value > other ? semicolon : comma;
   }
-  return semicolonFit[2] > 0 ? semicolon : comma;
+  return semicolonFit[3] > 0 ? semicolon : comma;
 }
 
 function readDelimited(input: string, delimiter: "," | ";"): readonly CsvRecord[] {
@@ -71,14 +73,19 @@ function readDelimited(input: string, delimiter: "," | ";"): readonly CsvRecord[
   return records;
 }
 
-function delimiterFit(records: readonly CsvRecord[]): readonly [header: number, matchKinds: number, multiColumn: number] {
+function delimiterFit(records: readonly CsvRecord[]): readonly [
+  header: number, validRows: number, explicitMatchKinds: number, multiColumn: number,
+] {
   const first = records[0];
   const header = first !== undefined && !first.invalid &&
     first.fields[0]?.toLowerCase() === "term" && first.fields[1]?.toLowerCase() === "category" &&
     first.fields[2]?.toLowerCase() === "matchkind";
   const multiColumn = records.filter(({ invalid, fields }) =>
     !invalid && fields.length >= 2 && fields.length <= 4 && Boolean(fields[0]));
-  const withMatchKind = multiColumn.filter(({ fields }) =>
-    /^(EXACT|CONTAINS|NORMALIZED|REGEX)$/i.test(fields[2] ?? ""));
-  return [Number(header), withMatchKind.length, multiColumn.length];
+  const validRows = multiColumn.filter(({ fields }) => {
+    const language = canonicalLanguageTag(fields[3] || "und");
+    return language !== null && language !== "auto" &&
+      /^(EXACT|CONTAINS|NORMALIZED|REGEX)$/i.test(fields[2] || "EXACT");
+  });
+  return [Number(header), validRows.length, validRows.filter(({ fields }) => Boolean(fields[2])).length, multiColumn.length];
 }
