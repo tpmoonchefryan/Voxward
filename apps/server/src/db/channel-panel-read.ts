@@ -119,8 +119,8 @@ function readEvidenceByCorrelation(
   return result;
 }
 
-function readScPayments(database: VoxwardDatabase, channelId: string, correlationIds: readonly string[], nowIso: string) {
-  const result = new Map<string, ScPayment>();
+function readPaidEvents(database: VoxwardDatabase, channelId: string, correlationIds: readonly string[], nowIso: string) {
+  const result = new Map<string, ScPayment | null>();
   if (correlationIds.length === 0) return result;
   const rows = database.orm
     .select({ correlationId: technicalLogs.correlationId, data: technicalLogs.dataJson })
@@ -131,9 +131,9 @@ function readScPayments(database: VoxwardDatabase, channelId: string, correlatio
     .all();
   for (const row of rows) {
     if (row.data === null || result.has(row.correlationId)) continue;
-    const data = JSON.parse(row.data) as { scAmountMicros?: unknown; scCurrency?: unknown; scTier?: unknown } | null;
+    const data = JSON.parse(row.data) as { isPaid?: unknown; scAmountMicros?: unknown; scCurrency?: unknown; scTier?: unknown } | null;
     const payment = readScPayment({ amountMicros: data?.scAmountMicros, currency: data?.scCurrency, tier: data?.scTier });
-    if (payment !== null) result.set(row.correlationId, payment);
+    if (payment !== null || data?.isPaid === true) result.set(row.correlationId, payment);
   }
   return result;
 }
@@ -160,7 +160,7 @@ export function readDockAndModerationFeed(
 
   const correlationIds = events.map((e) => e.correlationId);
   const evidence = readEvidenceByCorrelation(database, channelId, correlationIds, options.nowIso);
-  const payments = readScPayments(database, channelId, correlationIds, options.nowIso);
+  const paidEvents = readPaidEvents(database, channelId, correlationIds, options.nowIso);
   const platformDeletes = readPlatformDeleteStatusMap(database, channelId);
 
   const eventIds = events.map((e) => e.eventId);
@@ -266,16 +266,16 @@ export function readDockAndModerationFeed(
     liveStream.push(item);
     if (isBlocked) {
       blockedItems.push(item);
-    } else if (!isBlocked && (paidEventIds.has(ev.eventId) || evEvidence?.translationJson != null)) {
+    } else if (paidEvents.has(ev.correlationId) || paidEventIds.has(ev.eventId) || evEvidence?.translationJson != null) {
       const sc = parseScTranslationPayload(evEvidence?.translationJson ?? null);
-      const payment = payments.get(ev.correlationId);
+      const payment = paidEvents.get(ev.correlationId);
       approvedSc.push({
         eventId: ev.eventId,
         correlationId: ev.correlationId,
         subjectRef: ev.subjectKey,
         originalText: evEvidence?.messageText ?? null,
         ...sc,
-        ...(payment === undefined ? {} : { payment }),
+        ...(payment == null ? {} : { payment }),
         decidedAt: verdict.decidedAt,
         deliveryId: del?.id ?? null,
         deliveryStatus: del?.status ?? null,

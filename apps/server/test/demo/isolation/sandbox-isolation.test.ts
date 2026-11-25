@@ -152,6 +152,15 @@ describe("VOXWARD-SUB-047: sandbox fail-closed isolation and limited demo roles"
       await expect.poll(() => bliveFrames).toContainEqual(expect.objectContaining({
         cmd: BLIVECHAT_CMD.ADD_TEXT, data: expect.objectContaining({ translation: primary }),
       }));
+
+      const toggle = await app.inject({ method: "PUT", url: `${channel}/sc-translation`, headers, payload: { enabled: false } });
+      expect(toggle.statusCode, toggle.body).toBe(200);
+      const untranslated = await ingest("ko");
+      expect(untranslated.json().result.classification).toBe("ALLOW_MEANINGFUL");
+      const untranslatedDock = await app.inject({ url: `${channel}/dock`, headers });
+      expect(untranslatedDock.json().feed.approvedSc).toContainEqual(expect.objectContaining({
+        correlationId: untranslated.json().result.correlationId, translation: null,
+      }));
     } finally {
       sockets.forEach((socket) => socket.terminate());
       await app.close();
