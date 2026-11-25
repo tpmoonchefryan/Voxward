@@ -125,6 +125,8 @@ flowchart LR
 
 ---
 
+**Langues prises en charge.** L’interface propose l’anglais, le chinois simplifié, le japonais, le coréen et le français (lecture de gauche à droite). Dans **Paramètres → Score et exécution**, choisissez la langue source par chaîne (ou `auto`) et jusqu’à cinq langues cibles dans l’ordre voulu. Le Dock et la modération affichent toutes les traductions disponibles ; OBS et blivechat n’affichent que la première. Ce réglage est indépendant de la langue de l’interface. Consultez le [guide d’exploitation multilingue](./docs/multilingual.md) pour les limites de chaque fonction. Par défaut, VoxWard utilise des adaptateurs synthétiques, sans accès à YouTube ni à un fournisseur de traduction réel.
+
 ## Built with Kiro
 
 Ce dépôt conserve ses artefacts de développement Kiro :

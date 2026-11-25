@@ -9,7 +9,7 @@
 | 路径 | 作用 |
 | --- | --- |
 | `samples/SOURCES.md` | 样本来源、许可、覆盖矩阵，以及两组期望标签的含义 |
-| `samples/moderation-samples.json` | 73 条合成样本，每条带规则期望与 AI 期望 |
+| `samples/moderation-samples.json` | 91 条合成样本，每条带规则期望与 AI 期望 |
 | `samples/rule-set.json` | 占位规则集 `bench-synth-v1` 与读音表 |
 | `fixtures/fake-kiro-cli.mjs` | 假 CLI 替身，内容复制自 `apps/server/test` 的替身，不调用模型 |
 | `lib/` | 样本校验、规则装配、替身装配、指标、真实模型闸门、环境记录 |
@@ -30,6 +30,8 @@ pnpm bench:typecheck
 ```
 
 不加 `--out` 时，JSON 输出到标准输出。根目录的 `pnpm typecheck` 已包含 `bench:typecheck`。
+
+The quality JSON groups rule, realtime, SC and review results under `byLanguage`. Compare `falseBlock` and `miss` within each language; rule results also distinguish `falseReview` from direct blocks. `mixed` is code-switching and `und` is undetermined. Explicit language sample groups supply metadata to the rule checker; other groups use script hints for reporting. These are synthetic fixtures and doubles, not measured real-model quality.
 
 脚本使用的 `tsx` 与 `tsc` 来自 `apps/server` 的开发依赖，没有新增依赖。运行 scratch 位于 `$KIROCREW_SCRATCH/bench/`；未设置该变量时位于 `bench/.tmp/`，后者已被根 `.gitignore` 忽略。每次运行结束后会删除自己创建的目录。
 

@@ -29,7 +29,7 @@ export const BENCH_SELECTION: ModelSelection = { modelId: BENCH_MODEL_ID, reason
 export const FIXED_RECEIVED_AT = "2026-11-11T00:00:00.000Z";
 
 /** A channel event with fixed fields, so the outputs do not depend on the clock. */
-export function channelEventOf(input: { readonly id: string; readonly order: number; readonly senderRef: string; readonly body: string }): ChannelEvent {
+export function channelEventOf(input: { readonly id: string; readonly order: number; readonly senderRef: string; readonly body: string; readonly language?: string }): ChannelEvent {
   return {
     contractVersion: CONTRACT_VERSION,
     platform: "synthetic",
@@ -39,6 +39,7 @@ export function channelEventOf(input: { readonly id: string; readonly order: num
     receivedAt: FIXED_RECEIVED_AT,
     correlationId: `bench-corr-${input.id}`,
     body: input.body,
+    ...(input.language === undefined ? {} : { language: input.language }),
     sender: { contractVersion: CONTRACT_VERSION, senderRef: input.senderRef },
   };
 }

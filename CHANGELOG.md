@@ -11,6 +11,9 @@ and this project uses semantic pre-release / version tags (`rc0.1.0`, package ma
 
 ### Added
 
+- Channel-level Super Chat source detection and ordered translation targets, localized cue sheets, and structured payment metadata.
+- Language-scoped moderation rules and review candidates, plus multilingual CSV wordlist import, hit previews and rollback history.
+
 - Standard open-source repository documentation (`README.md` in five languages, `LICENSE`, `NOTICE`, `CHANGELOG.md`, `docs/KIROWEEN.md`, five-language `SECURITY.md` / `PRIVACY.md` / `CONTRIBUTING.md` / `CODE_OF_CONDUCT.md`, and `.github/` templates).
 - GitHub Private Vulnerability Reporting enabled for security disclosures.
 

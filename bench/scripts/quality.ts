@@ -28,9 +28,9 @@ import {
 } from "../lib/doubles.js";
 import { parseArgs, refuseRealModelRequest } from "../lib/gate.js";
 import { createScratchDir, RULES_PATH, SAMPLES_PATH } from "../lib/paths.js";
-import { aiMetrics, chunk, correlationOf, countBy, errorCodeOf, ruleMetrics } from "../lib/metrics.js";
+import { aiMetrics, bySampleLanguage, chunk, correlationOf, countBy, errorCodeOf, ruleMetrics } from "../lib/metrics.js";
 import { bodyChecker, fullChecker, loadRules } from "../lib/rules.js";
-import { groupCounts, loadSampleSet, SampleSetError, type Sample } from "../lib/samples.js";
+import { groupCounts, loadSampleSet, sampleLanguage, SampleSetError, type Sample } from "../lib/samples.js";
 
 /** Largest batch the bench sends, matching the deployment default used by the adapter tests. */
 const MAX_ITEMS = 10;
@@ -57,7 +57,7 @@ async function main(): Promise<void> {
   // Rules: the full message, nickname included, through the real engine.
   const routes = new Map<string, ModerationRoute>();
   for (const [order, sample] of set.samples.entries()) {
-    const verdict = await full.check(channelEventOf({ id: sample.id, order, senderRef: sample.senderRef, body: sample.body }));
+    const verdict = await full.check(channelEventOf({ id: sample.id, order, senderRef: sample.senderRef, body: sample.body, language: sampleLanguage(sample) }));
     routes.set(sample.id, verdict.route);
   }
 
@@ -83,7 +83,7 @@ async function main(): Promise<void> {
         refused.push(errorCodeOf(error));
       }
     }
-    return { double: label, qualityMeaningful: false, batches: batches.length, refusedBatches: countBy(refused), ...aiMetrics(set.samples, predicted) };
+    return { double: label, qualityMeaningful: false, batches: batches.length, refusedBatches: countBy(refused), ...aiMetrics(set.samples, predicted), byLanguage: bySampleLanguage(set.samples, (samples) => aiMetrics(samples, predicted)) };
   };
 
   const scRun = async (label: string, translationEnabled: boolean, deps: ScPipelineDeps): Promise<Record<string, unknown>> => {
@@ -128,6 +128,7 @@ async function main(): Promise<void> {
       generatedTextRejected,
       withheld,
       ...aiMetrics(set.samples, predicted),
+      byLanguage: bySampleLanguage(set.samples, (samples) => aiMetrics(samples, predicted)),
     };
   };
 
@@ -175,6 +176,7 @@ async function main(): Promise<void> {
       contractRefusals: countBy(contractRefusals),
       candidateTerms,
       ...aiMetrics(set.samples, predicted),
+      byLanguage: bySampleLanguage(set.samples, (samples) => aiMetrics(samples, predicted)),
     };
   };
 
@@ -190,7 +192,7 @@ async function main(): Promise<void> {
     note: "Doubles show that the pipeline runs and is reproducible. They are not a measurement of any model's quality.",
     samples: { total: set.samples.length, groups: groupCounts(set), provenance: set.provenance, containsRealViewerData: false },
     ruleSet: { version: rules.version, groups: rules.groupCount, rules: rules.ruleCount, readings: rules.readingCount },
-    rules: { engine: "moderation-engine", qualityMeaningful: false, ...ruleMetrics(set.samples, routes) },
+    rules: { engine: "moderation-engine", qualityMeaningful: false, ...ruleMetrics(set.samples, routes), byLanguage: bySampleLanguage(set.samples, (samples) => ruleMetrics(samples, routes)) },
     realtime: {
       synthetic: await realtime("synthetic", synthetic),
       fakeCli: await realtime("fake-cli", fakeSafety),

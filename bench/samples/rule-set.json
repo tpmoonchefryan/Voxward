@@ -26,6 +26,14 @@
   },
   "groups": [
     {
+      "id": "bench-lang-block",
+      "action": { "kind": "BLOCK" },
+      "rules": [
+        { "id": "fr-block", "kind": "normalized", "text": "flarpon", "language": "fr" },
+        { "id": "ko-block", "kind": "normalized", "text": "마루핀", "language": "ko" }
+      ]
+    },
+    {
       "id": "G-BLOCK-PLACEHOLDER",
       "action": { "kind": "BLOCK" },
       "rules": [

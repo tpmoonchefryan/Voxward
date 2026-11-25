@@ -1,11 +1,15 @@
 import { readFileSync } from "node:fs";
+import { messageLanguageOf } from "../../packages/contracts/src/index.js";
 
 export const SAMPLE_SCHEMA = "voxward.bench.moderation-samples.v1";
 export const GROUPS = [
   "zh",
   "ja",
   "en",
+  "fr",
+  "ko",
   "mixed",
+  "und",
   "homophone",
   "nickname-combo",
   "cross-line",
@@ -14,6 +18,21 @@ export const GROUPS = [
   "false-positive",
 ] as const;
 export type SampleGroup = (typeof GROUPS)[number];
+
+export function sampleLanguage(sample: Sample): string {
+  switch (sample.group) {
+    case "zh":
+    case "ja":
+    case "en":
+    case "fr":
+    case "ko":
+    case "mixed":
+    case "und":
+      return sample.group;
+    default:
+      return messageLanguageOf(sample.body);
+  }
+}
 
 export const ROUTES = ["PASS", "BLOCK", "REVIEW"] as const;
 export type ExpectedRoute = (typeof ROUTES)[number];

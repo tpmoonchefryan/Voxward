@@ -1,6 +1,6 @@
 import { KiroInferenceError } from "../../apps/server/src/adapters/kiro-cli/errors.js";
 import type { InternalClassification, ModerationRoute } from "../../packages/contracts/src/index.js";
-import type { Sample } from "./samples.js";
+import { sampleLanguage, type Sample } from "./samples.js";
 
 /** The correlation id a sample carries through every double. */
 export function correlationOf(sample: Sample): string {
@@ -33,6 +33,17 @@ export function countBy(keys: readonly string[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const key of keys) out[key] = (out[key] ?? 0) + 1;
   return out;
+}
+
+export function bySampleLanguage<T>(samples: readonly Sample[], measure: (samples: readonly Sample[]) => T): Record<string, T> {
+  const groups = new Map<string, Sample[]>();
+  for (const sample of samples) {
+    const language = sampleLanguage(sample);
+    const group = groups.get(language);
+    if (group === undefined) groups.set(language, [sample]);
+    else group.push(sample);
+  }
+  return Object.fromEntries([...groups].map(([language, group]) => [language, measure(group)]));
 }
 
 export interface RuleMetrics {
