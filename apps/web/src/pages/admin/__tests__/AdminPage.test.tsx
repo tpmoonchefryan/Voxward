@@ -2,9 +2,17 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
 import { AdminPage, buildTermCsvTemplate } from "../AdminPage";
+import { csvCopy, decodeTermCsv } from "../csv";
 import { routes } from "../route";
+import { localizeTermCategory } from "../term-category-copy";
 
 describe("Admin & Settings Page (VW-Draft-04)", () => {
+  it("localizes only built-in categories and preserves operator copy", () => {
+    const category = { code: "spam", label: "迷惑情報", description: "原文", listKind: "BLACKLIST" as const, createdAt: "" };
+    expect(localizeTermCategory({ ...category, builtIn: true }, "fr").description).toContain("publicités");
+    expect(localizeTermCategory(category, "fr")).toBe(category);
+  });
+
   it("exports both /admin/:channelId? and /settings/:channelId? routes", () => {
     expect(routes.map((r) => r.path)).toEqual(["/admin/:channelId?", "/settings/:channelId?"]);
   });
@@ -47,5 +55,15 @@ describe("Admin & Settings Page (VW-Draft-04)", () => {
     expect(wht.content).toContain("term,category,matchKind");
     expect(wht.content).toContain(",friendly,EXACT");
     expect(wht.content).toContain(",friendly,CONTAINS");
+  });
+
+  it("decodes a BOM or selected legacy encoding without replacing invalid bytes silently", () => {
+    const sjis = new Uint8Array([0x93, 0xfa, 0x96, 0x7b]).buffer;
+    const korean = new Uint8Array([0xc7, 0xd1, 0xb1, 0xdb]).buffer;
+    expect(decodeTermCsv(new TextEncoder().encode("\uFEFF日本").buffer, "utf-8")).toBe("日本");
+    expect(() => decodeTermCsv(sjis, "utf-8")).toThrow();
+    expect(decodeTermCsv(sjis, "shift_jis")).toBe("日本");
+    expect(decodeTermCsv(korean, "euc-kr")).toBe("한글");
+    expect(csvCopy("fr").error("CSV_INVALID_QUOTING")).toBe("Guillemets invalides");
   });
 });

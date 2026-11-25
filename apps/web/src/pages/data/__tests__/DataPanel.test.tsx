@@ -73,6 +73,17 @@ describe("data panel without data.handle (VW-SUB034-AC001: no operations for a u
 });
 
 describe("data panel with data.handle", () => {
+  it("switches retention categories and grouping to the selected French locale", () => {
+    const subject = { ...SUBJECT, ledgerEntryCount: 12345, retention: [{ category: "TECHNICAL_LOG", count: 12345, retentionDays: 30 }] };
+    const french = panel({ locale: "fr", subject });
+    const english = panel({ locale: "en", subject });
+    expect(french).toContain("Journaux techniques");
+    expect(french).toContain(new Intl.NumberFormat("fr").format(12345));
+    expect(french).not.toContain("TECHNICAL_LOG");
+    expect(english).toContain("Technical logs");
+    expect(english).toContain("12,345");
+  });
+
   it("shows both deletion entries, what each does, and the minimal preference note", () => {
     const html = panel();
     expect(html).toContain("Erase stored data only");

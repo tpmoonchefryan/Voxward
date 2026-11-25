@@ -5,6 +5,8 @@ import { Badge, Button, Card, EmptyState, Input, KeyValueList, TableShell } from
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
 import { DATA_COPY, DEFAULT_VOXWARD_LOCALE, pickLocale, type DataCopy, type VoxWardLocale } from "../../i18n";
+import { formatNumber } from "../../i18n/format";
+import { dataCategoryLabel } from "../../i18n/operator-data";
 import { VoxWardShell, useVoxWardShell } from "../../shell";
 import { createDataApi, messageFor, type DataApi, type SubjectPanel, type VerificationInput } from "./api";
 import { DeleteActions } from "./DeleteActions";
@@ -38,9 +40,11 @@ function listLabel(list: SubjectPanel["list"], copy: DataCopy): string {
 function SubjectSummary({
   subject,
   copy,
+  locale,
 }: {
   readonly subject: SubjectPanel;
   readonly copy: DataCopy;
+  readonly locale: VoxWardLocale;
 }) {
   const uniqueNotices = [...new Set(subject.notices)];
   return (
@@ -60,7 +64,7 @@ function SubjectSummary({
           {
             key: "score",
             label: copy.labelScore,
-            value: subject.currentScore === null ? copy.scoreUnset : String(subject.currentScore),
+            value: subject.currentScore === null ? copy.scoreUnset : formatNumber(subject.currentScore, locale),
           },
           {
             key: "list",
@@ -87,7 +91,7 @@ function SubjectSummary({
           {
             key: "ledger",
             label: copy.labelLedger,
-            value: copy.ledgerCount(subject.ledgerEntryCount),
+            value: copy.ledgerCount(formatNumber(subject.ledgerEntryCount, locale)),
           },
         ]}
       />
@@ -101,9 +105,9 @@ function SubjectSummary({
             { key: "days", label: copy.colDays },
           ]}
           rows={subject.retention.map((row) => ({
-            category: row.category,
-            count: row.count,
-            days: copy.daysUnit(row.retentionDays),
+            category: dataCategoryLabel(row.category, locale),
+            count: formatNumber(row.count, locale),
+            days: copy.daysUnit(formatNumber(row.retentionDays, locale)),
           }))}
         />
       ) : null}
@@ -184,7 +188,7 @@ export function DataPanelView({
 
       {subject !== null ? (
         <div className="vw-stack-lg">
-          <SubjectSummary subject={subject} copy={copy} />
+          <SubjectSummary subject={subject} copy={copy} locale={locale} />
           <DeleteActions
             flow={flow}
             locale={locale}

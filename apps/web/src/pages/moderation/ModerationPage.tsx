@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import type { InternalClassification } from "@voxward/contracts";
+import { formatTime } from "../../i18n/format";
 import {
   Badge,
   Button,
@@ -118,9 +119,11 @@ export function ModerationWorkbench({
       (snapshot?.feed.approvedSc ?? []).map((sc) => ({
         id: sc.eventId,
         author: sc.safeAlias ?? sc.subjectRef,
-        amountText: sc.notes ?? sc.acknowledgement ?? "$5",
+        amountText: null,
+        payment: sc.payment ?? null,
         text: sc.originalText,
         translation: sc.translation,
+        translationDetails: sc,
         decidedAtMs: Date.parse(sc.decidedAt) || Date.now(),
       })),
     [snapshot],
@@ -431,7 +434,7 @@ export function ModerationWorkbench({
                             <Badge tone="warning">{copy.pendingBadge}</Badge>
                             <span className="vw-caption">
                               {copy.deadlinePrefix}
-                              {new Date(item.deadlineAt).toLocaleTimeString()}
+                              {formatTime(item.deadlineAt, resolvedLocale)}
                             </span>
                           </div>
                         </div>
@@ -521,7 +524,7 @@ export function ModerationWorkbench({
                               className="vw-stream-item"
                               data-stream-kind="sc"
                             >
-                              <SuperChatCard item={streamEntry.item} />
+                              <SuperChatCard item={streamEntry.item} locale={resolvedLocale} />
                             </div>
                           );
                         }

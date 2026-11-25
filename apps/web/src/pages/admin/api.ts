@@ -1,4 +1,4 @@
-import type { InferenceCapabilities, ListKind, TermMatchKind } from "@voxward/contracts";
+import type { InferenceCapabilities, ListKind, ScLanguagePolicy, TermMatchKind } from "@voxward/contracts";
 import type { FaultBanner } from "../dock/api";
 
 export interface ChannelSummary {
@@ -75,6 +75,7 @@ export interface ModelSettingsView {
   readonly scTranslation: ModelSelectionView | null;
   readonly review: ModelSelectionView | null;
   readonly scTranslationEnabled: boolean;
+  readonly scLanguages?: ScLanguagePolicy;
 }
 
 export interface AdapterExtendedModelCapability {
@@ -124,6 +125,7 @@ export interface OutputsSummaryView {
 }
 
 export interface TermCategoryView {
+  readonly builtIn?: boolean;
   readonly code: string;
   readonly label: string;
   readonly listKind: "BLACKLIST" | "WHITELIST";
@@ -138,11 +140,12 @@ export interface ExtendedTermEntryView {
   readonly categoryCode: string;
   readonly matchKind: "EXACT" | "CONTAINS" | "REGEX" | "NORMALIZED";
   readonly enabled: boolean;
+  readonly language?: string;
 }
 
 export interface CsvImportResultView {
   readonly imported: number;
-  readonly errors: readonly { readonly line: number; readonly message: string }[];
+  readonly errors: readonly { readonly line: number; readonly code: string }[];
   readonly entries: readonly ExtendedTermEntryView[];
 }
 
@@ -185,6 +188,9 @@ export interface AdminApi {
     input: { readonly code: string; readonly label: string; readonly listKind: "BLACKLIST" | "WHITELIST"; readonly description?: string },
   ): Promise<readonly TermCategoryView[]>;
   listTermEntries(channelId: string): Promise<readonly ExtendedTermEntryView[]>;
+  listTermListVersions(channelId: string): Promise<readonly { version: number; createdAt: string | null }[]>;
+  previewTermList(channelId: string, text: string, language?: string): Promise<{ readonly hits: readonly string[] }>;
+  restoreTermList(channelId: string, version: number): Promise<{ readonly entries: readonly ExtendedTermEntryView[] }>;
   saveTermEntries(channelId: string, entries: readonly ExtendedTermEntryView[]): Promise<readonly ExtendedTermEntryView[]>;
   importTermEntriesCsv(channelId: string, listKind: "BLACKLIST" | "WHITELIST", csvText: string): Promise<CsvImportResultView>;
   listCandidates(channelId: string): Promise<readonly CandidateCardView[]>;
@@ -283,6 +289,12 @@ export function createAdminApi(fetcher: FetchLike = (input, init) => fetch(input
       (await mutateJson<{ categories: TermCategoryView[] }>("POST", `/channels/${encodeURIComponent(channelId)}/term-categories`, input)).categories,
     listTermEntries: async (channelId) =>
       (await getJson<{ entries: ExtendedTermEntryView[] }>(`/channels/${encodeURIComponent(channelId)}/term-entries`)).entries,
+    listTermListVersions: async (channelId) =>
+      (await getJson<{ versions: { version: number; createdAt: string | null }[] }>(`/channels/${encodeURIComponent(channelId)}/term-entries/versions`)).versions,
+    previewTermList: (channelId, text, language) =>
+      mutateJson("POST", `/channels/${encodeURIComponent(channelId)}/term-entries/preview`, { text, language }),
+    restoreTermList: (channelId, version) =>
+      mutateJson("POST", `/channels/${encodeURIComponent(channelId)}/term-entries/rollback`, { version }),
     saveTermEntries: async (channelId, entries) =>
       (await mutateJson<{ entries: ExtendedTermEntryView[] }>("PUT", `/channels/${encodeURIComponent(channelId)}/term-entries`, { entries })).entries,
     importTermEntriesCsv: (channelId, listKind, csvText) =>

@@ -30,6 +30,7 @@ import {
   type ChannelAdapterView,
   type IntegrationsApi,
 } from "./api";
+import { integrationLabel, integrationStatus } from "./operator-copy";
 
 type ConfigValues = Record<string, string | number | boolean | null>;
 
@@ -121,7 +122,7 @@ function IntegrationsSurface({
     readonly secret: string;
   } | null>(null);
   const [lastActionResult, setLastActionResult] = useState<{
-    readonly summary: string;
+    readonly adapter: ChannelAdapterView;
     readonly correlationId: string;
   } | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -280,10 +281,9 @@ function IntegrationsSurface({
     setNotice(null);
     try {
       const res = await client.runAdapterAction(channelId, editingAdapterId, action);
-      setLastActionResult({ summary: res.summary, correlationId: res.correlationId });
+      setLastActionResult({ adapter: res.adapter, correlationId: res.correlationId });
       setDraftModels([...res.adapter.models]);
       await loadAll();
-      setNotice({ tone: "positive", resolve: () => res.summary });
     } catch (error) {
       setNotice({
         tone: "danger",
@@ -441,13 +441,13 @@ function IntegrationsSurface({
             rows={filteredAdapters.map((a) => ({
               name: <UntrustedText text={a.displayName} />,
               category: <Badge tone="neutral">{copy.categories[a.category]}</Badge>,
-              driver: catalog.find((c) => c.driverId === a.driverId)?.displayName ?? a.driverId,
+              driver: integrationLabel(locale, a.driverId, catalog.find((c) => c.driverId === a.driverId)?.displayName ?? a.driverId),
               status: (
                 <Badge tone={a.enabled ? "positive" : "neutral"}>
                   {a.enabled ? copy.enabledBadge : copy.disabledBadge}
                 </Badge>
               ),
-              lastStatus: a.lastStatus,
+              lastStatus: integrationStatus(locale, a),
               actions: (
                 <div className="vw-table-actions">
                   <Button size="sm" variant="secondary" onClick={() => startEditFlow(a)}>
@@ -491,7 +491,7 @@ function IntegrationsSurface({
                     { value: "", label: copy.pickDriverPlaceholder },
                     ...scopedCatalogOptions.map((c) => ({
                       value: c.driverId,
-                      label: c.displayName,
+                      label: integrationLabel(locale, c.driverId, c.displayName),
                     })),
                   ]}
                 />
@@ -517,7 +517,7 @@ function IntegrationsSurface({
                           {
                             key: "driver",
                             label: copy.boundDriverLabel,
-                            value: activeCatalogMeta?.displayName ?? draftDriverId,
+                            value: integrationLabel(locale, draftDriverId, activeCatalogMeta?.displayName ?? draftDriverId),
                           },
                           {
                             key: "category",
@@ -529,7 +529,7 @@ function IntegrationsSurface({
                     ) : (
                       <div className="vw-row-between">
                         <Badge tone="accent">
-                          {copy.pickedDriverBadge(activeCatalogMeta?.displayName ?? draftDriverId)}
+                          {copy.pickedDriverBadge(integrationLabel(locale, draftDriverId, activeCatalogMeta?.displayName ?? draftDriverId))}
                         </Badge>
                         <Button
                           size="sm"
@@ -877,7 +877,7 @@ function IntegrationsSurface({
                               disabled={busy}
                               onClick={() => void handleRunAction(act.action)}
                             >
-                              {act.label}
+                              {integrationLabel(locale, act.action, act.label)}
                             </Button>
                           ))}
                         </div>
@@ -892,7 +892,7 @@ function IntegrationsSurface({
                               </Link>
                             }
                           >
-                            {lastActionResult.summary}
+                            {integrationStatus(locale, lastActionResult.adapter)}
                           </BannerNotice>
                         ) : null}
                       </div>

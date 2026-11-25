@@ -27,6 +27,7 @@ import {
   type RbacUserView,
   type UsersRbacApi,
 } from "./api";
+import { localizeRole } from "./preset-copy";
 
 type UsersViewMode = "users-list" | "edit-user" | "roles-list" | "edit-role";
 
@@ -80,7 +81,8 @@ function UsersSurface({
 
   const [viewMode, setViewMode] = useState<UsersViewMode>("users-list");
   const [users, setUsers] = useState<readonly RbacUserView[]>([]);
-  const [roles, setRoles] = useState<readonly RbacRoleView[]>([]);
+  const [storedRoles, setRoles] = useState<readonly RbacRoleView[]>([]);
+  const roles = useMemo(() => storedRoles.map((role) => localizeRole(role, locale)), [storedRoles, locale]);
 
   const [userSearch, setUserSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");

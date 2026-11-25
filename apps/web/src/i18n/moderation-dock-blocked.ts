@@ -4,7 +4,7 @@ export interface DockCopy {
   readonly dockAria: string;
   readonly streamAria: string;
   readonly streamTitle: string;
-  readonly countSummary: (total: number, scCount: number) => string;
+  readonly countSummary: (total: string, scCount: string) => string;
   readonly platformFaultTitle: string;
   readonly modelFaultTitle: string;
   readonly emptyTitle: string;
@@ -132,6 +132,9 @@ export interface YouTubeScCopy {
   readonly tickerAria: string;
   readonly progressAria: string;
   readonly overlayAria: string;
+  readonly slangNote: string;
+  readonly replyCue: string;
+  readonly thankYouReading: string;
 }
 
 export const YOUTUBE_SC_COPY: Readonly<Record<VoxWardLocale, YouTubeScCopy>> = {
@@ -139,26 +142,41 @@ export const YOUTUBE_SC_COPY: Readonly<Record<VoxWardLocale, YouTubeScCopy>> = {
     tickerAria: "Pinned Super Chat countdown bar",
     progressAria: "Remaining Super Chat pin time",
     overlayAria: "Expanded Super Chat card",
+    slangNote: "Slang note",
+    replyCue: "Reply cue",
+    thankYouReading: "Thank-you pronunciation",
   },
   "zh-CN": {
     tickerAria: "Super Chat 倒计时置顶条",
     progressAria: "Super Chat 置顶剩余时长进度",
     overlayAria: "Super Chat 置顶详情浮层",
+    slangNote: "梗注",
+    replyCue: "答谢提示",
+    thankYouReading: "答谢读音",
   },
   ja: {
     tickerAria: "Super Chat カウントダウンバー",
     progressAria: "Super Chat ピン留め残り時間",
     overlayAria: "Super Chat 詳細カード",
+    slangNote: "俗語の注釈",
+    replyCue: "返信のヒント",
+    thankYouReading: "お礼の発音",
   },
   ko: {
     tickerAria: "Super Chat 카운트다운 상단 바",
     progressAria: "Super Chat 고정 남은 시간",
     overlayAria: "Super Chat 상세 카드 오버레이",
+    slangNote: "속어 설명",
+    replyCue: "답변 팁",
+    thankYouReading: "감사 인사 발음",
   },
   fr: {
     tickerAria: "Barre de compte à rebours Super Chat",
     progressAria: "Durée d'épinglage Super Chat restante",
     overlayAria: "Carte Super Chat détaillée",
+    slangNote: "Note sur l’argot",
+    replyCue: "Suggestion de réponse",
+    thankYouReading: "Prononciation du remerciement",
   },
 };
 

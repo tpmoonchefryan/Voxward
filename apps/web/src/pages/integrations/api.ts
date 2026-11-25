@@ -34,6 +34,7 @@ export interface ChannelAdapterView {
   readonly config: Readonly<Record<string, string | number | boolean | null>>;
   readonly models: readonly AdapterModelPoolItem[];
   readonly lastStatus: string;
+  readonly lastStatusDetails?: { readonly code: string; readonly count?: number };
   readonly updatedAt: string;
 }
 

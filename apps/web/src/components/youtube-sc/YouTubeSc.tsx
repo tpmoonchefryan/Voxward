@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type WheelEvent } from "react";
+import type { LocalizedScTranslation, ScPayment } from "@voxward/contracts";
 import { DEFAULT_VOXWARD_LOCALE, pickLocale, YOUTUBE_SC_COPY, type VoxWardLocale } from "../../i18n";
+import { formatCurrency } from "../../i18n/format";
 import { UntrustedText } from "../untrusted-text/UntrustedText";
 
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -89,16 +91,24 @@ export interface SuperChatItemDisplay {
   readonly id: string;
   readonly author: string;
   readonly amountText: string | null;
+  readonly payment?: ScPayment | null;
   readonly text: string | null;
   readonly translation: string | null;
+  readonly translationDetails?: {
+    readonly sourceLanguage?: string;
+    readonly translations?: readonly LocalizedScTranslation[];
+    readonly notes: string | null;
+    readonly acknowledgement: string | null;
+    readonly thankYouReading?: string | null;
+  };
   readonly decidedAtMs?: number;
 }
 
 function computeActiveScTickers(items: readonly SuperChatItemDisplay[], nowMs: number) {
   return items
     .map((item) => {
-      const tier = resolveScTier(item.amountText);
-      if (tier.durationSeconds <= 0) {
+      const tier = tierForItem(item);
+      if (tier === undefined || tier.durationSeconds <= 0) {
         return null;
       }
       const started = item.decidedAtMs ?? nowMs;
@@ -160,7 +170,7 @@ export function SuperChatTicker({
             <span>
               <UntrustedText text={item.author} />
             </span>
-            <span>{item.amountText ?? tier.label}</span>
+            <span>{paymentText(item, locale)}</span>
             <span className="vw-sc-ticker__countdown">{formatTickerCountdown(remainingSec)}</span>
             <progress
               className="vw-sc-ticker__progress"
@@ -260,7 +270,7 @@ export function SuperChatOverlayBar({
           role="region"
           aria-label={copy.overlayAria}
         >
-          <SuperChatCard item={expandedItem} />
+          <SuperChatCard item={expandedItem} locale={locale} />
         </div>
       ) : null}
     </div>
@@ -395,35 +405,86 @@ export function useLiveStreamAutoScroll(
   return { viewportRef, trackRef, handleScroll, handleWheel };
 }
 
-export function SuperChatCard({ item }: { readonly item: SuperChatItemDisplay }) {
-  const tier = resolveScTier(item.amountText);
+export function SuperChatCard({ item, locale = DEFAULT_VOXWARD_LOCALE }: {
+  readonly item: SuperChatItemDisplay;
+  readonly locale?: VoxWardLocale;
+}) {
+  const tier = tierForItem(item);
+  const amount = paymentText(item, locale);
+  const copy = pickLocale(YOUTUBE_SC_COPY, locale);
+  const details = item.translationDetails;
+  const translations = details?.translations ?? [];
+  const translationClass = tier?.darkInk ? "vw-sc-card__tr vw-sc-card__tr--dark-ink" : "vw-sc-card__tr";
 
   return (
     <article
-      className={`vw-sc-card vw-sc-tier--${tier.id}`}
-      data-sc-tier={tier.id}
+      className={tier === undefined ? "vw-sc-card" : `vw-sc-card vw-sc-tier--${tier.id}`}
+      data-sc-tier={tier?.id}
       aria-label="Super Chat"
     >
       <header className="vw-sc-card__header">
         <span className="vw-sc-card__author">
           <UntrustedText text={item.author} />
         </span>
-        <span className="vw-sc-card__amount">{item.amountText ?? tier.label}</span>
+        {amount === null ? null : <span className="vw-sc-card__amount">{amount}</span>}
       </header>
-      {tier.showsBody && (item.text || item.translation) ? (
+      {(tier?.showsBody ?? true) && (item.text || item.translation) ? (
         <div className="vw-sc-card__body">
           {item.text ? (
-            <div>
+            <div lang={details?.sourceLanguage}>
+              {details?.sourceLanguage === undefined ? null : <bdi>{details.sourceLanguage}</bdi>}{" "}
               <UntrustedText text={item.text} />
             </div>
           ) : null}
-          {item.translation ? (
-            <div className={tier.darkInk ? "vw-sc-card__tr vw-sc-card__tr--dark-ink" : "vw-sc-card__tr"}>
-              <UntrustedText text={item.translation} />
+          {translations.length > 0 ? translations.map((entry) => (
+            <div key={entry.targetLanguage} className={translationClass}>
+              <bdi>{entry.targetLanguage}</bdi>{" "}
+              <span lang={entry.targetLanguage}><UntrustedText text={entry.translatedText} /></span>
+              <ScTranslationNotes copy={copy} notes={entry.slangNote} replyCue={entry.replyCue} reading={entry.thankYouReading} />
             </div>
+          )) : item.translation ? (
+            <div className={translationClass}><UntrustedText text={item.translation} /></div>
           ) : null}
+          {translations.length === 0 && details !== undefined
+            ? <ScTranslationNotes copy={copy} notes={details.notes} replyCue={details.acknowledgement} reading={details.thankYouReading} />
+            : null}
         </div>
       ) : null}
     </article>
+  );
+}
+
+function tierForItem(item: SuperChatItemDisplay): ScTierDescriptor | undefined {
+  // These hints are only used by legacy overlay demo presets, never by live panel data.
+  if (item.payment === undefined) return item.amountText === null ? undefined : resolveScTier(item.amountText);
+  const payment = item.payment;
+  if (payment === null) return undefined;
+  if (payment.tier !== undefined) return TIERS_BY_NUM[payment.tier - 1];
+  const thresholds = payment.currency === "USD" ? [1, 2, 5, 10, 20, 50, 100]
+    : payment.currency === "JPY" ? [100, 300, 700, 1400, 2800, 7000, 15000] : null;
+  if (thresholds === null) return undefined;
+  const amount = payment.amountMicros / 1_000_000;
+  const index = thresholds.findLastIndex((threshold) => amount >= threshold);
+  if (payment.currency === "USD" && amount >= 500) return { ...TIER_7, durationSeconds: 18000 };
+  return TIERS_BY_NUM[index];
+}
+
+function paymentText(item: SuperChatItemDisplay, locale: VoxWardLocale): string | null {
+  if (item.payment == null) return item.amountText;
+  return formatCurrency(item.payment.amountMicros / 1_000_000, item.payment.currency, locale);
+}
+
+function ScTranslationNotes({ copy, notes, replyCue, reading }: {
+  readonly copy: (typeof YOUTUBE_SC_COPY)[VoxWardLocale];
+  readonly notes: string | null;
+  readonly replyCue: string | null;
+  readonly reading: string | null | undefined;
+}) {
+  return (
+    <>
+      {notes ? <div>{copy.slangNote}: <UntrustedText text={notes} /></div> : null}
+      {replyCue ? <div>{copy.replyCue}: <UntrustedText text={replyCue} /></div> : null}
+      {reading ? <div>{copy.thankYouReading}: <UntrustedText text={reading} /></div> : null}
+    </>
   );
 }

@@ -85,6 +85,7 @@ describe("Moderation Console (VW-Draft-03)", () => {
                   originalText: "SC mid stream message",
                   translation: "中间插播的醒目留言",
                   notes: "$50",
+                  payment: { amountMicros: 50_000_000, currency: "USD", tier: 6 },
                   acknowledgement: "$50",
                   safeAlias: "Hana_Music",
                   decidedAt: new Date(baseMs - 2_000).toISOString(),

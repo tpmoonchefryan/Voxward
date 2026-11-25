@@ -28,12 +28,12 @@ export interface DataCopy {
   readonly exceptionActive: string;
   readonly exceptionNormal: string;
   readonly labelLedger: string;
-  readonly ledgerCount: (n: number) => string;
+  readonly ledgerCount: (n: string) => string;
   readonly retentionTableLabel: string;
   readonly colCategory: string;
   readonly colCount: string;
   readonly colDays: string;
-  readonly daysUnit: (n: number) => string;
+  readonly daysUnit: (n: string) => string;
   readonly notices: Readonly<Record<string, string>>;
   readonly noticeFallback: string;
   readonly errors: Readonly<Record<string, string>>;

@@ -1,4 +1,4 @@
-import type { InternalClassification } from "@voxward/contracts";
+import type { InternalClassification, LocalizedScTranslation, ScPayment } from "@voxward/contracts";
 import { DEFAULT_VOXWARD_LOCALE, DOCK_COPY, pickLocale, type VoxWardLocale } from "../../i18n";
 
 export interface ScFeedItemView {
@@ -10,6 +10,10 @@ export interface ScFeedItemView {
   readonly notes: string | null;
   readonly acknowledgement: string | null;
   readonly safeAlias: string | null;
+  readonly payment?: ScPayment;
+  readonly sourceLanguage?: string;
+  readonly translations?: readonly LocalizedScTranslation[];
+  readonly thankYouReading?: string | null;
   readonly decidedAt: string;
   readonly deliveryId: string | null;
   readonly deliveryStatus: string | null;

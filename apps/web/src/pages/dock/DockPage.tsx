@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import { EmptyState } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
+import { formatNumber, formatTime } from "../../i18n/format";
 import {
   SuperChatCard,
   SuperChatOverlayBar,
@@ -98,9 +99,11 @@ export function PureDockSurface({
       (snapshot?.feed.approvedSc ?? []).map((sc) => ({
         id: sc.eventId,
         author: sc.safeAlias ?? sc.subjectRef,
-        amountText: sc.notes ?? sc.acknowledgement ?? "$5",
+        amountText: null,
+        payment: sc.payment ?? null,
         text: sc.originalText,
         translation: sc.translation,
+        translationDetails: sc,
         decidedAtMs: Date.parse(sc.decidedAt) || Date.now(),
       })),
     [snapshot],
@@ -158,7 +161,7 @@ export function PureDockSurface({
         <div className="vw-row-between">
           <strong>{copy.streamTitle}</strong>
           <span className="vw-caption">
-            {copy.countSummary(unifiedTimeline.length, scItems.length)}
+            {copy.countSummary(formatNumber(unifiedTimeline.length, locale), formatNumber(scItems.length, locale))}
           </span>
         </div>
 
@@ -187,7 +190,7 @@ export function PureDockSurface({
                     data-stream-kind={entry.kind}
                   >
                     {entry.kind === "sc" ? (
-                      <SuperChatCard item={entry.item} />
+                      <SuperChatCard item={entry.item} locale={locale} />
                     ) : (
                       <article className="vw-chat-row">
                         <div className="vw-row-between">
@@ -195,7 +198,7 @@ export function PureDockSurface({
                             <UntrustedText text={entry.author} />
                           </strong>
                           <span className="vw-caption">
-                            {new Date(entry.decidedAt).toLocaleTimeString()}
+                            {formatTime(entry.decidedAt, locale)}
                           </span>
                         </div>
                         {entry.originalText !== null ? (

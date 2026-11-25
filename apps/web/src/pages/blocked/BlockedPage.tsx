@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
+import { formatDateTime } from "../../i18n/format";
 import {
   Badge,
   Button,
@@ -174,7 +175,7 @@ function BlockedSurface({
     subjectRef: <UntrustedText text={user.subjectRef} />,
     nickname: user.nickname ? <UntrustedText text={user.nickname} /> : <span className="vw-muted">{copy.noNickname}</span>,
     reason: user.reason ? <UntrustedText text={user.reason} /> : <span className="vw-muted">{copy.noReason}</span>,
-    createdAt: new Date(user.createdAt).toLocaleString(),
+    createdAt: formatDateTime(user.createdAt, locale),
     actions: (
       <div className="vw-table-actions">
         <Button
@@ -246,7 +247,7 @@ function BlockedSurface({
                         <div className="vw-row-wrap">
                           <Badge tone="danger">{copy.blockedBadge}</Badge>
                           <span className="vw-caption">
-                            {new Date(rec.decidedAt).toLocaleString()}
+                            {formatDateTime(rec.decidedAt, locale)}
                           </span>
                         </div>
                       </div>

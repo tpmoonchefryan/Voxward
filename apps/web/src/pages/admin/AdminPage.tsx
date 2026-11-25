@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
+import { parseScLanguagePolicy } from "@voxward/contracts";
 import {
   Badge,
   Button,
@@ -31,6 +32,9 @@ import {
   type ModelSettingsView,
   type TermCategoryView,
 } from "./api";
+import { CSV_ENCODINGS, csvCopy, decodeTermCsv, type CsvEncoding } from "./csv";
+import { localizeTermCategory } from "./term-category-copy";
+import { WordlistTools } from "./WordlistTools";
 
 type SettingsSectionId = "blacklist" | "whitelist" | "scoring" | "retention";
 
@@ -104,9 +108,10 @@ export function buildTermCsvTemplate(
     return {
       filename: "voxward-whitelist-template.csv",
       content: [
-        "term,category,matchKind",
-        `Tonight setlist is great,${primaryCat},EXACT`,
-        `encore,${primaryCat},CONTAINS`,
+        "term,category,matchKind,language",
+        `Tonight setlist is great,${primaryCat},EXACT,en`,
+        `encore,${primaryCat},CONTAINS,en`,
+        `ありがとう,${primaryCat},NORMALIZED,ja`,
       ].join("\n"),
     };
   }
@@ -116,10 +121,11 @@ export function buildTermCsvTemplate(
   return {
     filename: "voxward-blacklist-template.csv",
     content: [
-      "term,category,matchKind",
-      `free-nitro-scam,${primaryCat},EXACT`,
-      `join-rebate-group,${primaryCat},CONTAINS`,
-      `promo[vV]chat?\\d{6},${secondaryCat},REGEX`,
+      "term,category,matchKind,language",
+      `free-nitro-scam,${primaryCat},EXACT,en`,
+      `join-rebate-group,${primaryCat},CONTAINS,en`,
+      `promo[vV]chat?\\d{6},${secondaryCat},REGEX,und`,
+      `free-credit,${primaryCat},NORMALIZED,en`,
     ].join("\n"),
   };
 }
@@ -138,13 +144,15 @@ function AdminSurface({
   const { activeChannelId, locale } = useVoxWardShell();
   const channelId = channelIdParam ?? activeChannelId;
   const copy = pickLocale(ADMIN_COPY, locale);
+  const csv = csvCopy(locale);
   const adminClient = useMemo(() => api ?? createAdminApi(), [api]);
   const csvFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [section, setSection] = useState<SettingsSectionId>("blacklist");
 
   // Term categories & entries state
-  const [categories, setCategories] = useState<readonly TermCategoryView[]>([]);
+  const [storedCategories, setCategories] = useState<readonly TermCategoryView[]>([]);
+  const categories = useMemo(() => storedCategories.map((item) => localizeTermCategory(item, locale)), [storedCategories, locale]);
   const [entries, setEntries] = useState<readonly ExtendedTermEntryView[]>([]);
   const [catCode, setCatCode] = useState("");
   const [catLabel, setCatLabel] = useState("");
@@ -157,11 +165,14 @@ function AdminSurface({
   const [newTermCategory, setNewTermCategory] = useState("");
   const [newTermMatchKind, setNewTermMatchKind] = useState<"EXACT" | "CONTAINS" | "REGEX">("EXACT");
   const [csvText, setCsvText] = useState("");
+  const [csvEncoding, setCsvEncoding] = useState<CsvEncoding>("utf-8");
   const [editingEntry, setEditingEntry] = useState<ExtendedTermEntryView | null>(null);
 
   // Scoring, model, retention state
   const [modelResp, setModelResp] = useState<ModelSettingsResponseView | null>(null);
   const [modelForm, setModelForm] = useState<ModelSettingsView | null>(null);
+  const [scSource, setScSource] = useState("");
+  const [scTargets, setScTargets] = useState("");
   const [adminForm, setAdminForm] = useState<AdminSettingsView | null>(null);
 
   const [busy, setBusy] = useState(false);
@@ -179,6 +190,8 @@ function AdminSurface({
       setEntries(entList);
       setModelResp(mod);
       setModelForm(mod.settings);
+      setScSource(mod.settings.scLanguages?.sourceLanguage ?? "");
+      setScTargets(mod.settings.scLanguages?.targetLanguages.join(", ") ?? "");
       setAdminForm(adm);
     } catch (error) {
       if (error instanceof AdminApiFailure && error.status === 401) {
@@ -322,12 +335,12 @@ function AdminSurface({
 
   const handleCsvFileSelected = async (file: File | null) => {
     if (file === null) return;
-    const text = (await file.text()).replace(/^\uFEFF/, "");
-    setCsvText(text);
-    setNotice({
-      tone: "positive",
-      resolve: (c) => c.messages.csvFileLoaded(file.name),
-    });
+    try {
+      setCsvText(decodeTermCsv(await file.arrayBuffer(), csvEncoding));
+      setNotice({ tone: "positive", resolve: (c) => c.messages.csvFileLoaded(file.name) });
+    } catch {
+      setNotice({ tone: "danger", resolve: () => csv.invalidEncoding });
+    }
   };
 
   const handleCsvImport = async () => {
@@ -338,16 +351,17 @@ function AdminSurface({
     try {
       const res = await adminClient.importTermEntriesCsv(channelId, activeListKind, normalized);
       setEntries(res.entries);
-      setCsvText("");
-      setShowCsvImport(false);
       const firstErr = res.errors[0];
       if (firstErr !== undefined) {
+        if (res.imported > 0) setCsvText("");
         setNotice({
           tone: "warning",
           resolve: (c) =>
-            c.messages.csvPartial(res.imported, res.errors.length, firstErr.line, firstErr.message),
+            c.messages.csvPartial(res.imported, res.errors.length, firstErr.line, csv.error(firstErr.code)),
         });
       } else {
+        setCsvText("");
+        setShowCsvImport(false);
         setNotice({
           tone: "positive",
           resolve: (c) => c.messages.csvDone(res.imported),
@@ -368,12 +382,28 @@ function AdminSurface({
 
   const handleSaveModels = async () => {
     if (modelForm === null) return;
+    const source = scSource.trim();
+    const targets = scTargets.trim();
+    const languages = source === "" && targets === "" ? undefined : parseScLanguagePolicy({
+      sourceLanguage: source || "auto",
+      targetLanguages: targets.split(",").map((tag) => tag.trim()),
+    });
+    if (languages === null) {
+      setNotice({ tone: "danger", resolve: (c) => c.scLanguageInvalid });
+      return;
+    }
     setBusy(true);
     setNotice(null);
     try {
-      const saved = await adminClient.saveModelSettings(channelId, modelForm);
+      const { scLanguages: _previous, ...settings } = modelForm;
+      const saved = await adminClient.saveModelSettings(channelId, {
+        ...settings,
+        ...(languages === undefined ? {} : { scLanguages: languages }),
+      });
       setModelResp(saved);
       setModelForm(saved.settings);
+      setScSource(saved.settings.scLanguages?.sourceLanguage ?? "");
+      setScTargets(saved.settings.scLanguages?.targetLanguages.join(", ") ?? "");
       setNotice({ tone: "positive", resolve: (c) => c.messages.modelsSaved });
     } catch (error) {
       setNotice({
@@ -775,6 +805,15 @@ function AdminSurface({
                     </div>
                   </div>
                   <span className="vw-caption">{copy.csvColumnsHint(defaultCatForList)}</span>
+                  <div className="vw-field-col--compact">
+                    <label className="vw-field-label" htmlFor="term-csv-encoding">{csv.encoding}</label>
+                    <Select
+                      id="term-csv-encoding"
+                      value={csvEncoding}
+                      onChange={(event) => setCsvEncoding(event.target.value as CsvEncoding)}
+                      options={CSV_ENCODINGS.map((encoding, index) => ({ value: encoding, label: ["UTF-8", "Shift_JIS", "EUC-KR"][index] ?? encoding }))}
+                    />
+                  </div>
                   <div className="vw-field-col--wide">
                     <label className="vw-field-label" htmlFor="term-csv-box">
                       {copy.csvRowsLabel}
@@ -802,6 +841,7 @@ function AdminSurface({
                 </div>
               ) : null}
 
+              <WordlistTools key={channelId} api={adminClient} channelId={channelId} entries={entries} locale={locale} onRestore={setEntries} />
               <TableShell
                 label={copy.termsTableLabel}
                 columns={[
@@ -873,6 +913,23 @@ function AdminSurface({
                       })
                     }
                   />
+                  <div className="vw-row-wrap">
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="sc-source-language">{copy.scSourceLanguage}</label>
+                      <Input id="sc-source-language" placeholder="auto" value={scSource} onChange={(event) => setScSource(event.target.value)} />
+                    </div>
+                    <div className="vw-field-col--compact">
+                      <label className="vw-field-label" htmlFor="sc-target-languages">{copy.scTargetLanguages}</label>
+                      <Input
+                        id="sc-target-languages"
+                        placeholder="en, fr-CA, ja"
+                        aria-describedby="sc-language-help"
+                        value={scTargets}
+                        onChange={(event) => setScTargets(event.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <p id="sc-language-help">{copy.scLanguageHelp}</p>
                   {modelResp?.modelFault ? (
                     <BannerNotice tone="warning">{modelResp.modelFault.message}</BannerNotice>
                   ) : null}

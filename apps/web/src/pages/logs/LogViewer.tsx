@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
+import { auditSummaryLabel } from "../../i18n/operator-data";
 import {
   Badge,
   Button,
@@ -288,7 +289,7 @@ function LogViewerSurface({
                       </Badge>
                     ),
                     actor: <UntrustedText text={item.actor.ref} />,
-                    summary: <UntrustedText text={item.summary} />,
+                    summary: <UntrustedText text={auditSummaryLabel(item.summary, locale)} />,
                     actions: item.correlationId ? (
                       <Button
                         size="sm"
