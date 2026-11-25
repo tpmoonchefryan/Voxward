@@ -105,7 +105,8 @@ flowchart LR
     AI -->|Schema-Validated JSON| STORE
     STORE -->|DELIVER / WARD_BLOCKED| OUT
     UI["Multi-Operator Web Console"] <-->|Session + CSRF + RBAC| STORE
-    OUT -->|Read-Only WS / SSE| DOCK["Pure Danmaku Dock & OBS Transparent Overlay"]
+    OUT -->|Read-Only WS (vw-output.v1 / blivechat)| STAGE["OBS Transparent Overlay & blivechat Client"]
+    STORE -->|Session HTTP Polling| DOCK["Pure Danmaku Dock (/dock/:channelId)"]
 ```
 
 ---
@@ -156,15 +157,15 @@ Production deployment targets self-hosted Linux servers behind an HTTPS reverse 
 
 ### Current Verification & External Boundaries
 
-Local engineering checks verified at release candidate `rc0.1.0`: `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm build`, `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`, `pnpm test -- --run` (187 test files, 2,019 tests), and Playwright E2E across all routes in Sandbox/LAN preview.
+Local engineering gates enforced in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml): `pnpm check:deps`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm check:ds`, and `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`. End-to-end browser verification runs locally against built VoxWard assets using Playwright Chromium (not packaged as a mandatory CI browser matrix job).
 
-Containerized deployment checks verified live: the multi-stage [`Dockerfile`](./Dockerfile) builds cleanly on Cloud Build and the k3s `/sandbox` overlay is live and verified over HTTPS + Playwright E2E at **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)**.
+Containerized deployment checks verified live: the multi-stage [`Dockerfile`](./Dockerfile) builds cleanly and the k3s `/sandbox` overlay is live over HTTPS at **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)**.
 
-External dependencies explicitly left outside synthetic verification (see [`docs/deployment/troubleshooting-and-quotas.md`](./docs/deployment/troubleshooting-and-quotas.md) and [`deploy/kiro-runtime/README.md`](./deploy/kiro-runtime/README.md)):
+External dependencies explicitly outside local/synthetic verification (see [`docs/deployment/troubleshooting-and-quotas.md`](./docs/deployment/troubleshooting-and-quotas.md) and [`deploy/kiro-runtime/README.md`](./deploy/kiro-runtime/README.md)):
 
-- Live host execution of an isolated `kiro-cli` OS user (`VW-S029-KIRO-REAL`) and live AI provider latency/cost benchmarks (`VOXWARD-SUB-050`).
-- Operator-owned Google Cloud OAuth verification and YouTube API quota/policy confirmation for channel-scoped scoring.
-- Self-hosted production k3s deployment ([`deploy/k3s/production/`](./deploy/k3s/production/) with `local-path` RWO PVC and one-time owner bootstrap) remains validated statically via YAML/invariant checks and must be verified on the operator's target production cluster.
+- Real desktop third-party client compatibility spot-checks (desktop OBS Studio, blivechat, OneComme, VTube Studio) beyond loopback/WebSocket protocol drills.
+- Operator-owned Google Cloud OAuth verification, Production app review, and YouTube Data API v3 live broadcast quota/policy confirmation for channel-scoped scoring.
+- Self-hosted production k3s deployment ([`deploy/k3s/production/`](./deploy/k3s/production/) with `local-path` RWO PVC and one-time owner bootstrap) must be validated on the operator's target cluster.
 
 ## Roadmap Toward v1.0
 

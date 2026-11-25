@@ -680,3 +680,110 @@ export function formatAdapterActionLabel(
   const dict = ADAPTER_ACTION_LABELS[locale] ?? ADAPTER_ACTION_LABELS.en;
   return dict[action as BuiltInAdapterAction] ?? fallback;
 }
+
+const RETENTION_CATEGORY_LABELS: Readonly<Record<VoxWardLocale, Readonly<Record<string, string>>>> = {
+  en: {
+    TECHNICAL_LOG: "Technical Log Metadata",
+    EVIDENCE: "Message & Translation Evidence",
+    CHANGE_LOG: "Change Audit Log",
+  },
+  "zh-CN": {
+    TECHNICAL_LOG: "技术日志元数据",
+    EVIDENCE: "消息正文与翻译证据",
+    CHANGE_LOG: "变更审计日志",
+  },
+  ja: {
+    TECHNICAL_LOG: "技術ログメタデータ",
+    EVIDENCE: "メッセージ本文・翻訳証跡",
+    CHANGE_LOG: "変更監査ログ",
+  },
+  ko: {
+    TECHNICAL_LOG: "기술 로그 메타데이터",
+    EVIDENCE: "메시지 본문 및 번역 증적",
+    CHANGE_LOG: "변경 감사 로그",
+  },
+  fr: {
+    TECHNICAL_LOG: "Métadonnées de journal technique",
+    EVIDENCE: "Texte des messages et traductions",
+    CHANGE_LOG: "Journal d'audit des modifications",
+  },
+};
+
+export function formatRetentionCategory(category: string, locale: VoxWardLocale): string {
+  const dict = RETENTION_CATEGORY_LABELS[locale] ?? RETENTION_CATEGORY_LABELS.en;
+  return dict[category] ?? category;
+}
+
+const TECHNICAL_STAGE_LABELS: Readonly<Record<VoxWardLocale, Readonly<Record<string, string>>>> = {
+  en: {
+    INGEST: "Ingest",
+    BASE_RULES: "Base Rules",
+    ROUTE: "Routing",
+    AI_CALL: "AI Inference",
+    SCHEMA_VALIDATE: "Schema Validation",
+    COMMIT: "Verdict Commit",
+    SCORE: "Scoring",
+    DELIVER: "Output Delivery",
+    REVIEW: "Background Review",
+    DATA_DELETE: "Data Deletion",
+  },
+  "zh-CN": {
+    INGEST: "消息接入",
+    BASE_RULES: "基础规则",
+    ROUTE: "路由分发",
+    AI_CALL: "AI 推理",
+    SCHEMA_VALIDATE: "结构校验",
+    COMMIT: "裁决落库",
+    SCORE: "积分结算",
+    DELIVER: "下游投递",
+    REVIEW: "后台复盘",
+    DATA_DELETE: "数据删除",
+  },
+  ja: {
+    INGEST: "取り込み",
+    BASE_RULES: "基本ルール",
+    ROUTE: "ルーティング",
+    AI_CALL: "AI 推論",
+    SCHEMA_VALIDATE: "スキーマ検証",
+    COMMIT: "判定確定",
+    SCORE: "スコア計算",
+    DELIVER: "出力配信",
+    REVIEW: "バックグラウンド再審",
+    DATA_DELETE: "データ削除",
+  },
+  ko: {
+    INGEST: "수신",
+    BASE_RULES: "기본 규칙",
+    ROUTE: "라우팅",
+    AI_CALL: "AI 추론",
+    SCHEMA_VALIDATE: "스키마 검증",
+    COMMIT: "판정 커밋",
+    SCORE: "점수 산정",
+    DELIVER: "출력 전송",
+    REVIEW: "백그라운드 재심",
+    DATA_DELETE: "데이터 삭제",
+  },
+  fr: {
+    INGEST: "Ingestion",
+    BASE_RULES: "Règles de base",
+    ROUTE: "Routage",
+    AI_CALL: "Inférence IA",
+    SCHEMA_VALIDATE: "Validation schéma",
+    COMMIT: "Validation verdict",
+    SCORE: "Calcul du score",
+    DELIVER: "Diffusion sortie",
+    REVIEW: "Révision différée",
+    DATA_DELETE: "Suppression données",
+  },
+};
+
+export function formatTechnicalStage(stage: string, locale: VoxWardLocale): string {
+  const dict = TECHNICAL_STAGE_LABELS[locale] ?? TECHNICAL_STAGE_LABELS.en;
+  return dict[stage] ?? stage;
+}
+
+export function formatLocalizedTimestamp(iso: string, locale: VoxWardLocale): string {
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return iso;
+  return new Date(ms).toLocaleString(locale);
+}

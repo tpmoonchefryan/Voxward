@@ -189,7 +189,7 @@ export function PureDockSurface({
                     data-stream-kind={entry.kind}
                   >
                     {entry.kind === "sc" ? (
-                      <SuperChatCard item={entry.item} />
+                      <SuperChatCard item={entry.item} locale={locale} />
                     ) : (
                       <article className="vw-chat-row">
                         <div className="vw-row-between">
@@ -197,7 +197,7 @@ export function PureDockSurface({
                             <UntrustedText text={entry.author} />
                           </strong>
                           <span className="vw-caption">
-                            {new Date(entry.decidedAt).toLocaleTimeString()}
+                            {new Date(entry.decidedAt).toLocaleTimeString(locale)}
                           </span>
                         </div>
                         {entry.originalText !== null ? (

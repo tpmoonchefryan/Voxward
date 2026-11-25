@@ -8,6 +8,9 @@ import {
   formatBuiltInRbacRole,
   formatBuiltInTermCategory,
   formatChangeLogSummary,
+  formatLocalizedTimestamp,
+  formatRetentionCategory,
+  formatTechnicalStage,
   VOXWARD_SUPPORTED_LOCALES,
 } from "../index";
 
@@ -99,5 +102,19 @@ describe("structured 5-locale formatters", () => {
         "ja",
       ).name,
     ).toBe("Team Lead");
+  });
+
+  it("localizes retention categories, technical stages, and timestamps (VW3-R-012)", () => {
+    expect(formatRetentionCategory("TECHNICAL_LOG", "en")).toBe("Technical Log Metadata");
+    expect(formatRetentionCategory("EVIDENCE", "zh-CN")).toBe("消息正文与翻译证据");
+    expect(formatRetentionCategory("CHANGE_LOG", "ja")).toBe("変更監査ログ");
+    expect(formatRetentionCategory("Custom Category", "fr")).toBe("Custom Category");
+
+    expect(formatTechnicalStage("AI_CALL", "en")).toBe("AI Inference");
+    expect(formatTechnicalStage("DELIVER", "zh-CN")).toBe("下游投递");
+    expect(formatTechnicalStage("CUSTOM_STAGE", "ko")).toBe("CUSTOM_STAGE");
+
+    expect(formatLocalizedTimestamp("not-a-date", "en")).toBe("not-a-date");
+    expect(formatLocalizedTimestamp("2026-11-25T10:00:00.000Z", "en")).not.toBe("2026-11-25T10:00:00.000Z");
   });
 });

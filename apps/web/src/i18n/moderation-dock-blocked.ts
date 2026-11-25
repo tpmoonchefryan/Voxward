@@ -166,6 +166,8 @@ export interface OverlayCopy {
   readonly stageAria: string;
   readonly feedAria: string;
   readonly previewBadge: string;
+  readonly previewSampleChat: string;
+  readonly previewSampleScTranslation: string;
   readonly connectedStatus: string;
   readonly closeMessages: Readonly<Record<string, string>>;
   readonly parseErrors: {
@@ -180,6 +182,8 @@ export const OVERLAY_COPY: Readonly<Record<VoxWardLocale, OverlayCopy>> = {
     stageAria: "OBS Live Overlay Stage",
     feedAria: "OBS Chat Feed",
     previewBadge: "OBS Overlay Preview · Issue a read-only token under Integrations › OBS Overlay Source for live streaming",
+    previewSampleChat: "Amazing acoustic atmosphere tonight! Keep shining!",
+    previewSampleScTranslation: "Happy Halloween greetings from Tokyo!",
     connectedStatus: "Connected to read-only output stream (vw-output.v1)",
     closeMessages: {
       4403: "Output credential revoked (4403). Reconnect stopped; issue a new credential in Admin.",
@@ -198,6 +202,8 @@ export const OVERLAY_COPY: Readonly<Record<VoxWardLocale, OverlayCopy>> = {
     stageAria: "OBS 直播投屏舞台",
     feedAria: "OBS 聊天信息流",
     previewBadge: "OBS 透明投屏预览示例 · 请于「集成管理 › OBS 透明投屏源」签发只读令牌接入正式推流",
+    previewSampleChat: "今晚的现场声学氛围太棒了，继续加油！",
+    previewSampleScTranslation: "来自东京的万圣节问候！",
     connectedStatus: "已连接只读输出通道（vw-output.v1）",
     closeMessages: {
       4403: "输出凭据已被撤销（4403），已停止重连。请在管理后台重新签发凭据。",
@@ -216,6 +222,8 @@ export const OVERLAY_COPY: Readonly<Record<VoxWardLocale, OverlayCopy>> = {
     stageAria: "OBS ライブオーバーレイステージ",
     feedAria: "OBS チャットフィード",
     previewBadge: "OBS オーバーレイプレビュー · 本配信には「連携管理 › OBS 透過オーバーレイ」で読み取り専用トークンを発行してください",
+    previewSampleChat: "今夜のアコースティックな雰囲気最高です！応援しています！",
+    previewSampleScTranslation: "東京からハッピーハロウィン！",
     connectedStatus: "読み取り専用出力チャネルに接続済み (vw-output.v1)",
     closeMessages: {
       4403: "認証情報が失効しました (4403)。再接続を停止しました。管理画面から再発行してください。",
@@ -234,6 +242,8 @@ export const OVERLAY_COPY: Readonly<Record<VoxWardLocale, OverlayCopy>> = {
     stageAria: "OBS 라이브 오버레이 스테이지",
     feedAria: "OBS 채팅 피드",
     previewBadge: "OBS 오버레이 미리보기 · 실제 송출은 「연동 관리 › OBS 투명 오버레이」에서 읽기 전용 토큰을 발급하세요",
+    previewSampleChat: "오늘 밤 어쿠스틱 분위기가 정말 멋져요! 계속 응원할게요!",
+    previewSampleScTranslation: "도쿄에서 전하는 해피 할로윈 인사!",
     connectedStatus: "읽기 전용 출력 채널 연결됨 (vw-output.v1)",
     closeMessages: {
       4403: "출력 자격 증명이 철회되었습니다 (4403). 재연결을 중단했습니다.",
@@ -252,6 +262,8 @@ export const OVERLAY_COPY: Readonly<Record<VoxWardLocale, OverlayCopy>> = {
     stageAria: "Scène Overlay OBS en direct",
     feedAria: "Flux chat OBS",
     previewBadge: "Aperçu Overlay OBS · Émettez un jeton lecture seule sous Intégrations › Overlay OBS pour la diffusion réelle",
+    previewSampleChat: "Superbe ambiance acoustique ce soir ! Continue comme ça !",
+    previewSampleScTranslation: "Joyeux Halloween depuis Tokyo !",
     connectedStatus: "Connecté au flux de sortie lecture seule (vw-output.v1)",
     closeMessages: {
       4403: "Jeton de sortie révoqué (4403). Reconnexion arrêtée ; générez un nouveau jeton.",

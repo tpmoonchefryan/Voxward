@@ -536,7 +536,10 @@ function UsersSurface({
                   ]}
                   rows={filteredUsers.map((u) => {
                     const assignedNames = u.roleIds
-                      .map((id) => roles.find((r) => r.id === id)?.name ?? id)
+                      .map((id) => {
+                        const found = roles.find((r) => r.id === id);
+                        return found ? formatBuiltInRbacRole(found, locale).name : id;
+                      })
                       .join(" · ");
                     return {
                       loginName: (
@@ -767,7 +770,10 @@ function UsersSurface({
                     sources:
                       entry.sourceRoleIds.length > 0
                         ? entry.sourceRoleIds
-                            .map((id) => roles.find((r) => r.id === id)?.name ?? id)
+                            .map((id) => {
+                              const found = roles.find((r) => r.id === id);
+                              return found ? formatBuiltInRbacRole(found, locale).name : id;
+                            })
                             .join(", ")
                         : "—",
                   };

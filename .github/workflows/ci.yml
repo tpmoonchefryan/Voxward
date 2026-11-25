@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Deps, Typecheck, Tests, Build & DS Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check layer dependency boundaries
+        run: pnpm check:deps
+
+      - name: Typecheck packages, apps, and bench
+        run: pnpm typecheck
+
+      - name: Run full unit & integration test suite
+        run: pnpm test
+
+      - name: Build production bundles
+        run: pnpm build
+
+      - name: Check design system compliance
+        run: pnpm check:ds
+
+      - name: Verify deployment configuration invariants
+        run: node scripts/deploy-check.mjs --env-file deploy/server/server.env.example

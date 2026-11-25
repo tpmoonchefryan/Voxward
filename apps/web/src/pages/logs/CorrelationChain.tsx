@@ -9,8 +9,11 @@ import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
 import {
   DEFAULT_VOXWARD_LOCALE,
+  formatLocalizedTimestamp,
+  formatTechnicalStage,
   LOGS_COPY,
   pickLocale,
+  type LogsCopy,
   type VoxWardLocale,
 } from "../../i18n";
 import {
@@ -56,6 +59,13 @@ function stepStatusBadgeTone(status: LogViewerTechnicalItem["status"]): "positiv
   return "positive";
 }
 
+function stepStatusLabel(status: LogViewerTechnicalItem["status"], techStatus: LogsCopy["techStatus"]): string {
+  if (status === "TIMED_OUT") return techStatus.timedOut;
+  if (status === "FAILED") return techStatus.failed;
+  if (status === "SKIPPED") return techStatus.skipped;
+  return techStatus.ok;
+}
+
 export function CorrelationChain({
   channelId,
   correlationId,
@@ -64,7 +74,8 @@ export function CorrelationChain({
   fetchImpl,
   locale = DEFAULT_VOXWARD_LOCALE,
 }: CorrelationChainProps) {
-  const copy = pickLocale(LOGS_COPY, locale).chain;
+  const logsCopy = pickLocale(LOGS_COPY, locale);
+  const copy = logsCopy.chain;
   const [items, setItems] = useState<readonly LogViewerTechnicalItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialLogId);
   const [fetchError, setFetchError] = useState<unknown>(null);
@@ -165,12 +176,16 @@ export function CorrelationChain({
                       >
                         <div className="vw-row-between">
                           <span className="vw-mono vw-chain-step__title">
-                            {`#${item.sequence} ${item.stage}`}
+                            {`#${item.sequence} ${formatTechnicalStage(item.stage, locale)}`}
                           </span>
-                          <Badge tone={stepStatusBadgeTone(item.status)}>{item.status}</Badge>
+                          <Badge tone={stepStatusBadgeTone(item.status)}>
+                            {stepStatusLabel(item.status, logsCopy.techStatus)}
+                          </Badge>
                         </div>
                         <div className="vw-row-between">
-                          <span className="vw-mono vw-caption">{item.occurredAt}</span>
+                          <span className="vw-mono vw-caption">
+                            {formatLocalizedTimestamp(item.occurredAt, locale)}
+                          </span>
                           {item.latencyMs !== null ? (
                             <span className="vw-caption">{`${item.latencyMs} ms`}</span>
                           ) : null}

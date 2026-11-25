@@ -17,7 +17,13 @@ import {
   useLiveStreamAutoScroll,
   type SuperChatItemDisplay,
 } from "../../components/youtube-sc";
-import { MODERATION_COPY, pickLocale, type ModerationCopy, type VoxWardLocale } from "../../i18n";
+import {
+  formatBuiltInTermCategory,
+  MODERATION_COPY,
+  pickLocale,
+  type ModerationCopy,
+  type VoxWardLocale,
+} from "../../i18n";
 import { VoxWardShell, useVoxWardShell } from "../../shell";
 import {
   createModerationApi,
@@ -518,7 +524,7 @@ export function ModerationWorkbench({
                               className="vw-stream-item"
                               data-stream-kind="sc"
                             >
-                              <SuperChatCard item={streamEntry.item} />
+                              <SuperChatCard item={streamEntry.item} locale={resolvedLocale} />
                             </div>
                           );
                         }
@@ -640,7 +646,7 @@ export function ModerationWorkbench({
                               blacklistCategories.length > 0
                                 ? blacklistCategories.map((c) => ({
                                     value: c.code,
-                                    label: c.label,
+                                    label: formatBuiltInTermCategory(c, resolvedLocale).label,
                                   }))
                                 : [{ value: "spam", label: copy.defaultSpamCategory }]
                             }

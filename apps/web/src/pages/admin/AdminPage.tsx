@@ -18,7 +18,7 @@ import {
 } from "@tcrn/ui-react/approved";
 import { BannerNotice } from "../../components/banner-notice";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
-import { ADMIN_COPY, formatBuiltInTermCategory, pickLocale, type AdminCopy } from "../../i18n";
+import { ADMIN_COPY, formatBuiltInTermCategory, pickLocale, type AdminCopy, type VoxWardLocale } from "../../i18n";
 import { useVoxWardShell, VoxWardShell } from "../../shell";
 import {
   decodeCsvBuffer,
@@ -46,6 +46,17 @@ type NoticeState = {
   readonly tone: "positive" | "danger" | "warning";
   readonly resolve: (copy: AdminCopy) => string;
 } | null;
+
+function formatTermLanguageLabel(tag: string | undefined, locale: VoxWardLocale, anyLabel: string): string {
+  const normalized = (tag ?? "und").trim();
+  if (!normalized || normalized.toLowerCase() === "und") return anyLabel;
+  try {
+    const names = new Intl.DisplayNames(locale, { type: "language", languageDisplay: "standard" });
+    return names.of(normalized) ?? normalized;
+  } catch {
+    return normalized;
+  }
+}
 
 function matchKindLabel(kind: string, copy: AdminCopy): string {
   switch (kind) {
@@ -922,12 +933,17 @@ function AdminSurface({
                                 { key: "matchKind", label: copy.colMatchKind },
                                 { key: "language", label: copy.colLanguage },
                               ]}
-                              rows={preview.rows.map((cols) => ({
-                                term: <UntrustedText text={cols[0] ?? ""} />,
-                                category: cols[1] ?? defaultCatForList,
-                                matchKind: cols[2] ?? "EXACT",
-                                language: cols[3] ?? "und",
-                              }))}
+                              rows={preview.rows.map((cols) => {
+                                const catCode = cols[1] ?? defaultCatForList;
+                                const cat = categories.find((c) => c.code === catCode);
+                                const rawKind = (cols[2] ?? "EXACT").trim().toUpperCase();
+                                return {
+                                  term: <UntrustedText text={cols[0] ?? ""} />,
+                                  category: cat ? formatBuiltInTermCategory(cat, locale).label : catCode,
+                                  matchKind: matchKindLabel(rawKind, copy),
+                                  language: formatTermLanguageLabel(cols[3], locale, copy.termLanguageAny),
+                                };
+                              })}
                               emptyState={<EmptyState title={copy.csvPreviewEmpty} />}
                             />
                           </div>
@@ -978,7 +994,11 @@ function AdminSurface({
                       ? formatBuiltInTermCategory(matchedCat, locale).label
                       : entry.categoryCode,
                   matchKind: <Badge tone="neutral">{matchKindLabel(entry.matchKind, copy)}</Badge>,
-                  language: <Badge tone="neutral">{entry.language ?? "und"}</Badge>,
+                  language: (
+                    <Badge tone="neutral">
+                      {formatTermLanguageLabel(entry.language, locale, copy.termLanguageAny)}
+                    </Badge>
+                  ),
                   action: (
                     <Badge tone={entry.action === "BLOCK" ? "danger" : "warning"}>
                       {entry.action === "BLOCK" ? copy.termActions.BLOCK : copy.termActions.REVIEW}
