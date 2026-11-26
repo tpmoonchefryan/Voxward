@@ -18,6 +18,6 @@
   },
   "devDependencies": {
     "@tcrn/ds-consumer-tools": "4.2.0",
-    "vitest": "~3.2.7"
+    "vitest": "~4.1.11"
   }
 }
