@@ -1,5 +1,10 @@
 import {
   CONTRACT_VERSION,
+  INTERNAL_CLASSIFICATIONS,
+  MODERATION_REASON_CODES,
+  POLICY_REASON_CODES,
+  SC_ITEM_FIELDS,
+  SC_MULTILINGUAL_ITEM_FIELDS,
   type AiBatchInput,
   type InferenceCapabilities,
   type InferenceModelCapability,
@@ -12,6 +17,7 @@ import {
   type ModerationReasonCode,
   type ScMultilingualBatchInput,
 } from "@voxward/contracts";
+import { OutboundUrlError, safeOutboundFetch } from "../../security/outbound-url.js";
 
 export interface HttpValidatedItem {
   readonly itemId: string;
@@ -40,6 +46,7 @@ export interface OpenAiCompatProviderOptions {
   readonly baseUrl?: string;
   readonly apiKey: string;
   readonly model?: string;
+  readonly maxTokens?: number;
   readonly maxItems?: number;
   readonly timeoutMs?: number;
   readonly models?: readonly InferenceModelCapability[];
@@ -67,6 +74,7 @@ export interface HttpProbeResult {
 
 export const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
 const DEFAULT_TIMEOUT_MS = 60_000;
+const DEFAULT_MAX_TOKENS = 2048;
 const DEFAULT_MAX_ITEMS = 50;
 
 export function normalizeOpenAiBaseUrl(baseUrl?: string): string {
@@ -81,8 +89,14 @@ function stripJsonCodeFence(text: string): string {
   return match?.[1]?.trim() ?? trimmed;
 }
 
-function parseModelJsonObject(text: string): unknown {
-  const clean = stripJsonCodeFence(text);
+export function stripReasoningPrefix(text: string): string {
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/^\s*<think>[\s\S]*?(?=\s*(?:```|\{))/i, "");
+}
+
+export function parseModelJsonObject(text: string, errorCode = "OPENAI_OUTPUT_NOT_JSON"): unknown {
+  const clean = stripJsonCodeFence(stripReasoningPrefix(text));
   try {
     return JSON.parse(clean);
   } catch {
@@ -91,11 +105,11 @@ function parseModelJsonObject(text: string): unknown {
     if (start >= 0 && end > start) {
       return JSON.parse(clean.slice(start, end + 1));
     }
-    throw new Error("OPENAI_OUTPUT_NOT_JSON");
+    throw new Error(errorCode);
   }
 }
 
-const VALID_VERDICTS = new Set<InternalClassification>(["ALLOW_MEANINGFUL", "ALLOW_NOISE", "BLOCK"]);
+const VALID_VERDICTS = new Set<InternalClassification>(INTERNAL_CLASSIFICATIONS);
 
 function defaultValidateModeration(output: unknown, input: AiBatchInput): HttpBatchOutputOutcome {
   if (typeof output !== "object" || output === null || !Array.isArray((output as { items?: unknown }).items)) {
@@ -127,30 +141,40 @@ function defaultValidateModeration(output: unknown, input: AiBatchInput): HttpBa
   return { ok: true, items };
 }
 
-function buildModerationPrompt(input: AiBatchInput): string {
+export function buildModerationPrompt(input: AiBatchInput): string {
   return [
     "You are VoxWard's live-stream chat moderation classifier.",
-    "Evaluate every item strictly and return ONLY a JSON object with shape:",
-    '{"items":[{"itemId":"...","verdict":"ALLOW_MEANINGFUL|ALLOW_NOISE|BLOCK","reasonCodes":["..."]}]}',
-    "Rules:",
-    "- Use BLOCK for harassment, slurs, spam scams, doxxing, self-harm, hate speech, or explicit violence.",
-    "- Use ALLOW_NOISE for harmless reactions, laughter, emotes, or short greetings.",
-    "- Use ALLOW_MEANINGFUL for safe substantive chat or viewer questions.",
+    "Evaluate every item strictly and return ONLY a raw JSON object (no prose, no markdown fences, no extra fields):",
+    `{"items":[{"itemId":"...","verdict":"${INTERNAL_CLASSIFICATIONS.join("|")}","reasonCodes":["${MODERATION_REASON_CODES.join(' | ')}"]}]}`,
+    "Strict contract rules:",
+    `- Allowed verdicts: ${INTERNAL_CLASSIFICATIONS.join(", ")}.`,
+    `- Allowed reasonCodes (exact enum strings ONLY): ${MODERATION_REASON_CODES.join(", ")}.`,
+    `- ALLOW_MEANINGFUL MUST use reasonCodes: ["NONE"] (safe substantive chat or viewer questions).`,
+    `- ALLOW_NOISE MUST use reasonCodes: ["NOISE"] (harmless reactions, laughter, emotes, or short greetings).`,
+    `- BLOCK MUST use 1 or more codes from [${POLICY_REASON_CODES.join(", ")}], NEVER ["NONE"] and NEVER ["NOISE"] and NEVER [].`,
+    "- Do NOT add extra keys besides itemId, verdict, reasonCodes (and optional matchedSpan {start,end}).",
     "- Every input itemId must appear exactly once. Output raw JSON only.",
     "",
     JSON.stringify(input),
   ].join("\n");
 }
 
-function buildScTranslationPrompt(input: AiBatchInput | ScMultilingualBatchInput): string {
+export function buildScTranslationPrompt(input: AiBatchInput | ScMultilingualBatchInput): string {
   const isMultilingual = "targetLanguages" in input && Array.isArray(input.targetLanguages);
+  const exampleShape = isMultilingual
+    ? `{"items":[{"itemId":"...","verdict":"${INTERNAL_CLASSIFICATIONS.join("|")}","reasonCodes":["NONE"],"sourceLanguage":"ja","translations":[{"language":"en","translatedText":"...","slangNote":"...","replyCue":"..."}]}]}`
+    : '{"items":[{"itemId":"...","verdict":"ALLOW_MEANINGFUL|ALLOW_NOISE|BLOCK","reasonCodes":["NONE"],"translatedText":"...","slangNote":"...","replyCue":"..."}]}';
+  const allowedFields = (isMultilingual ? SC_MULTILINGUAL_ITEM_FIELDS : SC_ITEM_FIELDS).join(", ");
   return [
     "You are VoxWard's Super Chat safety moderator and concise translator.",
-    "Evaluate safety and translate safe Super Chat messages. Return ONLY raw JSON with shape:",
+    "Evaluate safety and translate safe Super Chat messages. Return ONLY raw JSON matching the exact schema below (no markdown, no extra keys):",
+    exampleShape,
+    "Strict contract rules:",
+    `- Required item keys ONLY: ${allowedFields}.`,
+    `- Allowed reasonCodes: ${MODERATION_REASON_CODES.join(", ")} (ALLOW_MEANINGFUL -> ["NONE"], ALLOW_NOISE -> ["NOISE"], BLOCK -> 1+ of [${POLICY_REASON_CODES.join(", ")}]).`,
     isMultilingual
-      ? '{"items":[{"itemId":"...","verdict":"ALLOW_MEANINGFUL|ALLOW_NOISE|BLOCK","reasonCodes":[],"translations":[{"language":"zh-CN","text":"...","notes":null}],"acknowledgement":"..."}]}'
-      : '{"items":[{"itemId":"...","verdict":"ALLOW_MEANINGFUL|ALLOW_NOISE|BLOCK","reasonCodes":[],"translation":"...","notes":null,"acknowledgement":"..."}]}',
-    "- If verdict is BLOCK, omit translations or set empty array and null acknowledgement.",
+      ? "- Include BCP-47 sourceLanguage (e.g. ja, en, zh-CN, ko) and one entry in translations per requested targetLanguage with language, translatedText, slangNote, replyCue (empty strings if BLOCK -> translations: [])."
+      : "- Provide concise translatedText, slangNote, replyCue strings (empty strings \"\" when verdict is BLOCK).",
     "- Every input itemId must appear exactly once. Output raw JSON only.",
     "",
     JSON.stringify(input),
@@ -171,19 +195,22 @@ export async function probeOpenAiCompatEndpoint(options: {
 }): Promise<HttpProbeResult> {
   const base = normalizeOpenAiBaseUrl(options.baseUrl);
   const url = `${base}/models`;
-  const fetchFn = options.fetchImpl ?? fetch;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 20_000);
   const started = Date.now();
   try {
-    const response = await fetchFn(url, {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-        authorization: `Bearer ${options.apiKey}`,
+    const response = await safeOutboundFetch(
+      url,
+      {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          authorization: `Bearer ${options.apiKey}`,
+        },
+        signal: controller.signal,
       },
-      signal: controller.signal,
-    });
+      { fetchImpl: options.fetchImpl },
+    );
     const latencyMs = Math.max(0, Date.now() - started);
     const bodyText = await response.text();
     if (!response.ok) {
@@ -220,7 +247,12 @@ export async function probeOpenAiCompatEndpoint(options: {
       statusCode: 0,
       latencyMs: Math.max(0, Date.now() - started),
       url,
-      errorCode: err instanceof Error && err.name === "AbortError" ? "TIMEOUT" : "NETWORK_ERROR",
+      errorCode:
+        err instanceof OutboundUrlError
+          ? err.code
+          : err instanceof Error && err.name === "AbortError"
+            ? "TIMEOUT"
+            : "NETWORK_ERROR",
     };
   } finally {
     clearTimeout(timer);
@@ -240,6 +272,7 @@ export function createOpenAiCompatInferenceProvider(options: OpenAiCompatProvide
   const baseUrl = normalizeOpenAiBaseUrl(options.baseUrl);
   const fetchFn = options.fetchImpl ?? fetch;
   const maxItems = options.maxItems ?? DEFAULT_MAX_ITEMS;
+  const maxTokens = options.maxTokens ?? DEFAULT_MAX_TOKENS;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const activeControllers = new Map<string, AbortController>();
   let cachedModels: readonly InferenceModelCapability[] | undefined = options.models;
@@ -260,6 +293,7 @@ export function createOpenAiCompatInferenceProvider(options: OpenAiCompatProvide
     try {
       const payload: Record<string, unknown> = {
         model: modelId,
+        max_tokens: maxTokens,
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
       };
@@ -268,16 +302,20 @@ export function createOpenAiCompatInferenceProvider(options: OpenAiCompatProvide
       } else {
         payload.temperature = 0;
       }
-      const response = await fetchFn(`${baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          accept: "application/json",
-          authorization: `Bearer ${options.apiKey}`,
+      const response = await safeOutboundFetch(
+        `${baseUrl}/chat/completions`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            accept: "application/json",
+            authorization: `Bearer ${options.apiKey}`,
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
         },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+        { fetchImpl: options.fetchImpl },
+      );
       const latencyMs = Math.max(0, Date.now() - started);
       const rawText = await response.text();
       if (!response.ok) {
@@ -333,7 +371,7 @@ export function createOpenAiCompatInferenceProvider(options: OpenAiCompatProvide
       const res = await probeOpenAiCompatEndpoint({
         baseUrl,
         apiKey: options.apiKey,
-        fetchImpl: fetchFn,
+        fetchImpl: options.fetchImpl,
         timeoutMs: Math.min(timeoutMs, 20_000),
       });
       if (res.ok && res.models) {

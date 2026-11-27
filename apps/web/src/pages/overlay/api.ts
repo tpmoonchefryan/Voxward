@@ -137,12 +137,16 @@ export type OverlayConnectionStatus =
   | "rejected"
   | "closed";
 
+export const OVERLAY_DEDUP_RETENTION_MS = 300_000;
+export const OVERLAY_MAX_SEEN_DELIVERIES = 1_000;
+
 export interface StageState {
   readonly connectionStatus: OverlayConnectionStatus;
   readonly heartbeatMs: number | null;
   readonly reconnectAttempt: number;
   readonly statusMessage: string | null;
   readonly seenDeliveryIds: ReadonlySet<string>;
+  readonly seenDeliveryExpiries: ReadonlyMap<string, number>;
   readonly activeDeliveries: readonly ActiveDeliverItem[];
   readonly activeWard: WardBlockedEvent | null;
   readonly wardTriggerCount: number;
@@ -155,6 +159,7 @@ export function createInitialStageState(status: OverlayConnectionStatus = "idle"
     reconnectAttempt: 0,
     statusMessage,
     seenDeliveryIds: new Set(),
+    seenDeliveryExpiries: new Map(),
     activeDeliveries: [],
     activeWard: null,
     wardTriggerCount: 0,
@@ -164,11 +169,25 @@ export function createInitialStageState(status: OverlayConnectionStatus = "idle"
 export function pruneExpiredStageItems(state: StageState, nowMs = Date.now()): StageState {
   const nextDeliveries = state.activeDeliveries.filter((item) => item.validUntilMs > nowMs);
   const nextWard = state.activeWard !== null && state.activeWard.validUntilMs > nowMs ? state.activeWard : null;
-  if (nextDeliveries.length === state.activeDeliveries.length && nextWard === state.activeWard) {
+
+  let seenChanged = false;
+  const nextExpiries = new Map<string, number>();
+  for (const [id, expiryMs] of state.seenDeliveryExpiries) {
+    if (expiryMs > nowMs) {
+      nextExpiries.set(id, expiryMs);
+    } else {
+      seenChanged = true;
+    }
+  }
+
+  if (nextDeliveries.length === state.activeDeliveries.length && nextWard === state.activeWard && !seenChanged) {
     return state;
   }
   return {
     ...state,
+    ...(seenChanged
+      ? { seenDeliveryIds: new Set(nextExpiries.keys()), seenDeliveryExpiries: nextExpiries }
+      : {}),
     activeDeliveries: nextDeliveries,
     activeWard: nextWard,
   };
@@ -204,6 +223,7 @@ export function reduceStageFrame(
   frame: NativeFrame,
   nowMs = Date.now(),
   locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
+  options: { readonly maxSeenDeliveries?: number } = {},
 ): StageState {
   const pruned = pruneExpiredStageItems(state, nowMs);
 
@@ -225,13 +245,21 @@ export function reduceStageFrame(
     return pruned;
   }
 
-  const nextSeen = new Set(pruned.seenDeliveryIds);
-  nextSeen.add(frame.deliveryId);
+  const maxSeen = Math.max(1, options.maxSeenDeliveries ?? OVERLAY_MAX_SEEN_DELIVERIES);
+  const nextExpiries = new Map(pruned.seenDeliveryExpiries);
+  while (nextExpiries.size >= maxSeen) {
+    const oldestKey = nextExpiries.keys().next().value;
+    if (oldestKey === undefined) break;
+    nextExpiries.delete(oldestKey);
+  }
+  nextExpiries.set(frame.deliveryId, validUntilMs);
+  const nextSeen = new Set(nextExpiries.keys());
 
   if (frame.type === "DELIVER") {
     return {
       ...pruned,
       seenDeliveryIds: nextSeen,
+      seenDeliveryExpiries: nextExpiries,
       activeDeliveries: [...pruned.activeDeliveries, toDeliverItem(frame, validUntilMs)],
     };
   }
@@ -240,6 +268,7 @@ export function reduceStageFrame(
   return {
     ...pruned,
     seenDeliveryIds: nextSeen,
+    seenDeliveryExpiries: nextExpiries,
     activeDeliveries: pruned.activeDeliveries.filter((item) => item.platformOrder !== frame.platformOrder),
     activeWard: toWardEvent(frame, validUntilMs),
     wardTriggerCount: pruned.wardTriggerCount + 1,

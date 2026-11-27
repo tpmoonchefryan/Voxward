@@ -47,15 +47,55 @@ export interface ClosedConnection {
   readonly code: number;
 }
 
+export interface WsUpgradeRateLimiter {
+  allow(ip: string): boolean;
+}
+
+export function createWsUpgradeRateLimiter(
+  options: { readonly maxAttempts?: number; readonly windowMs?: number; readonly nowMs?: () => number } = {},
+): WsUpgradeRateLimiter {
+  const maxAttempts = options.maxAttempts ?? 60;
+  const windowMs = options.windowMs ?? 60_000;
+  const nowMs = options.nowMs ?? (() => Date.now());
+  const buckets = new Map<string, { count: number; resetAt: number }>();
+
+  return {
+    allow(ip: string): boolean {
+      const now = nowMs();
+      if (buckets.size > 4096) {
+        for (const [key, entry] of buckets) {
+          if (entry.resetAt <= now) buckets.delete(key);
+        }
+      }
+      const existing = buckets.get(ip);
+      if (existing === undefined || existing.resetAt <= now) {
+        buckets.set(ip, { count: 1, resetAt: now + windowMs });
+        return true;
+      }
+      if (existing.count >= maxAttempts) {
+        return false;
+      }
+      existing.count += 1;
+      return true;
+    },
+  };
+}
+
+export type QuotaRegistryLike = OutputSubscriberRegistry & {
+  canAttach?: (target: { readonly channelId: string; readonly grantId: string }) => { readonly ok: boolean; readonly reason?: string };
+  tryAttach?: (subscriber: OutputSubscriber) => { readonly ok: boolean; readonly reason?: string };
+};
+
 export interface NativeOutputOptions {
   readonly grants: OutputGrantPort;
-  readonly subscribers: OutputSubscriberRegistry;
+  readonly subscribers: QuotaRegistryLike;
   readonly timing?: Partial<NativeOutputTiming>;
   /** Upgrade paths handled by sibling endpoints on the same HTTP server; skipped without 404. */
   readonly ignoredPaths?: ReadonlySet<string>;
   /** Receives refusals and connection errors. A line carries a reason code, never the URL, a header or a credential. */
   readonly log?: { warn(fields: Record<string, unknown>, message: string): void };
   readonly onClosed?: (closed: ClosedConnection) => void;
+  readonly authLimiter?: WsUpgradeRateLimiter;
 }
 
 export interface NativeOutputEndpoint {
@@ -66,22 +106,25 @@ export interface NativeOutputEndpoint {
 /** A credential is the `vwo_` prefix and 32 random bytes in base64url, which is 43 characters. */
 const CREDENTIAL_SHAPE = /^vwo_[A-Za-z0-9_-]{43}$/;
 
-const REFUSAL_STATUS_TEXT = { 401: "Unauthorized", 404: "Not Found", 500: "Internal Server Error" } as const;
+const REFUSAL_STATUS_TEXT = {
+  401: "Unauthorized",
+  404: "Not Found",
+  429: "Too Many Requests",
+  500: "Internal Server Error",
+} as const;
 
-/**
- * Serves the native output room on an HTTP server. A consumer proves its grant in the WebSocket subprotocol list as
- * `vw-cred.<credential>`, because a browser cannot set an Authorization header on a WebSocket, and a query string is logged.
- * The server selects only `vw-output.v1` in reply, so the credential is never echoed. A refused upgrade gets a bare HTTP
- * status line and no body.
- */
 export function attachNativeOutput(server: Server, options: NativeOutputOptions): NativeOutputEndpoint {
   const timing: NativeOutputTiming = { ...DEFAULT_NATIVE_OUTPUT_TIMING, ...options.timing };
+  const authLimiter = options.authLimiter ?? createWsUpgradeRateLimiter();
   const socketServer = new WebSocketServer({ noServer: true, maxPayload: 4096, handleProtocols: () => NATIVE_OUTPUT_PROTOCOL });
 
-  function refuse(socket: Duplex, status: 401 | 404 | 500, reason: string): void {
+  function refuse(socket: Duplex, status: 401 | 404 | 429 | 500, reason: string): void {
     // A client may drop the connection while the refusal is being written. That is not a server failure.
     socket.on("error", () => undefined);
-    socket.end(`HTTP/1.1 ${status} ${REFUSAL_STATUS_TEXT[status]}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+    const retryHeader = status === 429 ? "Retry-After: 60\r\n" : "";
+    socket.end(
+      `HTTP/1.1 ${status} ${REFUSAL_STATUS_TEXT[status]}\r\n${retryHeader}Connection: close\r\nContent-Length: 0\r\n\r\n`,
+    );
     options.log?.warn({ status, reason }, "native output upgrade refused");
   }
 
@@ -107,6 +150,11 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
       refuse(socket, 404, "PATH_NOT_FOUND");
       return;
     }
+    const clientIp = request.socket.remoteAddress ?? "unknown";
+    if (!authLimiter.allow(clientIp)) {
+      refuse(socket, 429, "AUTH_RATE_LIMITED");
+      return;
+    }
     const offered = offeredProtocols(request.headers["sec-websocket-protocol"]);
     const credential = credentialFrom(offered);
     if (credential === undefined || !offered.includes(NATIVE_OUTPUT_PROTOCOL)) {
@@ -123,6 +171,11 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
     }
     if (grant === undefined) {
       refuse(socket, 401, "CREDENTIAL_REJECTED");
+      return;
+    }
+    const quota = options.subscribers.canAttach?.(grant);
+    if (quota !== undefined && !quota.ok) {
+      refuse(socket, 429, quota.reason ?? "QUOTA_EXCEEDED");
       return;
     }
     socketServer.handleUpgrade(request, socket, head, (ws) => openConnection(ws, grant));
@@ -219,12 +272,20 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
       }, timing.pongTimeoutMs);
     }, timing.heartbeatMs);
 
-    // A revocation that landed between the credential lookup and the handshake must not leave a live consumer.
+    // A revocation or quota exhaustion that landed during handshake must not leave a live consumer or dangling timers.
     if (!grantIsActive(grant.grantId)) {
       shutDown(NATIVE_CLOSE.GRANT_REVOKED);
       return;
     }
-    options.subscribers.attach(subscriber);
+    if (options.subscribers.tryAttach !== undefined) {
+      const verdict = options.subscribers.tryAttach(subscriber);
+      if (!verdict.ok) {
+        shutDown(NATIVE_CLOSE.SUBSCRIBER_BACKPRESSURE);
+        return;
+      }
+    } else {
+      options.subscribers.attach(subscriber);
+    }
   }
 
   server.on("upgrade", onUpgrade);

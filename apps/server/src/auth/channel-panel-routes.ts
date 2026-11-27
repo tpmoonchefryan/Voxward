@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { inArray } from "drizzle-orm";
+import { inArray, like } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { CONTRACT_VERSION, type DecisionActor, type InferenceCapabilities } from "@voxward/contracts";
 import { z } from "zod";
@@ -49,8 +49,13 @@ import {
 } from "../db/channel-settings-store.js";
 import { applyManagedWordlistToRuleSet, toDbMatchKind } from "../db/wordlist-rules.js";
 import type { VoxwardDatabase } from "../db/client.js";
-import { authAccounts } from "../db/schema/index.js";
+import { authAccounts, deploymentSettings } from "../db/schema/index.js";
 import { runShortTransaction } from "../db/transaction.js";
+import {
+  assertValidEndpointUrlSync,
+  normalizeBoundEndpoint,
+  OutboundUrlError,
+} from "../security/outbound-url.js";
 import fastifyRateLimit from "@fastify/rate-limit";
 import { authenticateRequest } from "./guard.js";
 import { findActiveMembership, listActiveMembers, listActiveMembershipsOf, type Membership } from "./members.js";
@@ -402,22 +407,139 @@ function secretPurposeFor(driverId: AdapterDriverId): ChannelSecretPurpose {
   return driverId === "youtube-live-v3" ? "PLATFORM_OAUTH" : "MODEL_ACCESS";
 }
 
+function defaultEndpointForAdapter(
+  driverId: AdapterDriverId,
+  config: Readonly<Record<string, string | number | boolean | null>>,
+): string {
+  const raw = typeof config.baseEndpoint === "string" ? config.baseEndpoint.trim() : "";
+  if (driverId === "openai-compat") {
+    return normalizeBoundEndpoint(raw, "https://api.openai.com/v1");
+  }
+  if (driverId === "anthropic-compat") {
+    return normalizeBoundEndpoint(raw, "https://api.anthropic.com");
+  }
+  return normalizeBoundEndpoint(raw);
+}
+
+function hasAnyStoredSecret(
+  driverId: AdapterDriverId,
+  config: Readonly<Record<string, string | number | boolean | null>>,
+): boolean {
+  const desc = ADAPTER_SYSTEM_CATALOG.find((item) => item.driverId === driverId);
+  for (const field of desc?.secretFields ?? []) {
+    const val = config[field];
+    if (typeof val === "string" && val.length > 0) return true;
+  }
+  return false;
+}
+
+function validateAdapterEndpointConfig(
+  driverId: AdapterDriverId,
+  config: Readonly<Record<string, string | number | boolean | null>>,
+): void {
+  if (driverId !== "openai-compat" && driverId !== "anthropic-compat") return;
+  const raw = typeof config.baseEndpoint === "string" ? config.baseEndpoint.trim() : "";
+  if (!raw) return;
+  try {
+    assertValidEndpointUrlSync(raw);
+  } catch (err) {
+    if (err instanceof OutboundUrlError) {
+      throw new PanelRouteFailure(400, err.code);
+    }
+    throw new PanelRouteFailure(400, "INVALID_ENDPOINT_URL");
+  }
+}
+
 function sealConfigSecrets(
   driverId: AdapterDriverId,
   config: Readonly<Record<string, string | number | boolean | null>>,
   secrets: ChannelPanelSecretsPort | undefined,
 ): Record<string, string | number | boolean | null> {
-  if (secrets === undefined) return { ...config };
   const desc = ADAPTER_SYSTEM_CATALOG.find((item) => item.driverId === driverId);
   const secretFields = new Set(desc?.secretFields ?? []);
   const purpose = secretPurposeFor(driverId);
   const out: Record<string, string | number | boolean | null> = { ...config };
   for (const [k, v] of Object.entries(out)) {
     if (!secretFields.has(k) || typeof v !== "string" || v.length === 0) continue;
-    if (secrets.isSecretRef(v)) continue;
+    if (secrets !== undefined && secrets.isSecretRef(v)) continue;
+    if (secrets === undefined) {
+      throw new PanelRouteFailure(503, "VAULT_UNAVAILABLE");
+    }
     out[k] = secrets.seal(purpose, v);
   }
   return out;
+}
+
+/**
+ * Idempotently migrates legacy plaintext adapter secrets in `deployment_settings` into `CredentialVault`
+ * and records `__secretBoundEndpoint` for SSRF rebind enforcement.
+ */
+export function migrateLegacyChannelAdapters(
+  database: VoxwardDatabase,
+  secrets: ChannelPanelSecretsPort,
+): number {
+  const rows = database.orm
+    .select({
+      key: deploymentSettings.key,
+      valueJson: deploymentSettings.valueJson,
+    })
+    .from(deploymentSettings)
+    .where(like(deploymentSettings.key, "channel:%:adapters"))
+    .all();
+
+  let migratedAdapters = 0;
+  const nowIso = new Date().toISOString();
+  for (const row of rows) {
+    let list: ChannelAdapterRecord[];
+    try {
+      const parsed = JSON.parse(row.valueJson) as unknown;
+      if (!Array.isArray(parsed)) continue;
+      list = parsed as ChannelAdapterRecord[];
+    } catch {
+      continue;
+    }
+
+    let rowChanged = false;
+    const nextList = list.map((adapter) => {
+      const desc = ADAPTER_SYSTEM_CATALOG.find((item) => item.driverId === adapter.driverId);
+      const secretFields = new Set(desc?.secretFields ?? []);
+      const purpose = secretPurposeFor(adapter.driverId);
+      const nextConfig: Record<string, string | number | boolean | null> = { ...adapter.config };
+      let adapterChanged = false;
+      for (const field of secretFields) {
+        const val = nextConfig[field];
+        if (typeof val === "string" && val.length > 0 && !secrets.isSecretRef(val)) {
+          nextConfig[field] = secrets.seal(purpose, val);
+          adapterChanged = true;
+        }
+      }
+      if (hasAnyStoredSecret(adapter.driverId, nextConfig) && typeof nextConfig.__secretBoundEndpoint !== "string") {
+        nextConfig.__secretBoundEndpoint = defaultEndpointForAdapter(adapter.driverId, nextConfig);
+        adapterChanged = true;
+      }
+      if (!adapterChanged) return adapter;
+      rowChanged = true;
+      migratedAdapters += 1;
+      return { ...adapter, config: nextConfig };
+    });
+
+    if (rowChanged) {
+      runShortTransaction(database, (tx) => {
+        tx.insert(deploymentSettings)
+          .values({
+            key: row.key,
+            valueJson: JSON.stringify(nextList),
+            updatedAt: nowIso,
+          })
+          .onConflictDoUpdate({
+            target: deploymentSettings.key,
+            set: { valueJson: JSON.stringify(nextList), updatedAt: nowIso },
+          })
+          .run();
+      });
+    }
+  }
+  return migratedAdapters;
 }
 
 function releaseReplacedSecrets(
@@ -507,6 +629,9 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
   );
 
   await app.register(fastifyRateLimit, ROUTE_RATE_LIMIT_PLUGIN_OPTIONS);
+  if (secrets !== undefined) {
+    migrateLegacyChannelAdapters(database, secrets);
+  }
 
   function saveTerms(
     channelId: string,
@@ -1166,15 +1291,21 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     "/channels/:channelId/adapters",
     async (request, reply) => {
       const { channelId } = request.params;
-      requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
       const parsed = ADAPTER_CREATE_BODY.safeParse(request.body);
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const requiredCap: Capability = parsed.data.category === "OUTPUT_TARGET" ? "output.manage" : "score.config";
+      requireChannelMember(database, request, channelId, [requiredCap]);
       const desc = ADAPTER_SYSTEM_CATALOG.find(
         (d) => d.driverId === parsed.data.driverId && d.category === parsed.data.category,
       );
       if (desc === undefined) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      validateAdapterEndpointConfig(parsed.data.driverId, parsed.data.config);
       const now = new Date();
-      const sealedConfig = sealConfigSecrets(parsed.data.driverId, parsed.data.config, secrets);
+      const { __secretBoundEndpoint: _ignored, ...cleanInputConfig } = parsed.data.config;
+      const sealedConfig = sealConfigSecrets(parsed.data.driverId, cleanInputConfig, secrets);
+      if (hasAnyStoredSecret(parsed.data.driverId, sealedConfig)) {
+        sealedConfig.__secretBoundEndpoint = defaultEndpointForAdapter(parsed.data.driverId, sealedConfig);
+      }
       const record: ChannelAdapterRecord = {
         id: `adp-${randomUUID().slice(0, 10)}`,
         category: parsed.data.category,
@@ -1197,15 +1328,47 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     "/channels/:channelId/adapters/:adapterId",
     async (request, reply) => {
       const { channelId, adapterId } = request.params;
-      requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
+      const actor = requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
       const parsed = ADAPTER_UPDATE_BODY.safeParse(request.body);
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
       const list = readChannelAdapters(database, channelId);
       const current = list.find((a) => a.id === adapterId);
       if (current === undefined) throw new PanelRouteFailure(404, "ADAPTER_NOT_FOUND");
+      const requiredCap: Capability = current.category === "OUTPUT_TARGET" ? "output.manage" : "score.config";
+      if (!actor.capabilities.has(requiredCap)) throw new PanelRouteFailure(403, "FORBIDDEN");
+
+      const { __secretBoundEndpoint: _ignored, ...cleanIncoming } = parsed.data.config;
+      const mergedConfig = mergeMaskedConfig(current.driverId, current.config, cleanIncoming);
+      validateAdapterEndpointConfig(current.driverId, mergedConfig);
+
+      const desc = ADAPTER_SYSTEM_CATALOG.find((d) => d.driverId === current.driverId);
+      const secretFields = new Set(desc?.secretFields ?? []);
+      const prevEndpoint =
+        typeof current.config.__secretBoundEndpoint === "string"
+          ? current.config.__secretBoundEndpoint
+          : defaultEndpointForAdapter(current.driverId, current.config);
+      const nextEndpoint = defaultEndpointForAdapter(current.driverId, mergedConfig);
+      const hasPrevSecret = hasAnyStoredSecret(current.driverId, current.config);
+      const suppliedNewSecret = Object.entries(cleanIncoming).some(
+        ([k, v]) =>
+          secretFields.has(k) &&
+          typeof v === "string" &&
+          v.length > 0 &&
+          !v.includes("••••") &&
+          !v.startsWith("secretref:"),
+      );
+      const clearedAllSecrets = !hasAnyStoredSecret(current.driverId, mergedConfig);
+      if (hasPrevSecret && nextEndpoint !== prevEndpoint && !suppliedNewSecret && !clearedAllSecrets) {
+        throw new PanelRouteFailure(400, "CREDENTIAL_REBIND_REQUIRED");
+      }
+
       const now = new Date();
-      const mergedConfig = mergeMaskedConfig(current.driverId, current.config, parsed.data.config);
       const sealedConfig = sealConfigSecrets(current.driverId, mergedConfig, secrets);
+      if (hasAnyStoredSecret(current.driverId, sealedConfig)) {
+        sealedConfig.__secretBoundEndpoint = nextEndpoint;
+      } else {
+        delete sealedConfig.__secretBoundEndpoint;
+      }
       releaseReplacedSecrets(current.driverId, current.config, sealedConfig, secrets);
       const updated: ChannelAdapterRecord = {
         ...current,
@@ -1229,10 +1392,12 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     "/channels/:channelId/adapters/:adapterId",
     async (request, reply) => {
       const { channelId, adapterId } = request.params;
-      requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
+      const actor = requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
       const list = readChannelAdapters(database, channelId);
       const current = list.find((a) => a.id === adapterId);
       if (current === undefined) throw new PanelRouteFailure(404, "ADAPTER_NOT_FOUND");
+      const requiredCap: Capability = current.category === "OUTPUT_TARGET" ? "output.manage" : "score.config";
+      if (!actor.capabilities.has(requiredCap)) throw new PanelRouteFailure(403, "FORBIDDEN");
       releaseReplacedSecrets(current.driverId, current.config, {}, secrets);
       writeChannelAdapters(
         database,
@@ -1247,10 +1412,20 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     "/channels/:channelId/adapters/:adapterId/actions/:action",
     async (request, reply) => {
       const { channelId, adapterId, action } = request.params;
-      requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
+      const actor = requireChannelMember(database, request, channelId, ["score.config", "output.manage"]);
       const list = readChannelAdapters(database, channelId);
       const current = list.find((a) => a.id === adapterId);
       if (current === undefined) throw new PanelRouteFailure(404, "ADAPTER_NOT_FOUND");
+      const requiredCap: Capability = current.category === "OUTPUT_TARGET" ? "output.manage" : "score.config";
+      if (!actor.capabilities.has(requiredCap)) throw new PanelRouteFailure(403, "FORBIDDEN");
+      if (
+        (current.driverId === "openai-compat" || current.driverId === "anthropic-compat") &&
+        hasAnyStoredSecret(current.driverId, current.config) &&
+        typeof current.config.__secretBoundEndpoint === "string" &&
+        defaultEndpointForAdapter(current.driverId, current.config) !== current.config.__secretBoundEndpoint
+      ) {
+        throw new PanelRouteFailure(400, "CREDENTIAL_REBIND_REQUIRED");
+      }
       if (adapterActions === undefined) throw new PanelRouteFailure(503, "ADAPTER_ACTIONS_UNAVAILABLE");
 
       const now = new Date();

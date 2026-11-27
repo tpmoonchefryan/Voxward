@@ -8,7 +8,12 @@ import {
 } from "@voxward/contracts";
 import { createRealAdapterActionExecutor } from "./adapters/adapter-actions.js";
 import { attachBlivechatOutput } from "./adapters/blivechat/socket.js";
-import { attachNativeOutput, type ClosedConnection, type NativeOutputTiming } from "./adapters/native-output/socket.js";
+import {
+  attachNativeOutput,
+  createWsUpgradeRateLimiter,
+  type ClosedConnection,
+  type NativeOutputTiming,
+} from "./adapters/native-output/socket.js";
 import {
   channelPanelRoutes,
   type ChannelPanelAdapterActionsPort,
@@ -73,7 +78,7 @@ import { compileRuleSet, type RuleSetInput } from "./modules/moderation-engine/r
 import { DEFAULT_NORMALIZE_OPTIONS, normalizeText } from "./modules/moderation-engine/rules/normalize.js";
 import { BLIVECHAT_OUTPUT_PATH, BLIVECHAT_PROTOCOL_VERSION, createBlivechatAdapter } from "./modules/output/index.js";
 import { createDeliveryPump } from "./modules/output-adapter/delivery.js";
-import { createSubscriptionRegistry } from "./modules/output-adapter/subscription.js";
+import { createSubscriptionRegistry, type OutputWsLimits } from "./modules/output-adapter/subscription.js";
 import { createChannelAwareScoringPlanner, type ModuleRegistry } from "./modules/registry.js";
 import { createPersistentCredentialVault, deriveVaultKey, isSecretRef } from "./security/persistent-vault.js";
 import { redactUrlText } from "./security/redaction.js";
@@ -126,6 +131,7 @@ export interface NativeOutputSettings {
   /** Time between two delivery passes, in milliseconds (自定). Tests shorten it. */
   readonly passIntervalMs?: number;
   readonly onClosed?: (closed: ClosedConnection) => void;
+  readonly wsLimits?: OutputWsLimits;
 }
 
 /** Delivery pump limits (自定, not measured). */
@@ -166,11 +172,14 @@ export function buildApp({
   const bus = invalidation ?? createInvalidationBus();
   app.decorate("modules", modules);
   // Native output consumers of this process. Revoking a grant closes the consumers that the grant opened.
-  const outputSubscribers = createSubscriptionRegistry();
+  const outputSubscribers = createSubscriptionRegistry(nativeOutput?.wsLimits);
   // A fixed body. The default one repeats the requested URL, and a URL can carry a credential.
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: "NOT_FOUND" }));
   app.get("/healthz", async () => ({ status: "ok" }));
   if (database !== undefined) {
+    if (sandbox?.enabled === true) {
+      assertSandboxStartupSafe(sandbox, database.filePath);
+    }
     app.register(authRoutes, {
       database,
       onOutputGrantRevoked: (grantId) => outputSubscribers.closeGrant(grantId),
@@ -244,7 +253,6 @@ export function buildApp({
     );
     startNativeOutput(app, database, outputSubscribers, nativeOutput);
     if (sandbox?.enabled === true) {
-      assertSandboxStartupSafe(sandbox, database.filePath);
       app.register(sandboxRoutes, { database });
     }
   }
@@ -263,6 +271,10 @@ function startNativeOutput(
 ): void {
   const nativeGrants = createOutputGrantPort(database, ["NATIVE_V1", "OBS_OVERLAY"]);
   const blivechatGrants = createOutputGrantPort(database, ["NATIVE_V1", "BLIVECHAT"]);
+  const authLimiter = createWsUpgradeRateLimiter({
+    maxAttempts: settings?.wsLimits?.maxAuthAttemptsPerIp,
+    windowMs: settings?.wsLimits?.authWindowMs,
+  });
   const endpoint = attachNativeOutput(app.server, {
     grants: nativeGrants,
     subscribers,
@@ -270,6 +282,7 @@ function startNativeOutput(
     ignoredPaths: new Set([BLIVECHAT_OUTPUT_PATH]),
     log: app.log,
     onClosed: settings?.onClosed,
+    authLimiter,
   });
   const blivechatEndpoint = attachBlivechatOutput(app.server, {
     path: BLIVECHAT_OUTPUT_PATH,
@@ -280,6 +293,7 @@ function startNativeOutput(
     timing: settings?.timing,
     log: app.log,
     onClosed: settings?.onClosed,
+    authLimiter,
   });
   const pump = createDeliveryPump({
     delivery: createOutputDeliveryPort(database),

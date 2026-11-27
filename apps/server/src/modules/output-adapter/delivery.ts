@@ -1,6 +1,16 @@
-import type { ApprovedContentPort, OutputDeliveryPort, OutputSubscriberRegistry, SendableDelivery } from "@voxward/contracts";
+import {
+  NATIVE_CLOSE,
+  type ApprovedContentPort,
+  type OutputDeliveryPort,
+  type OutputSubscriber,
+  type OutputSubscriberRegistry,
+  type SendableDelivery,
+} from "@voxward/contracts";
 import { frameFor } from "./native-protocol.js";
 import { decideSend } from "./resend.js";
+
+/** Default client/delivery deduplication & retry replay window (5 minutes), shared with Overlay dedup TTL. */
+export const DEFAULT_DELIVERY_REPLAY_WINDOW_MS = 300_000;
 
 export interface DeliveryPumpOptions {
   readonly delivery: OutputDeliveryPort;
@@ -11,7 +21,7 @@ export interface DeliveryPumpOptions {
   readonly batchLimit: number;
   /** Rows marked EXPIRED in one pass (自定). */
   readonly expireLimit: number;
-  /** Failed sends after which a row is marked FAILED (自定). */
+  /** Failed sends after which a target/row is marked FAILED (自定). */
   readonly maxAttempts: number;
 }
 
@@ -31,21 +41,36 @@ export interface DeliveryPump {
 
 type MutableReport = { expired: number; sent: number; retried: number; failed: number };
 
-/**
- * What one send attempt did to its row. RETRY and WAIT end the channel's pass, so the rows behind the row keep their order.
- * WAIT leaves the row PENDING and counts no attempt.
- */
-type RowOutcome = "SENT" | "FAILED" | "RETRY" | "WAIT" | "SKIPPED";
+interface SubscriberDeliveryEntry {
+  delivered: boolean;
+  attempts: number;
+}
+
+type RowPassAction = "CONTINUE" | "STOP_CHANNEL";
 
 /**
- * Sends approved deliveries to connected consumers. Within a channel, rows go out in delivery order, and a row that fails
- * holds back the rows after it until it is sent or marked FAILED. A row is marked SENT only after every consumer connected
- * at the moment of the send accepted the frame, and only when no consumer joined during the send. A consumer that already
- * received the frame may receive it again after a failed pass. Consumers deduplicate by delivery identifier, so the protocol
- * does not promise exactly-once display.
+ * Sends approved deliveries to connected consumers with per-subscriber isolation:
+ * - One failing subscriber retries up to `maxAttempts` (then disconnects) without stalling or failing healthy subscribers.
+ * - Healthy subscribers that already received a delivery are not resent the same delivery while a failing peer retries.
+ * - Shared rows stay PENDING until every remaining non-exhausted subscriber receives them or no subscriber succeeds.
  */
 export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
   let queue: Promise<unknown> = Promise.resolve();
+  const subscriberStates = new WeakMap<OutputSubscriber, Map<string, SubscriberDeliveryEntry>>();
+
+  function entryFor(subscriber: OutputSubscriber, deliveryId: string): SubscriberDeliveryEntry {
+    let perDelivery = subscriberStates.get(subscriber);
+    if (perDelivery === undefined) {
+      perDelivery = new Map();
+      subscriberStates.set(subscriber, perDelivery);
+    }
+    let entry = perDelivery.get(deliveryId);
+    if (entry === undefined) {
+      entry = { delivered: false, attempts: 0 };
+      perDelivery.set(deliveryId, entry);
+    }
+    return entry;
+  }
 
   function serialized(work: () => Promise<PassReport>): Promise<PassReport> {
     const next = queue.then(work);
@@ -60,52 +85,103 @@ export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
     if (options.subscribers.forChannel(channelId).length === 0) return;
 
     const rows = options.delivery.readSendable({ channelId, nowIso: options.now().toISOString(), limit: options.batchLimit });
+    const stalled = new Set<OutputSubscriber>();
     for (const row of rows) {
       const nowIso = options.now().toISOString();
       // Re-read synchronously right before sending: an earlier in-flight send may have yielded while this row was overturned or cancelled.
       const currentRow = options.delivery.readSendableRow({ deliveryId: row.deliveryId, nowIso });
       if (currentRow === undefined || decideSend(currentRow, nowIso) !== "SEND") continue;
-      const outcome = await sendRow(channelId, currentRow, nowIso);
-      if (outcome === "SENT") report.sent += 1;
-      else if (outcome === "FAILED") report.failed += 1;
-      else if (outcome === "RETRY") {
-        report.retried += 1;
-        return;
-      } else if (outcome === "WAIT") return;
+      const action = await sendRow(channelId, currentRow, nowIso, stalled, report);
+      if (action === "STOP_CHANNEL") return;
     }
   }
 
-  /** One send attempt for one row, to the consumers connected at the moment of the send. */
-  async function sendRow(channelId: string, row: SendableDelivery, nowIso: string): Promise<RowOutcome> {
-    // Read here, not at the start of the pass: a consumer that left during the pass must not count as a recipient.
+  async function sendRow(
+    channelId: string,
+    row: SendableDelivery,
+    nowIso: string,
+    stalled: Set<OutputSubscriber>,
+    report: MutableReport,
+  ): Promise<RowPassAction> {
     const targets = options.subscribers.forChannel(channelId);
-    if (targets.length === 0) return "WAIT";
+    if (targets.length === 0) return "STOP_CHANNEL";
+
+    const eligible = targets.filter((sub) => !stalled.has(sub));
+    if (eligible.length === 0) return "STOP_CHANNEL";
 
     // An ALLOW row without approved content cannot be shown. Marking it FAILED keeps it out of the queue.
     const content =
       row.verdict === "ALLOW" ? options.content.readApproved({ channelId, correlationId: row.correlationId, nowIso }) : undefined;
     const frame = frameFor(row, content);
     if (frame === undefined) {
-      return options.delivery.markFailed({ deliveryId: row.deliveryId, nowIso }) ? "FAILED" : "SKIPPED";
+      if (options.delivery.markFailed({ deliveryId: row.deliveryId, nowIso })) {
+        report.failed += 1;
+      }
+      return "CONTINUE";
     }
 
-    const results = await Promise.allSettled(targets.map((subscriber) => subscriber.send(frame)));
-    if (results.some((result) => result.status === "rejected")) {
+    const pendingTargets = eligible.filter((sub) => !entryFor(sub, row.deliveryId).delivered);
+    const results = await Promise.allSettled(pendingTargets.map((subscriber) => subscriber.send(frame)));
+
+    const rejectedSubscribers: OutputSubscriber[] = [];
+    for (let i = 0; i < pendingTargets.length; i++) {
+      const sub = pendingTargets[i]!;
+      const res = results[i]!;
+      const entry = entryFor(sub, row.deliveryId);
+      if (res.status === "fulfilled") {
+        entry.delivered = true;
+      } else {
+        entry.attempts += 1;
+        rejectedSubscribers.push(sub);
+      }
+    }
+
+    const deliveredCount = targets.filter((sub) => entryFor(sub, row.deliveryId).delivered).length;
+    if (deliveredCount === 0 && rejectedSubscribers.length > 0) {
       const outcome = options.delivery.recordSendFailure({
         deliveryId: row.deliveryId,
         nowIso: options.now().toISOString(),
         maxAttempts: options.maxAttempts,
       });
-      if (outcome === "FAILED") return "FAILED";
-      return outcome === "RETRY" ? "RETRY" : "SKIPPED";
+      if (outcome === "FAILED") {
+        report.failed += 1;
+        return "CONTINUE";
+      }
+      if (outcome === "RETRY") {
+        report.retried += 1;
+        return "STOP_CHANNEL";
+      }
+      return "CONTINUE";
     }
 
-    // A consumer that connected during the send did not receive this frame. The row stays PENDING, so the next pass sends it
-    // to every consumer, and the consumers that already have it deduplicate it.
-    const joined = options.subscribers.forChannel(channelId).some((subscriber) => !targets.includes(subscriber));
-    if (joined) return "WAIT";
+    for (const sub of rejectedSubscribers) {
+      const entry = entryFor(sub, row.deliveryId);
+      if (entry.attempts >= options.maxAttempts) {
+        sub.close(NATIVE_CLOSE.SUBSCRIBER_BACKPRESSURE);
+      } else {
+        stalled.add(sub);
+      }
+    }
 
-    return options.delivery.markSent({ deliveryId: row.deliveryId, nowIso: options.now().toISOString() }) ? "SENT" : "SKIPPED";
+    const nowTargets = options.subscribers.forChannel(channelId);
+    const newlyJoined = nowTargets.some((subscriber) => !targets.includes(subscriber));
+    if (newlyJoined) {
+      return "STOP_CHANNEL";
+    }
+
+    const stillPendingInChannel = nowTargets.filter((sub) => !entryFor(sub, row.deliveryId).delivered);
+    if (stillPendingInChannel.length === 0) {
+      if (options.delivery.markSent({ deliveryId: row.deliveryId, nowIso: options.now().toISOString() })) {
+        report.sent += 1;
+      }
+      return "CONTINUE";
+    }
+
+    if (rejectedSubscribers.length > 0) {
+      report.retried += 1;
+    }
+    const hasHealthyTarget = nowTargets.some((sub) => !stalled.has(sub));
+    return hasHealthyTarget ? "CONTINUE" : "STOP_CHANNEL";
   }
 
   async function passOver(channelIds: readonly string[]): Promise<PassReport> {

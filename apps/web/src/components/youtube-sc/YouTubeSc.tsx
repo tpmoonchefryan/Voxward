@@ -99,23 +99,46 @@ export function resolveScTierForItem(
   return resolveScTier(item.amountText);
 }
 
+const BIDI_CONTROL_CHARACTERS = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
+const KNOWN_CURRENCIES: ReadonlySet<string> | null =
+  typeof Intl !== "undefined" && typeof (Intl as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf === "function"
+    ? new Set((Intl as { supportedValuesOf: (key: string) => string[] }).supportedValuesOf("currency").map((c) => c.toUpperCase()))
+    : null;
+
+export function stripBidiControlChars(value: string): string {
+  return value.replace(BIDI_CONTROL_CHARACTERS, "");
+}
+
 export function formatScAmountDisplay(
   item: Pick<SuperChatItemDisplay, "payment" | "amountText">,
   locale: VoxWardLocale = DEFAULT_VOXWARD_LOCALE,
 ): string {
   const payment = item.payment;
   if (payment !== undefined && payment !== null) {
-    if (payment.amountDisplay !== null && payment.amountDisplay.trim() !== "") {
-      return payment.amountDisplay;
+    const code = typeof payment.currency === "string" ? payment.currency.toUpperCase() : "";
+    const isKnownCurrency =
+      /^[A-Z]{3}$/.test(code) && (KNOWN_CURRENCIES === null || KNOWN_CURRENCIES.has(code));
+    if (
+      isKnownCurrency &&
+      typeof payment.amountMicros === "number" &&
+      Number.isFinite(payment.amountMicros) &&
+      payment.amountMicros >= 0
+    ) {
+      const major = payment.amountMicros / 1_000_000;
+      try {
+        return new Intl.NumberFormat(locale, { style: "currency", currency: code }).format(major);
+      } catch {
+        if (payment.amountDisplay !== null && payment.amountDisplay.trim() !== "") {
+          return stripBidiControlChars(payment.amountDisplay);
+        }
+        return `${code} ${major.toFixed(2)}`;
+      }
     }
-    const major = payment.amountMicros / 1_000_000;
-    try {
-      return new Intl.NumberFormat(locale, { style: "currency", currency: payment.currency }).format(major);
-    } catch {
-      return `${payment.currency} ${major.toFixed(2)}`;
+    if (payment.amountDisplay !== null && payment.amountDisplay.trim() !== "") {
+      return stripBidiControlChars(payment.amountDisplay);
     }
   }
-  return item.amountText ?? "";
+  return item.amountText ? stripBidiControlChars(item.amountText) : "";
 }
 
 export function formatTickerCountdown(remainingSeconds: number): string {
@@ -206,7 +229,9 @@ export function SuperChatTicker({
             <span>
               <UntrustedText text={item.author} />
             </span>
-            <span>{formatScAmountDisplay(item, locale)}</span>
+            <span>
+              <UntrustedText text={formatScAmountDisplay(item, locale)} />
+            </span>
             <span className="vw-sc-ticker__countdown">{formatTickerCountdown(remainingSec)}</span>
             <progress
               className="vw-sc-ticker__progress"
@@ -472,7 +497,11 @@ export function SuperChatCard({
         <span className="vw-sc-card__author">
           <UntrustedText text={item.author} />
         </span>
-        {amountLabel !== "" ? <span className="vw-sc-card__amount">{amountLabel}</span> : null}
+        {amountLabel !== "" ? (
+          <span className="vw-sc-card__amount">
+            <UntrustedText text={amountLabel} />
+          </span>
+        ) : null}
       </header>
       {tier.showsBody && (item.text || hasTranslations) ? (
         <div className="vw-sc-card__body">

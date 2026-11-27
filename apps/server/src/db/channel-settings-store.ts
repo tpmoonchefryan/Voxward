@@ -852,12 +852,9 @@ export function redactAdapterConfig(
   const secrets = new Set(desc?.secretFields ?? []);
   const out: Record<string, string | number | boolean | null> = {};
   for (const [k, v] of Object.entries(config)) {
+    if (k === "__secretBoundEndpoint") continue;
     if (secrets.has(k) && typeof v === "string" && v.length > 0) {
-      if (v.startsWith("secretref:")) {
-        out[k] = "••••••";
-      } else {
-        out[k] = v.length > 6 ? `${v.slice(0, 3)}••••${v.slice(-2)}` : "••••••";
-      }
+      out[k] = "••••••";
     } else {
       out[k] = v;
     }
@@ -906,16 +903,86 @@ const SENSITIVE_HTTP_HEADERS = new Set([
   "x-csrf-token",
 ]);
 
+const SENSITIVE_URL_PARAMS = new Set([
+  "key",
+  "api_key",
+  "apikey",
+  "token",
+  "access_token",
+  "refresh_token",
+  "id_token",
+  "client_secret",
+  "secret",
+  "password",
+  "passwd",
+  "sig",
+  "signature",
+  "cred",
+  "credential",
+  "auth",
+  "authorization",
+]);
+
+function scrubSecretStrings(input: string): string {
+  return input
+    .replace(/(https?:\/\/)([^/@\s]+)(@)/gi, "$1[REDACTED]$3")
+    .replace(
+      /([?&#](?:api[_-]?key|key|(?:access_|refresh_|id_)?token|client_secret|secret|pass(?:word|wd)?|sig(?:nature)?|cred(?:ential)?|auth(?:orization)?)=)([^&#\s"'`]+)/gi,
+      "$1[REDACTED]",
+    )
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]{8,}/gi, "Bearer [REDACTED]")
+    .replace(/\b(?:sk-[A-Za-z0-9_-]{12,}|AIza[0-9A-Za-z_-]{20,}|ya29\.[0-9A-Za-z_-]{12,}|vwo_[A-Za-z0-9_-]{12,}|vws_[A-Za-z0-9_-]{12,})\b/g, "[REDACTED]");
+}
+
+/** Strips userinfo, sensitive query/fragment parameters, and token shapes from a URL string. */
+export function sanitizeIntegrationUrl(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.username || parsed.password) {
+      parsed.username = "[REDACTED]";
+      parsed.password = "";
+    }
+    for (const key of [...parsed.searchParams.keys()]) {
+      if (SENSITIVE_URL_PARAMS.has(key.toLowerCase())) {
+        parsed.searchParams.set(key, "[REDACTED]");
+      }
+    }
+    if (parsed.hash) {
+      const hashBody = parsed.hash.startsWith("#") ? parsed.hash.slice(1) : parsed.hash;
+      const scrubbedHash = scrubSecretStrings(
+        hashBody.includes("=") ? `&${hashBody}` : hashBody,
+      ).replace(/^&/, "");
+      parsed.hash = `#${scrubbedHash}`;
+    }
+    return parsed.toString();
+  } catch {
+    return scrubSecretStrings(rawUrl);
+  }
+}
+
+export function sanitizeIntegrationLogEntry(entry: IntegrationLogRecord): IntegrationLogRecord {
+  return {
+    ...entry,
+    url: sanitizeIntegrationUrl(entry.url),
+    requestHeaders: redactHttpHeaders(entry.requestHeaders),
+    responseHeaders: redactHttpHeaders(entry.responseHeaders),
+    rawRequestBody: entry.rawRequestBody === null ? null : scrubSecretStrings(entry.rawRequestBody),
+    rawResponseBody: entry.rawResponseBody === null ? null : scrubSecretStrings(entry.rawResponseBody),
+  };
+}
+
 export function redactHttpHeaders(headers: Readonly<Record<string, string>>): Record<string, string> {
   const sanitized: Record<string, string> = {};
   for (const [key, val] of Object.entries(headers)) {
-    sanitized[key] = SENSITIVE_HTTP_HEADERS.has(key.toLowerCase()) ? "[REDACTED]" : val;
+    sanitized[key] = SENSITIVE_HTTP_HEADERS.has(key.toLowerCase()) ? "[REDACTED]" : scrubSecretStrings(val);
   }
   return sanitized;
 }
 
 export function readIntegrationLogs(database: VoxwardDatabase, channelId: string): IntegrationLogRecord[] {
-  return readChannelSetting<IntegrationLogRecord[]>(database, channelId, "integration-logs", []);
+  return readChannelSetting<IntegrationLogRecord[]>(database, channelId, "integration-logs", []).map(
+    sanitizeIntegrationLogEntry,
+  );
 }
 
 export function appendIntegrationLog(
@@ -924,11 +991,7 @@ export function appendIntegrationLog(
   entry: IntegrationLogRecord,
   now: Date = new Date(),
 ): void {
-  const redacted: IntegrationLogRecord = {
-    ...entry,
-    requestHeaders: redactHttpHeaders(entry.requestHeaders),
-    responseHeaders: redactHttpHeaders(entry.responseHeaders),
-  };
+  const redacted = sanitizeIntegrationLogEntry(entry);
   updateChannelSettingAtomic<IntegrationLogRecord[], void>(
     database,
     channelId,

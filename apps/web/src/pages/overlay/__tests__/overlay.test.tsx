@@ -8,6 +8,7 @@ import {
   closeMessageFor,
   createInitialStageState,
   parseOverlayCredential,
+  pruneExpiredStageItems,
   reduceStageFrame,
   SAFE_ANONYMOUS_ALIAS,
   safeAnonymousAliasFor,
@@ -135,7 +136,7 @@ describe("overlay pure protocol and StageView rendering (VW-Draft-01)", () => {
     expect(html).toContain("vw-sc-tier--t7");
     expect(html).toContain("vw-sc-tier--t1");
     expect(html).toContain("<bdi>Kaito_Tokyo</bdi>");
-    expect(html).toContain('<span class="vw-sc-card__amount">$100</span>');
+    expect(html).toContain('<span class="vw-sc-card__amount"><span class="untrusted-text" data-untrusted="true" style="white-space:pre-wrap"><bdi>$100</bdi></span></span>');
     expect(html).not.toContain("<bdi>Kaito_Tokyo · $100</bdi>");
     expect(html.indexOf("Happy Halloween!")).toBeLessThan(html.indexOf("Keep up the stream!"));
     expect(html).not.toContain("Super Chat 展示列表");
@@ -206,5 +207,54 @@ describe("overlay pure protocol and StageView rendering (VW-Draft-01)", () => {
     expect(closeMessageFor(4403, "ja")).toContain("4403");
     expect(closeMessageFor(4400, "ko")).toContain("4400");
     expect(closeMessageFor(4408, "en")).toContain("4408");
+  });
+
+  it("STORY-061 & STORY-063: expires/evicts bounded dedup cache and prioritizes Intl.NumberFormat with <bdi> isolation", () => {
+    let state = createInitialStageState("connected");
+    for (let i = 0; i < 4; i++) {
+      state = reduceStageFrame(
+        state,
+        {
+          type: "DELIVER",
+          version: NATIVE_OUTPUT_VERSION,
+          deliveryId: `del-cap-${i}`,
+          deliverySequence: i + 1,
+          platformOrder: i + 1,
+          validUntil: new Date(10_000 + i * 1_000).toISOString(),
+          display: { label: "Viewer", text: `msg-${i}`, translation: null },
+        },
+        1_000,
+        "en",
+        { maxSeenDeliveries: 2 },
+      );
+    }
+    expect(state.seenDeliveryIds.size).toBe(2);
+    expect([...state.seenDeliveryIds]).toEqual(["del-cap-2", "del-cap-3"]);
+
+    const expired = pruneExpiredStageItems(state, 20_000);
+    expect(expired.seenDeliveryIds.size).toBe(0);
+
+    const scState = reduceStageFrame(
+      createInitialStageState("connected"),
+      {
+        type: "DELIVER",
+        version: NATIVE_OUTPUT_VERSION,
+        deliveryId: "del-sc-bidi",
+        deliverySequence: 1,
+        platformOrder: 1,
+        validUntil: new Date(Date.now() + 60_000).toISOString(),
+        display: {
+          label: "Viewer",
+          text: "Super chat!",
+          translation: null,
+          payment: { amountMicros: 50_000_000, currency: "USD", amountDisplay: "\u202EFake999", tier: null },
+        },
+      },
+      1_000,
+    );
+    const html = renderToStaticMarkup(<StageView state={scState} />);
+    expect(html).not.toContain("Fake999");
+    expect(html).not.toContain("\u202E");
+    expect(html).toContain("<bdi>");
   });
 });
