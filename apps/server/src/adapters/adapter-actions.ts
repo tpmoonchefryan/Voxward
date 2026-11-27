@@ -418,6 +418,15 @@ export function createRealAdapterActionExecutor(
           { fetchImpl: options.fetchImpl },
         );
         const bodyText = await res.text();
+        let broadcastCount: number | undefined;
+        try {
+          const parsed = JSON.parse(bodyText) as { items?: unknown };
+          if (Array.isArray(parsed.items)) {
+            broadcastCount = parsed.items.length;
+          }
+        } catch {
+          broadcastCount = undefined;
+        }
         return {
           ok: res.ok,
           httpStatus: res.ok ? 200 : 502,
@@ -431,7 +440,12 @@ export function createRealAdapterActionExecutor(
           requestHeaders: { accept: "application/json", authorization: "[REDACTED]", "x-voxward-action": input.action },
           responseHeaders: { "content-type": res.headers.get("content-type") ?? "application/json" },
           rawRequestBody: null,
-          rawResponseBody: bodyText.slice(0, 512),
+          rawResponseBody: JSON.stringify({
+            ok: res.ok,
+            statusCode: res.status,
+            ...(broadcastCount !== undefined ? { broadcastCount } : {}),
+            ...(!res.ok ? { error: `HTTP_${res.status}` } : {}),
+          }),
         };
       } catch (err) {
         const errorCode = err instanceof OutboundUrlError ? err.code : "NETWORK_ERROR";

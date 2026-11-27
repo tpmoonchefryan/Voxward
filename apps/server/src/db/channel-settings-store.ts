@@ -903,6 +903,18 @@ const SENSITIVE_HTTP_HEADERS = new Set([
   "x-csrf-token",
 ]);
 
+const ALLOWED_ADAPTER_ACTIONS = new Set([
+  "test-connection",
+  "fetch-models",
+  "cli-self-check",
+  "self-check",
+  "cleanup-orphans",
+  "sync-ban",
+  "verify",
+]);
+
+const ALLOWED_TARGET_DRIVERS = new Set(["obs-overlay-source", "native-readonly-protocol"]);
+
 const SAFE_DIAGNOSTIC_PATH_SEGMENTS = new Set([
   "v1",
   "v1beta",
@@ -921,7 +933,7 @@ const SAFE_DIAGNOSTIC_PATH_SEGMENTS = new Set([
   "cleanup-orphans",
 ]);
 
-const SAFE_DIAGNOSTIC_QUERY_KEYS = new Set(["part", "mine"]);
+const ALLOWED_YOUTUBE_PART_TOKENS = new Set(["id", "status", "snippet", "contentDetails"]);
 
 const FIXED_INTERNAL_URIS = new Set([
   "kiro-cli://runtime/self-check",
@@ -961,40 +973,71 @@ function sanitizeSearch(rawSearch: string): string {
   for (const rawPair of body.split("&")) {
     if (!rawPair) continue;
     const eqIdx = rawPair.indexOf("=");
-    if (eqIdx < 0) {
-      parts.push("[REDACTED]");
+    if (eqIdx < 0) continue;
+    const key = safeDecodeSegment(rawPair.slice(0, eqIdx));
+    const val = safeDecodeSegment(rawPair.slice(eqIdx + 1));
+    if (key === "part") {
+      const tokens = val.split(",").filter((token) => token.length > 0);
+      if (tokens.length > 0 && tokens.every((token) => ALLOWED_YOUTUBE_PART_TOKENS.has(token))) {
+        parts.push(`part=${tokens.join(",")}`);
+      }
       continue;
     }
-    const rawKey = rawPair.slice(0, eqIdx);
-    const rawVal = rawPair.slice(eqIdx + 1);
-    const key = safeDecodeSegment(rawKey);
-    const val = safeDecodeSegment(rawVal);
-    if (SAFE_DIAGNOSTIC_QUERY_KEYS.has(key) && /^[A-Za-z0-9_,]+$/.test(val)) {
-      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
-    } else {
-      parts.push(`${encodeURIComponent(key)}=[REDACTED]`);
+    if (key === "mine" && (val === "true" || val === "false")) {
+      parts.push(`mine=${val}`);
     }
   }
   return parts.length > 0 ? `?${parts.join("&")}` : "";
 }
 
-function scrubSecretStrings(input: string): string {
-  const withSanitizedUrls = input.replace(/https?:\/\/[^\s"'`<>),;]+/gi, (match) => sanitizeIntegrationUrl(match));
-  return withSanitizedUrls
-    .replace(/(https?:\/\/)([^/@\s]+)(@)/gi, "$1[REDACTED]$3")
-    .replace(
-      /([?&#](?:api[_-]?key|key|(?:access_|refresh_|id_)?token|client_secret|secret|pass(?:word|wd)?|sig(?:nature)?|cred(?:ential)?|auth(?:orization)?)=)([^&#\s"'`]+)/gi,
-      "$1[REDACTED]",
-    )
-    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]{8,}/gi, "Bearer [REDACTED]")
-    .replace(/\b(?:sk-[A-Za-z0-9_-]{12,}|AIza[0-9A-Za-z_-]{20,}|ya29\.[0-9A-Za-z_-]{12,}|vwo_[A-Za-z0-9_-]{12,}|vws_[A-Za-z0-9_-]{12,})\b/g, "[REDACTED]");
+function sanitizeDiagnosticBody(raw: string | null): string | null {
+  if (raw === null) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return null;
+  }
+  const obj = parsed as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  if (typeof obj.ok === "boolean") out.ok = obj.ok;
+  if (typeof obj.statusCode === "number" && Number.isInteger(obj.statusCode) && obj.statusCode >= 100 && obj.statusCode <= 599) {
+    out.statusCode = obj.statusCode;
+  }
+  if (typeof obj.modelCount === "number" && Number.isInteger(obj.modelCount) && obj.modelCount >= 0 && obj.modelCount <= 100_000) {
+    out.modelCount = obj.modelCount;
+  }
+  if (
+    typeof obj.broadcastCount === "number" &&
+    Number.isInteger(obj.broadcastCount) &&
+    obj.broadcastCount >= 0 &&
+    obj.broadcastCount <= 100_000
+  ) {
+    out.broadcastCount = obj.broadcastCount;
+  }
+  if (typeof obj.removed === "number" && Number.isInteger(obj.removed) && obj.removed >= 0 && obj.removed <= 100_000) {
+    out.removed = obj.removed;
+  }
+  if (typeof obj.manualAction === "boolean") out.manualAction = obj.manualAction;
+  if (typeof obj.action === "string" && ALLOWED_ADAPTER_ACTIONS.has(obj.action)) out.action = obj.action;
+  if (typeof obj.target === "string" && ALLOWED_TARGET_DRIVERS.has(obj.target)) out.target = obj.target;
+  if (obj.version === null || (typeof obj.version === "string" && /^[A-Za-z0-9._+-]{1,32}$/.test(obj.version))) {
+    out.version = obj.version;
+  }
+  if (obj.error === null || (typeof obj.error === "string" && /^[A-Z][A-Z0-9_]{1,63}$/.test(obj.error))) {
+    out.error = obj.error;
+  }
+  return Object.keys(out).length > 0 ? JSON.stringify(out) : null;
 }
 
 /**
- * Normalizes integration diagnostic URLs to an allowlisted safe projection:
+ * Normalizes integration diagnostic URLs to a closed allowlisted projection:
  * - Drops userinfo and fragments (`#...`)
  * - Preserves only allowlisted canonical API path segments; custom path segments become `[REDACTED]`
- * - Preserves only allowlisted diagnostic query parameters; other query values become `[REDACTED]`
+ * - Retains only business-defined diagnostic query parameters with validated values; drops all other keys/values
  */
 export function sanitizeIntegrationUrl(rawUrl: string): string {
   const trimmed = rawUrl.trim();
@@ -1004,7 +1047,7 @@ export function sanitizeIntegrationUrl(rawUrl: string): string {
   if (FIXED_INTERNAL_URIS.has(withoutQueryAndHash)) {
     return withoutQueryAndHash;
   }
-  if (/^\/overlay\/[A-Za-z0-9._-]+$/.test(withoutQueryAndHash)) {
+  if (/^\/overlay\/[A-Za-z0-9_-]{1,64}$/.test(withoutQueryAndHash)) {
     return withoutQueryAndHash;
   }
   try {
@@ -1020,7 +1063,7 @@ export function sanitizeIntegrationUrl(rawUrl: string): string {
     if (withoutQueryAndHash.startsWith("/")) {
       return `${sanitizePathname(withoutQueryAndHash)}${sanitizeSearch(withoutHash.slice(withoutQueryAndHash.length))}`;
     }
-    return scrubSecretStrings(withoutHash);
+    return "[REDACTED]";
   }
 }
 
@@ -1030,15 +1073,35 @@ export function sanitizeIntegrationLogEntry(entry: IntegrationLogRecord): Integr
     url: sanitizeIntegrationUrl(entry.url),
     requestHeaders: redactHttpHeaders(entry.requestHeaders),
     responseHeaders: redactHttpHeaders(entry.responseHeaders),
-    rawRequestBody: entry.rawRequestBody === null ? null : scrubSecretStrings(entry.rawRequestBody),
-    rawResponseBody: entry.rawResponseBody === null ? null : scrubSecretStrings(entry.rawResponseBody),
+    rawRequestBody: sanitizeDiagnosticBody(entry.rawRequestBody),
+    rawResponseBody: sanitizeDiagnosticBody(entry.rawResponseBody),
   };
 }
 
 export function redactHttpHeaders(headers: Readonly<Record<string, string>>): Record<string, string> {
   const sanitized: Record<string, string> = {};
-  for (const [key, val] of Object.entries(headers)) {
-    sanitized[key] = SENSITIVE_HTTP_HEADERS.has(key.toLowerCase()) ? "[REDACTED]" : scrubSecretStrings(val);
+  for (const [key, rawVal] of Object.entries(headers)) {
+    const lowerKey = key.toLowerCase();
+    if (SENSITIVE_HTTP_HEADERS.has(lowerKey)) {
+      sanitized[lowerKey] = "[REDACTED]";
+      continue;
+    }
+    const val = rawVal.trim();
+    if (
+      lowerKey === "accept" &&
+      val.length <= 64 &&
+      /^[a-z*][a-z0-9!#$&^_.+-]*\/[a-z*][a-z0-9!#$&^_.+-]*(?:\s*;\s*charset=[a-z0-9-]+)?$/i.test(val)
+    ) {
+      sanitized.accept = val;
+    } else if (
+      lowerKey === "content-type" &&
+      val.length <= 64 &&
+      /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+(?:\s*;\s*charset=[a-z0-9-]+)?$/i.test(val)
+    ) {
+      sanitized["content-type"] = val;
+    } else if (lowerKey === "x-voxward-action" && ALLOWED_ADAPTER_ACTIONS.has(val)) {
+      sanitized["x-voxward-action"] = val;
+    }
   }
   return sanitized;
 }

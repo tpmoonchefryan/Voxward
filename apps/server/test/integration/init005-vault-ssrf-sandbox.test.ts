@@ -180,8 +180,7 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
     expect((listRes.json() as { adapters: Array<{ config: { apiKey: string } }> }).adapters[0]?.config.apiKey).toBe("••••••");
   });
 
-  it("STORY-057: sanitizes custom URL path segments, query values, and legacy/new integration logs onto safe diagnostic fields", async () => {
-    // Direct legacy row with embedded credentials in userinfo, CUSTOM URL PATH SEGMENT, arbitrary query param, and fragment
+  it("STORY-057: retains only allowlisted diagnostic fields and validated values across legacy migration, new writes, and API reads", async () => {
     runShortTransaction(db, (tx) => {
       tx.insert(deploymentSettings)
         .values({
@@ -194,13 +193,42 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
               adapterName: "Custom Gateway",
               providerKind: "AI_PROVIDER",
               method: "GET",
-              url: "https://user:topsecret@api.example.test/tenant-path-secret-9988/v1/models?key=AIzaSyDummySecretValue1234567890&customParam=PathQuerySecretVal#access_token=ya29.supersecretvalue12345",
+              url: "https://user:topsecret@api.example.test/tenant-path-secret-9988/v3/liveBroadcasts?part=id,status&mine=true&key=AIzaSyDummySecretValue1234567890&secretQueryName=PathQuerySecretVal#access_token=ya29.supersecretvalue12345",
               statusCode: 200,
               latencyMs: 12,
-              requestHeaders: { authorization: "Bearer raw", "x-note": "Bearer sk-abc123456789012" },
-              responseHeaders: {},
+              requestHeaders: {
+                authorization: "Bearer raw",
+                "x-note": "Bearer sk-abc123456789012",
+                "x-voxward-action": "evil-custom-action",
+                accept: "application/json",
+              },
+              responseHeaders: {
+                "content-type": "application/json; charset=utf-8",
+                "x-debug-token": "leaked-header-val",
+              },
               rawRequestBody: "url=https://a:b@host.test/secret-hook-seg/cb?token=secret123",
-              rawResponseBody: "token=sk-live9876543210987654",
+              rawResponseBody: JSON.stringify({
+                ok: true,
+                modelCount: 3,
+                secretField: "sk-live9876543210987654",
+                error: "unsafe lowercase error",
+              }),
+              occurredAt: T0,
+            },
+            {
+              id: "legacy-log-2",
+              correlationId: "corr-legacy-2",
+              adapterId: "adp-2",
+              adapterName: "YouTube Bad Params",
+              providerKind: "LIVE_PLATFORM",
+              method: "GET",
+              url: "https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,arbitrary_token&mine=maybe&tokenParam=secret",
+              statusCode: 200,
+              latencyMs: 9,
+              requestHeaders: { "x-voxward-action": "fetch-models" },
+              responseHeaders: {},
+              rawRequestBody: null,
+              rawResponseBody: "raw-unstructured-upstream-body-with-secret",
               occurredAt: T0,
             },
           ]),
@@ -210,16 +238,30 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
     });
 
     const readSanitized = readIntegrationLogs(db, CH1);
-    expect(readSanitized).toHaveLength(1);
-    expect(readSanitized[0]?.url).toBe("https://api.example.test/[REDACTED]/v1/models?key=[REDACTED]&customParam=[REDACTED]");
+    expect(readSanitized).toHaveLength(2);
+    expect(readSanitized[0]?.url).toBe(
+      "https://api.example.test/[REDACTED]/v3/liveBroadcasts?part=id,status&mine=true",
+    );
+    expect(readSanitized[0]?.url).not.toContain("secretQueryName");
+    expect(readSanitized[0]?.url).not.toContain("key=");
     expect(readSanitized[0]?.url).not.toContain("topsecret");
     expect(readSanitized[0]?.url).not.toContain("tenant-path-secret-9988");
-    expect(readSanitized[0]?.url).not.toContain("PathQuerySecretVal");
-    expect(readSanitized[0]?.url).not.toContain("AIzaSyDummySecretValue");
-    expect(readSanitized[0]?.url).not.toContain("ya29.supersecretvalue");
-    expect(readSanitized[0]?.rawRequestBody).not.toContain("secret-hook-seg");
-    expect(readSanitized[0]?.rawRequestBody).not.toContain("secret123");
-    expect(readSanitized[0]?.rawResponseBody).not.toContain("sk-live9876543210987654");
+    expect(readSanitized[0]?.requestHeaders).toEqual({
+      authorization: "[REDACTED]",
+      accept: "application/json",
+    });
+    expect(readSanitized[0]?.responseHeaders).toEqual({
+      "content-type": "application/json; charset=utf-8",
+    });
+    expect(readSanitized[0]?.rawRequestBody).toBeNull();
+    expect(readSanitized[0]?.rawResponseBody).toBe(JSON.stringify({ ok: true, modelCount: 3 }));
+
+    expect(readSanitized[1]?.url).toBe("https://www.googleapis.com/youtube/v3/liveBroadcasts");
+    expect(readSanitized[1]?.url).not.toContain("arbitrary_token");
+    expect(readSanitized[1]?.url).not.toContain("mine=");
+    expect(readSanitized[1]?.url).not.toContain("tokenParam");
+    expect(readSanitized[1]?.requestHeaders).toEqual({ "x-voxward-action": "fetch-models" });
+    expect(readSanitized[1]?.rawResponseBody).toBeNull();
 
     // Booting app migrates legacy integration logs in deployment_settings on disk and scrubs new adapter actions
     app = buildApp({
@@ -229,6 +271,12 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
       vaultKey: deriveVaultKey("test-vault-seed-init005-57"),
       adapterActionFetch: async (input) => {
         const u = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (u.includes("googleapis.com/youtube/v3/liveBroadcasts")) {
+          return new Response(
+            JSON.stringify({ items: [{ id: "bc-1" }], upstreamSecretNote: "AIzaSyLeakedFromYoutube" }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
         return new Response(`Upstream error for ${u}`, { status: 401 });
       },
     });
@@ -236,7 +284,12 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
 
     const migratedRow = db.orm.select().from(deploymentSettings).all().find((r) => r.key === `channel:${CH1}:integration-logs`);
     expect(migratedRow?.valueJson).not.toContain("tenant-path-secret-9988");
+    expect(migratedRow?.valueJson).not.toContain("secretQueryName");
     expect(migratedRow?.valueJson).not.toContain("PathQuerySecretVal");
+    expect(migratedRow?.valueJson).not.toContain("arbitrary_token");
+    expect(migratedRow?.valueJson).not.toContain("tokenParam");
+    expect(migratedRow?.valueJson).not.toContain("x-note");
+    expect(migratedRow?.valueJson).not.toContain("raw-unstructured-upstream-body-with-secret");
 
     const owner = await signIn("owner57", "Owner 57");
     runShortTransaction(db, (tx) => {
@@ -264,17 +317,55 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
       headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
     });
 
+    const ytRes = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/adapters`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: {
+        category: "LIVE_PLATFORM",
+        driverId: "youtube-live-v3",
+        displayName: "YouTube Channel",
+        enabled: true,
+        config: { refreshToken: "1//yt-refresh-token" },
+      },
+    });
+    expect(ytRes.statusCode).toBe(201);
+    const ytId = (ytRes.json() as { adapter: { id: string } }).adapter.id;
+
+    await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/adapters/${ytId}/actions/test-connection`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+    });
+
     const logsRes = await app.inject({
       method: "GET",
       url: `/internal/channels/${CH1}/logs/integration`,
       headers: { cookie: owner.cookie },
     });
     expect(logsRes.statusCode).toBe(200);
-    const items = (logsRes.json() as { items: Array<{ id: string; url: string; statusCode: number; correlationId: string; rawResponseBody: string | null }> }).items;
-    expect(items[0]?.url).toBe("https://gateway.example.test/[REDACTED]/v1/models");
-    expect(items[0]?.statusCode).toBe(401);
-    expect(items[0]?.correlationId).toBeTruthy();
+    const items = (
+      logsRes.json() as {
+        items: Array<{
+          id: string;
+          adapterId: string;
+          url: string;
+          statusCode: number;
+          correlationId: string;
+          rawResponseBody: string | null;
+        }>;
+      }
+    ).items;
+    const ytItem = items.find((item) => item.adapterId === ytId);
+    const aiItem = items.find((item) => item.adapterId === adpId);
+    expect(ytItem?.url).toBe("https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,status&mine=true");
+    expect(ytItem?.rawResponseBody).toBe(JSON.stringify({ ok: true, statusCode: 200, broadcastCount: 1 }));
+    expect(aiItem?.url).toBe("https://gateway.example.test/[REDACTED]/v1/models");
+    expect(aiItem?.statusCode).toBe(401);
+    expect(aiItem?.correlationId).toBeTruthy();
     expect(JSON.stringify(items)).not.toContain("custom-secret-route-777");
+    expect(JSON.stringify(items)).not.toContain("AIzaSyLeakedFromYoutube");
+    expect(JSON.stringify(items)).not.toContain("upstreamSecretNote");
   });
 
   it("STORY-058: blocks symlinked/traversal DB paths and expanded production credentials in sandbox startup", () => {
