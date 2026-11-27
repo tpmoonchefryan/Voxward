@@ -1,11 +1,14 @@
-FROM node:24-bookworm-slim AS base
+FROM node:24-bookworm-slim@sha256:873f586f3794f52281bd039bf02c048a0be08fde619338f9941bad1eb6b34530 AS base
 
 ARG PNPM_VERSION=12.18.0
+ARG PNPM_TARBALL_SHA256=29d1d7d99bf6ec6d0a3dbb0ec5656f0d16e997e8be676ca45c581d11cb71f753
 WORKDIR /app
 
 FROM base AS builder
 
-RUN npm install -g "pnpm@${PNPM_VERSION}"
+RUN node -e 'const fs=require("node:fs"),crypto=require("node:crypto");(async()=>{const res=await fetch("https://registry.npmjs.org/pnpm/-/pnpm-"+process.env.PNPM_VERSION+".tgz");if(!res.ok)process.exit(1);const buf=Buffer.from(await res.arrayBuffer());const hex=crypto.createHash("sha256").update(buf).digest("hex");if(hex!==process.env.PNPM_TARBALL_SHA256){console.error("pnpm sha256 mismatch:",hex);process.exit(1)}fs.writeFileSync("pnpm.tgz",buf)})()' \
+  && npm install -g ./pnpm.tgz \
+  && rm -f ./pnpm.tgz
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/server/package.json apps/server/package.json
@@ -21,7 +24,9 @@ RUN pnpm build
 
 FROM base AS prod-deps
 
-RUN npm install -g "pnpm@${PNPM_VERSION}"
+RUN node -e 'const fs=require("node:fs"),crypto=require("node:crypto");(async()=>{const res=await fetch("https://registry.npmjs.org/pnpm/-/pnpm-"+process.env.PNPM_VERSION+".tgz");if(!res.ok)process.exit(1);const buf=Buffer.from(await res.arrayBuffer());const hex=crypto.createHash("sha256").update(buf).digest("hex");if(hex!==process.env.PNPM_TARBALL_SHA256){console.error("pnpm sha256 mismatch:",hex);process.exit(1)}fs.writeFileSync("pnpm.tgz",buf)})()' \
+  && npm install -g ./pnpm.tgz \
+  && rm -f ./pnpm.tgz
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/server/package.json apps/server/package.json
@@ -31,7 +36,7 @@ COPY vendor/tcrn-ds/4.2.0 vendor/tcrn-ds/4.2.0
 
 RUN pnpm install --frozen-lockfile --prod --filter @voxward/server...
 
-FROM node:24-bookworm-slim AS runtime
+FROM node:24-bookworm-slim@sha256:873f586f3794f52281bd039bf02c048a0be08fde619338f9941bad1eb6b34530 AS runtime
 
 ENV NODE_ENV=production
 WORKDIR /app

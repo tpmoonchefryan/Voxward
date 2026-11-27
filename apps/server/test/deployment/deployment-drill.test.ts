@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../../src/app.js";
@@ -290,5 +291,93 @@ describe("VOXWARD-SUB-053 non-real deployment drill", () => {
     const runtimeEnvPath = fileURLToPath(new URL("../../../../deploy/kiro-runtime/runtime.env.example", import.meta.url));
     const runtimeEnv = readFileSync(runtimeEnvPath, "utf8");
     expect(runtimeEnv).toContain("KIRO_API_KEY=\n");
+  });
+
+  it("VOXWARD-STORY-066: enforces immutable digest/SHA pinning and rejects unpinned or mismatched supply-chain inputs", () => {
+    const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
+    const checkScript = join(repoRoot, "scripts/deploy-check.mjs");
+
+    // Helper creates a minimal fixture copy containing built artifacts + supply-chain files
+    const createSupplyChainFixture = (name: string): string => {
+      const fixtureRoot = join(directory, name);
+      const copyPaths = [
+        "Dockerfile",
+        ".dockerignore",
+        ".github/workflows/ci.yml",
+        "deploy/provenance.json",
+        "deploy/k3s",
+        "deploy/server",
+        "deploy/kiro-runtime",
+        "apps/server/dist",
+        "apps/server/src/db/migrations/meta/_journal.json",
+        "apps/web/dist",
+      ];
+      for (const rel of copyPaths) {
+        const src = join(repoRoot, rel);
+        const dst = join(fixtureRoot, rel);
+        mkdirSync(dirname(dst), { recursive: true });
+        cpSync(src, dst, { recursive: true });
+      }
+      return fixtureRoot;
+    };
+
+    const runCheckJson = (rootDir: string) => {
+      try {
+        const stdout = execFileSync(
+          process.execPath,
+          [checkScript, "--root", rootDir, "--json", "--env-file", "deploy/server/server.env.example"],
+          { encoding: "utf8" },
+        );
+        return { exitCode: 0, report: JSON.parse(stdout) as { ok: boolean; checks: Array<{ name: string; ok: boolean }> } };
+      } catch (err) {
+        const stdout = String((err as { stdout?: unknown }).stdout ?? "{}");
+        return { exitCode: 1, report: JSON.parse(stdout) as { ok: boolean; checks: Array<{ name: string; ok: boolean }> } };
+      }
+    };
+
+    // Valid repo passes supply-chain checks
+    const validFixture = createSupplyChainFixture("valid-supply-chain");
+    const validOut = runCheckJson(validFixture);
+    expect(validOut.exitCode).toBe(0);
+    expect(validOut.report.ok).toBe(true);
+
+    // Negative 1: unpinned Dockerfile base image tag
+    const badDocker = createSupplyChainFixture("bad-docker");
+    writeFileSync(
+      join(badDocker, "Dockerfile"),
+      readFileSync(join(badDocker, "Dockerfile"), "utf8").replace(
+        /node:24-bookworm-slim@sha256:[0-9a-f]{64}/g,
+        "node:24-bookworm-slim",
+      ),
+    );
+    const badDockerOut = runCheckJson(badDocker);
+    expect(badDockerOut.exitCode).toBe(1);
+    expect(badDockerOut.report.checks.find((c) => c.name === "supply-chain:dockerfile-base-digest")?.ok).toBe(false);
+
+    // Negative 2: mutable GitHub Action tag in ci.yml
+    const badCi = createSupplyChainFixture("bad-ci");
+    writeFileSync(
+      join(badCi, ".github/workflows/ci.yml"),
+      readFileSync(join(badCi, ".github/workflows/ci.yml"), "utf8").replace(
+        /actions\/checkout@[0-9a-f]{40}/,
+        "actions/checkout@v4",
+      ),
+    );
+    const badCiOut = runCheckJson(badCi);
+    expect(badCiOut.exitCode).toBe(1);
+    expect(badCiOut.report.checks.find((c) => c.name === "supply-chain:ci-actions-sha")?.ok).toBe(false);
+
+    // Negative 3: unpinned floating k3s manifest image tag & provenance mismatch
+    const badK3s = createSupplyChainFixture("bad-k3s");
+    writeFileSync(
+      join(badK3s, "deploy/k3s/production/deployment.yaml"),
+      readFileSync(join(badK3s, "deploy/k3s/production/deployment.yaml"), "utf8").replace(
+        /image:\s*[^\s]+/,
+        "image: ghcr.io/tpmoonchefryan/voxward:latest",
+      ),
+    );
+    const badK3sOut = runCheckJson(badK3s);
+    expect(badK3sOut.exitCode).toBe(1);
+    expect(badK3sOut.report.checks.find((c) => c.name === "supply-chain:k3s:deploy/k3s/production/deployment.yaml")?.ok).toBe(false);
   });
 });

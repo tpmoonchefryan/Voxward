@@ -12,27 +12,30 @@ VoxWard provides two separate k3s deployment overlays backed by a single multi-s
 
 ---
 
-## 1. Build and Import the Container Image
+## 1. Build, Digest Verification, and Import of the Container Image
 
-The `Dockerfile` uses `node:24-bookworm-slim` (`better-sqlite3@13.0.3` bundles N-API prebuilds for both `linux-x64` and `linux-arm64`) and runs as non-root UID/GID `10001`.
+The `Dockerfile` pins `node:24-bookworm-slim@sha256:873f586f3794f52281bd039bf02c048a0be08fde619338f9941bad1eb6b34530`, verifies the `pnpm@12.18.0` tarball SHA-256 checksum (`29d1d7d99bf6ec6d0a3dbb0ec5656f0d16e997e8be676ca45c581d11cb71f753`) before installing build tools (`better-sqlite3` bundles N-API prebuilds for `linux-x64` and `linux-arm64`), and runs as non-root UID/GID `10001`.
 
-### Option A: Local build + `k3s ctr images import` (single-node / air-gapped)
-
-```bash
-docker build -t voxward:local .
-docker save voxward:local | sudo k3s ctr images import -
-```
-
-Update `image:` in the target `deployment.yaml` (and `production/bootstrap-owner-job.yaml` for production) to `voxward:local`, keeping `imagePullPolicy: IfNotPresent`.
-
-### Option B: Push to GHCR (or private registry)
+### Option A: Local build + offline digest verification + `k3s ctr images import` (single-node / air-gapped)
 
 ```bash
-docker build -t ghcr.io/<org>/voxward:<tag> .
-docker push ghcr.io/<org>/voxward:<tag>
+docker build -t ghcr.io/tpmoonchefryan/voxward:local .
+docker save ghcr.io/tpmoonchefryan/voxward:local | sudo k3s ctr images import -
+DIGEST=$(sudo k3s ctr images ls -q | grep voxward || true)
+sudo k3s ctr images info ghcr.io/tpmoonchefryan/voxward:local
 ```
 
-The default image reference in the manifests is `ghcr.io/tpmoonchefryan/voxward:rc0.1.0`.
+Inspect the imported OCI manifest digest (`sha256:...`), then update `appImage.digest` in `deploy/provenance.json` and replace `image: ghcr.io/tpmoonchefryan/voxward@sha256:<64-hex>` in [production/deployment.yaml](production/deployment.yaml), [production/bootstrap-owner-job.yaml](production/bootstrap-owner-job.yaml), and [sandbox/deployment.yaml](sandbox/deployment.yaml). Keep `imagePullPolicy: IfNotPresent` and re-run `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example` before applying.
+
+### Option B: Push to GHCR (or private registry) and pin immutable `@sha256:` digest
+
+```bash
+docker buildx build --push --provenance=mode=max -t ghcr.io/<org>/voxward:<tag> .
+# Read the exact pushed manifest digest and record it in deploy/provenance.json + k3s manifests:
+docker buildx imagetools inspect ghcr.io/<org>/voxward:<tag>
+```
+
+The repository manifests pin immutable `@sha256:...` digest references matching `deploy/provenance.json` (`imageDigestStatus: candidate-placeholder-until-oci-build` until your registry build updates the candidate digest). Floating `:latest` or mutable tag-only references are rejected by `scripts/deploy-check.mjs`.
 
 ---
 
