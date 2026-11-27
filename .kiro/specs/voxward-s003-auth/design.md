@@ -87,7 +87,8 @@ No design authority is configured for the resolved work context. No authority wa
 
 | 来源分区 | 允许的目标（新增部分加粗） |
 | --- | --- |
-| `auth`（`apps/server/src/auth/`） | contracts、auth、db、external、builtin |
+| `auth`（`apps/server/src/auth/`） | contracts、auth、db、**security**、external、builtin |
+| `adapter`（`apps/server/src/adapters/`） | contracts、adapter、**security**、external、builtin |
 | `security`（`apps/server/src/security/`） | contracts、security、builtin |
 | `composition`（`app.ts`、`main.ts`、`config/`、`modules/registry.ts`） | 原有目标，并加 **auth、security** |
 

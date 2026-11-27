@@ -51,11 +51,17 @@ import { applyManagedWordlistToRuleSet, toDbMatchKind } from "../db/wordlist-rul
 import type { VoxwardDatabase } from "../db/client.js";
 import { authAccounts } from "../db/schema/index.js";
 import { runShortTransaction } from "../db/transaction.js";
+import fastifyRateLimit from "@fastify/rate-limit";
 import { authenticateRequest } from "./guard.js";
-import { listActiveMembers, listActiveMembershipsOf, type Membership } from "./members.js";
-import { capabilitiesOfMembership, resolveEffectivePermissions, type Capability } from "./permissions.js";
-import { resolveChannelAccess } from "./rbac-enforce.js";
-import { revokeAccountSessions } from "./session.js";
+import { findActiveMembership, listActiveMembers, listActiveMembershipsOf, type Membership } from "./members.js";
+import { CAPABILITIES, resolveEffectivePermissions, type Capability, type RbacRoleDefinition } from "./permissions.js";
+import {
+  buildRouteRateLimitConfig,
+  DEFAULT_HTTP_RATE_LIMITS,
+  ROUTE_RATE_LIMIT_PLUGIN_OPTIONS,
+  type HttpRateLimitSettings,
+} from "./rate-limit.js";
+import { defaultRoleIdsForMembership, resolveChannelAccess } from "./rbac-enforce.js";
 import { parseTermCsv } from "./term-csv.js";
 
 export interface ChannelPanelDecisionHandlers {
@@ -168,6 +174,45 @@ export interface ChannelPanelRoutesOptions {
   readonly rules: ChannelPanelRuleValidator;
   readonly secrets?: ChannelPanelSecretsPort;
   readonly adapterActions?: ChannelPanelAdapterActionsPort;
+  readonly httpRateLimits?: HttpRateLimitSettings;
+}
+
+const RESERVED_PRESET_ROLE_IDS = new Set([
+  "role-owner",
+  "role-moderator",
+  "role-data-admin",
+  "role-auditor",
+]);
+const VALID_CAPABILITY_SET = new Set<string>(CAPABILITIES);
+
+function validateRolePermissions(permissions: Readonly<Record<string, "GRANT" | "DENY" | "NOT_SET">>): void {
+  for (const key of Object.keys(permissions)) {
+    if (!VALID_CAPABILITY_SET.has(key)) {
+      throw new PanelRouteFailure(400, "INVALID_REQUEST");
+    }
+  }
+}
+
+function effectiveAllowCapabilities(roles: readonly RbacRoleDefinition[]): Set<Capability> {
+  const effective = resolveEffectivePermissions(roles);
+  const allowed = new Set<Capability>();
+  for (const entry of effective) {
+    if (entry.effect === "ALLOW") {
+      allowed.add(entry.capability);
+    }
+  }
+  return allowed;
+}
+
+function assertCapabilitiesWithinActor(
+  actorCapabilities: ReadonlySet<string>,
+  targetCapabilities: Iterable<Capability>,
+): void {
+  for (const cap of targetCapabilities) {
+    if (!actorCapabilities.has(cap)) {
+      throw new PanelRouteFailure(403, "PRIVILEGE_ESCALATION_DENIED");
+    }
+  }
 }
 
 class PanelRouteFailure extends Error {
@@ -455,6 +500,13 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
   options,
 ) => {
   const { database, decisions, candidates, models, rules, secrets, adapterActions } = options;
+  const channelsListRateConfig = buildRouteRateLimitConfig(
+    options.httpRateLimits?.channelsListMax ?? DEFAULT_HTTP_RATE_LIMITS.channelsListMax,
+    options.httpRateLimits?.windowMs ?? DEFAULT_HTTP_RATE_LIMITS.windowMs,
+    "RATE_LIMITED",
+  );
+
+  await app.register(fastifyRateLimit, ROUTE_RATE_LIMIT_PLUGIN_OPTIONS);
 
   function saveTerms(
     channelId: string,
@@ -487,6 +539,13 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       return reply.code(error.status).header("cache-control", "no-store").send({ error: error.code });
     }
     const statusCode = (error as { statusCode?: unknown }).statusCode;
+    if (statusCode === 429) {
+      const code = (error as { error?: unknown }).error;
+      return reply
+        .code(429)
+        .header("cache-control", "no-store")
+        .send({ error: typeof code === "string" ? code : "RATE_LIMITED" });
+    }
     if (typeof statusCode === "number" && statusCode >= 400 && statusCode <= 499) {
       return reply.code(statusCode).header("cache-control", "no-store").send({ error: "INVALID_REQUEST" });
     }
@@ -494,23 +553,34 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     return reply.code(500).header("cache-control", "no-store").send({ error: "INTERNAL_ERROR" });
   });
 
-  app.get("/auth/channels", async (request, reply) => {
-    const { accountId } = authenticateAccount(database, request);
-    const memberships = listActiveMembershipsOf(database, accountId);
-    const items = memberships.map((m) => {
-      const ctx = readChannelContext(database, m.channelId);
-      return {
-        channelId: m.channelId,
-        displayName: ctx?.displayName ?? m.channelId,
-        platform: ctx?.platform ?? "unknown",
-        role: m.role,
-        logAccess: m.logAccess,
-        dataAdmin: m.dataAdmin,
-        capabilities: capabilitiesOfMembership(m),
-      };
-    });
-    return send(reply, 200, { channels: items });
-  });
+  app.get(
+    "/auth/channels",
+    {
+      onRequest: app.rateLimit(channelsListRateConfig),
+      config: { rateLimit: channelsListRateConfig },
+    },
+    async (request, reply) => {
+      const { accountId } = authenticateAccount(database, request);
+      const memberships = listActiveMembershipsOf(database, accountId);
+      const items = memberships.flatMap((m) => {
+        const access = resolveChannelAccess(database, m.channelId, accountId);
+        if (access === null) return [];
+        const ctx = readChannelContext(database, m.channelId);
+        return [
+          {
+            channelId: m.channelId,
+            displayName: ctx?.displayName ?? m.channelId,
+            platform: ctx?.platform ?? "unknown",
+            role: m.role,
+            logAccess: m.logAccess,
+            dataAdmin: m.dataAdmin,
+            capabilities: [...access.capabilities],
+          },
+        ];
+      });
+      return send(reply, 200, { channels: items });
+    },
+  );
 
   app.get<{ Params: { channelId: string } }>("/channels/:channelId/context", async (request, reply) => {
     const { channelId } = request.params;
@@ -1257,11 +1327,20 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     "/channels/:channelId/rbac/roles",
     async (request, reply) => {
       const { channelId } = request.params;
-      requireChannelMember(database, request, channelId, ["members.manage"]);
+      const actor = requireChannelMember(database, request, channelId, ["members.manage"]);
       const parsed = RBAC_ROLE_BODY.safeParse(request.body);
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
-      const roles = readRbacRoles(database, channelId);
+      validateRolePermissions(parsed.data.permissions);
       const id = parsed.data.id ?? `role-${randomUUID().slice(0, 8)}`;
+      if (RESERVED_PRESET_ROLE_IDS.has(id)) {
+        throw new PanelRouteFailure(403, "PRESET_ROLE_IMMUTABLE");
+      }
+      if (actor.membership.role !== "CHANNEL_OWNER") {
+        assertCapabilitiesWithinActor(actor.capabilities, effectiveAllowCapabilities([
+          { id, name: parsed.data.name, permissions: parsed.data.permissions },
+        ]));
+      }
+      const roles = readRbacRoles(database, channelId);
       if (roles.some((r) => r.id === id)) throw new PanelRouteFailure(409, "ROLE_EXISTS");
       const created: StoredRbacRole = {
         id,
@@ -1279,18 +1358,34 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     "/channels/:channelId/rbac/roles/:roleId",
     async (request, reply) => {
       const { channelId, roleId } = request.params;
-      requireChannelMember(database, request, channelId, ["members.manage"]);
+      const actor = requireChannelMember(database, request, channelId, ["members.manage"]);
       const parsed = RBAC_ROLE_BODY.safeParse(request.body);
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      validateRolePermissions(parsed.data.permissions);
       const roles = readRbacRoles(database, channelId);
       const existing = roles.find((r) => r.id === roleId);
       if (existing === undefined) throw new PanelRouteFailure(404, "ROLE_NOT_FOUND");
+      if (RESERVED_PRESET_ROLE_IDS.has(roleId) || existing.systemPreset || existing.builtIn === true) {
+        throw new PanelRouteFailure(403, "PRESET_ROLE_IMMUTABLE");
+      }
       const updated: StoredRbacRole = {
         ...existing,
         name: parsed.data.name,
         description: parsed.data.description ?? existing.description,
         permissions: parsed.data.permissions,
       };
+      if (actor.membership.role !== "CHANNEL_OWNER") {
+        assertCapabilitiesWithinActor(actor.capabilities, effectiveAllowCapabilities([updated]));
+        const users = hydrateRbacUsersFromChannel(database, channelId);
+        const actorRecord = users.find((u) => u.accountId === actor.accountId);
+        if (actorRecord?.roleIds.includes(roleId)) {
+          for (const [cap, prevState] of Object.entries(existing.permissions)) {
+            if (prevState === "DENY" && updated.permissions[cap] !== "DENY") {
+              throw new PanelRouteFailure(403, "PRIVILEGE_ESCALATION_DENIED");
+            }
+          }
+        }
+      }
       const next = writeRbacRoles(database, channelId, roles.map((r) => (r.id === roleId ? updated : r)));
       return send(reply, 200, { role: updated, roles: next });
     },
@@ -1300,32 +1395,49 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
     "/channels/:channelId/rbac/roles/:roleId",
     async (request, reply) => {
       const { channelId, roleId } = request.params;
-      requireChannelMember(database, request, channelId, ["members.manage"]);
+      const actor = requireChannelMember(database, request, channelId, ["members.manage"]);
       const roles = readRbacRoles(database, channelId);
       const existing = roles.find((r) => r.id === roleId);
       if (existing === undefined) throw new PanelRouteFailure(404, "ROLE_NOT_FOUND");
-      if (existing.systemPreset) throw new PanelRouteFailure(400, "CANNOT_DELETE_PRESET_ROLE");
+      if (RESERVED_PRESET_ROLE_IDS.has(roleId) || existing.systemPreset || existing.builtIn === true) {
+        throw new PanelRouteFailure(400, "CANNOT_DELETE_PRESET_ROLE");
+      }
+      const users = hydrateRbacUsersFromChannel(database, channelId);
+      if (actor.membership.role !== "CHANNEL_OWNER") {
+        const prevMap = new Map(roles.map((r) => [r.id, r]));
+        const nextRoles = roles.filter((r) => r.id !== roleId);
+        const nextMap = new Map(nextRoles.map((r) => [r.id, r]));
+        for (const u of users) {
+          if (!u.roleIds.includes(roleId)) continue;
+          const beforeCaps = effectiveAllowCapabilities(
+            u.roleIds.map((id) => prevMap.get(id)).filter((r): r is StoredRbacRole => r !== undefined),
+          );
+          const afterCaps = effectiveAllowCapabilities(
+            u.roleIds.filter((id) => id !== roleId).map((id) => nextMap.get(id)).filter((r): r is StoredRbacRole => r !== undefined),
+          );
+          if (u.accountId === actor.accountId) {
+            for (const cap of afterCaps) {
+              if (!beforeCaps.has(cap)) {
+                throw new PanelRouteFailure(403, "PRIVILEGE_ESCALATION_DENIED");
+              }
+            }
+          } else {
+            assertCapabilitiesWithinActor(actor.capabilities, afterCaps);
+          }
+        }
+      }
       writeRbacRoles(database, channelId, roles.filter((r) => r.id !== roleId));
-      const users = readRbacUsers(database, channelId);
-      writeRbacUsers(
-        database,
-        channelId,
-        users.map((u) => ({ ...u, roleIds: u.roleIds.filter((id) => id !== roleId) })),
-      );
+      const storedUsers = readRbacUsers(database, channelId);
+      if (storedUsers.length > 0) {
+        writeRbacUsers(
+          database,
+          channelId,
+          storedUsers.map((u) => ({ ...u, roleIds: u.roleIds.filter((id) => id !== roleId) })),
+        );
+      }
       return reply.code(204).send();
     },
   );
-
-function defaultRolesForMembership(member: Membership): string[] {
-  const roleIds: string[] = [];
-  if (member.role === "CHANNEL_OWNER") roleIds.push("role-owner");
-  else if (member.role === "MODERATOR") roleIds.push("role-moderator");
-  else roleIds.push("role-data-admin");
-  if (member.logAccess && member.role !== "CHANNEL_OWNER") {
-    roleIds.push("role-auditor");
-  }
-  return roleIds;
-}
 
 function hydrateRbacUsersFromChannel(database: VoxwardDatabase, channelId: string): StoredRbacUser[] {
   const stored = readChannelSetting<StoredRbacUser[] | null>(database, channelId, "rbac-users", null);
@@ -1350,7 +1462,7 @@ function hydrateRbacUsersFromChannel(database: VoxwardDatabase, channelId: strin
       displayName: account?.displayName ?? member.accountId,
       loginName: account?.loginName ?? member.accountId,
       enabled: account?.disabledAt === null || account?.disabledAt === undefined,
-      roleIds: defaultRolesForMembership(member),
+      roleIds: defaultRoleIdsForMembership(member),
       updatedAt: member.grantedAt,
     };
   });
@@ -1375,9 +1487,44 @@ function hydrateRbacUsersFromChannel(database: VoxwardDatabase, channelId: strin
     "/channels/:channelId/rbac/users",
     async (request, reply) => {
       const { channelId } = request.params;
-      requireChannelMember(database, request, channelId, ["members.manage"]);
+      const actor = requireChannelMember(database, request, channelId, ["members.manage"]);
       const parsed = RBAC_USER_BODY.safeParse(request.body);
       if (!parsed.success) throw new PanelRouteFailure(400, "INVALID_REQUEST");
+      const targetMember = findActiveMembership(database, channelId, parsed.data.accountId);
+      if (targetMember === undefined) {
+        throw new PanelRouteFailure(404, "MEMBERSHIP_NOT_FOUND");
+      }
+      const roles = readRbacRoles(database, channelId);
+      const roleMap = new Map(roles.map((r) => [r.id, r]));
+      const assigned: StoredRbacRole[] = [];
+      for (const id of parsed.data.roleIds) {
+        const role = roleMap.get(id);
+        if (role === undefined) {
+          throw new PanelRouteFailure(400, "INVALID_REQUEST");
+        }
+        assigned.push(role);
+      }
+      const targetCaps = effectiveAllowCapabilities(assigned);
+      if (actor.membership.role !== "CHANNEL_OWNER") {
+        if (targetMember.role === "CHANNEL_OWNER" || parsed.data.roleIds.includes("role-owner")) {
+          throw new PanelRouteFailure(403, "FORBIDDEN");
+        }
+        if (parsed.data.accountId === actor.accountId) {
+          throw new PanelRouteFailure(403, "PRIVILEGE_ESCALATION_DENIED");
+        }
+        assertCapabilitiesWithinActor(actor.capabilities, targetCaps);
+      }
+      if (targetMember.role === "CHANNEL_OWNER" && (!parsed.data.enabled || !targetCaps.has("members.manage"))) {
+        const hasOtherActiveOwner = listActiveMembers(database, channelId).some(
+          (m) =>
+            m.accountId !== parsed.data.accountId &&
+            m.role === "CHANNEL_OWNER" &&
+            resolveChannelAccess(database, channelId, m.accountId)?.capabilities.has("members.manage") === true,
+        );
+        if (!hasOtherActiveOwner) {
+          throw new PanelRouteFailure(409, "LAST_OWNER_REQUIRED");
+        }
+      }
       const users = hydrateRbacUsersFromChannel(database, channelId).filter(
         (u) => u.accountId !== parsed.data.accountId,
       );
@@ -1391,12 +1538,6 @@ function hydrateRbacUsersFromChannel(database: VoxwardDatabase, channelId: strin
         updatedAt: now.toISOString(),
       };
       const next = writeRbacUsers(database, channelId, [...users, record], now);
-      if (!record.enabled) {
-        runShortTransaction(database, (tx) => revokeAccountSessions(tx, record.accountId, now));
-      }
-      const roles = readRbacRoles(database, channelId);
-      const roleMap = new Map(roles.map((r) => [r.id, r]));
-      const assigned = record.roleIds.map((id) => roleMap.get(id)).filter((r): r is StoredRbacRole => r !== undefined);
       return send(reply, 201, {
         user: { ...record, effectivePermissions: resolveEffectivePermissions(assigned) },
         users: next,
@@ -1408,9 +1549,27 @@ function hydrateRbacUsersFromChannel(database: VoxwardDatabase, channelId: strin
     "/channels/:channelId/rbac/users/:accountId",
     async (request, reply) => {
       const { channelId, accountId } = request.params;
-      requireChannelMember(database, request, channelId, ["members.manage"]);
+      const actor = requireChannelMember(database, request, channelId, ["members.manage"]);
+      const targetMember = findActiveMembership(database, channelId, accountId);
+      if (targetMember === undefined) {
+        throw new PanelRouteFailure(404, "MEMBERSHIP_NOT_FOUND");
+      }
       const users = hydrateRbacUsersFromChannel(database, channelId);
       if (!users.some((u) => u.accountId === accountId)) throw new PanelRouteFailure(404, "USER_NOT_FOUND");
+      if (actor.membership.role !== "CHANNEL_OWNER") {
+        if (targetMember.role === "CHANNEL_OWNER") {
+          throw new PanelRouteFailure(403, "FORBIDDEN");
+        }
+        if (accountId === actor.accountId) {
+          throw new PanelRouteFailure(403, "PRIVILEGE_ESCALATION_DENIED");
+        }
+        const roles = readRbacRoles(database, channelId);
+        const roleMap = new Map(roles.map((r) => [r.id, r]));
+        const fallbackAssigned = defaultRoleIdsForMembership(targetMember)
+          .map((id) => roleMap.get(id))
+          .filter((r): r is StoredRbacRole => r !== undefined);
+        assertCapabilitiesWithinActor(actor.capabilities, effectiveAllowCapabilities(fallbackAssigned));
+      }
       writeRbacUsers(database, channelId, users.filter((u) => u.accountId !== accountId));
       return reply.code(204).send();
     },

@@ -276,7 +276,7 @@ describe("EPIC-014 (VW3-R-004..007): production wiring, vault sealing, RBAC enfo
     });
     expect(deniedLogs.statusCode).toBe(403);
 
-    // Disabling StoredRbacUser immediately revokes active auth_sessions (401 on next request)
+    // Disabling StoredRbacUser blocks CH immediately (403) without revoking global auth_sessions (VOXWARD-STORY-051)
     const disableRes = await app.inject({
       method: "POST",
       url: `/channels/${CH}/rbac/users`,
@@ -291,12 +291,20 @@ describe("EPIC-014 (VW3-R-004..007): production wiring, vault sealing, RBAC enfo
     });
     expect(disableRes.statusCode).toBe(201);
 
-    const revokedReq = await app.inject({
+    const blockedReq = await app.inject({
       method: "GET",
       url: `/channels/${CH}/dock`,
       headers: { cookie: mod.cookie },
     });
-    expect(revokedReq.statusCode).toBe(401);
+    expect(blockedReq.statusCode).toBe(403);
+
+    const stillAuthedChannels = await app.inject({
+      method: "GET",
+      url: "/auth/channels",
+      headers: { cookie: mod.cookie },
+    });
+    expect(stillAuthedChannels.statusCode).toBe(200);
+    expect((stillAuthedChannels.json() as { channels: unknown[] }).channels).toEqual([]);
 
     // includeOriginal=false masks originalText in reviewQueue and approvedSc
     runShortTransaction(db, (tx) => {

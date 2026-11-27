@@ -19,10 +19,10 @@ const DATABASE_PACKAGES = ["drizzle-orm", "better-sqlite3"];
 const ALLOWED_TARGETS = {
   contracts: ["contracts"],
   demo: ["contracts", "demo", "module", "adapter", "db", "auth", "security", "composition", "external", "builtin"],
-  adapter: ["contracts", "adapter", "external", "builtin"],
+  adapter: ["contracts", "adapter", "security", "external", "builtin"],
   composition: ["contracts", "demo", "module", "adapter", "composition", "db", "auth", "security", "external", "builtin"],
   db: ["contracts", "db", "builtin"],
-  auth: ["contracts", "auth", "db", "external", "builtin"],
+  auth: ["contracts", "auth", "db", "security", "external", "builtin"],
   security: ["contracts", "security", "builtin"],
   web: ["web", "contracts", "external"],
 };

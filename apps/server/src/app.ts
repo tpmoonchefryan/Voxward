@@ -19,6 +19,7 @@ import { dataLifecycleRoutes } from "./auth/data-routes.js";
 import { databaseViewerAccess } from "./auth/log-viewer-access.js";
 import { logViewerRoutes } from "./auth/log-viewer-routes.js";
 import { authRoutes } from "./auth/routes.js";
+import type { HttpRateLimitSettings } from "./auth/rate-limit.js";
 import { createAuditLogPort } from "./db/audit-log.js";
 import { createPersistentCandidateStore } from "./db/candidate-store.js";
 import {
@@ -116,6 +117,8 @@ export interface AppOptions {
   readonly kiroCommand?: string;
   /** Optional Kiro CLI runtime root for orphan cleanup action. */
   readonly kiroRuntimeRoot?: string;
+  /** Optional HTTP route rate-limit overrides (primarily for deterministic testing). */
+  readonly httpRateLimits?: HttpRateLimitSettings;
 }
 
 export interface NativeOutputSettings {
@@ -156,6 +159,7 @@ export function buildApp({
   adapterActions,
   kiroCommand,
   kiroRuntimeRoot,
+  httpRateLimits,
 }: AppOptions): FastifyInstance {
   const app = Fastify({ logger: logger ? loggerOptions(logStream) : false, frameworkErrors: frameworkErrorReply });
   // One bus for the whole process: the viewer cache and the deletion path both use it (Q35).
@@ -167,7 +171,11 @@ export function buildApp({
   app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: "NOT_FOUND" }));
   app.get("/healthz", async () => ({ status: "ok" }));
   if (database !== undefined) {
-    app.register(authRoutes, { database, onOutputGrantRevoked: (grantId) => outputSubscribers.closeGrant(grantId) });
+    app.register(authRoutes, {
+      database,
+      onOutputGrantRevoked: (grantId) => outputSubscribers.closeGrant(grantId),
+      httpRateLimits,
+    });
     const cache = createViewerCache(bus);
     const viewer = createLogViewer({
       port: createAuditLogPort(database),
@@ -223,13 +231,16 @@ export function buildApp({
     app.register(dataLifecycleRoutes, { database, routes: createDataRoutes(deps) });
     app.register(
       channelPanelRoutes,
-      channelPanelOptionsFor(database, modules, resolvedCandidateStore, {
-        vaultKey,
-        adapterActionFetch,
-        adapterActions,
-        kiroCommand,
-        kiroRuntimeRoot,
-      }),
+      {
+        ...channelPanelOptionsFor(database, modules, resolvedCandidateStore, {
+          vaultKey,
+          adapterActionFetch,
+          adapterActions,
+          kiroCommand,
+          kiroRuntimeRoot,
+        }),
+        httpRateLimits,
+      },
     );
     startNativeOutput(app, database, outputSubscribers, nativeOutput);
     if (sandbox?.enabled === true) {
