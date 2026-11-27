@@ -1,6 +1,5 @@
 import {
   readChannelSetting,
-  readRbacRoles,
   type StoredRbacRole,
   type StoredRbacUser,
 } from "../db/channel-settings-store.js";
@@ -8,12 +7,27 @@ import type { VoxwardDatabase } from "../db/client.js";
 import { findActiveMembership, type Membership } from "./members.js";
 import { capabilitiesOfMembership, resolveEffectivePermissions, type Capability } from "./permissions.js";
 
+/** Maps a base channel membership record to its default built-in RBAC role IDs. */
+export function defaultRoleIdsForMembership(member: Membership): string[] {
+  const roleIds: string[] = [];
+  if (member.role === "CHANNEL_OWNER") roleIds.push("role-owner");
+  else if (member.role === "MODERATOR") roleIds.push("role-moderator");
+  else roleIds.push("role-data-admin");
+  if (member.logAccess && member.role !== "CHANNEL_OWNER") {
+    roleIds.push("role-auditor");
+  }
+  if (member.dataAdmin && member.role !== "DATA_ADMIN" && member.role !== "CHANNEL_OWNER") {
+    roleIds.push("role-data-admin");
+  }
+  return roleIds;
+}
+
 /**
  * Authoritative channel capability resolver combining active `channel_members` rows with channel tri-state
  * RBAC assignments (`rbac-roles` / `rbac-users`).
  * - Returns `null` when the account is not an active member OR is explicitly disabled in `rbac-users`.
- * - When an active `rbac-users` record exists for the account, evaluates `DENY > GRANT > NOT_SET` strictly.
- * - When no `rbac-users` override exists for the account, falls back to base membership capabilities.
+ * - When an active `rbac-users` record exists OR custom `rbac-roles` exist, evaluates `DENY > GRANT > NOT_SET` strictly.
+ * - When neither `rbac-users` nor custom `rbac-roles` overrides exist, falls back to base membership capabilities.
  */
 export function resolveChannelAccess(
   database: VoxwardDatabase,
@@ -24,23 +38,26 @@ export function resolveChannelAccess(
   if (membership === undefined) return null;
 
   const storedUsers = readChannelSetting<StoredRbacUser[] | null>(database, channelId, "rbac-users", null);
-  if (storedUsers === null) {
-    return { membership, capabilities: new Set(capabilitiesOfMembership(membership)) };
-  }
+  const storedRoles = readChannelSetting<StoredRbacRole[] | null>(database, channelId, "rbac-roles", null);
+  const rbacUser = storedUsers?.find((u) => u.accountId === accountId);
 
-  const rbacUser = storedUsers.find((u) => u.accountId === accountId);
-  if (rbacUser === undefined) {
-    return { membership, capabilities: new Set(capabilitiesOfMembership(membership)) };
-  }
-  if (!rbacUser.enabled) {
+  if (rbacUser !== undefined && !rbacUser.enabled) {
     return null;
   }
+  if (rbacUser === undefined && storedRoles === null) {
+    return { membership, capabilities: new Set(capabilitiesOfMembership(membership)) };
+  }
 
-  const roles = readRbacRoles(database, channelId);
+  const roles = storedRoles ?? [];
+  const roleIds = rbacUser !== undefined ? rbacUser.roleIds : defaultRoleIdsForMembership(membership);
   const roleMap = new Map<string, StoredRbacRole>(roles.map((r) => [r.id, r]));
-  const assignedRoles = rbacUser.roleIds
+  const assignedRoles = roleIds
     .map((id) => roleMap.get(id))
     .filter((role): role is StoredRbacRole => role !== undefined);
+
+  if (rbacUser === undefined && assignedRoles.length === 0) {
+    return { membership, capabilities: new Set(capabilitiesOfMembership(membership)) };
+  }
 
   const effective = resolveEffectivePermissions(assignedRoles);
   const allowed = new Set<Capability>();

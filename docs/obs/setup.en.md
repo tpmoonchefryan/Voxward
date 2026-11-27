@@ -21,7 +21,8 @@ This guide explains how to connect OBS Studio to a self-hosted VoxWard transpare
 ### Fragment Credential Safety (`Q16`)
 
 - **Never use URL query parameters**: Do not pass `?cred=vwo_...` or `?token=vwo_...`. Query parameters enter HTTP request lines, reverse-proxy access logs, and browser history; the Overlay page explicitly refuses query credentials and aborts WebSocket connection.
-- **Immediate Fragment Stripping**: On load, the page extracts the credential from `location.hash`, immediately strips the hash via `window.history.replaceState`, and connects to `/output/v1/room` using WebSocket subprotocols `["vw-output.v1", "vw-cred.<credential>"]`.
+- **Immediate Fragment Stripping**: On load, the page extracts the credential from `location.hash`, immediately strips the hash via `window.history.replaceState` while keeping the token in memory for reconnects, and connects to `/output/v1/room` using WebSocket subprotocols `["vw-output.v1", "vw-cred.<credential>"]`.
+- **OBS Credential Rotation Guide**: Client scripts cannot rewrite the URL saved inside OBS Studio's local source configuration. To rotate credentials: (1) revoke the old `vwo_...` grant in VoxWard **Integrations** (active connections close immediately with `4403`); (2) issue a replacement grant; and (3) replace the URL in the OBS Browser Source properties dialog and click **Refresh cache of current page**.
 - **Revocation & Expiration**: Revoking the grant disconnects the overlay with WebSocket close code `4403` (`GRANT_REVOKED`) and halts automatic reconnection. Reconnecting never replays expired Super Chats or past `WARD_BLOCKED` events.
 - **Read-Only Display**: The overlay renders approved text and multilingual translations inside `<bdi>` isolation elements alongside `WARD_BLOCKED` notices without exposing blocked text, user identities, TTS, or secondary moderation controls.
 

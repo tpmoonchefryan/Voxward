@@ -12,10 +12,13 @@ import {
 } from "@voxward/contracts";
 import { WebSocket, WebSocketServer } from "ws";
 import {
+  createWsUpgradeRateLimiter,
   DEFAULT_NATIVE_OUTPUT_TIMING,
   type ClosedConnection,
   type NativeOutputEndpoint,
   type NativeOutputTiming,
+  type QuotaRegistryLike,
+  type WsUpgradeRateLimiter,
 } from "../native-output/socket.js";
 
 /** Minimal structural protocol interface injected by composition (`app.ts`) from `modules/output`. */
@@ -38,33 +41,32 @@ export interface BlivechatOutputOptions {
   readonly path: string;
   readonly protocolVersion: string;
   readonly grants: OutputGrantPort;
-  readonly subscribers: OutputSubscriberRegistry;
+  readonly subscribers: QuotaRegistryLike;
   readonly protocol: BlivechatSocketProtocol;
   readonly timing?: Partial<NativeOutputTiming>;
   readonly log?: { warn(fields: Record<string, unknown>, message: string): void };
   readonly onClosed?: (closed: ClosedConnection) => void;
+  readonly authLimiter?: WsUpgradeRateLimiter;
 }
 
 const CREDENTIAL_SHAPE = /^vwo_[A-Za-z0-9_-]{43}$/;
-const REFUSAL_STATUS_TEXT = { 401: "Unauthorized", 500: "Internal Server Error" } as const;
+const REFUSAL_STATUS_TEXT = { 401: "Unauthorized", 429: "Too Many Requests", 500: "Internal Server Error" } as const;
 
-/**
- * Serves the blivechat-compatible read-only WebSocket endpoint on an HTTP server.
- * Authenticates via `vw-cred.<credential>` subprotocol, registers into `OutputSubscriberRegistry`
- * upon JOIN_ROOM, maps DELIVER frames via the injected pure protocol adapter, and closes with
- * 4403 when the grant is revoked.
- */
 export function attachBlivechatOutput(server: Server, options: BlivechatOutputOptions): NativeOutputEndpoint {
   const timing: NativeOutputTiming = { ...DEFAULT_NATIVE_OUTPUT_TIMING, ...options.timing };
+  const authLimiter = options.authLimiter ?? createWsUpgradeRateLimiter();
   const socketServer = new WebSocketServer({
     noServer: true,
     maxPayload: 4096,
     handleProtocols: (protocols) => (protocols.has(options.protocolVersion) ? options.protocolVersion : false),
   });
 
-  function refuse(socket: Duplex, status: 401 | 500, reason: string): void {
+  function refuse(socket: Duplex, status: 401 | 429 | 500, reason: string): void {
     socket.on("error", () => undefined);
-    socket.end(`HTTP/1.1 ${status} ${REFUSAL_STATUS_TEXT[status]}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+    const retryHeader = status === 429 ? "Retry-After: 60\r\n" : "";
+    socket.end(
+      `HTTP/1.1 ${status} ${REFUSAL_STATUS_TEXT[status]}\r\n${retryHeader}Connection: close\r\nContent-Length: 0\r\n\r\n`,
+    );
     options.log?.warn({ status, reason }, "blivechat output upgrade refused");
   }
 
@@ -79,6 +81,11 @@ export function attachBlivechatOutput(server: Server, options: BlivechatOutputOp
 
   function onUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): void {
     if (pathOf(request.url) !== options.path) {
+      return;
+    }
+    const clientIp = request.socket.remoteAddress ?? "unknown";
+    if (!authLimiter.allow(clientIp)) {
+      refuse(socket, 429, "AUTH_RATE_LIMITED");
       return;
     }
     const offered = offeredProtocols(request.headers["sec-websocket-protocol"]);
@@ -97,6 +104,11 @@ export function attachBlivechatOutput(server: Server, options: BlivechatOutputOp
     }
     if (grant === undefined) {
       refuse(socket, 401, "CREDENTIAL_REJECTED");
+      return;
+    }
+    const quota = options.subscribers.canAttach?.(grant);
+    if (quota !== undefined && !quota.ok) {
+      refuse(socket, 429, quota.reason ?? "QUOTA_EXCEEDED");
       return;
     }
     socketServer.handleUpgrade(request, socket, head, (ws) => openConnection(ws, grant));
@@ -181,7 +193,15 @@ export function attachBlivechatOutput(server: Server, options: BlivechatOutputOp
           return;
         }
         if (!attached) {
-          options.subscribers.attach(subscriber);
+          if (options.subscribers.tryAttach !== undefined) {
+            const verdict = options.subscribers.tryAttach(subscriber);
+            if (!verdict.ok) {
+              shutDown(NATIVE_CLOSE.SUBSCRIBER_BACKPRESSURE);
+              return;
+            }
+          } else {
+            options.subscribers.attach(subscriber);
+          }
           attached = true;
         }
         return;

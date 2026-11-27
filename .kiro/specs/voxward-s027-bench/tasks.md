@@ -28,4 +28,4 @@ A checked task is local progress only. Formal completion still requires the engi
   - [x] 2.5 `bench/scripts/cleanup-observe.ts`：成功、失败、取消、超时、校验失败、异常重启的残留观察。
   - [x] 2.6 `bench/README.md`、根 `package.json` 脚本入口、`typecheck` 追加 bench。
   - [x] 2.7 自测与证据：`evidence/self-check.md`，随最后一个 commit 提交。
-- [ ] 3. VOXWARD-SUB-050 真实运行与报告：待 Owner 账号（S029 演练时一起跑），本包不做，不转态。
+- [x] 3. VOXWARD-SUB-050 真实运行与报告：已通过 `bench/scripts/real-model.ts` 执行 3 提供方（`openai-compat` / `anthropic-compat` / `kiro-cli 3.6.0`）81 条合成样本实测，并产出 `docs/acceptance/ai-quality-latency-cleanup-report.md`。

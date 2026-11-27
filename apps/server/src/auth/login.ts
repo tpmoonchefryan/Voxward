@@ -67,8 +67,8 @@ const STORED_HASH = /^\$scrypt\$ln=(\d+),r=(\d+),p=(\d+)\$([A-Za-z0-9+/]+)\$([A-
 let activeScryptCount = 0;
 const scryptWaiters: Array<() => void> = [];
 
-async function withScryptSlot<T>(action: () => Promise<T>): Promise<T> {
-  if (activeScryptCount >= MAX_SCRYPT_CONCURRENCY) {
+export async function withScryptSlot<T>(action: () => Promise<T>): Promise<T> {
+  while (activeScryptCount >= MAX_SCRYPT_CONCURRENCY) {
     if (scryptWaiters.length >= MAX_SCRYPT_WAITERS) {
       throw new ScryptOverloadedError();
     }

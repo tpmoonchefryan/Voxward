@@ -25,7 +25,7 @@ import { createSyntheticInferenceProvider } from "../adapters/synthetic/inferenc
 import { createSyntheticOutputAdapter } from "../adapters/synthetic/output-adapter.js";
 import { createSyntheticPlatformSource } from "../adapters/synthetic/platform-source.js";
 import { listActiveMembershipsOf } from "../auth/members.js";
-import { resolveChannelCapabilities } from "../auth/rbac-enforce.js";
+import { resolveChannelAccess, resolveChannelCapabilities } from "../auth/rbac-enforce.js";
 import type { ServerConfig } from "../config/schema.js";
 import { createAuditLogPort } from "../db/audit-log.js";
 import {
@@ -310,7 +310,10 @@ export function buildRegistry(
       sanitize: redactText,
       newId: () => randomUUID(),
       access: {
-        channelsFor: (actorRef) => listActiveMembershipsOf(database, actorRef).map((m) => m.channelId),
+        channelsFor: (actorRef) =>
+          listActiveMembershipsOf(database, actorRef)
+            .filter((m) => resolveChannelAccess(database, m.channelId, actorRef) !== null)
+            .map((m) => m.channelId),
         capabilitiesFor: (actorRef, channelId) =>
           resolveChannelCapabilities(database, channelId, actorRef) ?? new Set<string>(),
       },

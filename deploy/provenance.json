@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "baseImage": "node:24-bookworm-slim@sha256:873f586f3794f52281bd039bf02c048a0be08fde619338f9941bad1eb6b34530",
+  "pnpmVersion": "12.18.0",
+  "pnpmTarballSha256": "29d1d7d99bf6ec6d0a3dbb0ec5656f0d16e997e8be676ca45c581d11cb71f753",
+  "githubActions": {
+    "actions/checkout": "11d5960a326750d5838078e36cf38b85af677262",
+    "pnpm/action-setup": "b906affcce14559ad1aafd4ab0e942779e9f58b1",
+    "actions/setup-node": "49933ea5288caeca8642d1e84afbd3f7d6820020"
+  },
+  "ciNodeVersion": "24",
+  "appImage": {
+    "repository": "ghcr.io/tpmoonchefryan/voxward",
+    "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "imageDigestStatus": "candidate-placeholder-until-oci-build",
+    "manifests": [
+      "deploy/k3s/production/deployment.yaml",
+      "deploy/k3s/production/bootstrap-owner-job.yaml",
+      "deploy/k3s/sandbox/deployment.yaml"
+    ]
+  }
+}

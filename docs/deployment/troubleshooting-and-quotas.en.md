@@ -27,9 +27,7 @@ Status: Operational troubleshooting and real-data admission gates. Live YouTube 
   - On startup and periodic sweeps, `sweepOrphanRunDirectories` inspects `/proc/<pid>/cwd`, terminates orphaned process groups belonging to the run directory, and retries session cleanup.
   - If OS permissions block inspection or ownership verification, a `needs-manual.json` marker is written with a diagnostic code for operator inspection under the isolated `voxward-kiro` service account.
 
-## 4. External Admission Gates (Unverified in Synthetic Mode)
+## 4. Real-Run Evidence and Production Prerequisites
 
-Before ingesting live streams or viewer data in production, complete the two unverified admission gates maintained outside synthetic CI:
-
-1. **`VW-S029-KIRO-REAL`**: Execute live `kiro-cli` runs under a dedicated isolated OS user (`HOME`, `KIRO_API_KEY`, least privilege) covering success, failure, cancel, crash orphan cleanup, and non-interactive untrusted-tool refusal.
-2. **`VOXWARD-SUB-050` (`Q60`)**: Measure real latency, throughput, and token cost benchmarks with owner-supplied credentials alongside `VW-S029-KIRO-REAL`.
+1. **`VW-S029-KIRO-REAL` (`kiro-cli 3.6.0`)**: Verified in an isolated `0700` runtime directory for normal completion, `RUN_TIMEOUT`, `RUN_CANCELLED`, `--trust-tools=` non-interactive write refusal, and orphan cleanup (`sweepOrphanRunDirectories` process-group termination + `--delete-session` when `sessionId` is recorded; unrecorded sessions fall back fail-closed to `needs-manual.json` on `3.6.0` `--list-sessions` wrapper output). Production hosts still require root/admin provisioning of the dedicated `voxward-kiro` OS user.
+2. **`VOXWARD-SUB-050` (`Q60`)**: Completed live 3-provider moderation, SC/review contract, latency, and cleanup measurement across 81 synthetic samples (`docs/acceptance/ai-quality-latency-cleanup-report.md`). Live broadcast use still awaits Owner Google Cloud OAuth verification and immutable container image promotion.

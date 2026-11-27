@@ -19,7 +19,8 @@
 ### 安全与凭据片段说明（Q16）
 
 - **严禁使用查询参数**：不要把凭据写成 `?cred=vwo_...` 或 `?token=vwo_...`。查询参数会进入 HTTP 请求行、服务端访问日志与浏览器历史；Overlay 页面会明确拒绝此类 URL 并禁止建立 WebSocket 连接。
-- **即时抹除 Fragment**：页面加载时从 `location.hash` 读取凭据后，会在打开 WebSocket 之前立即调用 `window.history.replaceState` 清除 URL Fragment，随后通过 WebSocket 子协议 `["vw-output.v1", "vw-cred.<credential>"]` 连接 `/output/v1/room`。
+- **即时抹除 Fragment**：页面加载时从 `location.hash` 读取凭据后，会在打开 WebSocket 之前立即调用 `window.history.replaceState` 清除 URL Fragment，随后通过 WebSocket 子协议 `["vw-output.v1", "vw-cred.<credential>"]` 连接 `/output/v1/room`（断线重连复用内存中的凭据）。
+- **OBS 凭据轮换指引**：由于 OBS Browser Source 会长期保存配置面板里的 URL 字符串，客户端无法改写 OBS 本地配置文件。若需轮换或回收旧凭据：1）在 Voxward 管理后台 **集成 -> 输出凭据** 撤销旧 `vwo_...` 凭据（正在运行的连接将立即收到 `4403` 关闭）；2）签发新凭据并更新 OBS Browser Source 属性中的 URL；3）点击 OBS 源属性中的 **刷新当前页面缓存**。
 - **撤销与过期**：若后台撤销该凭据，连接会收到关闭码 `4403` 并立即停止重连；断连重连后不会补播已过期的 SC 或历史 `WARD_BLOCKED`。
 - **无 TTS / 无二次裁决**：Overlay 仅展示已批准的原文与译文（通过 `<bdi>` 隔离渲染）及安全结界提示（`WARD_BLOCKED` 绝不泄露原文或身份），不执行语音合成或二次裁决。
 

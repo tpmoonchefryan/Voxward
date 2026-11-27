@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { OutboundUrlError, safeOutboundFetch } from "../security/outbound-url.js";
 import { probeAnthropicCompatEndpoint } from "./anthropic-compat/provider.js";
 import { describeKiroCli } from "./kiro-cli/capabilities.js";
 import { sweepOrphanRunDirectories } from "./kiro-cli/orphan-sweep.js";
@@ -147,13 +148,17 @@ export function createRealAdapterActionExecutor(
         const probe = await probeOpenAiCompatEndpoint({
           baseUrl: baseEndpoint,
           apiKey,
-          fetchImpl,
+          fetchImpl: options.fetchImpl,
         });
         const models = probe.models ?? [];
         const isFetchModels = input.action === "fetch-models";
+        const isPolicyBlocked =
+          probe.errorCode === "SSRF_BLOCKED" ||
+          probe.errorCode === "OUTBOUND_URL_FORBIDDEN" ||
+          probe.errorCode === "INVALID_ENDPOINT_URL";
         return {
           ok: probe.ok,
-          httpStatus: probe.ok ? 200 : 502,
+          httpStatus: probe.ok ? 200 : isPolicyBlocked ? 400 : 502,
           upstreamStatusCode: probe.statusCode,
           latencyMs: probe.latencyMs,
           method: "GET",
@@ -209,13 +214,17 @@ export function createRealAdapterActionExecutor(
           baseUrl: baseEndpoint,
           apiKey,
           anthropicVersion,
-          fetchImpl,
+          fetchImpl: options.fetchImpl,
         });
         const models = probe.models ?? [];
         const isFetchModels = input.action === "fetch-models";
+        const isPolicyBlocked =
+          probe.errorCode === "SSRF_BLOCKED" ||
+          probe.errorCode === "OUTBOUND_URL_FORBIDDEN" ||
+          probe.errorCode === "INVALID_ENDPOINT_URL";
         return {
           ok: probe.ok,
-          httpStatus: probe.ok ? 200 : 502,
+          httpStatus: probe.ok ? 200 : isPolicyBlocked ? 400 : 502,
           upstreamStatusCode: probe.statusCode,
           latencyMs: probe.latencyMs,
           method: "GET",
@@ -244,10 +253,26 @@ export function createRealAdapterActionExecutor(
       }
 
       if (input.driverId === "kiro-cli") {
-        const command =
-          (typeof input.config.command === "string" && input.config.command.trim()) ||
-          options.kiroCommand ||
-          "kiro-cli";
+        const requestedCommand = typeof input.config.command === "string" ? input.config.command.trim() : "";
+        const allowedCommand = options.kiroCommand ?? "kiro-cli";
+        if (requestedCommand && requestedCommand !== "kiro-cli" && requestedCommand !== allowedCommand) {
+          return {
+            ok: false,
+            httpStatus: 400,
+            upstreamStatusCode: 0,
+            latencyMs: elapsed(),
+            method: "POST",
+            url: "kiro-cli://runtime/self-check",
+            summary: "拒绝执行非白名单 Kiro CLI 命令路径",
+            statusCode: "CLI_FAILED",
+            statusParams: { error: "CLI_COMMAND_FORBIDDEN" },
+            requestHeaders: { "x-voxward-action": input.action },
+            responseHeaders: {},
+            rawRequestBody: null,
+            rawResponseBody: JSON.stringify({ ok: false, error: "CLI_COMMAND_FORBIDDEN" }),
+          };
+        }
+        const command = requestedCommand || allowedCommand;
         const runtimeRoot =
           (typeof input.config.runtimeRoot === "string" && input.config.runtimeRoot.trim()) ||
           options.kiroRuntimeRoot;
@@ -384,10 +409,14 @@ export function createRealAdapterActionExecutor(
         };
       }
       try {
-        const res = await fetchImpl(url, {
-          method: "GET",
-          headers: { accept: "application/json", authorization: `Bearer ${accessToken}` },
-        });
+        const res = await safeOutboundFetch(
+          url,
+          {
+            method: "GET",
+            headers: { accept: "application/json", authorization: `Bearer ${accessToken}` },
+          },
+          { fetchImpl: options.fetchImpl },
+        );
         const bodyText = await res.text();
         return {
           ok: res.ok,
@@ -404,21 +433,22 @@ export function createRealAdapterActionExecutor(
           rawRequestBody: null,
           rawResponseBody: bodyText.slice(0, 512),
         };
-      } catch {
+      } catch (err) {
+        const errorCode = err instanceof OutboundUrlError ? err.code : "NETWORK_ERROR";
         return {
           ok: false,
-          httpStatus: 502,
+          httpStatus: err instanceof OutboundUrlError ? 400 : 502,
           upstreamStatusCode: 0,
           latencyMs: elapsed(),
           method: "GET",
           url,
           summary: "YouTube API 网络请求失败",
           statusCode: "CONNECTION_FAILED",
-          statusParams: { error: "NETWORK_ERROR" },
+          statusParams: { error: errorCode },
           requestHeaders: { accept: "application/json", authorization: "[REDACTED]", "x-voxward-action": input.action },
           responseHeaders: {},
           rawRequestBody: null,
-          rawResponseBody: JSON.stringify({ ok: false, error: "NETWORK_ERROR" }),
+          rawResponseBody: JSON.stringify({ ok: false, error: errorCode }),
         };
       }
     },
@@ -428,21 +458,25 @@ export function createRealAdapterActionExecutor(
         return { synced: false, banId: null, errorCode: "YOUTUBE_NOT_CONFIGURED" };
       }
       try {
-        const res = await fetchImpl("https://www.googleapis.com/youtube/v3/liveChat/bans?part=snippet", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            accept: "application/json",
-            authorization: `Bearer ${input.accessToken}`,
-          },
-          body: JSON.stringify({
-            snippet: {
-              liveChatId: input.liveChatId,
-              type: "permanent",
-              bannedUserDetails: { channelId: input.subjectRef },
+        const res = await safeOutboundFetch(
+          "https://www.googleapis.com/youtube/v3/liveChat/bans?part=snippet",
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              accept: "application/json",
+              authorization: `Bearer ${input.accessToken}`,
             },
-          }),
-        });
+            body: JSON.stringify({
+              snippet: {
+                liveChatId: input.liveChatId,
+                type: "permanent",
+                bannedUserDetails: { channelId: input.subjectRef },
+              },
+            }),
+          },
+          { fetchImpl: options.fetchImpl },
+        );
         if (!res.ok) {
           return { synced: false, banId: null, errorCode: `HTTP_${res.status}`, httpStatus: res.status };
         }

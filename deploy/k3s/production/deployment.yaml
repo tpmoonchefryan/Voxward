@@ -38,8 +38,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: voxward
-          # Replace with voxward:local when importing directly via `k3s ctr images import`.
-          image: ghcr.io/tpmoonchefryan/voxward:rc0.1.0
+          # Replace digest via scripts/deploy-check provenance update when importing locally via `k3s ctr images import`.
+          image: ghcr.io/tpmoonchefryan/voxward@sha256:0000000000000000000000000000000000000000000000000000000000000000
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -82,10 +82,10 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 128Mi
+              memory: 256Mi
             limits:
               cpu: 500m
-              memory: 512Mi
+              memory: 1Gi
       volumes:
         - name: data
           persistentVolumeClaim:

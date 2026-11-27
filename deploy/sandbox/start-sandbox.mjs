@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -12,10 +12,27 @@ const forbiddenEnv = [
   "GOOGLE_CLIENT_SECRET",
   "YOUTUBE_CLIENT_SECRET",
   "OAUTH_CLIENT_SECRET",
+  "VOXWARD_YOUTUBE_CLIENT_SECRET",
   "YOUTUBE_REFRESH_TOKEN",
   "YOUTUBE_ACCESS_TOKEN",
   "GOOGLE_REFRESH_TOKEN",
+  "VOXWARD_YOUTUBE_REFRESH_TOKEN",
+  "VOXWARD_YOUTUBE_ACCESS_TOKEN",
+  "VOXWARD_YOUTUBE_API_KEY",
+  "OPENAI_API_KEY",
+  "VOXWARD_OPENAI_API_KEY",
+  "ANTHROPIC_API_KEY",
+  "VOXWARD_ANTHROPIC_API_KEY",
+  "VOXWARD_AI_API_KEY",
+  "KIRO_API_KEY",
+  "VOXWARD_VAULT_KEY",
+  "VOXWARD_MASTER_KEY",
+  "VOXWARD_SESSION_SECRET",
+  "VOXWARD_BOOTSTRAP_PASSWORD",
+  "BWS_ACCESS_TOKEN",
 ];
+
+const dynamicForbidden = /^(?:VOXWARD|YOUTUBE|GOOGLE|OPENAI|ANTHROPIC|KIRO|BWS)_.*(?:SECRET|TOKEN|API_KEY|VAULT_KEY|MASTER_KEY|PASSWORD)$/i;
 
 for (const key of forbiddenEnv) {
   if (typeof process.env[key] === "string" && process.env[key].trim().length > 0) {
@@ -24,10 +41,39 @@ for (const key of forbiddenEnv) {
   }
 }
 
+for (const [key, val] of Object.entries(process.env)) {
+  if (dynamicForbidden.test(key) && typeof val === "string" && val.trim().length > 0) {
+    console.error(`[sandbox-guard] Refusing to start: forbidden production credential ${key} is set.`);
+    process.exit(1);
+  }
+}
+
+function resolveAncestorRealpath(abs) {
+  const tail = [];
+  let cursor = abs;
+  while (!existsSync(cursor)) {
+    const parent = dirname(cursor);
+    if (parent === cursor) break;
+    tail.unshift(basename(cursor));
+    cursor = parent;
+  }
+  const base = existsSync(cursor) ? realpathSync(cursor) : cursor;
+  return tail.length > 0 ? join(base, ...tail) : base;
+}
+
 const dbPath = process.env.VOXWARD_SANDBOX_DB ?? config.databasePath;
-if (!dbPath.toLowerCase().includes("sandbox") && dbPath !== ":memory:") {
-  console.error(`[sandbox-guard] Refusing to start: non-sandbox database path "${dbPath}".`);
-  process.exit(1);
+if (dbPath !== ":memory:") {
+  const abs = resolve(root, dbPath);
+  const real = resolveAncestorRealpath(abs);
+  const hasProd = abs.toLowerCase().includes("prod") || real.toLowerCase().includes("prod");
+  const hasSandbox =
+    basename(abs).toLowerCase().includes("sandbox") &&
+    basename(real).toLowerCase().includes("sandbox");
+  const isSymlinkEscape = existsSync(abs) && lstatSync(abs).isSymbolicLink() && !hasSandbox;
+  if (hasProd || !hasSandbox || isSymlinkEscape) {
+    console.error(`[sandbox-guard] Refusing to start: non-sandbox database path "${dbPath}".`);
+    process.exit(1);
+  }
 }
 
 const host = process.env.VOXWARD_SANDBOX_HOST ?? config.host;

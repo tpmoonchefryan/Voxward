@@ -124,12 +124,17 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     expect(roleRes.statusCode).toBe(201);
     const createdRoleId = (roleRes.json() as { role: { id: string } }).role.id;
 
+    const multi = await signIn("multi", "Multi User");
+    runShortTransaction(db, (tx) => {
+      grantMembership(tx, { channelId: CH1, accountId: multi.accountId, role: "MODERATOR", logAccess: false, now: NOW });
+    });
+
     const userRes = await app.inject({
       method: "POST",
       url: `/channels/${CH1}/rbac/users`,
       headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
       payload: {
-        accountId: "acc-multi",
+        accountId: multi.accountId,
         displayName: "Multi User",
         loginName: "multi",
         enabled: true,
@@ -137,6 +142,20 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
       },
     });
     expect(userRes.statusCode).toBe(201);
+
+    const nonMemberRes = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/rbac/users`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: {
+        accountId: "acc-non-member",
+        displayName: "Outsider",
+        loginName: "outsider",
+        enabled: true,
+        roleIds: ["role-moderator"],
+      },
+    });
+    expect(nonMemberRes.statusCode).toBe(404);
     const eff = (userRes.json() as { user: { effectivePermissions: Array<{ capability: string; effect: string }> } }).user.effectivePermissions;
     expect(eff.find((p) => p.capability === "review.decide")?.effect).toBe("DENY");
     expect(eff.find((p) => p.capability === "queue.read")?.effect).toBe("ALLOW");
@@ -150,7 +169,7 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
     expect(rbacList.statusCode).toBe(200);
     const listedUsers = (rbacList.json() as { users: Array<{ accountId: string; roleIds: string[] }> }).users;
     expect(listedUsers.some((u) => u.accountId === owner.accountId && u.roleIds.includes("role-owner"))).toBe(true);
-    expect(listedUsers.some((u) => u.accountId === "acc-multi")).toBe(true);
+    expect(listedUsers.some((u) => u.accountId === multi.accountId)).toBe(true);
   });
 
   it("handles term categories/REGEX/CSV, manual blocked users, score-only rejudge, adapters + Integration Log", async () => {

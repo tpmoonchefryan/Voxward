@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SuperChatCard, useLiveStreamAutoScroll } from "../../components/youtube-sc";
 import { UntrustedText } from "../../components/untrusted-text/UntrustedText";
 import { DEFAULT_VOXWARD_LOCALE, OVERLAY_COPY, pickLocale, type VoxWardLocale } from "../../i18n";
@@ -172,6 +172,7 @@ export function Stage({ initialState, previewMode }: StageProps = {}) {
   const guestPrefs = useVoxWardGuestPrefs();
   const [resolvedLocale, setResolvedLocale] = useState<VoxWardLocale>(guestPrefs.locale);
   const [state, setState] = useState<StageState>(() => initialState ?? createInitialStageState());
+  const credentialRef = useRef<string | null>(null);
   const shellClient = useMemo(() => createShellPreferencesClient(), []);
 
   useEffect(() => {
@@ -214,15 +215,29 @@ export function Stage({ initialState, previewMode }: StageProps = {}) {
     if (initialState !== undefined) {
       return;
     }
-    const parsed = parseOverlayCredential(window.location, resolvedLocale);
-    if (!parsed.ok) {
-      setState((prev) => ({
-        ...prev,
-        connectionStatus: parsed.errorCode === "QUERY_CREDENTIAL_REJECTED" ? "rejected" : "idle",
-        statusMessage: parsed.message,
-      }));
-      return;
+    let credential = credentialRef.current;
+    if (credential === null || window.location.hash !== "") {
+      const parsed = parseOverlayCredential(window.location, resolvedLocale);
+      if (!parsed.ok) {
+        if (parsed.errorCode === "MISSING_CREDENTIAL" && credential !== null) {
+          // Hash was already scrubbed cleanly; continue using held in-memory credential.
+        } else {
+          setState((prev) => ({
+            ...prev,
+            connectionStatus: parsed.errorCode === "QUERY_CREDENTIAL_REJECTED" ? "rejected" : "idle",
+            statusMessage: parsed.message,
+          }));
+          return;
+        }
+      } else {
+        credential = parsed.credential;
+        credentialRef.current = credential;
+        if (window.location.hash !== "") {
+          window.history.replaceState(null, "", parsed.cleanedUrl);
+        }
+      }
     }
+    if (credential === null) return;
 
     let disposed = false;
     let attempt = 0;
@@ -230,7 +245,7 @@ export function Stage({ initialState, previewMode }: StageProps = {}) {
     let socket: WebSocket | null = null;
 
     const connect = () => {
-      if (disposed) return;
+      if (disposed || credential === null) return;
       setState((prev) => ({
         ...prev,
         connectionStatus: attempt === 0 ? "connecting" : "reconnecting",
@@ -238,7 +253,7 @@ export function Stage({ initialState, previewMode }: StageProps = {}) {
       }));
 
       const wsUrl = buildOverlayWsUrl(window.location);
-      const protocols = buildOverlaySubprotocols(parsed.credential);
+      const protocols = buildOverlaySubprotocols(credential);
       socket = new WebSocket(wsUrl, protocols);
 
       socket.onopen = () => {

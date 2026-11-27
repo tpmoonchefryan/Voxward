@@ -16,6 +16,7 @@
 | `scripts/quality.ts` | 规则、实时、SC、复盘的质量指标 |
 | `scripts/latency-capacity.ts` | 静态耗时、端到端 P50/P95、并发档位、超时与过载探针 |
 | `scripts/cleanup-observe.ts` | 成功、失败、校验失败、取消、超时、异常重启后的残留观察 |
+| `scripts/real-model.ts` | Opt-in 真实多提供方实测（`openai-compat`、`anthropic-compat`、`kiro-cli`），仅显式双闸门放行 |
 | `tsconfig.json` | 只用于类型检查，不生成文件 |
 
 ## 运行
@@ -27,6 +28,7 @@ pnpm bench:quality [--out <文件>]
 pnpm bench:latency [--out <文件>]
 pnpm bench:cleanup [--out <文件>]
 pnpm bench:typecheck
+VOXWARD_BENCH_REAL_MODEL=1 pnpm bench:real --real-model [--out <文件>]
 ```
 
 不加 `--out` 时，JSON 输出到标准输出。根目录的 `pnpm typecheck` 已包含 `bench:typecheck`。
@@ -37,7 +39,8 @@ pnpm bench:typecheck
 
 ## 真实模型闸门
 
-默认关闭。给出 `--real-model` 还需要环境变量 `VOXWARD_BENCH_REAL_MODEL=1`。两者都给出时，脚本仍然拒绝运行：本包没有绑定真实适配器，绑定由 SUB-050 完成。只给出其中之一时，脚本同样拒绝运行并说明缺少的条件。
+- `bench:quality`、`bench:latency`、`bench:cleanup` 默认且始终仅运行替身，即使传入 `--real-model`（无论是否设置 `VOXWARD_BENCH_REAL_MODEL=1`）也会以退出码 2 拒绝。
+- 真实模型基准入口 `bench:real`（`VOXWARD-SUB-050`）要求**同时**传入 `--real-model` 参数和 `VOXWARD_BENCH_REAL_MODEL=1` 环境变量，缺一即以退出码 2 拒绝。实测结论见 `docs/acceptance/ai-quality-latency-cleanup-report.md`。
 
 ## 质量（quality）
 

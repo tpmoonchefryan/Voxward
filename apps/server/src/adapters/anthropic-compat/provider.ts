@@ -1,5 +1,10 @@
 import {
   CONTRACT_VERSION,
+  INTERNAL_CLASSIFICATIONS,
+  MODERATION_REASON_CODES,
+  POLICY_REASON_CODES,
+  SC_ITEM_FIELDS,
+  SC_MULTILINGUAL_ITEM_FIELDS,
   type AiBatchInput,
   type InferenceCapabilities,
   type InferenceModelCapability,
@@ -11,13 +16,17 @@ import {
   type ModerationReasonCode,
   type ScMultilingualBatchInput,
 } from "@voxward/contracts";
-import type {
-  HttpBatchOutputOutcome,
-  HttpBatchValidator,
-  HttpInferenceUsage,
-  HttpProbeResult,
-  HttpValidatedItem,
-  RemoteModelSummary,
+import { OutboundUrlError, safeOutboundFetch } from "../../security/outbound-url.js";
+import {
+  buildModerationPrompt,
+  buildScTranslationPrompt,
+  parseModelJsonObject,
+  type HttpBatchOutputOutcome,
+  type HttpBatchValidator,
+  type HttpInferenceUsage,
+  type HttpProbeResult,
+  type HttpValidatedItem,
+  type RemoteModelSummary,
 } from "../openai-compat/provider.js";
 
 export interface AnthropicCompatProviderOptions {
@@ -54,27 +63,7 @@ export function buildAnthropicPath(baseUrl: string, resource: "messages" | "mode
   return `${normalized}/v1/${resource}`;
 }
 
-function stripJsonCodeFence(text: string): string {
-  const trimmed = text.trim();
-  const match = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(trimmed);
-  return match?.[1]?.trim() ?? trimmed;
-}
-
-function parseModelJsonObject(text: string): unknown {
-  const clean = stripJsonCodeFence(text);
-  try {
-    return JSON.parse(clean);
-  } catch {
-    const start = clean.indexOf("{");
-    const end = clean.lastIndexOf("}");
-    if (start >= 0 && end > start) {
-      return JSON.parse(clean.slice(start, end + 1));
-    }
-    throw new Error("ANTHROPIC_OUTPUT_NOT_JSON");
-  }
-}
-
-const VALID_VERDICTS = new Set<InternalClassification>(["ALLOW_MEANINGFUL", "ALLOW_NOISE", "BLOCK"]);
+const VALID_VERDICTS = new Set<InternalClassification>(INTERNAL_CLASSIFICATIONS);
 
 function defaultValidateModeration(output: unknown, input: AiBatchInput): HttpBatchOutputOutcome {
   if (typeof output !== "object" || output === null || !Array.isArray((output as { items?: unknown }).items)) {
@@ -106,35 +95,6 @@ function defaultValidateModeration(output: unknown, input: AiBatchInput): HttpBa
   return { ok: true, items };
 }
 
-function buildModerationPrompt(input: AiBatchInput): string {
-  return [
-    "You are VoxWard's live-stream chat moderation classifier.",
-    "Evaluate every item strictly and return ONLY a raw JSON object (no prose, no markdown):",
-    '{"items":[{"itemId":"...","verdict":"ALLOW_MEANINGFUL|ALLOW_NOISE|BLOCK","reasonCodes":["..."]}]}',
-    "- Use BLOCK for harassment, slurs, spam scams, doxxing, self-harm, hate speech, or explicit violence.",
-    "- Use ALLOW_NOISE for harmless reactions, laughter, emotes, or short greetings.",
-    "- Use ALLOW_MEANINGFUL for safe substantive chat or viewer questions.",
-    "- Every input itemId must appear exactly once.",
-    "",
-    JSON.stringify(input),
-  ].join("\n");
-}
-
-function buildScTranslationPrompt(input: AiBatchInput | ScMultilingualBatchInput): string {
-  const isMultilingual = "targetLanguages" in input && Array.isArray(input.targetLanguages);
-  return [
-    "You are VoxWard's Super Chat safety moderator and concise translator.",
-    "Evaluate safety and translate safe Super Chat messages. Return ONLY raw JSON (no markdown):",
-    isMultilingual
-      ? '{"items":[{"itemId":"...","verdict":"ALLOW_MEANINGFUL|ALLOW_NOISE|BLOCK","reasonCodes":[],"translations":[{"language":"zh-CN","text":"...","notes":null}],"acknowledgement":"..."}]}'
-      : '{"items":[{"itemId":"...","verdict":"ALLOW_MEANINGFUL|ALLOW_NOISE|BLOCK","reasonCodes":[],"translation":"...","notes":null,"acknowledgement":"..."}]}',
-    "- If verdict is BLOCK, omit translations or set empty array and null acknowledgement.",
-    "- Every input itemId must appear exactly once.",
-    "",
-    JSON.stringify(input),
-  ].join("\n");
-}
-
 export async function probeAnthropicCompatEndpoint(options: {
   readonly baseUrl?: string;
   readonly apiKey: string;
@@ -143,20 +103,23 @@ export async function probeAnthropicCompatEndpoint(options: {
   readonly timeoutMs?: number;
 }): Promise<HttpProbeResult> {
   const url = buildAnthropicPath(options.baseUrl ?? DEFAULT_ANTHROPIC_BASE_URL, "models");
-  const fetchFn = options.fetchImpl ?? fetch;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 20_000);
   const started = Date.now();
   try {
-    const response = await fetchFn(url, {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-        "x-api-key": options.apiKey,
-        "anthropic-version": options.anthropicVersion ?? DEFAULT_ANTHROPIC_VERSION,
+    const response = await safeOutboundFetch(
+      url,
+      {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          "x-api-key": options.apiKey,
+          "anthropic-version": options.anthropicVersion ?? DEFAULT_ANTHROPIC_VERSION,
+        },
+        signal: controller.signal,
       },
-      signal: controller.signal,
-    });
+      { fetchImpl: options.fetchImpl },
+    );
     const latencyMs = Math.max(0, Date.now() - started);
     const bodyText = await response.text();
     if (!response.ok) {
@@ -193,7 +156,12 @@ export async function probeAnthropicCompatEndpoint(options: {
       statusCode: 0,
       latencyMs: Math.max(0, Date.now() - started),
       url,
-      errorCode: err instanceof Error && err.name === "AbortError" ? "TIMEOUT" : "NETWORK_ERROR",
+      errorCode:
+        err instanceof OutboundUrlError
+          ? err.code
+          : err instanceof Error && err.name === "AbortError"
+            ? "TIMEOUT"
+            : "NETWORK_ERROR",
     };
   } finally {
     clearTimeout(timer);
@@ -212,7 +180,6 @@ export interface AnthropicCompatProvider extends InferenceProvider {
 export function createAnthropicCompatInferenceProvider(options: AnthropicCompatProviderOptions): AnthropicCompatProvider {
   const baseUrl = normalizeAnthropicBaseUrl(options.baseUrl);
   const anthropicVersion = options.anthropicVersion ?? DEFAULT_ANTHROPIC_VERSION;
-  const fetchFn = options.fetchImpl ?? fetch;
   const maxItems = options.maxItems ?? DEFAULT_MAX_ITEMS;
   const maxTokens = options.maxTokens ?? DEFAULT_MAX_TOKENS;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -228,22 +195,26 @@ export function createAnthropicCompatInferenceProvider(options: AnthropicCompatP
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const started = Date.now();
     try {
-      const response = await fetchFn(buildAnthropicPath(baseUrl, "messages"), {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          accept: "application/json",
-          "x-api-key": options.apiKey,
-          "anthropic-version": anthropicVersion,
+      const response = await safeOutboundFetch(
+        buildAnthropicPath(baseUrl, "messages"),
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            accept: "application/json",
+            "x-api-key": options.apiKey,
+            "anthropic-version": anthropicVersion,
+          },
+          body: JSON.stringify({
+            model: modelId,
+            max_tokens: maxTokens,
+            temperature: 0,
+            messages: [{ role: "user", content: prompt }],
+          }),
+          signal: controller.signal,
         },
-        body: JSON.stringify({
-          model: modelId,
-          max_tokens: maxTokens,
-          temperature: 0,
-          messages: [{ role: "user", content: prompt }],
-        }),
-        signal: controller.signal,
-      });
+        { fetchImpl: options.fetchImpl },
+      );
       const latencyMs = Math.max(0, Date.now() - started);
       const rawText = await response.text();
       if (!response.ok) {
@@ -278,7 +249,7 @@ export function createAnthropicCompatInferenceProvider(options: AnthropicCompatP
       if (!textBlock.trim()) {
         throw new Error("ANTHROPIC_EMPTY_CONTENT");
       }
-      return parseModelJsonObject(textBlock);
+      return parseModelJsonObject(textBlock, "ANTHROPIC_OUTPUT_NOT_JSON");
     } finally {
       clearTimeout(timer);
       activeControllers.delete(batchId);
@@ -303,7 +274,7 @@ export function createAnthropicCompatInferenceProvider(options: AnthropicCompatP
         baseUrl,
         apiKey: options.apiKey,
         anthropicVersion,
-        fetchImpl: fetchFn,
+        fetchImpl: options.fetchImpl,
         timeoutMs: Math.min(timeoutMs, 20_000),
       });
       if (res.ok && res.models) {

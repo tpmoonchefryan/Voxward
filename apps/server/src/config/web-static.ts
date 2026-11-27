@@ -1,7 +1,9 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import fastifyRateLimit from "@fastify/rate-limit";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { buildSpaRateLimitPluginOptions, type HttpRateLimitSettings } from "../auth/rate-limit.js";
 
 const MIME_TYPES: Readonly<Record<string, string>> = {
   ".html": "text/html; charset=utf-8",
@@ -87,26 +89,44 @@ export function sendStaticFile(reply: FastifyReply, webDistDir: string, urlPath:
   return reply.header("content-type", contentType).send(readFileSync(candidate));
 }
 
-function registerSpaRoutes(app: FastifyInstance, webDistDir: string, spaPaths: readonly string[]): void {
+function registerSpaRoutes(
+  app: FastifyInstance,
+  webDistDir: string,
+  spaPaths: readonly string[],
+  rateLimit?: Pick<HttpRateLimitSettings, "spaMax" | "windowMs">,
+): void {
   const root = resolve(webDistDir);
-  const indexHtml = join(root, "index.html");
-  const serveSpaIndex = async (_request: FastifyRequest, reply: FastifyReply) => {
-    return reply.header("content-type", "text/html; charset=utf-8").send(readFileSync(indexHtml));
-  };
+  const indexHtmlBuffer = readFileSync(join(root, "index.html"));
 
-  for (const spaPath of spaPaths) {
-    app.get(spaPath, serveSpaIndex);
-  }
-  app.get("/assets/*", async (request, reply) => sendStaticFile(reply, root, request.url));
-  app.get("/favicon.ico", async (request, reply) => sendStaticFile(reply, root, request.url));
+  void app.register(async (spaApp) => {
+    await spaApp.register(fastifyRateLimit, buildSpaRateLimitPluginOptions(rateLimit));
+
+    const serveSpaIndex = async (_request: FastifyRequest, reply: FastifyReply) => {
+      return reply.header("content-type", "text/html; charset=utf-8").send(indexHtmlBuffer);
+    };
+
+    for (const spaPath of spaPaths) {
+      spaApp.get(spaPath, serveSpaIndex);
+    }
+    spaApp.get("/assets/*", async (request, reply) => sendStaticFile(reply, root, request.url));
+    spaApp.get("/favicon.ico", async (request, reply) => sendStaticFile(reply, root, request.url));
+  });
 }
 
 /** Registers production SPA routes while preserving JSON 404 semantics for `/auth/*`, `/internal/*`, and API routes. */
-export function registerProductionSpaRoutes(app: FastifyInstance, webDistDir: string): void {
-  registerSpaRoutes(app, webDistDir, PRODUCTION_SPA_PATHS);
+export function registerProductionSpaRoutes(
+  app: FastifyInstance,
+  webDistDir: string,
+  rateLimit?: Pick<HttpRateLimitSettings, "spaMax" | "windowMs">,
+): void {
+  registerSpaRoutes(app, webDistDir, PRODUCTION_SPA_PATHS, rateLimit);
 }
 
 /** Registers synthetic sandbox SPA routes including overlay preview and static assets. */
-export function registerSandboxSpaRoutes(app: FastifyInstance, webDistDir: string): void {
-  registerSpaRoutes(app, webDistDir, SANDBOX_SPA_PATHS);
+export function registerSandboxSpaRoutes(
+  app: FastifyInstance,
+  webDistDir: string,
+  rateLimit?: Pick<HttpRateLimitSettings, "spaMax" | "windowMs">,
+): void {
+  registerSpaRoutes(app, webDistDir, SANDBOX_SPA_PATHS, rateLimit);
 }

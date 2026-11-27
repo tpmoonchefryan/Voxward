@@ -1,3 +1,4 @@
+import fastifyRateLimit from "@fastify/rate-limit";
 import { OUTPUT_GRANT_KINDS, type OutputGrantKind } from "@voxward/contracts";
 import type { FastifyInstance, FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { and, desc, eq, gt } from "drizzle-orm";
@@ -11,6 +12,7 @@ import { issueOutputToken, revokeOutputToken } from "./downstream-tokens.js";
 import { issueNativeGrant } from "./output-grants.js";
 import { createLoginRateLimiter, login, ScryptOverloadedError, type LoginRateLimiter } from "./login.js";
 import {
+  findActiveMembership,
   grantMembership,
   listActiveMembers,
   revokeMembership,
@@ -24,7 +26,14 @@ import {
   type Allowed,
   type Principal,
 } from "./guard.js";
-import type { Capability } from "./permissions.js";
+import { capabilitiesOfMembership, type Capability, type ChannelRole } from "./permissions.js";
+import {
+  buildRouteRateLimitConfig,
+  DEFAULT_HTTP_RATE_LIMITS,
+  ROUTE_RATE_LIMIT_PLUGIN_OPTIONS,
+  type HttpRateLimitSettings,
+} from "./rate-limit.js";
+import { resolveChannelAccess } from "./rbac-enforce.js";
 import { DEFAULT_SESSION_TTL_MS, revokeSession } from "./session.js";
 
 export interface AuthRoutesOptions {
@@ -33,6 +42,8 @@ export interface AuthRoutesOptions {
   readonly onOutputGrantRevoked?: (grantId: string) => void;
   /** Optional custom login brute-force limiter (defaults to createLoginRateLimiter()). */
   readonly loginRateLimiter?: LoginRateLimiter;
+  /** Optional HTTP route rate-limit overrides (primarily for deterministic testing). */
+  readonly httpRateLimits?: HttpRateLimitSettings;
 }
 
 /** A refusal with a stable code. The error handler turns it into a JSON body with no detail beyond the code. */
@@ -119,6 +130,46 @@ function principalOf(database: VoxwardDatabase, request: FastifyRequest): Allowe
   return result;
 }
 
+function requireDelegationAllowed(
+  database: VoxwardDatabase,
+  allowed: Allowed,
+  channelId: string,
+  target: {
+    readonly accountId: string;
+    readonly nextRole: ChannelRole | null;
+    readonly logAccess: boolean;
+    readonly dataAdmin: boolean;
+  },
+): void {
+  if (allowed.principal.kind !== "account") {
+    throw new RouteFailure(403, "FORBIDDEN");
+  }
+  const actorAccess = resolveChannelAccess(database, channelId, allowed.principal.accountId);
+  if (actorAccess === null) {
+    throw new RouteFailure(403, "FORBIDDEN");
+  }
+  if (actorAccess.membership.role === "CHANNEL_OWNER") {
+    return;
+  }
+  const existingTarget = findActiveMembership(database, channelId, target.accountId);
+  if (existingTarget?.role === "CHANNEL_OWNER") {
+    throw new RouteFailure(403, "FORBIDDEN");
+  }
+  if (target.nextRole !== null) {
+    if (target.nextRole === "CHANNEL_OWNER") {
+      throw new RouteFailure(403, "FORBIDDEN");
+    }
+    const targetCaps = capabilitiesOfMembership({
+      role: target.nextRole,
+      logAccess: target.logAccess,
+      dataAdmin: target.dataAdmin,
+    });
+    if (targetCaps.some((cap) => !actorAccess.capabilities.has(cap))) {
+      throw new RouteFailure(403, "FORBIDDEN");
+    }
+  }
+}
+
 function requireCapability(database: VoxwardDatabase, allowed: Allowed, channelId: string, capability: Capability): void {
   const scope = authorizeChannel(database, allowed.principal, { channelId, capability });
   if (!scope.ok) throw new RouteFailure(403, "FORBIDDEN");
@@ -162,6 +213,19 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
   const { database } = options;
   const loginLimiter = options.loginRateLimiter ?? createLoginRateLimiter();
   const approvedContent = createApprovedContentPort(database);
+  const windowMs = options.httpRateLimits?.windowMs ?? DEFAULT_HTTP_RATE_LIMITS.windowMs;
+  const loginRateConfig = buildRouteRateLimitConfig(
+    options.httpRateLimits?.loginMax ?? DEFAULT_HTTP_RATE_LIMITS.loginMax,
+    windowMs,
+    "TOO_MANY_ATTEMPTS",
+  );
+  const batchMembersRateConfig = buildRouteRateLimitConfig(
+    options.httpRateLimits?.batchMembersMax ?? DEFAULT_HTTP_RATE_LIMITS.batchMembersMax,
+    windowMs,
+    "RATE_LIMITED",
+  );
+
+  await app.register(fastifyRateLimit, ROUTE_RATE_LIMIT_PLUGIN_OPTIONS);
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof RouteFailure) {
@@ -170,6 +234,10 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
       }
       const body = error.index === undefined ? { error: error.code } : { error: error.code, index: error.index };
       return reply.code(error.status).send(body);
+    }
+    if ((error as { statusCode?: unknown }).statusCode === 429) {
+      const code = (error as { error?: unknown }).error;
+      return reply.code(429).send({ error: typeof code === "string" ? code : "RATE_LIMITED" });
     }
     const refusal = fastifyRefusal(error);
     if (refusal !== undefined) {
@@ -182,7 +250,13 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
     return reply.code(500).send({ error: "INTERNAL_ERROR" });
   });
 
-  app.post("/auth/login", async (request, reply) => {
+  app.post(
+    "/auth/login",
+    {
+      onRequest: app.rateLimit(loginRateConfig),
+      config: { rateLimit: loginRateConfig },
+    },
+    async (request, reply) => {
     const body = parseBody(LOGIN_BODY, request.body);
     const now = new Date();
     const ip = request.ip || "unknown";
@@ -281,6 +355,12 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
     const { channelId } = request.params;
     requireCapability(database, allowed, channelId, "members.manage");
     const body = parseBody(MEMBER_BODY, request.body);
+    requireDelegationAllowed(database, allowed, channelId, {
+      accountId: body.accountId,
+      nextRole: body.role,
+      logAccess: body.logAccess,
+      dataAdmin: body.dataAdmin ?? false,
+    });
     requireKnownAccount(database, body.accountId);
     const membership = runShortTransaction(database, (tx) => {
       if (wouldLeaveChannelWithoutOwner(tx, { channelId, accountId: body.accountId, nextRole: body.role })) {
@@ -304,6 +384,12 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app: Fas
       const allowed = principalOf(database, request);
       const { channelId, accountId } = request.params;
       requireCapability(database, allowed, channelId, "members.manage");
+      requireDelegationAllowed(database, allowed, channelId, {
+        accountId,
+        nextRole: null,
+        logAccess: false,
+        dataAdmin: false,
+      });
       const revoked = runShortTransaction(database, (tx) => {
         if (wouldLeaveChannelWithoutOwner(tx, { channelId, accountId, nextRole: null })) {
           throw new RouteFailure(409, "LAST_OWNER_REQUIRED");
@@ -428,32 +514,47 @@ const OUTPUT_GRANT_BODY = z
     },
   );
 
-  app.post("/members/batch", async (request, reply) => {
-    const allowed = principalOf(database, request);
-    const body = parseBody(BATCH_BODY, request.body);
-    const scope = authorizeBatch(
-      database,
-      allowed.principal,
-      body.items.map((item) => ({ channelId: item.channelId, capability: "members.manage" as const })),
-    );
-    if (!scope.ok) throw new RouteFailure(403, "BATCH_DENIED", scope.index);
-    for (const item of body.items) requireKnownAccount(database, item.accountId);
-    const now = new Date();
-    const granted = runShortTransaction(database, (tx) =>
-      body.items.map((item) => {
-        if (wouldLeaveChannelWithoutOwner(tx, { channelId: item.channelId, accountId: item.accountId, nextRole: item.role })) {
-          throw new RouteFailure(409, "LAST_OWNER_REQUIRED");
-        }
-        return grantMembership(tx, {
-          channelId: item.channelId,
+  app.post(
+    "/members/batch",
+    {
+      onRequest: app.rateLimit(batchMembersRateConfig),
+      config: { rateLimit: batchMembersRateConfig },
+    },
+    async (request, reply) => {
+      const allowed = principalOf(database, request);
+      const body = parseBody(BATCH_BODY, request.body);
+      const scope = authorizeBatch(
+        database,
+        allowed.principal,
+        body.items.map((item) => ({ channelId: item.channelId, capability: "members.manage" as const })),
+      );
+      if (!scope.ok) throw new RouteFailure(403, "BATCH_DENIED", scope.index);
+      for (const item of body.items) {
+        requireDelegationAllowed(database, allowed, item.channelId, {
           accountId: item.accountId,
-          role: item.role,
+          nextRole: item.role,
           logAccess: item.logAccess,
           dataAdmin: item.dataAdmin ?? false,
-          now,
         });
-      }),
-    );
-    return reply.code(201).send({ granted: granted.length });
-  });
+        requireKnownAccount(database, item.accountId);
+      }
+      const now = new Date();
+      const granted = runShortTransaction(database, (tx) =>
+        body.items.map((item) => {
+          if (wouldLeaveChannelWithoutOwner(tx, { channelId: item.channelId, accountId: item.accountId, nextRole: item.role })) {
+            throw new RouteFailure(409, "LAST_OWNER_REQUIRED");
+          }
+          return grantMembership(tx, {
+            channelId: item.channelId,
+            accountId: item.accountId,
+            role: item.role,
+            logAccess: item.logAccess,
+            dataAdmin: item.dataAdmin ?? false,
+            now,
+          });
+        }),
+      );
+      return reply.code(201).send({ granted: granted.length });
+    },
+  );
 };

@@ -38,10 +38,10 @@
 | 官网与演示地址 | 材料 | 同上（`/sandbox` 演示已可访问，正式官网按部署方规划补齐） | 第 15.3、20.1 节 |
 | 申请主体的身份资料 | 身份 | 正式申请时补全，不写入仓库 | 第 15.3 节 |
 | AI 服务的实际留存与训练选项 | 核对 | 部署时展示所选服务的实际条款。本包未核对 | 第 8.4、20.1 节 |
-| Kiro 与 Crew 的清理行为 | 实测 | 适配器、孤儿目录回收及真实本机实测验收随 VOXWARD-INIT-003 归档 | 第 20.1 节 |
-| 第三方接入的版本兼容（OneComme、VTube Studio、blivechat） | 实测 | 协议层 `vw-output.v1` 与 `blivechat-v1.x-json-ws` 已有自动化验证；真实桌面端兼容抽检仍属外部条件 | 第 13.2、20.1 节 |
-| 模型推荐、reasoning、延迟与容量 | 实测 | 真实三提供商基线测量随 `VOXWARD-SUB-050`（Q60）执行归档，未测前不作承诺 | 第 20.1 节 |
-| 删除与恢复的验证 | 实测 | 墓碑账本、WAL/备份恢复与 `event_payments` 清除已纳入服务端集成测试 | 第 12.4、19.2 节 |
+| Kiro 与 Crew 的清理行为 | 实测 | 适配器、孤儿目录回收及 `kiro-cli 3.6.0` 隔离 `0700` 实测（正常、超时、取消、`--trust-tools=`、带 `sessionId` 孤儿清理）已随 `STORY-029` / `deploy/kiro-runtime/README.md` 归档；目标生产机仍需 root 建立 `voxward-kiro` 用户 | 第 20.1 节 |
+| 第三方接入的版本兼容（OneComme、VTube Studio、blivechat） | 实测 | 协议层 `vw-output.v1`、`blivechat-v1.x-json-ws` 及 `INIT-006` WebSocket 配额/隔离投递已通过集成测试；真实桌面端 GUI 联调仍属外部条件 | 第 13.2、20.1 节 |
+| 模型推荐、reasoning、延迟与容量 | 实测 | 81 条合成样本三提供方真实基准（`openai-compat` / `anthropic-compat` / `kiro-cli 3.6.0`）已随 `docs/acceptance/ai-quality-latency-cleanup-report.md` 归档，未保证提供方零留存 | 第 20.1 节 |
+| 删除与恢复的验证 | 实测 | 墓碑账本、WAL/`.restoring` 备份恢复、`event_payments` 清除及浏览端到 OBS E2E 已纳入集成测试（`init001-mvp-e2e.test.ts`） | 第 12.4、19.2 节 |
 | 公开仓库的开源许可证 | 决定 | 已确定采用 **Apache-2.0**（见根目录 [`LICENSE`](../../LICENSE) 与 [`NOTICE`](../../NOTICE)） | 第 19.3 节 |
 | 提交材料（英文版、视频、表单字段） | 材料 | 由 VOXWARD-EPIC-007 承接，不在本包范围内 | 第 19.3 节；INHERIT-022 |
 
