@@ -39,7 +39,7 @@ spec:
       containers:
         - name: voxward
           # Immutable attested OCI image built by .github/workflows/container-provenance.yml (verify via scripts/verify-provenance.mjs).
-          image: ghcr.io/tpmoonchefryan/voxward@sha256:7acaa398531fb26c55091ba1ae4aaae1c64ad4b2479ecf795669ed0fcbffea45
+          image: ghcr.io/tpmoonchefryan/voxward@sha256:5f1cd93af103cacc74cff9ee9773ddedac92c6057f1330df7b032fcdf7b5028c
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

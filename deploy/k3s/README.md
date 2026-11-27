@@ -35,7 +35,7 @@ docker buildx build --push --provenance=mode=max -t ghcr.io/<org>/voxward:<tag> 
 docker buildx imagetools inspect ghcr.io/<org>/voxward:<tag>
 ```
 
-The repository manifests pin the immutable attested OCI digest (`ghcr.io/tpmoonchefryan/voxward@sha256:7acaa398531fb26c55091ba1ae4aaae1c64ad4b2479ecf795669ed0fcbffea45`) built by [container-provenance.yml](../../.github/workflows/container-provenance.yml) and verified against `deploy/provenance.json` (`imageDigestStatus: verified`). Verify SLSA v1.0 provenance live before deploying:
+The repository manifests pin the immutable attested OCI digest (`ghcr.io/tpmoonchefryan/voxward@sha256:5f1cd93af103cacc74cff9ee9773ddedac92c6057f1330df7b032fcdf7b5028c`) built by [container-provenance.yml](../../.github/workflows/container-provenance.yml) and verified against `deploy/provenance.json` (`imageDigestStatus: verified`). Verify SLSA v1.0 provenance live before deploying:
 
 ```bash
 node scripts/deploy-check.mjs --env-file deploy/server/server.env.example
