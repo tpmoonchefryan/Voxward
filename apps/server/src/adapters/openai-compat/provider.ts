@@ -17,7 +17,7 @@ import {
   type ModerationReasonCode,
   type ScMultilingualBatchInput,
 } from "@voxward/contracts";
-import { OutboundUrlError, safeOutboundFetch } from "../../security/outbound-url.js";
+import { OutboundUrlError, safeOutboundFetch, trimTrailingSlashes } from "../../security/outbound-url.js";
 
 export interface HttpValidatedItem {
   readonly itemId: string;
@@ -80,7 +80,7 @@ const DEFAULT_MAX_ITEMS = 50;
 export function normalizeOpenAiBaseUrl(baseUrl?: string): string {
   const raw = (baseUrl ?? "").trim();
   if (!raw) return DEFAULT_OPENAI_BASE_URL;
-  return raw.replace(/\/+$/, "");
+  return trimTrailingSlashes(raw);
 }
 
 function stripJsonCodeFence(text: string): string {

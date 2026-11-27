@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { OutboundUrlError, safeOutboundFetch } from "../security/outbound-url.js";
+import { OutboundUrlError, safeOutboundFetch, trimTrailingSlashes } from "../security/outbound-url.js";
 import { probeAnthropicCompatEndpoint } from "./anthropic-compat/provider.js";
 import { describeKiroCli } from "./kiro-cli/capabilities.js";
 import { sweepOrphanRunDirectories } from "./kiro-cli/orphan-sweep.js";
@@ -135,7 +135,7 @@ export function createRealAdapterActionExecutor(
             upstreamStatusCode: 0,
             latencyMs: elapsed(),
             method: "GET",
-            url: `${(baseEndpoint || "https://api.openai.com/v1").replace(/\/+$/, "")}/models`,
+            url: `${trimTrailingSlashes(baseEndpoint || "https://api.openai.com/v1")}/models`,
             summary: "缺少已托管 API Key，无法执行远端探测",
             statusCode: "CONNECTION_FAILED",
             statusParams: { error: "API_KEY_MISSING" },
@@ -200,7 +200,7 @@ export function createRealAdapterActionExecutor(
             upstreamStatusCode: 0,
             latencyMs: elapsed(),
             method: "GET",
-            url: `${(baseEndpoint || "https://api.anthropic.com").replace(/\/+$/, "")}/v1/models`,
+            url: `${trimTrailingSlashes(baseEndpoint || "https://api.anthropic.com")}/v1/models`,
             summary: "缺少已托管 API Key，无法执行远端探测",
             statusCode: "CONNECTION_FAILED",
             statusParams: { error: "API_KEY_MISSING" },

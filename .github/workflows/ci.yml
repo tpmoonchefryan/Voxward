@@ -38,11 +38,11 @@ jobs:
       - name: Typecheck packages, apps, and bench
         run: pnpm typecheck
 
-      - name: Run full unit & integration test suite
-        run: pnpm test
-
       - name: Build production bundles
         run: pnpm build
+
+      - name: Run full unit & integration test suite
+        run: pnpm test
 
       - name: Check design system compliance
         run: pnpm check:ds

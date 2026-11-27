@@ -16,7 +16,7 @@ import {
   type ModerationReasonCode,
   type ScMultilingualBatchInput,
 } from "@voxward/contracts";
-import { OutboundUrlError, safeOutboundFetch } from "../../security/outbound-url.js";
+import { OutboundUrlError, safeOutboundFetch, trimTrailingSlashes } from "../../security/outbound-url.js";
 import {
   buildModerationPrompt,
   buildScTranslationPrompt,
@@ -52,7 +52,7 @@ const DEFAULT_MAX_ITEMS = 50;
 export function normalizeAnthropicBaseUrl(baseUrl?: string): string {
   const raw = (baseUrl ?? "").trim();
   if (!raw) return DEFAULT_ANTHROPIC_BASE_URL;
-  return raw.replace(/\/+$/, "");
+  return trimTrailingSlashes(raw);
 }
 
 export function buildAnthropicPath(baseUrl: string, resource: "messages" | "models"): string {

@@ -156,16 +156,23 @@ export function assertValidEndpointUrlSync(rawUrl: string, options: OutboundUrlC
   return parsed;
 }
 
+/** Removes trailing slashes without polynomial backtracking regexes (CodeQL js/polynomial-redos). */
+export function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1;
+  return value.slice(0, end);
+}
+
 /** Normalizes an adapter endpoint into `origin + pathname` (no trailing slash) for secret binding. */
 export function normalizeBoundEndpoint(rawUrl?: string | null, fallbackUrl?: string): string {
   const candidate = rawUrl?.trim() || fallbackUrl?.trim() || "";
   if (!candidate) return "";
   try {
     const u = new URL(candidate);
-    const cleanPath = u.pathname.replace(/\/+$/, "");
+    const cleanPath = trimTrailingSlashes(u.pathname);
     return `${u.origin}${cleanPath}`;
   } catch {
-    return candidate.replace(/\/+$/, "");
+    return trimTrailingSlashes(candidate);
   }
 }
 
