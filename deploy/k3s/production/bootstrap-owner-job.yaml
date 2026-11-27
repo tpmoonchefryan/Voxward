@@ -37,7 +37,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: bootstrap-owner
-          image: ghcr.io/tpmoonchefryan/voxward@sha256:5f1cd93af103cacc74cff9ee9773ddedac92c6057f1330df7b032fcdf7b5028c
+          image: ghcr.io/tpmoonchefryan/voxward@sha256:dca8691ecc042e9c692155ee363616916ce93a19e07b65371022952d98df588e
           imagePullPolicy: IfNotPresent
           args:
             - scripts/bootstrap-owner.mjs

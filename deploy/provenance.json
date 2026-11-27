@@ -15,7 +15,7 @@
   "ciNodeVersion": "24",
   "appImage": {
     "repository": "ghcr.io/tpmoonchefryan/voxward",
-    "digest": "sha256:5f1cd93af103cacc74cff9ee9773ddedac92c6057f1330df7b032fcdf7b5028c",
+    "digest": "sha256:dca8691ecc042e9c692155ee363616916ce93a19e07b65371022952d98df588e",
     "imageDigestStatus": "verified",
     "manifests": [
       "deploy/k3s/production/deployment.yaml",
@@ -25,12 +25,12 @@
     "provenance": {
       "predicateType": "https://slsa.dev/provenance/v1",
       "sourceRepository": "https://github.com/tpmoonchefryan/Voxward",
-      "sourceCommit": "fa1571de600ce59b4c8e7235b49162da7868523e",
+      "sourceCommit": "c4c2f2921fc171044542de24e12ea68babeb8ba2",
       "workflow": ".github/workflows/container-provenance.yml",
-      "workflowRunId": "46014540475",
-      "workflowRunUrl": "https://github.com/tpmoonchefryan/Voxward/actions/runs/46014540475",
-      "attestationApiUrl": "https://api.github.com/repos/tpmoonchefryan/Voxward/attestations/sha256:5f1cd93af103cacc74cff9ee9773ddedac92c6057f1330df7b032fcdf7b5028c",
-      "attestationUrl": "https://github.com/tpmoonchefryan/Voxward/attestations/73143285"
+      "workflowRunId": "46035916475",
+      "workflowRunUrl": "https://github.com/tpmoonchefryan/Voxward/actions/runs/46035916475",
+      "attestationApiUrl": "https://api.github.com/repos/tpmoonchefryan/Voxward/attestations/sha256:dca8691ecc042e9c692155ee363616916ce93a19e07b65371022952d98df588e",
+      "attestationUrl": "https://github.com/tpmoonchefryan/Voxward/attestations/73205026"
     }
   }
 }
