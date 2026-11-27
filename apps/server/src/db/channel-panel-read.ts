@@ -228,7 +228,7 @@ export function readDockAndModerationFeed(
     const del = deliveryByEvent.get(ev.eventId) ?? null;
     const isBlocked = verdict.downstream === "BLOCK";
     const bodyFolded = isBlocked;
-    const originalText = isBlocked && !options.includeOriginal ? null : (evEvidence?.messageText ?? null);
+    const originalText = options.includeOriginal ? (evEvidence?.messageText ?? null) : null;
 
     const item: ModerationItem = {
       eventId: ev.eventId,

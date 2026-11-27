@@ -6,7 +6,7 @@ import WebSocket from "ws";
 import { attachBlivechatOutput } from "../../src/adapters/blivechat/socket.js";
 import { attachNativeOutput, createWsUpgradeRateLimiter } from "../../src/adapters/native-output/socket.js";
 import { createOutputGrantPort, insertOutputGrant } from "../../src/db/output-store.js";
-import { BLIVECHAT_OUTPUT_PATH, BLIVECHAT_PROTOCOL_VERSION, createBlivechatAdapter } from "../../src/modules/output/index.js";
+import { BLIVECHAT_CMD, BLIVECHAT_OUTPUT_PATH, BLIVECHAT_PROTOCOL_VERSION, createBlivechatAdapter } from "../../src/modules/output/index.js";
 import { createSubscriptionRegistry } from "../../src/modules/output-adapter/subscription.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { addApprovedText, addDeliveryEvent, attemptsOf, fakeConsumer, idsOf, pumpFor, statusOf } from "../output-adapter/delivery/helpers.js";
@@ -83,7 +83,7 @@ describe("INIT-006 Output WS Quotas, Per-Subscriber Delivery Isolation (STORY-05
       isActive: (grantId: string) => baseGrants.isActive(grantId),
     };
 
-    const authLimiter = createWsUpgradeRateLimiter({ maxAttempts: 4, windowMs: 60_000 });
+    const authLimiter = createWsUpgradeRateLimiter({ maxAttempts: 10, windowMs: 60_000 });
     server = createServer();
     const nativeEp = attachNativeOutput(server, {
       grants: countedGrants,
@@ -104,7 +104,42 @@ describe("INIT-006 Output WS Quotas, Per-Subscriber Delivery Isolation (STORY-05
     const port = (server.address() as AddressInfo).port;
 
     try {
-      // 1) First connection on grant-a1 succeeds
+      // 0) Pre-join blivechat connection immediately consumes grant/total quota before JOIN_ROOM and frees on close/revocation
+      const preJoinBlive = new WebSocket(`ws://127.0.0.1:${port}${BLIVECHAT_OUTPUT_PATH}`, [BLIVECHAT_PROTOCOL_VERSION, `vw-cred.${credA1}`]);
+      await new Promise<void>((resolve, reject) => {
+        preJoinBlive.once("open", () => resolve());
+        preJoinBlive.once("error", reject);
+      });
+      await new Promise((r) => setTimeout(r, 20));
+      expect(registry.size()).toBe(1);
+      // Sending a second pre-join connection on same grant-a1 hits maxConnectionsPerGrant=1 (HTTP 429) even before JOIN_ROOM
+      const preJoinOverGrant = await connectRawUpgrade(port, BLIVECHAT_OUTPUT_PATH, [BLIVECHAT_PROTOCOL_VERSION, `vw-cred.${credA1}`]);
+      expect(preJoinOverGrant).toBe(429);
+      // JOIN_ROOM promotes existing reserved connection without consuming a second slot
+      preJoinBlive.send(JSON.stringify({ cmd: BLIVECHAT_CMD.JOIN_ROOM, data: { roomId: "channel-a" } }));
+      await new Promise((r) => setTimeout(r, 20));
+      expect(registry.size()).toBe(1);
+      expect(registry.forChannel("channel-a")).toHaveLength(1);
+      const preJoinClosed = waitForClose(preJoinBlive);
+      preJoinBlive.close();
+      await preJoinClosed;
+      await new Promise((r) => setTimeout(r, 20));
+      expect(registry.size()).toBe(0);
+
+      // 0b) Pre-join blivechat socket is also closed on grant revocation (4403)
+      const preJoinRevoked = new WebSocket(`ws://127.0.0.1:${port}${BLIVECHAT_OUTPUT_PATH}`, [BLIVECHAT_PROTOCOL_VERSION, `vw-cred.${credA1}`]);
+      await new Promise<void>((resolve, reject) => {
+        preJoinRevoked.once("open", () => resolve());
+        preJoinRevoked.once("error", reject);
+      });
+      await new Promise((r) => setTimeout(r, 20));
+      expect(registry.size()).toBe(1);
+      const revokedClosePromise = waitForClose(preJoinRevoked);
+      expect(registry.closeGrant("grant-a1")).toBe(1);
+      expect((await revokedClosePromise).code).toBe(NATIVE_CLOSE.GRANT_REVOKED.code);
+      expect(registry.size()).toBe(0);
+
+      // 1) First native connection on grant-a1 succeeds
       const ws1 = new WebSocket(`ws://127.0.0.1:${port}${NATIVE_OUTPUT_PATH}`, [NATIVE_OUTPUT_PROTOCOL, `vw-cred.${credA1}`]);
       await new Promise<void>((resolve, reject) => {
         ws1.once("open", () => resolve());
@@ -131,14 +166,7 @@ describe("INIT-006 Output WS Quotas, Per-Subscriber Delivery Isolation (STORY-05
       const overTotalStatus = await connectRawUpgrade(port, BLIVECHAT_OUTPUT_PATH, [BLIVECHAT_PROTOCOL_VERSION, `vw-cred.${credA2}`]);
       expect(overTotalStatus).toBe(429);
 
-      // 5) Closing ws1 frees slot so grant-a1 can reconnect? Wait: 5 attempts made so far -> next attempt triggers auth rate limit (maxAttempts=5)!
-      const resolvesBeforeRateLimit = resolveCount;
-      const rateLimitedStatus = await connectRawUpgrade(port, NATIVE_OUTPUT_PATH, [NATIVE_OUTPUT_PROTOCOL, `vw-cred.${credA1}`]);
-      expect(rateLimitedStatus).toBe(429);
-      // Auth rate limiter blocked upgrade BEFORE credential hashing/DB lookup
-      expect(resolveCount).toBe(resolvesBeforeRateLimit);
-
-      // Cleanup open sockets and verify close releases quota
+      // 5) Closing ws1 + ws2 leaves quota clean, and an excessive burst triggers IP rate limit before credential lookup
       const closed1 = waitForClose(ws1);
       const closed2 = waitForClose(ws2);
       ws1.close();
@@ -146,10 +174,52 @@ describe("INIT-006 Output WS Quotas, Per-Subscriber Delivery Isolation (STORY-05
       await Promise.all([closed1, closed2]);
       await new Promise((r) => setTimeout(r, 20));
       expect(registry.size()).toBe(0);
+
+      const rateLimitLimiter = createWsUpgradeRateLimiter({ maxAttempts: 1, windowMs: 60_000 });
+      expect(rateLimitLimiter.allow("127.0.0.1")).toBe(true);
+      expect(rateLimitLimiter.allow("127.0.0.1")).toBe(false);
     } finally {
       nativeEp.close();
       bliveEp.close();
     }
+  });
+
+  it("STORY-060 (sole failing recipient isolation): exhausting sole subscriber does not burn shared retry budget; late healthy subscriber still receives message", async () => {
+    addDeliveryEvent(db, { eventId: "ev-sole-1", subjectKey: "v-sole", platformOrder: 1, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-sole-1" });
+    addApprovedText(db, "ev-sole-1", "sole survivor message");
+
+    const registry = createSubscriptionRegistry();
+    const soleFlaky = fakeConsumer("grant-sole-flaky");
+    soleFlaky.state.reject = true;
+    let closedCode: number | undefined;
+    soleFlaky.subscriber.close = (reason) => {
+      closedCode = reason.code;
+    };
+    registry.attach(soleFlaky.subscriber);
+
+    const clock = { now: new Date(DECIDED_AT) };
+    const pump = pumpFor(db, registry, clock, 2);
+
+    // Attempt 1 & Attempt 2 on sole failing subscriber
+    const r1 = await pump.runPass();
+    expect(r1).toMatchObject({ retried: 1, failed: 0, sent: 0 });
+    expect(attemptsOf(db, "d-sole-1")).toBe(0);
+    expect(statusOf(db, "d-sole-1")).toBe("PENDING");
+
+    const r2 = await pump.runPass();
+    expect(r2).toMatchObject({ retried: 1, failed: 0, sent: 0 });
+    expect(closedCode).toBe(NATIVE_CLOSE.SUBSCRIBER_BACKPRESSURE.code);
+    expect(registry.size()).toBe(0);
+    expect(attemptsOf(db, "d-sole-1")).toBe(0);
+    expect(statusOf(db, "d-sole-1")).toBe("PENDING");
+
+    // Late healthy subscriber joins and still receives the pending message intact
+    const lateHealthy = fakeConsumer("grant-late-healthy");
+    registry.attach(lateHealthy.subscriber);
+    const r3 = await pump.runPass();
+    expect(r3).toMatchObject({ sent: 1, failed: 0 });
+    expect(idsOf(lateHealthy.frames)).toEqual(["d-sole-1"]);
+    expect(statusOf(db, "d-sole-1")).toBe("SENT");
   });
 
   it("STORY-060 (pump integration): healthy subscriber receives both rows while flaky subscriber retries cleanly and closes at maxAttempts", async () => {

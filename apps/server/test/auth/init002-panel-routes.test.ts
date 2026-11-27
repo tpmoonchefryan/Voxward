@@ -10,6 +10,7 @@ import { ChannelEventStore, SubjectStore, TaskStore } from "../../src/db/reposit
 import { channels, deliveries, ruleTerms, ruleVersions, verdicts, wordlistSnapshots } from "../../src/db/schema/index.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { buildRegistry } from "../../src/modules/registry.js";
+import { deriveVaultKey } from "../../src/security/persistent-vault.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
 
 const NOW = new Date();
@@ -82,6 +83,7 @@ describe("INIT-002 extended panel & RBAC routes (VOXWARD-STORY-036)", () => {
       modules: buildRegistry({ adapters: "synthetic", host: "127.0.0.1", port: 3000, databaseFile: ":memory:" }),
       logger: false,
       database: db,
+      vaultKey: deriveVaultKey("test-vault-key-init002-panel"),
       adapterActionFetch: stubFetch,
     });
     await app.ready();

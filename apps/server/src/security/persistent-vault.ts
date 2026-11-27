@@ -35,6 +35,9 @@ export function deriveVaultKey(material: string): Buffer {
   if (/^[0-9a-fA-F]{64}$/.test(trimmed)) {
     return Buffer.from(trimmed, "hex");
   }
+  if (trimmed.length < 16) {
+    throw new Error("credential vault key material must be at least 16 characters");
+  }
   return createHash("sha256").update("voxward-vault-key-v1:", "utf8").update(trimmed, "utf8").digest();
 }
 

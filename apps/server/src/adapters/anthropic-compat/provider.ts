@@ -129,7 +129,7 @@ export async function probeAnthropicCompatEndpoint(options: {
         latencyMs,
         url,
         errorCode: `HTTP_${response.status}`,
-        rawBodyPreview: bodyText.slice(0, 512),
+        rawBodyPreview: JSON.stringify({ ok: false, statusCode: response.status, error: `HTTP_${response.status}` }),
       };
     }
     const parsed = JSON.parse(bodyText) as { data?: Array<{ id?: unknown; display_name?: unknown }> };

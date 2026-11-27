@@ -1,0 +1,140 @@
+name: Container Image & SLSA Provenance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - apps/**
+      - packages/**
+      - scripts/bootstrap-owner.mjs
+      - deploy/sandbox/**
+      - vendor/**
+      - .github/workflows/container-provenance.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-attest:
+    name: Build, Smoke-Test & Attest OCI Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push immutable OCI image
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          provenance: mode=max
+          sbom: true
+          tags: |
+            ghcr.io/tpmoonchefryan/voxward:sha-${{ github.sha }}
+
+      - name: Smoke-test production, sandbox, and bootstrap entrypoints by digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="ghcr.io/tpmoonchefryan/voxward@${{ steps.build.outputs.digest }}"
+          docker pull "$IMAGE"
+
+          cleanup() {
+            docker rm -f vox-prod vox-sandbox >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          # 1. Production entrypoint
+          docker run -d --name vox-prod --read-only --tmpfs /tmp:rw,noexec,nosuid \
+            -e VOXWARD_ADAPTERS=synthetic \
+            -e VOXWARD_DATABASE_FILE=/tmp/prod.sqlite3 \
+            -e VOXWARD_HOST=0.0.0.0 \
+            -e VOXWARD_PORT=3000 \
+            "$IMAGE"
+          for i in $(seq 1 15); do
+            if docker exec vox-prod node -e 'fetch("http://127.0.0.1:3000/healthz").then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))'; then
+              break
+            fi
+            if [ "$i" -eq 15 ]; then
+              docker logs vox-prod
+              exit 1
+            fi
+            sleep 1
+          done
+          docker rm -f vox-prod
+
+          # 2. Sandbox entrypoint
+          docker run -d --name vox-sandbox --read-only --tmpfs /tmp:rw,noexec,nosuid \
+            -e VOXWARD_SANDBOX_ENABLED=true \
+            -e VOXWARD_SANDBOX_HOST=0.0.0.0 \
+            -e VOXWARD_SANDBOX_PORT=3100 \
+            -e VOXWARD_SANDBOX_DB=/tmp/sandbox.sqlite3 \
+            "$IMAGE" apps/server/dist/sandbox-main.js
+          for i in $(seq 1 15); do
+            if docker exec vox-sandbox node -e 'fetch("http://127.0.0.1:3100/healthz").then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))'; then
+              break
+            fi
+            if [ "$i" -eq 15 ]; then
+              docker logs vox-sandbox
+              exit 1
+            fi
+            sleep 1
+          done
+          docker rm -f vox-sandbox
+
+          # 3. Bootstrap owner CLI entrypoint
+          docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid \
+            -e VOXWARD_BOOTSTRAP_PASSWORD=smoke-bootstrap-pass-1234 \
+            "$IMAGE" scripts/bootstrap-owner.mjs \
+            --db /tmp/boot.sqlite3 \
+            --channel-id smoke-room \
+            --login-name smoke-owner \
+            --display-name "Smoke Owner"
+
+      - name: Generate SLSA v1.0 Build Provenance Attestation
+        id: attest
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-name: ghcr.io/tpmoonchefryan/voxward
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Write provenance summary
+        shell: bash
+        run: |
+          {
+            echo "### VoxWard OCI Image & Provenance"
+            echo "- Image: \`ghcr.io/tpmoonchefryan/voxward@${{ steps.build.outputs.digest }}\`"
+            echo "- Source Commit: \`${{ github.sha }}\`"
+            echo "- Workflow Run: \`${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\`"
+            echo "- Attestation API: \`https://api.github.com/repos/${{ github.repository }}/attestations/${{ steps.build.outputs.digest }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

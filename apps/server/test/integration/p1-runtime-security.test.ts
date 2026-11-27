@@ -19,6 +19,7 @@ import { createReviewRunner } from "../../src/modules/moderation-engine/review/r
 import type { ReviewCandidate, ReviewStorePort } from "../../src/modules/moderation-engine/review/ports.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 import { createTaskCoordinator } from "../../src/modules/task-coordinator/index.js";
+import { deriveVaultKey } from "../../src/security/persistent-vault.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
 
 const CH = "ch-p1-1";
@@ -183,6 +184,7 @@ describe("EPIC-014 (VW3-R-004..007): production wiring, vault sealing, RBAC enfo
       modules: buildRegistry({ adapters: "synthetic", host: "127.0.0.1", port: 3000, databaseFile: ":memory:" }),
       logger: false,
       database: db,
+      vaultKey: deriveVaultKey("test-vault-key-p1-s005"),
       adapterActionFetch: failingFetch,
     });
     await app.ready();
@@ -306,7 +308,7 @@ describe("EPIC-014 (VW3-R-004..007): production wiring, vault sealing, RBAC enfo
     expect(stillAuthedChannels.statusCode).toBe(200);
     expect((stillAuthedChannels.json() as { channels: unknown[] }).channels).toEqual([]);
 
-    // includeOriginal=false masks originalText in reviewQueue and approvedSc
+    // includeOriginal=false masks originalText in reviewQueue, approvedSc, and ALLOW liveStream entries
     runShortTransaction(db, (tx) => {
       const ev = ChannelEventStore.recordIfNew(tx, {
         id: "ev-sc-1",
@@ -340,8 +342,35 @@ describe("EPIC-014 (VW3-R-004..007): production wiring, vault sealing, RBAC enfo
           decidedByRef: "system",
         })
         .run();
+
+      const chatEv = ChannelEventStore.recordIfNew(tx, {
+        id: "ev-chat-1",
+        channelId: CH,
+        subjectId: "sub-p1",
+        platformMessageRef: "pm-chat-1",
+        platformOrder: 2,
+        receivedAt: T0,
+        correlationId: "corr-chat-1",
+        exceptionMarked: false,
+        createdAt: T0,
+      });
+      tx.insert(verdicts)
+        .values({
+          id: "v-chat-1",
+          eventId: chatEv.id,
+          taskId: null,
+          seq: 1,
+          classification: "ALLOW_MEANINGFUL",
+          downstream: "ALLOW",
+          source: "MODEL",
+          isCurrent: 1,
+          decidedAt: T0,
+          decidedByRef: "system",
+        })
+        .run();
     });
-    createAuditLogPort(db).insertTechnicalLog(
+    const auditPort = createAuditLogPort(db);
+    auditPort.insertTechnicalLog(
       {
         id: "log-sc-1",
         channelId: CH,
@@ -364,14 +393,39 @@ describe("EPIC-014 (VW3-R-004..007): production wiring, vault sealing, RBAC enfo
       },
       [{ id: "evid-sc-1", kind: "MESSAGE_TEXT", payload: "secret viewer text", expiresAt: "2099-01-01T00:00:00.000Z" }],
     );
+    auditPort.insertTechnicalLog(
+      {
+        id: "log-chat-1",
+        channelId: CH,
+        correlationId: "corr-chat-1",
+        batchId: null,
+        taskId: null,
+        attempt: 1,
+        stage: "MODEL_CALL",
+        status: "OK",
+        level: "INFO",
+        errorCode: null,
+        providerRef: null,
+        modelRef: null,
+        ruleTemplateVersion: null,
+        latencyMs: 10,
+        subjectId: "sub-p1",
+        data: null,
+        createdAt: T0,
+        expiresAt: "2099-01-01T00:00:00.000Z",
+      },
+      [{ id: "evid-chat-1", kind: "MESSAGE_TEXT", payload: "allow chat original text", expiresAt: "2099-01-01T00:00:00.000Z" }],
+    );
 
     const masked = readDockAndModerationFeed(db, CH, { includeOriginal: false, nowIso: T0 });
     expect(masked.reviewQueue[0]?.originalText).toBeNull();
     expect(masked.approvedSc[0]?.originalText).toBeNull();
+    expect(masked.liveStream.every((item) => item.originalText === null)).toBe(true);
 
     const unmasked = readDockAndModerationFeed(db, CH, { includeOriginal: true, nowIso: T0 });
     expect(unmasked.reviewQueue[0]?.originalText).toBe("secret viewer text");
     expect(unmasked.approvedSc[0]?.originalText).toBe("secret viewer text");
+    expect(unmasked.liveStream.find((item) => item.eventId === "ev-chat-1")?.originalText).toBe("allow chat original text");
   });
 
   it("VW3-R-007: persists candidateStore across instances and recovers cross-instance ReviewRunner tasks (Q57 R7)", async () => {

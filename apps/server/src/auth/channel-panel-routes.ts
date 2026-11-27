@@ -17,6 +17,7 @@ import {
   DEFAULT_QUEUE_ADMIN_SETTINGS,
   DEFAULT_RETENTION_ADMIN_SETTINGS,
   DEFAULT_SCORING_ADMIN_SETTINGS,
+  migrateLegacyIntegrationLogs,
   publishTermList,
   readBlockedUsers,
   readChannelAdapters,
@@ -450,10 +451,24 @@ function validateAdapterEndpointConfig(
   }
 }
 
+function assertNoClientSecretRefs(
+  driverId: AdapterDriverId,
+  config: Readonly<Record<string, string | number | boolean | null>>,
+): void {
+  const desc = ADAPTER_SYSTEM_CATALOG.find((item) => item.driverId === driverId);
+  for (const field of desc?.secretFields ?? []) {
+    const val = config[field];
+    if (typeof val === "string" && val.trim().startsWith("secretref:")) {
+      throw new PanelRouteFailure(400, "INVALID_REQUEST");
+    }
+  }
+}
+
 function sealConfigSecrets(
   driverId: AdapterDriverId,
   config: Readonly<Record<string, string | number | boolean | null>>,
   secrets: ChannelPanelSecretsPort | undefined,
+  preservedExistingConfig?: Readonly<Record<string, string | number | boolean | null>>,
 ): Record<string, string | number | boolean | null> {
   const desc = ADAPTER_SYSTEM_CATALOG.find((item) => item.driverId === driverId);
   const secretFields = new Set(desc?.secretFields ?? []);
@@ -461,10 +476,15 @@ function sealConfigSecrets(
   const out: Record<string, string | number | boolean | null> = { ...config };
   for (const [k, v] of Object.entries(out)) {
     if (!secretFields.has(k) || typeof v !== "string" || v.length === 0) continue;
-    if (secrets !== undefined && secrets.isSecretRef(v)) continue;
+    const isPreservedRef =
+      preservedExistingConfig !== undefined &&
+      v === preservedExistingConfig[k] &&
+      (secrets !== undefined ? secrets.isSecretRef(v) : v.startsWith("secretref:"));
+    if (isPreservedRef) continue;
     if (secrets === undefined) {
       throw new PanelRouteFailure(503, "VAULT_UNAVAILABLE");
     }
+    if (secrets.isSecretRef(v)) continue;
     out[k] = secrets.seal(purpose, v);
   }
   return out;
@@ -583,8 +603,6 @@ function revealConfigSecrets(
       } catch {
         // Unreadable or removed secret reference stays absent.
       }
-    } else if (!raw.startsWith("secretref:")) {
-      resolved[field] = raw;
     }
   }
   return resolved;
@@ -629,6 +647,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
   );
 
   await app.register(fastifyRateLimit, ROUTE_RATE_LIMIT_PLUGIN_OPTIONS);
+  migrateLegacyIntegrationLogs(database);
   if (secrets !== undefined) {
     migrateLegacyChannelAdapters(database, secrets);
   }
@@ -1302,6 +1321,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       validateAdapterEndpointConfig(parsed.data.driverId, parsed.data.config);
       const now = new Date();
       const { __secretBoundEndpoint: _ignored, ...cleanInputConfig } = parsed.data.config;
+      assertNoClientSecretRefs(parsed.data.driverId, cleanInputConfig);
       const sealedConfig = sealConfigSecrets(parsed.data.driverId, cleanInputConfig, secrets);
       if (hasAnyStoredSecret(parsed.data.driverId, sealedConfig)) {
         sealedConfig.__secretBoundEndpoint = defaultEndpointForAdapter(parsed.data.driverId, sealedConfig);
@@ -1338,6 +1358,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       if (!actor.capabilities.has(requiredCap)) throw new PanelRouteFailure(403, "FORBIDDEN");
 
       const { __secretBoundEndpoint: _ignored, ...cleanIncoming } = parsed.data.config;
+      assertNoClientSecretRefs(current.driverId, cleanIncoming);
       const mergedConfig = mergeMaskedConfig(current.driverId, current.config, cleanIncoming);
       validateAdapterEndpointConfig(current.driverId, mergedConfig);
 
@@ -1363,7 +1384,7 @@ export const channelPanelRoutes: FastifyPluginAsync<ChannelPanelRoutesOptions> =
       }
 
       const now = new Date();
-      const sealedConfig = sealConfigSecrets(current.driverId, mergedConfig, secrets);
+      const sealedConfig = sealConfigSecrets(current.driverId, mergedConfig, secrets, current.config);
       if (hasAnyStoredSecret(current.driverId, sealedConfig)) {
         sealedConfig.__secretBoundEndpoint = nextEndpoint;
       } else {

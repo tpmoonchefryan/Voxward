@@ -903,28 +903,84 @@ const SENSITIVE_HTTP_HEADERS = new Set([
   "x-csrf-token",
 ]);
 
-const SENSITIVE_URL_PARAMS = new Set([
-  "key",
-  "api_key",
-  "apikey",
-  "token",
-  "access_token",
-  "refresh_token",
-  "id_token",
-  "client_secret",
-  "secret",
-  "password",
-  "passwd",
-  "sig",
-  "signature",
-  "cred",
-  "credential",
-  "auth",
-  "authorization",
+const SAFE_DIAGNOSTIC_PATH_SEGMENTS = new Set([
+  "v1",
+  "v1beta",
+  "v2",
+  "v3",
+  "youtube",
+  "liveBroadcasts",
+  "liveChat",
+  "bans",
+  "models",
+  "messages",
+  "chat",
+  "completions",
+  "runtime",
+  "self-check",
+  "cleanup-orphans",
 ]);
 
+const SAFE_DIAGNOSTIC_QUERY_KEYS = new Set(["part", "mine"]);
+
+const FIXED_INTERNAL_URIS = new Set([
+  "kiro-cli://runtime/self-check",
+  "kiro-cli://runtime/models",
+  "kiro-cli://runtime/cleanup-orphans",
+  "/output/v1/room",
+]);
+
+function safeDecodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
+function sanitizePathname(pathname: string): string {
+  const segments = pathname.split("/").filter((seg) => seg.length > 0);
+  if (segments.length === 0) return "";
+  const sanitized: string[] = [];
+  for (const rawSeg of segments) {
+    const decoded = safeDecodeSegment(rawSeg);
+    if (decoded !== "[REDACTED]" && SAFE_DIAGNOSTIC_PATH_SEGMENTS.has(decoded)) {
+      sanitized.push(decoded);
+    } else if (sanitized[sanitized.length - 1] !== "[REDACTED]") {
+      sanitized.push("[REDACTED]");
+    }
+  }
+  return `/${sanitized.join("/")}`;
+}
+
+function sanitizeSearch(rawSearch: string): string {
+  if (!rawSearch || rawSearch === "?") return "";
+  const body = rawSearch.startsWith("?") ? rawSearch.slice(1) : rawSearch;
+  if (!body) return "";
+  const parts: string[] = [];
+  for (const rawPair of body.split("&")) {
+    if (!rawPair) continue;
+    const eqIdx = rawPair.indexOf("=");
+    if (eqIdx < 0) {
+      parts.push("[REDACTED]");
+      continue;
+    }
+    const rawKey = rawPair.slice(0, eqIdx);
+    const rawVal = rawPair.slice(eqIdx + 1);
+    const key = safeDecodeSegment(rawKey);
+    const val = safeDecodeSegment(rawVal);
+    if (SAFE_DIAGNOSTIC_QUERY_KEYS.has(key) && /^[A-Za-z0-9_,]+$/.test(val)) {
+      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
+    } else {
+      parts.push(`${encodeURIComponent(key)}=[REDACTED]`);
+    }
+  }
+  return parts.length > 0 ? `?${parts.join("&")}` : "";
+}
+
 function scrubSecretStrings(input: string): string {
-  return input
+  const withSanitizedUrls = input.replace(/https?:\/\/[^\s"'`<>),;]+/gi, (match) => sanitizeIntegrationUrl(match));
+  return withSanitizedUrls
     .replace(/(https?:\/\/)([^/@\s]+)(@)/gi, "$1[REDACTED]$3")
     .replace(
       /([?&#](?:api[_-]?key|key|(?:access_|refresh_|id_)?token|client_secret|secret|pass(?:word|wd)?|sig(?:nature)?|cred(?:ential)?|auth(?:orization)?)=)([^&#\s"'`]+)/gi,
@@ -934,29 +990,37 @@ function scrubSecretStrings(input: string): string {
     .replace(/\b(?:sk-[A-Za-z0-9_-]{12,}|AIza[0-9A-Za-z_-]{20,}|ya29\.[0-9A-Za-z_-]{12,}|vwo_[A-Za-z0-9_-]{12,}|vws_[A-Za-z0-9_-]{12,})\b/g, "[REDACTED]");
 }
 
-/** Strips userinfo, sensitive query/fragment parameters, and token shapes from a URL string. */
+/**
+ * Normalizes integration diagnostic URLs to an allowlisted safe projection:
+ * - Drops userinfo and fragments (`#...`)
+ * - Preserves only allowlisted canonical API path segments; custom path segments become `[REDACTED]`
+ * - Preserves only allowlisted diagnostic query parameters; other query values become `[REDACTED]`
+ */
 export function sanitizeIntegrationUrl(rawUrl: string): string {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return "";
+  const withoutHash = trimmed.split("#", 1)[0] ?? "";
+  const withoutQueryAndHash = withoutHash.split("?", 1)[0] ?? "";
+  if (FIXED_INTERNAL_URIS.has(withoutQueryAndHash)) {
+    return withoutQueryAndHash;
+  }
+  if (/^\/overlay\/[A-Za-z0-9._-]+$/.test(withoutQueryAndHash)) {
+    return withoutQueryAndHash;
+  }
   try {
-    const parsed = new URL(rawUrl);
-    if (parsed.username || parsed.password) {
-      parsed.username = "[REDACTED]";
-      parsed.password = "";
+    const parsed = new URL(trimmed);
+    const sanitizedPath = sanitizePathname(parsed.pathname);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      const origin = `${parsed.protocol}//${parsed.host}`;
+      const sanitizedQuery = sanitizeSearch(parsed.search);
+      return `${origin}${sanitizedPath}${sanitizedQuery}`;
     }
-    for (const key of [...parsed.searchParams.keys()]) {
-      if (SENSITIVE_URL_PARAMS.has(key.toLowerCase())) {
-        parsed.searchParams.set(key, "[REDACTED]");
-      }
-    }
-    if (parsed.hash) {
-      const hashBody = parsed.hash.startsWith("#") ? parsed.hash.slice(1) : parsed.hash;
-      const scrubbedHash = scrubSecretStrings(
-        hashBody.includes("=") ? `&${hashBody}` : hashBody,
-      ).replace(/^&/, "");
-      parsed.hash = `#${scrubbedHash}`;
-    }
-    return parsed.toString();
+    return `${parsed.protocol}//${parsed.host}${sanitizedPath}`;
   } catch {
-    return scrubSecretStrings(rawUrl);
+    if (withoutQueryAndHash.startsWith("/")) {
+      return `${sanitizePathname(withoutQueryAndHash)}${sanitizeSearch(withoutHash.slice(withoutQueryAndHash.length))}`;
+    }
+    return scrubSecretStrings(withoutHash);
   }
 }
 
@@ -983,6 +1047,42 @@ export function readIntegrationLogs(database: VoxwardDatabase, channelId: string
   return readChannelSetting<IntegrationLogRecord[]>(database, channelId, "integration-logs", []).map(
     sanitizeIntegrationLogEntry,
   );
+}
+
+/**
+ * Idempotently normalizes existing integration log rows in `deployment_settings` onto the safe
+ * diagnostic URL & header projection so legacy stored path/query credentials are scrubbed on disk.
+ */
+export function migrateLegacyIntegrationLogs(database: VoxwardDatabase, now: Date = new Date()): number {
+  const rows = database.sqlite
+    .prepare("SELECT key, value_json AS valueJson FROM deployment_settings WHERE key LIKE 'channel:%:integration-logs'")
+    .all() as Array<{ key: string; valueJson: string }>;
+
+  let migratedRows = 0;
+  const updatedAt = now.toISOString();
+  for (const row of rows) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(row.valueJson);
+    } catch {
+      continue;
+    }
+    if (!Array.isArray(parsed)) continue;
+    const sanitized = (parsed as IntegrationLogRecord[]).map(sanitizeIntegrationLogEntry);
+    const nextJson = JSON.stringify(sanitized);
+    if (nextJson === row.valueJson) continue;
+    migratedRows += 1;
+    runShortTransaction(database, (tx) => {
+      tx.insert(deploymentSettings)
+        .values({ key: row.key, valueJson: nextJson, updatedAt })
+        .onConflictDoUpdate({
+          target: deploymentSettings.key,
+          set: { valueJson: nextJson, updatedAt },
+        })
+        .run();
+    });
+  }
+  return migratedRows;
 }
 
 export function appendIntegrationLog(

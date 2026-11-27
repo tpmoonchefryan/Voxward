@@ -44,15 +44,16 @@ type MutableReport = { expired: number; sent: number; retried: number; failed: n
 interface SubscriberDeliveryEntry {
   delivered: boolean;
   attempts: number;
+  exhausted: boolean;
 }
 
 type RowPassAction = "CONTINUE" | "STOP_CHANNEL";
 
 /**
  * Sends approved deliveries to connected consumers with per-subscriber isolation:
- * - One failing subscriber retries up to `maxAttempts` (then disconnects) without stalling or failing healthy subscribers.
+ * - One failing subscriber retries up to `maxAttempts` (then detaches & disconnects) without mutating shared row retry counts or failing later recipients.
  * - Healthy subscribers that already received a delivery are not resent the same delivery while a failing peer retries.
- * - Shared rows stay PENDING until every remaining non-exhausted subscriber receives them or no subscriber succeeds.
+ * - Shared rows stay PENDING until at least one active subscriber has succeeded and no active non-exhausted subscriber remains pending.
  */
 export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
   let queue: Promise<unknown> = Promise.resolve();
@@ -66,7 +67,7 @@ export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
     }
     let entry = perDelivery.get(deliveryId);
     if (entry === undefined) {
-      entry = { delivered: false, attempts: 0 };
+      entry = { delivered: false, attempts: 0, exhausted: false };
       perDelivery.set(deliveryId, entry);
     }
     return entry;
@@ -106,7 +107,7 @@ export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
     const targets = options.subscribers.forChannel(channelId);
     if (targets.length === 0) return "STOP_CHANNEL";
 
-    const eligible = targets.filter((sub) => !stalled.has(sub));
+    const eligible = targets.filter((sub) => !stalled.has(sub) && !entryFor(sub, row.deliveryId).exhausted);
     if (eligible.length === 0) return "STOP_CHANNEL";
 
     // An ALLOW row without approved content cannot be shown. Marking it FAILED keeps it out of the queue.
@@ -136,27 +137,11 @@ export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
       }
     }
 
-    const deliveredCount = targets.filter((sub) => entryFor(sub, row.deliveryId).delivered).length;
-    if (deliveredCount === 0 && rejectedSubscribers.length > 0) {
-      const outcome = options.delivery.recordSendFailure({
-        deliveryId: row.deliveryId,
-        nowIso: options.now().toISOString(),
-        maxAttempts: options.maxAttempts,
-      });
-      if (outcome === "FAILED") {
-        report.failed += 1;
-        return "CONTINUE";
-      }
-      if (outcome === "RETRY") {
-        report.retried += 1;
-        return "STOP_CHANNEL";
-      }
-      return "CONTINUE";
-    }
-
     for (const sub of rejectedSubscribers) {
       const entry = entryFor(sub, row.deliveryId);
       if (entry.attempts >= options.maxAttempts) {
+        entry.exhausted = true;
+        options.subscribers.detach(sub);
         sub.close(NATIVE_CLOSE.SUBSCRIBER_BACKPRESSURE);
       } else {
         stalled.add(sub);
@@ -166,11 +151,19 @@ export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
     const nowTargets = options.subscribers.forChannel(channelId);
     const newlyJoined = nowTargets.some((subscriber) => !targets.includes(subscriber));
     if (newlyJoined) {
+      if (rejectedSubscribers.length > 0) {
+        report.retried += 1;
+      }
       return "STOP_CHANNEL";
     }
 
-    const stillPendingInChannel = nowTargets.filter((sub) => !entryFor(sub, row.deliveryId).delivered);
-    if (stillPendingInChannel.length === 0) {
+    const activeTargets = nowTargets.filter((sub) => !entryFor(sub, row.deliveryId).exhausted);
+    const anyDelivered =
+      targets.some((sub) => entryFor(sub, row.deliveryId).delivered) ||
+      activeTargets.some((sub) => entryFor(sub, row.deliveryId).delivered);
+    const stillPendingInChannel = activeTargets.filter((sub) => !entryFor(sub, row.deliveryId).delivered);
+
+    if (anyDelivered && stillPendingInChannel.length === 0) {
       if (options.delivery.markSent({ deliveryId: row.deliveryId, nowIso: options.now().toISOString() })) {
         report.sent += 1;
       }
@@ -180,7 +173,7 @@ export function createDeliveryPump(options: DeliveryPumpOptions): DeliveryPump {
     if (rejectedSubscribers.length > 0) {
       report.retried += 1;
     }
-    const hasHealthyTarget = nowTargets.some((sub) => !stalled.has(sub));
+    const hasHealthyTarget = activeTargets.some((sub) => !stalled.has(sub));
     return hasHealthyTarget ? "CONTINUE" : "STOP_CHANNEL";
   }
 

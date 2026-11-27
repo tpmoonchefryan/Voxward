@@ -400,12 +400,20 @@ export function restoreDatabaseWithLedger(options: RestoreDatabaseOptions): void
   });
 }
 
-function resolveVaultKeyBuffer(database: VoxwardDatabase, provided?: Buffer | string): Buffer {
-  if (Buffer.isBuffer(provided) && provided.length === 32) return provided;
-  if (typeof provided === "string" && provided.trim().length > 0) return deriveVaultKey(provided);
-  const envKey = process.env.VOXWARD_VAULT_KEY?.trim();
+function resolveVaultKeyBuffer(provided?: Buffer | string, env: NodeJS.ProcessEnv = process.env): Buffer | undefined {
+  if (Buffer.isBuffer(provided)) {
+    if (provided.length !== 32) {
+      throw new Error("credential vault key must be 32 bytes");
+    }
+    return Buffer.from(provided);
+  }
+  if (typeof provided === "string") {
+    const trimmed = provided.trim();
+    return trimmed.length === 0 ? undefined : deriveVaultKey(trimmed);
+  }
+  const envKey = env.VOXWARD_VAULT_KEY?.trim();
   if (envKey) return deriveVaultKey(envKey);
-  return deriveVaultKey(`voxward-local-vault:${database.filePath}`);
+  return undefined;
 }
 
 function channelPanelOptionsFor(
@@ -436,18 +444,25 @@ function channelPanelOptionsFor(
     createListAdministration(decisionDeps),
   );
   const candidates = createCandidateRoutes(resolvedCandidates);
-  const vault = createPersistentCredentialVault({
-    key: resolveVaultKeyBuffer(database, extras.vaultKey),
-    store: createSqliteVaultBackingStore(database),
-  });
-  const secrets: ChannelPanelSecretsPort = {
-    seal: (purpose, plaintext) => vault.put(purpose, plaintext).ref,
-    reveal: (ref, purpose) => vault.reveal(ref, purpose),
-    remove: (ref, purpose) => {
-      vault.remove(ref, purpose);
-    },
-    isSecretRef,
-  };
+  const vaultKeyBuffer = resolveVaultKeyBuffer(extras.vaultKey);
+  const vault =
+    vaultKeyBuffer === undefined
+      ? undefined
+      : createPersistentCredentialVault({
+          key: vaultKeyBuffer,
+          store: createSqliteVaultBackingStore(database),
+        });
+  const secrets: ChannelPanelSecretsPort | undefined =
+    vault === undefined
+      ? undefined
+      : {
+          seal: (purpose, plaintext) => vault.put(purpose, plaintext).ref,
+          reveal: (ref, purpose) => vault.reveal(ref, purpose),
+          remove: (ref, purpose) => {
+            vault.remove(ref, purpose);
+          },
+          isSecretRef,
+        };
   const adapterActions: ChannelPanelAdapterActionsPort =
     extras.adapterActions ??
     createRealAdapterActionExecutor({
@@ -464,7 +479,7 @@ function channelPanelOptionsFor(
     database,
     decisions,
     candidates,
-    secrets,
+    ...(secrets !== undefined ? { secrets } : {}),
     adapterActions,
     models: {
       describe,

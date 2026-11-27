@@ -116,6 +116,7 @@ export function attachBlivechatOutput(server: Server, options: BlivechatOutputOp
 
   function openConnection(ws: WebSocket, grant: GrantFacts): void {
     let closing = false;
+    let reserved = false;
     let attached = false;
     let heartbeat: NodeJS.Timeout | undefined;
     let pongTimer: NodeJS.Timeout | undefined;
@@ -139,8 +140,9 @@ export function attachBlivechatOutput(server: Server, options: BlivechatOutputOp
     function shutDown(reason: NativeClose): void {
       if (closing) return;
       closing = true;
-      if (attached) {
+      if (reserved || attached) {
         options.subscribers.detach(subscriber);
+        reserved = false;
         attached = false;
       }
       stopTimers();
@@ -218,13 +220,28 @@ export function attachBlivechatOutput(server: Server, options: BlivechatOutputOp
     ws.on("error", (error) => options.log?.warn({ errorCode: errorCodeOf(error) }, "blivechat output connection failed"));
     ws.on("close", () => {
       closing = true;
-      if (attached) {
+      if (reserved || attached) {
         options.subscribers.detach(subscriber);
+        reserved = false;
         attached = false;
       }
       stopTimers();
       clearTimeout(graceTimer);
     });
+
+    // Reserve quota and verify grant BEFORE allocating heartbeat timers so pre-join sockets consume bounded quota.
+    if (!grantIsActive(grant.grantId)) {
+      shutDown(NATIVE_CLOSE.GRANT_REVOKED);
+      return;
+    }
+    if (options.subscribers.tryReserve !== undefined) {
+      const reserveVerdict = options.subscribers.tryReserve(subscriber);
+      if (!reserveVerdict.ok) {
+        shutDown(NATIVE_CLOSE.SUBSCRIBER_BACKPRESSURE);
+        return;
+      }
+      reserved = true;
+    }
 
     heartbeat = setInterval(() => {
       if (!grantIsActive(grant.grantId)) {
@@ -238,10 +255,6 @@ export function attachBlivechatOutput(server: Server, options: BlivechatOutputOp
         shutDown(NATIVE_CLOSE.HEARTBEAT_TIMEOUT);
       }, timing.pongTimeoutMs);
     }, timing.heartbeatMs);
-
-    if (!grantIsActive(grant.grantId)) {
-      shutDown(NATIVE_CLOSE.GRANT_REVOKED);
-    }
   }
 
   server.on("upgrade", onUpgrade);

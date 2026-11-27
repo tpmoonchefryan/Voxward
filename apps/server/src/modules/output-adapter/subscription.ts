@@ -22,29 +22,32 @@ export type AttachQuotaResult =
 
 export interface QuotaManagedSubscriberRegistry extends OutputSubscriberRegistry {
   canAttach(target: { readonly channelId: string; readonly grantId: string }): AttachQuotaResult;
+  tryReserve(subscriber: OutputSubscriber): AttachQuotaResult;
   tryAttach(subscriber: OutputSubscriber): AttachQuotaResult;
   size(): number;
 }
 
 /**
- * Connected consumers, by channel. A transport attaches a consumer once its credential is accepted and quota permits,
- * and detaches it when the connection closes. Revoking a grant closes every consumer that the grant opened.
+ * Connected consumers, by channel. A transport reserves a quota slot immediately at WebSocket accept (before
+ * allocating heartbeat timers or waiting on protocol join frames), promotes it to delivery-active on join,
+ * and releases both when the connection closes. Revoking a grant closes every consumer (reserved or attached).
  */
 export function createSubscriptionRegistry(
   limits: Pick<OutputWsLimits, "maxTotalConnections" | "maxConnectionsPerChannel" | "maxConnectionsPerGrant"> = {},
 ): QuotaManagedSubscriberRegistry {
+  const reserved = new Set<OutputSubscriber>();
   const attached = new Set<OutputSubscriber>();
   const maxTotal = limits.maxTotalConnections ?? DEFAULT_OUTPUT_WS_LIMITS.maxTotalConnections;
   const maxPerChannel = limits.maxConnectionsPerChannel ?? DEFAULT_OUTPUT_WS_LIMITS.maxConnectionsPerChannel;
   const maxPerGrant = limits.maxConnectionsPerGrant ?? DEFAULT_OUTPUT_WS_LIMITS.maxConnectionsPerGrant;
 
   function canAttach(target: { readonly channelId: string; readonly grantId: string }): AttachQuotaResult {
-    if (attached.size >= maxTotal) {
+    if (reserved.size >= maxTotal) {
       return { ok: false, reason: "TOTAL_LIMIT" };
     }
     let channelCount = 0;
     let grantCount = 0;
-    for (const sub of attached) {
+    for (const sub of reserved) {
       if (sub.channelId === target.channelId) channelCount += 1;
       if (sub.grantId === target.grantId) grantCount += 1;
     }
@@ -60,21 +63,33 @@ export function createSubscriptionRegistry(
   return {
     canAttach,
 
-    tryAttach(subscriber) {
-      if (!attached.has(subscriber)) {
+    tryReserve(subscriber) {
+      if (!reserved.has(subscriber)) {
         const verdict = canAttach(subscriber);
         if (!verdict.ok) return verdict;
+        reserved.add(subscriber);
+      }
+      return { ok: true };
+    },
+
+    tryAttach(subscriber) {
+      if (!reserved.has(subscriber)) {
+        const verdict = canAttach(subscriber);
+        if (!verdict.ok) return verdict;
+        reserved.add(subscriber);
       }
       attached.add(subscriber);
       return { ok: true };
     },
 
     attach(subscriber) {
+      reserved.add(subscriber);
       attached.add(subscriber);
     },
 
     detach(subscriber) {
       attached.delete(subscriber);
+      reserved.delete(subscriber);
     },
 
     forChannel(channelId) {
@@ -86,14 +101,15 @@ export function createSubscriptionRegistry(
     },
 
     size() {
-      return attached.size;
+      return reserved.size;
     },
 
     closeGrant(grantId) {
       let closed = 0;
-      for (const subscriber of [...attached]) {
+      for (const subscriber of [...reserved]) {
         if (subscriber.grantId !== grantId) continue;
         attached.delete(subscriber);
+        reserved.delete(subscriber);
         subscriber.close(NATIVE_CLOSE.GRANT_REVOKED);
         closed += 1;
       }

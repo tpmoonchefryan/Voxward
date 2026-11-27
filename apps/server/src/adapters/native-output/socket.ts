@@ -83,6 +83,7 @@ export function createWsUpgradeRateLimiter(
 
 export type QuotaRegistryLike = OutputSubscriberRegistry & {
   canAttach?: (target: { readonly channelId: string; readonly grantId: string }) => { readonly ok: boolean; readonly reason?: string };
+  tryReserve?: (subscriber: OutputSubscriber) => { readonly ok: boolean; readonly reason?: string };
   tryAttach?: (subscriber: OutputSubscriber) => { readonly ok: boolean; readonly reason?: string };
 };
 
@@ -248,6 +249,19 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
       clearTimeout(graceTimer);
     });
 
+    // Reserve quota and verify grant BEFORE writing HELLO or allocating heartbeat timers.
+    if (!grantIsActive(grant.grantId)) {
+      shutDown(NATIVE_CLOSE.GRANT_REVOKED);
+      return;
+    }
+    if (options.subscribers.tryReserve !== undefined) {
+      const reserveVerdict = options.subscribers.tryReserve(subscriber);
+      if (!reserveVerdict.ok) {
+        shutDown(NATIVE_CLOSE.SUBSCRIBER_BACKPRESSURE);
+        return;
+      }
+    }
+
     // HELLO is written before the consumer is attached, so no delivery frame can come before it.
     const hello: HelloFrame = {
       type: "HELLO",
@@ -272,11 +286,6 @@ export function attachNativeOutput(server: Server, options: NativeOutputOptions)
       }, timing.pongTimeoutMs);
     }, timing.heartbeatMs);
 
-    // A revocation or quota exhaustion that landed during handshake must not leave a live consumer or dangling timers.
-    if (!grantIsActive(grant.grantId)) {
-      shutDown(NATIVE_CLOSE.GRANT_REVOKED);
-      return;
-    }
     if (options.subscribers.tryAttach !== undefined) {
       const verdict = options.subscribers.tryAttach(subscriber);
       if (!verdict.ok) {

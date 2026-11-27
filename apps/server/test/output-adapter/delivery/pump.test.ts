@@ -117,31 +117,49 @@ describe("delivery pump (VW-SUB040-AC001, m6 N2)", () => {
     expect(statusOf(db, "d-f1")).toBe("FAILED");
   });
 
-  it("a refused frame counts an attempt and holds the rows behind it, and the row fails for good at the limit", async () => {
+  it("a refused frame retries per-subscriber without mutating shared row attempts and holds rows behind it until evicted", async () => {
     addDeliveryEvent(db, { eventId: "event-g1", subjectKey: "viewer-g1", platformOrder: 1, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-g1" });
     addDeliveryEvent(db, { eventId: "event-g2", subjectKey: "viewer-g2", platformOrder: 2, verdict: createVerdict("ALLOW_MEANINGFUL"), deliveryId: "d-g2" });
     addApprovedText(db, "event-g1", "first");
     addApprovedText(db, "event-g2", "second");
     const consumer = fakeConsumer("grant-1");
     consumer.state.reject = true;
+    const closedCodes: number[] = [];
+    const origClose = consumer.subscriber.close;
+    consumer.subscriber.close = (reason) => {
+      closedCodes.push(reason.code);
+      origClose(reason);
+    };
     registry.attach(consumer.subscriber);
     const pump = pumpFor(db, registry, clock, 3);
 
     const first = await pump.runPass();
-    expect(first).toMatchObject({ retried: 1, failed: 0 });
-    expect(attemptsOf(db, "d-g1")).toBe(1);
+    expect(first).toMatchObject({ retried: 1, failed: 0, sent: 0 });
+    expect(attemptsOf(db, "d-g1")).toBe(0);
     expect(statusOf(db, "d-g1")).toBe("PENDING");
     expect(attemptsOf(db, "d-g2")).toBe(0);
 
     await pump.runPass();
-    expect(attemptsOf(db, "d-g1")).toBe(2);
+    expect(attemptsOf(db, "d-g1")).toBe(0);
+    expect(closedCodes).toEqual([]);
 
+    // 3rd attempt exhausts failing subscriber's budget, evicts & closes it (4413), leaving shared rows PENDING for later subscribers
     const third = await pump.runPass();
-    expect(third.failed).toBe(1);
-    expect(statusOf(db, "d-g1")).toBe("FAILED");
-    expect(attemptsOf(db, "d-g1")).toBe(3);
+    expect(third).toMatchObject({ retried: 1, failed: 0, sent: 0 });
+    expect(closedCodes).toEqual([4413]);
+    expect(registry.size()).toBe(0);
+    expect(statusOf(db, "d-g1")).toBe("PENDING");
+    expect(attemptsOf(db, "d-g1")).toBe(0);
     expect(statusOf(db, "d-g2")).toBe("PENDING");
     expect(consumer.frames).toEqual([]);
+
+    const healthy = fakeConsumer("grant-2");
+    registry.attach(healthy.subscriber);
+    const fourth = await pump.runPass();
+    expect(fourth).toMatchObject({ sent: 2, failed: 0 });
+    expect(idsOf(healthy.frames)).toEqual(["d-g1", "d-g2"]);
+    expect(statusOf(db, "d-g1")).toBe("SENT");
+    expect(statusOf(db, "d-g2")).toBe("SENT");
   });
 
   it("a row that changed while its frame was in flight is not overwritten with SENT", async () => {

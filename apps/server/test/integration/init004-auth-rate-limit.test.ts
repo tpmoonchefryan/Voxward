@@ -9,8 +9,10 @@ import { grantMembership } from "../../src/auth/members.js";
 import { createSession } from "../../src/auth/session.js";
 import { registerProductionSpaRoutes } from "../../src/config/web-static.js";
 import type { VoxwardDatabase } from "../../src/db/client.js";
+import { createAuditLogPort } from "../../src/db/audit-log.js";
 import { readRbacUsers, writeRbacRoles, readRbacRoles } from "../../src/db/channel-settings-store.js";
-import { channels } from "../../src/db/schema/index.js";
+import { ChannelEventStore, SubjectStore } from "../../src/db/repository.js";
+import { channels, verdicts } from "../../src/db/schema/index.js";
 import { runShortTransaction } from "../../src/db/transaction.js";
 import { buildRegistry } from "../../src/modules/registry.js";
 import { migratedDatabase, removeDirectory, scratchDirectory, T0 } from "../db/helpers.js";
@@ -76,17 +78,140 @@ describe("INIT-004 Auth, Channel RBAC & HTTP Rate Limits (STORY-049..054)", () =
       grantMembership(tx, { channelId: CH2, accountId: mod.accountId, role: "MODERATOR", logAccess: true, now: NOW });
     });
 
-    // Customize built-in role-moderator DENY before rbac-users is written: GET /auth/channels reflects it
+    // Customize built-in role-moderator DENY before rbac-users is written: GET /auth/channels and GET /dock enforce it
     const roles = readRbacRoles(db, CH1);
     writeRbacRoles(
       db,
       CH1,
       roles.map((r) =>
         r.id === "role-moderator"
-          ? { ...r, permissions: { ...r.permissions, "logs.view": "DENY" } }
+          ? { ...r, permissions: { ...r.permissions, "logs.view": "DENY", "message.original": "DENY" } }
           : r,
       ),
     );
+
+    // Seed an approved ALLOW message and a BLOCK message with original MESSAGE_TEXT evidence
+    const farFuture = "2099-01-01T00:00:00.000Z";
+    runShortTransaction(db, (tx) => {
+      SubjectStore.create(tx, { id: "sub-49-1", channelId: CH1, platformSubjectKey: "viewer-49-1", createdAt: T0 });
+      const evAllow = ChannelEventStore.recordIfNew(tx, {
+        id: "ev-49-allow",
+        channelId: CH1,
+        subjectId: "sub-49-1",
+        platformMessageRef: "pm-49-allow",
+        platformOrder: 1,
+        receivedAt: T0,
+        correlationId: "corr-49-allow",
+        exceptionMarked: false,
+        createdAt: T0,
+      });
+      tx.insert(verdicts)
+        .values({
+          id: "v-49-allow",
+          eventId: evAllow.id,
+          taskId: null,
+          seq: 1,
+          classification: "ALLOW_MEANINGFUL",
+          downstream: "ALLOW",
+          source: "MODEL",
+          isCurrent: 1,
+          decidedAt: T0,
+          decidedByRef: "system",
+        })
+        .run();
+      const evBlock = ChannelEventStore.recordIfNew(tx, {
+        id: "ev-49-block",
+        channelId: CH1,
+        subjectId: "sub-49-1",
+        platformMessageRef: "pm-49-block",
+        platformOrder: 2,
+        receivedAt: T0,
+        correlationId: "corr-49-block",
+        exceptionMarked: false,
+        createdAt: T0,
+      });
+      tx.insert(verdicts)
+        .values({
+          id: "v-49-block",
+          eventId: evBlock.id,
+          taskId: null,
+          seq: 1,
+          classification: "BLOCK",
+          downstream: "BLOCK",
+          source: "MODEL",
+          isCurrent: 1,
+          decidedAt: T0,
+          decidedByRef: "system",
+        })
+        .run();
+    });
+    const auditPort = createAuditLogPort(db);
+    auditPort.insertTechnicalLog(
+      {
+        id: "log-49-allow",
+        channelId: CH1,
+        correlationId: "corr-49-allow",
+        batchId: null,
+        taskId: null,
+        attempt: 1,
+        stage: "MODEL_CALL",
+        status: "OK",
+        level: "INFO",
+        errorCode: null,
+        providerRef: null,
+        modelRef: null,
+        ruleTemplateVersion: null,
+        latencyMs: 5,
+        subjectId: "sub-49-1",
+        data: null,
+        createdAt: T0,
+        expiresAt: farFuture,
+      },
+      [{ id: "evid-49-allow", kind: "MESSAGE_TEXT", payload: "allow secret original text", expiresAt: farFuture }],
+    );
+    auditPort.insertTechnicalLog(
+      {
+        id: "log-49-block",
+        channelId: CH1,
+        correlationId: "corr-49-block",
+        batchId: null,
+        taskId: null,
+        attempt: 1,
+        stage: "MODEL_CALL",
+        status: "OK",
+        level: "INFO",
+        errorCode: null,
+        providerRef: null,
+        modelRef: null,
+        ruleTemplateVersion: null,
+        latencyMs: 5,
+        subjectId: "sub-49-1",
+        data: null,
+        createdAt: T0,
+        expiresAt: farFuture,
+      },
+      [{ id: "evid-49-block", kind: "MESSAGE_TEXT", payload: "blocked secret original text", expiresAt: farFuture }],
+    );
+
+    const modDock = await app.inject({
+      method: "GET",
+      url: `/channels/${CH1}/dock`,
+      headers: { cookie: mod.cookie },
+    });
+    expect(modDock.statusCode).toBe(200);
+    const modLive = (modDock.json() as { feed: { liveStream: Array<{ eventId: string; localStatus: string; originalText: string | null }> } }).feed.liveStream;
+    expect(modLive.find((i) => i.eventId === "ev-49-allow")?.originalText).toBeNull();
+    expect(modLive.find((i) => i.eventId === "ev-49-block")?.originalText).toBeNull();
+
+    const ownerDock = await app.inject({
+      method: "GET",
+      url: `/channels/${CH1}/dock`,
+      headers: { cookie: owner.cookie },
+    });
+    expect(ownerDock.statusCode).toBe(200);
+    const ownerLive = (ownerDock.json() as { feed: { liveStream: Array<{ eventId: string; originalText: string | null }> } }).feed.liveStream;
+    expect(ownerLive.find((i) => i.eventId === "ev-49-allow")?.originalText).toBe("allow secret original text");
+    expect(ownerLive.find((i) => i.eventId === "ev-49-block")?.originalText).toBe("blocked secret original text");
 
     const beforeDisable = await app.inject({
       method: "GET",

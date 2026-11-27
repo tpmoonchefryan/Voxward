@@ -25,3 +25,4 @@
 /deploy/k3s
 /deploy/server
 /deploy/kiro-runtime
+/deploy/provenance.json

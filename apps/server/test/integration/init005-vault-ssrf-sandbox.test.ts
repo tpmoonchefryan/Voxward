@@ -66,8 +66,8 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
     removeDirectory(dir);
   });
 
-  it("STORY-055: masks secrets uniformly, rejects plaintext writes when vault unavailable, and idempotently migrates legacy rows", async () => {
-    // 1) Legacy plaintext row in DB is migrated on startup into CredentialVault without duplication
+  it("STORY-055: refuses implicit default Vault keys, rejects plaintext/client secretref writes without configured vault, and idempotently migrates legacy rows when configured", async () => {
+    // 1) Legacy plaintext row in DB
     writeChannelAdapters(db, CH1, [
       {
         id: "adp-legacy-1",
@@ -82,6 +82,50 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
       },
     ]);
 
+    const owner = await signIn("owner55", "Owner 55");
+    runShortTransaction(db, (tx) => {
+      grantMembership(tx, { channelId: CH1, accountId: owner.accountId, role: "CHANNEL_OWNER", logAccess: true, now: NOW });
+    });
+
+    // 2) Full buildApp WITHOUT vaultKey and WITHOUT VOXWARD_VAULT_KEY: must NOT derive a predictable key from DB path
+    const prevEnvVaultKey = process.env.VOXWARD_VAULT_KEY;
+    delete process.env.VOXWARD_VAULT_KEY;
+    const unconfiguredApp = buildApp({
+      modules: buildRegistry({ adapters: "synthetic", host: "127.0.0.1", port: 3000, databaseFile: ":memory:" }),
+      logger: false,
+      database: db,
+    });
+    await unconfiguredApp.ready();
+    try {
+      const vaultStorePre = createSqliteVaultBackingStore(db);
+      expect(vaultStorePre.list()).toHaveLength(0);
+      const legacyAfterNoVaultBoot = readChannelAdapters(db, CH1);
+      expect(legacyAfterNoVaultBoot[0]?.config.apiKey).toBe("sk-legacy-plaintext-123456");
+
+      const writeWithoutVault = await unconfiguredApp.inject({
+        method: "POST",
+        url: `/channels/${CH1}/adapters`,
+        headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+        payload: {
+          category: "AI_PROVIDER",
+          driverId: "openai-compat",
+          displayName: "Must Refuse Without Vault",
+          enabled: true,
+          config: { baseEndpoint: "https://api.example.test/v1", apiKey: "sk-must-not-write" },
+        },
+      });
+      expect(writeWithoutVault.statusCode).toBe(503);
+      expect(writeWithoutVault.json()).toEqual({ error: "VAULT_UNAVAILABLE" });
+      expect(vaultStorePre.list()).toHaveLength(0);
+    } finally {
+      await unconfiguredApp.close();
+      if (prevEnvVaultKey !== undefined) process.env.VOXWARD_VAULT_KEY = prevEnvVaultKey;
+    }
+
+    // Short (< 16 chars) passphrase seed must also be rejected
+    expect(() => deriveVaultKey("too-short")).toThrow(/16/);
+
+    // 3) Full buildApp WITH explicit vaultKey migrates legacy plaintext row idempotently
     app = buildApp({
       modules: buildRegistry({ adapters: "synthetic", host: "127.0.0.1", port: 3000, databaseFile: ":memory:" }),
       logger: false,
@@ -90,10 +134,21 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
     });
     await app.ready();
 
-    const owner = await signIn("owner55", "Owner 55");
-    runShortTransaction(db, (tx) => {
-      grantMembership(tx, { channelId: CH1, accountId: owner.accountId, role: "CHANNEL_OWNER", logAccess: true, now: NOW });
+    // Client-supplied secretref: values are refused (prevents cross-adapter ref injection)
+    const clientRefRes = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/adapters`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: {
+        category: "AI_PROVIDER",
+        driverId: "openai-compat",
+        displayName: "Forged Ref",
+        enabled: true,
+        config: { baseEndpoint: "https://api.example.test/v1", apiKey: "secretref:0000111122223333" },
+      },
     });
+    expect(clientRefRes.statusCode).toBe(400);
+    expect(clientRefRes.json()).toEqual({ error: "INVALID_REQUEST" });
 
     // Stored record now holds secretref: + __secretBoundEndpoint, zero plaintext
     const storedAfterBoot = readChannelAdapters(db, CH1);
@@ -123,58 +178,10 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
     });
     expect(listRes.statusCode).toBe(200);
     expect((listRes.json() as { adapters: Array<{ config: { apiKey: string } }> }).adapters[0]?.config.apiKey).toBe("••••••");
-
-    // 2) Route handler with secrets=undefined rejects plaintext secrets with 503 VAULT_UNAVAILABLE
-    const noVaultApp = Fastify({ logger: false });
-    await noVaultApp.register(channelPanelRoutes, {
-      database: db,
-      decisions: {
-        commitTask: async () => ({ status: 200, body: {} }),
-        reviewEvent: async () => ({ status: 200, body: {} }),
-        resendDelivery: async () => ({ status: 200, body: {} }),
-        editSubjectList: () => ({ status: 200, body: {} }),
-        editTerm: () => ({ status: 200, body: {} }),
-      },
-      candidates: {
-        listCards: () => ({ status: 200, body: {} }),
-        confirm: () => ({ status: 200, body: {} }),
-        reject: () => ({ status: 200, body: {} }),
-      },
-      models: {
-        describe: () => ({ contractVersion: CONTRACT_VERSION, providerName: "stub", supportsCancel: false }),
-        read: async () => ({ status: 200, body: {} }),
-        write: async () => ({ status: 200, body: {} }),
-        toggleScTranslation: async () => ({ status: 200, body: {} }),
-      },
-      rules: {
-        validate: () => ({ ok: true }),
-        normalizedTermIsEmpty: () => false,
-        previewWordlist: async () => ({ hits: [], whitelistMatches: [], language: "und", action: null }),
-      },
-    });
-    await noVaultApp.ready();
-    try {
-      const noVaultRes = await noVaultApp.inject({
-        method: "POST",
-        url: `/channels/${CH1}/adapters`,
-        headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
-        payload: {
-          category: "AI_PROVIDER",
-          driverId: "openai-compat",
-          displayName: "No Vault",
-          enabled: true,
-          config: { baseEndpoint: "https://api.example.test/v1", apiKey: "sk-must-not-write" },
-        },
-      });
-      expect(noVaultRes.statusCode).toBe(503);
-      expect(noVaultRes.json()).toEqual({ error: "VAULT_UNAVAILABLE" });
-    } finally {
-      await noVaultApp.close();
-    }
   });
 
-  it("STORY-057: strips URL userinfo, query/fragment credentials & bearer tokens on integration log write AND read", () => {
-    // Direct legacy row with embedded credentials in deployment_settings
+  it("STORY-057: sanitizes custom URL path segments, query values, and legacy/new integration logs onto safe diagnostic fields", async () => {
+    // Direct legacy row with embedded credentials in userinfo, CUSTOM URL PATH SEGMENT, arbitrary query param, and fragment
     runShortTransaction(db, (tx) => {
       tx.insert(deploymentSettings)
         .values({
@@ -184,15 +191,15 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
               id: "legacy-log-1",
               correlationId: "corr-legacy",
               adapterId: "adp-1",
-              adapterName: "YouTube",
-              providerKind: "LIVE_PLATFORM",
+              adapterName: "Custom Gateway",
+              providerKind: "AI_PROVIDER",
               method: "GET",
-              url: "https://user:topsecret@api.example.test/v1/models?key=AIzaSyDummySecretValue1234567890&foo=bar#access_token=ya29.supersecretvalue12345",
+              url: "https://user:topsecret@api.example.test/tenant-path-secret-9988/v1/models?key=AIzaSyDummySecretValue1234567890&customParam=PathQuerySecretVal#access_token=ya29.supersecretvalue12345",
               statusCode: 200,
               latencyMs: 12,
               requestHeaders: { authorization: "Bearer raw", "x-note": "Bearer sk-abc123456789012" },
               responseHeaders: {},
-              rawRequestBody: "url=https://a:b@host.test/cb?token=secret123",
+              rawRequestBody: "url=https://a:b@host.test/secret-hook-seg/cb?token=secret123",
               rawResponseBody: "token=sk-live9876543210987654",
               occurredAt: T0,
             },
@@ -204,35 +211,70 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
 
     const readSanitized = readIntegrationLogs(db, CH1);
     expect(readSanitized).toHaveLength(1);
+    expect(readSanitized[0]?.url).toBe("https://api.example.test/[REDACTED]/v1/models?key=[REDACTED]&customParam=[REDACTED]");
     expect(readSanitized[0]?.url).not.toContain("topsecret");
+    expect(readSanitized[0]?.url).not.toContain("tenant-path-secret-9988");
+    expect(readSanitized[0]?.url).not.toContain("PathQuerySecretVal");
     expect(readSanitized[0]?.url).not.toContain("AIzaSyDummySecretValue");
     expect(readSanitized[0]?.url).not.toContain("ya29.supersecretvalue");
-    expect(readSanitized[0]?.url).toContain("foo=bar");
+    expect(readSanitized[0]?.rawRequestBody).not.toContain("secret-hook-seg");
     expect(readSanitized[0]?.rawRequestBody).not.toContain("secret123");
     expect(readSanitized[0]?.rawResponseBody).not.toContain("sk-live9876543210987654");
 
-    appendIntegrationLog(db, CH1, {
-      id: "new-log-1",
-      correlationId: "corr-new",
-      adapterId: "adp-2",
-      adapterName: "OpenAI",
-      providerKind: "AI_PROVIDER",
-      method: "POST",
-      url: "https://alice:pw123@api.example.test/v1/chat?api_key=sk-1234567890abcdef#sig=xyz999",
-      statusCode: 200,
-      latencyMs: 5,
-      requestHeaders: { "x-custom": "ok" },
-      responseHeaders: {},
-      rawRequestBody: null,
-      rawResponseBody: null,
-      occurredAt: T0,
+    // Booting app migrates legacy integration logs in deployment_settings on disk and scrubs new adapter actions
+    app = buildApp({
+      modules: buildRegistry({ adapters: "synthetic", host: "127.0.0.1", port: 3000, databaseFile: ":memory:" }),
+      logger: false,
+      database: db,
+      vaultKey: deriveVaultKey("test-vault-seed-init005-57"),
+      adapterActionFetch: async (input) => {
+        const u = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        return new Response(`Upstream error for ${u}`, { status: 401 });
+      },
     });
-    const storedAfterAppend = readChannelAdapters(db, CH1);
-    expect(Array.isArray(storedAfterAppend)).toBe(true);
-    const logs = readIntegrationLogs(db, CH1);
-    expect(logs[0]?.url).not.toContain("pw123");
-    expect(logs[0]?.url).not.toContain("sk-1234567890abcdef");
-    expect(logs[0]?.url).not.toContain("xyz999");
+    await app.ready();
+
+    const migratedRow = db.orm.select().from(deploymentSettings).all().find((r) => r.key === `channel:${CH1}:integration-logs`);
+    expect(migratedRow?.valueJson).not.toContain("tenant-path-secret-9988");
+    expect(migratedRow?.valueJson).not.toContain("PathQuerySecretVal");
+
+    const owner = await signIn("owner57", "Owner 57");
+    runShortTransaction(db, (tx) => {
+      grantMembership(tx, { channelId: CH1, accountId: owner.accountId, role: "CHANNEL_OWNER", logAccess: true, now: NOW });
+    });
+
+    const createRes = await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/adapters`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+      payload: {
+        category: "AI_PROVIDER",
+        driverId: "openai-compat",
+        displayName: "Gateway OpenAI",
+        enabled: true,
+        config: { baseEndpoint: "https://gateway.example.test/custom-secret-route-777/v1", apiKey: "sk-custom-path-key-1234" },
+      },
+    });
+    expect(createRes.statusCode).toBe(201);
+    const adpId = (createRes.json() as { adapter: { id: string } }).adapter.id;
+
+    await app.inject({
+      method: "POST",
+      url: `/channels/${CH1}/adapters/${adpId}/actions/fetch-models`,
+      headers: { cookie: owner.cookie, "x-csrf-token": owner.csrf },
+    });
+
+    const logsRes = await app.inject({
+      method: "GET",
+      url: `/internal/channels/${CH1}/logs/integration`,
+      headers: { cookie: owner.cookie },
+    });
+    expect(logsRes.statusCode).toBe(200);
+    const items = (logsRes.json() as { items: Array<{ id: string; url: string; statusCode: number; correlationId: string; rawResponseBody: string | null }> }).items;
+    expect(items[0]?.url).toBe("https://gateway.example.test/[REDACTED]/v1/models");
+    expect(items[0]?.statusCode).toBe(401);
+    expect(items[0]?.correlationId).toBeTruthy();
+    expect(JSON.stringify(items)).not.toContain("custom-secret-route-777");
   });
 
   it("STORY-058: blocks symlinked/traversal DB paths and expanded production credentials in sandbox startup", () => {
@@ -269,6 +311,7 @@ describe("INIT-005 Vault, Outbound SSRF, Sandbox & Prompt Contracts (STORY-055..
       modules: buildRegistry({ adapters: "synthetic", host: "127.0.0.1", port: 3000, databaseFile: ":memory:" }),
       logger: false,
       database: db,
+      vaultKey: deriveVaultKey("test-vault-key-init005-s056"),
       adapterActionFetch: stubFetch,
     });
     await app.ready();
