@@ -35,7 +35,14 @@ docker buildx build --push --provenance=mode=max -t ghcr.io/<org>/voxward:<tag> 
 docker buildx imagetools inspect ghcr.io/<org>/voxward:<tag>
 ```
 
-The repository manifests pin immutable `@sha256:...` digest references matching `deploy/provenance.json` (`imageDigestStatus: candidate-placeholder-until-oci-build` until your registry build updates the candidate digest). Floating `:latest` or mutable tag-only references are rejected by `scripts/deploy-check.mjs`.
+The repository manifests pin the immutable attested OCI digest (`ghcr.io/tpmoonchefryan/voxward@sha256:7acaa398531fb26c55091ba1ae4aaae1c64ad4b2479ecf795669ed0fcbffea45`) built by [container-provenance.yml](../../.github/workflows/container-provenance.yml) and verified against `deploy/provenance.json` (`imageDigestStatus: verified`). Verify SLSA v1.0 provenance live before deploying:
+
+```bash
+node scripts/deploy-check.mjs --env-file deploy/server/server.env.example
+node scripts/verify-provenance.mjs
+```
+
+Floating `:latest`, mutable tag-only references, and all-zero placeholder digests are rejected by `scripts/deploy-check.mjs`.
 
 ---
 

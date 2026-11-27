@@ -49,3 +49,8 @@ jobs:
 
       - name: Verify deployment configuration invariants
         run: node scripts/deploy-check.mjs --env-file deploy/server/server.env.example
+
+      - name: Verify live OCI SLSA Build Provenance Attestation
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/verify-provenance.mjs

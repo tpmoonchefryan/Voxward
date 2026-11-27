@@ -74,9 +74,11 @@ jobs:
           trap cleanup EXIT
 
           # 1. Production entrypoint
-          docker run -d --name vox-prod --read-only --tmpfs /tmp:rw,noexec,nosuid \
+          docker run -d --name vox-prod --read-only \
+            --tmpfs /var/lib/voxward:rw,noexec,nosuid,uid=10001,gid=10001,mode=0700 \
+            --tmpfs /tmp:rw,noexec,nosuid,mode=1777 \
             -e VOXWARD_ADAPTERS=synthetic \
-            -e VOXWARD_DATABASE_FILE=/tmp/prod.sqlite3 \
+            -e VOXWARD_DATABASE_FILE=/var/lib/voxward/prod.sqlite3 \
             -e VOXWARD_HOST=0.0.0.0 \
             -e VOXWARD_PORT=3000 \
             "$IMAGE"
@@ -93,11 +95,13 @@ jobs:
           docker rm -f vox-prod
 
           # 2. Sandbox entrypoint
-          docker run -d --name vox-sandbox --read-only --tmpfs /tmp:rw,noexec,nosuid \
+          docker run -d --name vox-sandbox --read-only \
+            --tmpfs /var/lib/voxward-sandbox:rw,noexec,nosuid,uid=10001,gid=10001,mode=0700 \
+            --tmpfs /tmp:rw,noexec,nosuid,mode=1777 \
             -e VOXWARD_SANDBOX_ENABLED=true \
             -e VOXWARD_SANDBOX_HOST=0.0.0.0 \
             -e VOXWARD_SANDBOX_PORT=3100 \
-            -e VOXWARD_SANDBOX_DB=/tmp/sandbox.sqlite3 \
+            -e VOXWARD_SANDBOX_DB=/var/lib/voxward-sandbox/sandbox.sqlite3 \
             "$IMAGE" apps/server/dist/sandbox-main.js
           for i in $(seq 1 15); do
             if docker exec vox-sandbox node -e 'fetch("http://127.0.0.1:3100/healthz").then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))'; then
@@ -112,10 +116,12 @@ jobs:
           docker rm -f vox-sandbox
 
           # 3. Bootstrap owner CLI entrypoint
-          docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid \
+          docker run --rm --read-only \
+            --tmpfs /var/lib/voxward:rw,noexec,nosuid,uid=10001,gid=10001,mode=0700 \
+            --tmpfs /tmp:rw,noexec,nosuid,mode=1777 \
             -e VOXWARD_BOOTSTRAP_PASSWORD=smoke-bootstrap-pass-1234 \
             "$IMAGE" scripts/bootstrap-owner.mjs \
-            --db /tmp/boot.sqlite3 \
+            --db /var/lib/voxward/boot.sqlite3 \
             --channel-id smoke-room \
             --login-name smoke-owner \
             --display-name "Smoke Owner"

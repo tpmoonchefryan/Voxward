@@ -2,6 +2,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node
 import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { verifySlsaAttestationBundle } from "../../../../scripts/verify-provenance.mjs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../../src/app.js";
 import { createKiroCliInferenceProvider } from "../../src/adapters/kiro-cli/provider.js";
@@ -293,7 +294,7 @@ describe("VOXWARD-SUB-053 non-real deployment drill", () => {
     expect(runtimeEnv).toContain("KIRO_API_KEY=\n");
   });
 
-  it("VOXWARD-STORY-066: enforces immutable digest/SHA pinning and rejects unpinned or mismatched supply-chain inputs", () => {
+  it("VOXWARD-STORY-066: enforces non-placeholder OCI digest/SLSA provenance pinning and rejects placeholders or tampered manifests", () => {
     const repoRoot = fileURLToPath(new URL("../../../..", import.meta.url));
     const checkScript = join(repoRoot, "scripts/deploy-check.mjs");
 
@@ -303,7 +304,7 @@ describe("VOXWARD-SUB-053 non-real deployment drill", () => {
       const copyPaths = [
         "Dockerfile",
         ".dockerignore",
-        ".github/workflows/ci.yml",
+        ".github/workflows",
         "deploy/provenance.json",
         "deploy/k3s",
         "deploy/server",
@@ -335,11 +336,56 @@ describe("VOXWARD-SUB-053 non-real deployment drill", () => {
       }
     };
 
-    // Valid repo passes supply-chain checks
+    // Valid repo passes supply-chain & non-placeholder provenance checks
     const validFixture = createSupplyChainFixture("valid-supply-chain");
     const validOut = runCheckJson(validFixture);
     expect(validOut.exitCode).toBe(0);
     expect(validOut.report.ok).toBe(true);
+
+    const realProv = JSON.parse(readFileSync(join(repoRoot, "deploy/provenance.json"), "utf8")) as {
+      appImage: {
+        repository: string;
+        digest: string;
+        imageDigestStatus: string;
+        manifests: string[];
+        provenance: { predicateType: string; sourceRepository: string; sourceCommit: string; workflow: string };
+      };
+    };
+    expect(realProv.appImage.imageDigestStatus).toBe("verified");
+    expect(realProv.appImage.digest).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(realProv.appImage.digest).not.toBe(`sha256:${"0".repeat(64)}`);
+    const expectedImage = `${realProv.appImage.repository}@${realProv.appImage.digest}`;
+    for (const rel of realProv.appImage.manifests) {
+      const yaml = readFileSync(join(repoRoot, rel), "utf8");
+      expect(yaml).toContain(`image: ${expectedImage}`);
+    }
+
+    // Positive & Negative SLSA attestation statement verification
+    const validStatement = {
+      _type: "https://in-toto.io/Statement/v1",
+      subject: [{ name: realProv.appImage.repository, digest: { sha256: realProv.appImage.digest.slice(7) } }],
+      predicateType: realProv.appImage.provenance.predicateType,
+      predicate: {
+        buildDefinition: {
+          externalParameters: {
+            workflow: {
+              repository: realProv.appImage.provenance.sourceRepository,
+              path: realProv.appImage.provenance.workflow,
+            },
+          },
+          resolvedDependencies: [{ digest: { gitCommit: realProv.appImage.provenance.sourceCommit } }],
+        },
+      },
+    };
+    const b64 = Buffer.from(JSON.stringify(validStatement), "utf8").toString("base64");
+    expect(verifySlsaAttestationBundle({ attestations: [{ bundle: { dsseEnvelope: { payload: b64 } } }] }, realProv).ok).toBe(true);
+
+    const mismatchedStatement = { ...validStatement, subject: [{ name: realProv.appImage.repository, digest: { sha256: "f".repeat(64) } }] };
+    const badB64 = Buffer.from(JSON.stringify(mismatchedStatement), "utf8").toString("base64");
+    expect(verifySlsaAttestationBundle({ attestations: [{ bundle: { dsseEnvelope: { payload: badB64 } } }] }, realProv)).toEqual({
+      ok: false,
+      reason: "ATTESTATION_MISMATCH",
+    });
 
     // Negative 1: unpinned Dockerfile base image tag
     const badDocker = createSupplyChainFixture("bad-docker");
@@ -354,7 +400,7 @@ describe("VOXWARD-SUB-053 non-real deployment drill", () => {
     expect(badDockerOut.exitCode).toBe(1);
     expect(badDockerOut.report.checks.find((c) => c.name === "supply-chain:dockerfile-base-digest")?.ok).toBe(false);
 
-    // Negative 2: mutable GitHub Action tag in ci.yml
+    // Negative 2: mutable GitHub Action tag in ci.yml & container-provenance.yml
     const badCi = createSupplyChainFixture("bad-ci");
     writeFileSync(
       join(badCi, ".github/workflows/ci.yml"),
@@ -365,7 +411,19 @@ describe("VOXWARD-SUB-053 non-real deployment drill", () => {
     );
     const badCiOut = runCheckJson(badCi);
     expect(badCiOut.exitCode).toBe(1);
-    expect(badCiOut.report.checks.find((c) => c.name === "supply-chain:ci-actions-sha")?.ok).toBe(false);
+    expect(badCiOut.report.checks.find((c) => c.name === "supply-chain:workflow-sha:.github/workflows/ci.yml")?.ok).toBe(false);
+
+    const badContainerWf = createSupplyChainFixture("bad-container-wf");
+    writeFileSync(
+      join(badContainerWf, ".github/workflows/container-provenance.yml"),
+      readFileSync(join(badContainerWf, ".github/workflows/container-provenance.yml"), "utf8").replace(
+        /actions\/attest-build-provenance@[0-9a-f]{40}/,
+        "actions/attest-build-provenance@v2",
+      ),
+    );
+    const badContainerWfOut = runCheckJson(badContainerWf);
+    expect(badContainerWfOut.exitCode).toBe(1);
+    expect(badContainerWfOut.report.checks.find((c) => c.name === "supply-chain:workflow-sha:.github/workflows/container-provenance.yml")?.ok).toBe(false);
 
     // Negative 3: unpinned floating k3s manifest image tag & provenance mismatch
     const badK3s = createSupplyChainFixture("bad-k3s");
@@ -379,5 +437,27 @@ describe("VOXWARD-SUB-053 non-real deployment drill", () => {
     const badK3sOut = runCheckJson(badK3s);
     expect(badK3sOut.exitCode).toBe(1);
     expect(badK3sOut.report.checks.find((c) => c.name === "supply-chain:k3s:deploy/k3s/production/deployment.yaml")?.ok).toBe(false);
+
+    // Negative 4: all-zero placeholder digest is rejected even if all manifests match it
+    const placeholderDir = createSupplyChainFixture("placeholder-digest");
+    const zeroDigest = `sha256:${"0".repeat(64)}`;
+    for (const rel of ["deploy/provenance.json", ...realProv.appImage.manifests]) {
+      writeFileSync(
+        join(placeholderDir, rel),
+        readFileSync(join(placeholderDir, rel), "utf8").replaceAll(realProv.appImage.digest, zeroDigest),
+      );
+    }
+    const placeholderOut = runCheckJson(placeholderDir);
+    expect(placeholderOut.exitCode).toBe(1);
+    expect(placeholderOut.report.checks.find((c) => c.name === "supply-chain:app-image-provenance")?.ok).toBe(false);
+
+    // Negative 5: missing or unverified provenance metadata in provenance.json is rejected
+    const badProvDir = createSupplyChainFixture("bad-prov");
+    const tamperedProv = structuredClone(realProv) as Record<string, unknown>;
+    (tamperedProv.appImage as Record<string, unknown>).imageDigestStatus = "candidate-placeholder-until-oci-build";
+    writeFileSync(join(badProvDir, "deploy/provenance.json"), JSON.stringify(tamperedProv, null, 2));
+    const badProvOut = runCheckJson(badProvDir);
+    expect(badProvOut.exitCode).toBe(1);
+    expect(badProvOut.report.checks.find((c) => c.name === "supply-chain:app-image-provenance")?.ok).toBe(false);
   });
 });

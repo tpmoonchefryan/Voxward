@@ -193,13 +193,16 @@ function checkSupplyChainPinning(root) {
     });
   }
 
-  // 2. GitHub Actions CI commit SHA pinning + permissions + Node 24
-  const ciPath = resolve(root, ".github/workflows/ci.yml");
-  if (!existsSync(ciPath)) {
-    checks.push({ name: "supply-chain:ci", ok: false, detail: ".github/workflows/ci.yml missing" });
-  } else {
-    const ci = readFileSync(ciPath, "utf8");
-    const usesMatches = [...ci.matchAll(/\buses:\s*([^\s#]+)/g)].map((m) => m[1]);
+  // 2. GitHub Actions CI & container workflow commit SHA pinning + permissions + Node 24
+  const workflowFiles = [".github/workflows/ci.yml", ".github/workflows/container-provenance.yml"];
+  for (const relWorkflow of workflowFiles) {
+    const wfPath = resolve(root, relWorkflow);
+    if (!existsSync(wfPath)) {
+      checks.push({ name: `supply-chain:${relWorkflow}`, ok: false, detail: `${relWorkflow} missing` });
+      continue;
+    }
+    const wf = readFileSync(wfPath, "utf8");
+    const usesMatches = [...wf.matchAll(/\buses:\s*([^\s#]+)/g)].map((m) => m[1]);
     const allUsesPinned =
       usesMatches.length > 0 &&
       usesMatches.every((ref) => {
@@ -208,32 +211,41 @@ function checkSupplyChainPinning(root) {
         const repo = ref.slice(0, atIdx);
         const sha = ref.slice(atIdx + 1);
         const expectedSha = provenance.githubActions?.[repo];
-        return /^[0-9a-f]{40}$/.test(sha) && (expectedSha === undefined || expectedSha === sha);
+        return /^[0-9a-f]{40}$/.test(sha) && expectedSha !== undefined && expectedSha === sha;
       });
     checks.push({
-      name: "supply-chain:ci-actions-sha",
+      name: `supply-chain:workflow-sha:${relWorkflow}`,
       ok: allUsesPinned,
       detail: allUsesPinned
         ? `all ${usesMatches.length} GitHub Actions pinned to 40-hex commit SHA`
-        : "CI uses: entries must pin immutable 40-hex commit SHAs matching deploy/provenance.json",
+        : `${relWorkflow} uses: entries must pin immutable 40-hex commit SHAs matching deploy/provenance.json`,
     });
 
-    const expectedNode = String(provenance.ciNodeVersion ?? "24");
-    const hasPermissions = /^\s*permissions:/m.test(ci);
-    const hasNode24 = ci.includes(`node-version: "${expectedNode}"`) || ci.includes(`node-version: '${expectedNode}'`);
-    checks.push({
-      name: "supply-chain:ci-node-and-perms",
-      ok: hasPermissions && hasNode24,
-      detail:
-        hasPermissions && hasNode24
-          ? `permissions set, node-version=${expectedNode}`
-          : `CI must declare permissions and node-version: "${expectedNode}"`,
-    });
+    const hasPermissions = /^\s*permissions:/m.test(wf);
+    if (relWorkflow.endsWith("/ci.yml")) {
+      const expectedNode = String(provenance.ciNodeVersion ?? "24");
+      const hasNode24 = wf.includes(`node-version: "${expectedNode}"`) || wf.includes(`node-version: '${expectedNode}'`);
+      checks.push({
+        name: "supply-chain:ci-node-and-perms",
+        ok: hasPermissions && hasNode24,
+        detail:
+          hasPermissions && hasNode24
+            ? `permissions set, node-version=${expectedNode}`
+            : `CI must declare permissions and node-version: "${expectedNode}"`,
+      });
+    } else {
+      checks.push({
+        name: `supply-chain:workflow-perms:${relWorkflow}`,
+        ok: hasPermissions,
+        detail: hasPermissions ? "permissions set" : `${relWorkflow} must declare explicit permissions`,
+      });
+    }
   }
 
-  // 3. k3s workload manifests image digest pinning & provenance parity
+  // 3. k3s workload manifests non-placeholder image digest pinning & verified SLSA provenance metadata
   const expectedRepo = provenance.appImage?.repository ?? "";
   const expectedDigest = provenance.appImage?.digest ?? "";
+  const expectedStatus = provenance.appImage?.imageDigestStatus ?? "";
   const expectedImage = `${expectedRepo}@${expectedDigest}`;
   const manifests = Array.isArray(provenance.appImage?.manifests)
     ? provenance.appImage.manifests
@@ -242,7 +254,31 @@ function checkSupplyChainPinning(root) {
         "deploy/k3s/production/bootstrap-owner-job.yaml",
         "deploy/k3s/sandbox/deployment.yaml",
       ];
-  const validDigestSyntax = /^sha256:[0-9a-f]{64}$/.test(expectedDigest);
+  const validNonPlaceholderDigest =
+    /^sha256:[0-9a-f]{64}$/.test(expectedDigest) && !/^sha256:0{64}$/.test(expectedDigest);
+  const provMeta = provenance.appImage?.provenance;
+  const provenanceMetadataOk =
+    validNonPlaceholderDigest &&
+    expectedStatus === "verified" &&
+    provMeta !== null &&
+    typeof provMeta === "object" &&
+    provMeta.predicateType === "https://slsa.dev/provenance/v1" &&
+    provMeta.sourceRepository === "https://github.com/tpmoonchefryan/Voxward" &&
+    /^[0-9a-f]{40}$/.test(String(provMeta.sourceCommit ?? "")) &&
+    provMeta.workflow === ".github/workflows/container-provenance.yml" &&
+    /^\d+$/.test(String(provMeta.workflowRunId ?? "")) &&
+    typeof provMeta.workflowRunUrl === "string" &&
+    provMeta.workflowRunUrl.endsWith(`/actions/runs/${provMeta.workflowRunId}`) &&
+    typeof provMeta.attestationApiUrl === "string" &&
+    provMeta.attestationApiUrl.endsWith(`/attestations/${expectedDigest}`);
+  checks.push({
+    name: "supply-chain:app-image-provenance",
+    ok: provenanceMetadataOk,
+    detail: provenanceMetadataOk
+      ? `verified digest ${expectedDigest.slice(0, 19)}... from commit ${provMeta.sourceCommit.slice(0, 7)}`
+      : "appImage.digest must be a non-zero verified @sha256:<64-hex> with complete SLSA provenance metadata",
+  });
+
   for (const rel of manifests) {
     const abs = resolve(root, rel);
     if (!existsSync(abs)) {
@@ -252,15 +288,15 @@ function checkSupplyChainPinning(root) {
     const yaml = readFileSync(abs, "utf8");
     const images = [...yaml.matchAll(/^\s*image:\s*([^\s#]+)/gm)].map((m) => m[1]);
     const ok =
-      validDigestSyntax &&
+      validNonPlaceholderDigest &&
       images.length > 0 &&
-      images.every((img) => /@sha256:[0-9a-f]{64}$/.test(img) && img === expectedImage);
+      images.every((img) => /@sha256:[0-9a-f]{64}$/.test(img) && !/@sha256:0{64}$/.test(img) && img === expectedImage);
     checks.push({
       name: `supply-chain:k3s:${rel}`,
       ok,
       detail: ok
         ? `image pinned to ${expectedDigest.slice(0, 19)}...`
-        : `k3s manifest image must match ${expectedImage} with @sha256:<64-hex>`,
+        : `k3s manifest image must match ${expectedImage} with non-placeholder @sha256:<64-hex>`,
     });
   }
 
@@ -280,6 +316,7 @@ export function runDeployChecks({ root = DEFAULT_ROOT, envFile, processEnv = pro
     "Dockerfile",
     ".dockerignore",
     ".github/workflows/ci.yml",
+    ".github/workflows/container-provenance.yml",
     "deploy/provenance.json",
     "deploy/k3s/README.md",
     "deploy/k3s/production/bootstrap-owner-job.yaml",
