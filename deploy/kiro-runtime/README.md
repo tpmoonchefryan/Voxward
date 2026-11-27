@@ -39,7 +39,7 @@
 - 孤儿扫描 `sweepOrphanRunDirectories` 在启动时执行一次，之后由 `scheduleOrphanSweeps` 按周期执行（已实现；组合根尚未接入 Kiro 适配器，见设计文档 D3，因此目前只存在于库级接口与测试中）。
 - 记录的进程仍在运行，且它的工作目录就是该运行目录（Linux 上读 `/proc/<pid>/cwd`）时，孤儿扫描才终止整个进程组：先 SIGTERM，宽限后 SIGKILL。工作目录不符的 pid 视为已被其它进程复用，不发任何信号（已实现）。
 - 身份无法确认（非 Linux，或读取 `/proc` 被拒绝），或 SIGKILL 后进程仍然存在时，目录保留，并写入 `needs-manual.json`，内含原因码。这种情况需要运维处理。服务账号能否向运行账号的进程发信号取决于部署，待实测。
-- 没有记录会话 ID 的孤儿，在运行目录下执行 `chat --list-sessions -f json` 查找，并逐个请求删除（待实测：输出格式未对 kiro-cli 3.1.0 核实）。列表为空表示没有会话；列表不可读时目录保留，需要运维处理。
+- 没有记录会话 ID 的孤儿，在运行目录下执行 `chat --list-sessions -f json` 查找（在 `kiro-cli 3.6.0` 上已实测该命令返回 `[{"cwd":...,"sessions":[]}]` 包装对象，当前 `parseSessionListing` 保守拒绝包装对象并落盘 `needs-manual.json` 等待人工核查，避免误删）。当流内已记录 `sessionId` 时，清理器会调用 `--delete-session` 并自动移除孤儿目录。
 - 本进程中仍在运行的批次，其目录不会被扫描。扫描假定同一运行根只有一个服务进程（部署要求）。
 - 残留的进程组无法终止时，孤儿扫描不会强制结束其它进程，只保留目录并报告。
 
@@ -48,16 +48,16 @@
 - 不安装 Kiro CLI，不登录，不创建用户，不修改 sudoers、systemd 或防火墙。
 - 不提供包装程序、sudoers 规则或 systemd 单元。
 - 不提供真实凭据或示例凭据。
-- 不运行真实推理。
 
-## 5. 待实测
+## 5. `kiro-cli 3.6.0` 独立沙盒实测结果（`VW-S029-KIRO-REAL`）
 
-- stream-json 事件的结构（设计文档 §4.3）。
-- `--agent-engine v2` 与空值 `--trust-tools=` 在 kiro-cli 3.1.0 上的真实行为。
-- `KIRO_API_KEY` 与 `HOME` 对 CLI 登录状态的影响。
-- `--delete-session` 的真实删除效果，以及 CLI 会话文件的存放位置。
-- `mcp.json` 与 agent 配置的格式。
-- 异常退出后仍然存活的进程的处理方式。
+在隔离的 `0700` 运行根目录与非交互环境下对本地已安装的 `kiro-cli 3.6.0`（升级自 3.1.0，设计边界 `Q33`）执行真实调用演练，观察如下：
+
+- **headless JSON 流（`--no-interactive --output-format stream-json --agent-engine v2 --trust-tools=`）**：已实测真实返回 ACP `sessionUpdate` (`agent_message_chunk`) 事件与 `sessionId`，经 `validateModerationBatch` 解析并产出合法裁决，正常结束后 `residualRunDirs === 0`。
+- **超时与取消**：`timeoutMs: 50` 触发 `RUN_TIMEOUT`；异步 `cancel()` 触发 `RUN_CANCELLED`，均不泄漏正文或运行目录。
+- **无人值守未信任工具（`--trust-tools=`）**：诱导调用 `fs_write` 创建文件被非交互策略拦截，`should_not_exist.txt` 未被创建。
+- **崩溃孤儿清理（`sweepOrphanRunDirectories`）**：已记录 `sessionId` 的模拟崩溃目录连同残留子进程被全部清理（`terminated: 1, removed: 1, kiroSessions.requested: 1, manualAction: 0`）；未记录 `sessionId` 的目录则保守保留 `needs-manual.json`。
+- **已知待生产运维前置**：独立操作系统用户（`voxward-kiro`）的 `useradd` 账号隔离仍须由目标生产宿主机 root 管理员创建（无特权开发环境不绕过 `sudo`）。
 
 ## 6. 文件
 

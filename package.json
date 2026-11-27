@@ -14,7 +14,8 @@
     "bench:typecheck": "pnpm --filter @voxward/server exec tsc -p ../../bench/tsconfig.json",
     "bench:quality": "pnpm --filter @voxward/server exec tsx ../../bench/scripts/quality.ts",
     "bench:latency": "pnpm --filter @voxward/server exec tsx ../../bench/scripts/latency-capacity.ts",
-    "bench:cleanup": "pnpm --filter @voxward/server exec tsx ../../bench/scripts/cleanup-observe.ts"
+    "bench:cleanup": "pnpm --filter @voxward/server exec tsx ../../bench/scripts/cleanup-observe.ts",
+    "bench:real": "pnpm --filter @voxward/server exec tsx ../../bench/scripts/real-model.ts"
   },
   "devDependencies": {
     "@tcrn/ds-consumer-tools": "4.2.0",

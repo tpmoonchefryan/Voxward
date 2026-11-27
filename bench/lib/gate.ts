@@ -1,8 +1,8 @@
 import { cpus, totalmem, platform, release, arch } from "node:os";
 
 /**
- * The real-model gate. Default off: without `--real-model` the bench runs only doubles. With `--real-model` it refuses, so
- * SUB-049 never reaches a real model. The real binding is for SUB-050 (Q60). The refusal exits with code 2.
+ * The real-model gate for doubles-only scripts. Default off: without `--real-model` the bench runs only doubles.
+ * With `--real-model` it refuses, so `bench:quality` / `bench:latency` / `bench:cleanup` never reach a real model.
  */
 export function refuseRealModelRequest(argv: readonly string[], env: NodeJS.ProcessEnv): void {
   if (!argv.includes("--real-model")) return;
@@ -11,6 +11,18 @@ export function refuseRealModelRequest(argv: readonly string[], env: NodeJS.Proc
       ? "the real-model binding is not part of SUB-049; SUB-050 adds it with the Owner account (Q60)"
       : "--real-model also needs VOXWARD_BENCH_REAL_MODEL=1; by default the bench runs only doubles";
   process.stderr.write(`bench: refused: ${reason}\n`);
+  process.exit(2);
+}
+
+/**
+ * Explicit opt-in gate for `bench/scripts/real-model.ts`. Refuses unless BOTH `--real-model` and
+ * `VOXWARD_BENCH_REAL_MODEL=1` are explicitly supplied.
+ */
+export function requireRealModelAuthorization(argv: readonly string[], env: NodeJS.ProcessEnv): void {
+  if (argv.includes("--real-model") && env.VOXWARD_BENCH_REAL_MODEL === "1") return;
+  process.stderr.write(
+    "bench: refused: real-model bench requires both --real-model and VOXWARD_BENCH_REAL_MODEL=1\n",
+  );
   process.exit(2);
 }
 

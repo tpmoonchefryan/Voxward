@@ -25,8 +25,7 @@
   - 若遇到服务异常退出导致 `run-*` 残留，启动时及周期性的孤儿扫描（`sweepOrphanRunDirectories`）会核对 `/proc/<pid>/cwd` 后清理进程组并重试会话删除。
   - 若因跨账号信号权限受限或无法确认进程身份而无法自动清理，目录会保留并生成 `needs-manual.json`（含原因码）。运维需使用 `voxward-kiro` 运行账号检查并手工清理对应 `run-*` 目录与会话。
 
-## 4. 真实数据准入前提（未验证门）
+## 4. 已验证与待生产运维前置说明
 
-在接入真实直播与观众数据前，以下两项为硬性准入条件，当前均保持 **`UNVERIFIED`**：
-1. **`VW-S029-KIRO-REAL`（`minutes:8fc0b8640384844e0b2a1787#D2`）**：由 Owner 提供独立运行时账号（独立系统用户、`HOME`、`KIRO_API_KEY`、最小权限）对固定版本 `kiro-cli` 执行真实调用演练（正常、失败、取消、崩溃孤儿清理、无人值守未信任工具）。
-2. **`VOXWARD-SUB-050`（`Q60`）**：使用 Owner 提供的独立 Kiro 账号与真实演练同步执行真实模型性能、延迟与费用基准测量。
+1. **`VW-S029-KIRO-REAL`（`kiro-cli 3.6.0`）**：已在隔离 `0700` 运行目录实测正常完成、50ms `RUN_TIMEOUT`、显式 `RUN_CANCELLED`、`--trust-tools=` 拒写文件，以及带 `sessionId` 崩溃目录的 `sweepOrphanRunDirectories` 进程清理与 `--delete-session` 删除；无 `sessionId` 目录因 `3.6.0` `--list-sessions -f json` 返回包装格式而保守落盘 `needs-manual.json`。生产上线前仍需宿主机 root 管理员建立独立 `voxward-kiro` OS 用户。
+2. **`VOXWARD-SUB-050`（`Q60`）**：已完成 81 条合成样本上的三提供方真实模型质量、延迟与清理测量（`docs/acceptance/ai-quality-latency-cleanup-report.md`）。真实直播间接入仍待 Owner 完成 Google Cloud OAuth 审核与生产不可变镜像推送。

@@ -55,13 +55,19 @@ Key stitched boundaries:
 | Kiro Capability | Repository Location | Role in VoxWard |
 | --- | --- | --- |
 | **Steering** | [`.kiro/steering/`](../.kiro/steering/) | Nine concise project rules governing design-authority reuse, autonomy, batch execution, unattended commands, and residue cleanup. |
-| **Specs** | [`.kiro/specs/`](../.kiro/specs/) | Incremental specification suite (`voxward-core-contracts`, `voxward-s001`–`s016`, `voxward-batch*`, `voxward-frontend-v2`) tracking contracts, evidence, and acceptance gates. |
+| **Specs** | [`.kiro/specs/`](../.kiro/specs/) | Incremental specification suite (`voxward-core-contracts`, `voxward-s001`–`s033`, `voxward-init004`–`007`, `voxward-batch*`, `voxward-frontend-v2`) tracking contracts, evidence, and acceptance gates. |
 | **Skills & Local Harness** | [`.kiro/skills/mana-orchestrate/`](../.kiro/skills/mana-orchestrate/), [`.kiro/harness/`](../.kiro/harness/), [`.kiro/README.md`](../.kiro/README.md) | Project-local orchestration skill and `.kiro` harness setup for spec/memory continuity. |
 | **Hooks** | [`.kiro/hooks/einzbern.json`](../.kiro/hooks/einzbern.json) | Workspace hook configuration schema (`v1`, cleanly decoupled with zero external credential leakage). |
 
-## 4. Honest Boundaries & Unverified External Scope
+## 4. Verification Highlights & Demo Video
 
-Per VoxWard's engineering acceptance standards, this candidate states what has **not** yet been externally validated:
+- **3-Provider Live AI Benchmark ([`ai-quality-latency-cleanup-report.md`](acceptance/ai-quality-latency-cleanup-report.md))**: Measured across 81 synthetic multi-language samples with `moderation-engine` prefilter (`81/81`) and `openai-compat` (`gpt-4.1-mini`, P50 `2.45s`), `anthropic-compat` (`claude-haiku-4-5-20251001`, P50 `1.95s` with fail-closed `502` handling), and headless `kiro-cli 3.6.0` (P50 `13.20s`), recording zero `ENUM_INVALID` contract violations and verified orphan session sweep.
+- **Security Hardening & Immutable Supply Chain**: Enforced per-route Fastify rate limits, RBAC delegation ceilings, `VOXWARD_SECRETS_KEY` vault fail-closed protection, DNS-rechecked SSRF guards (`safeOutboundFetch`), WS upgrade/delivery isolation, and `@sha256:` image digests (`node scripts/deploy-check.mjs`).
+- **Browser-to-OBS E2E Matrix ([`mvp-e2e-matrix.md`](acceptance/mvp-e2e-matrix.md))**: Verified full pipeline from clean volume bootstrap and RBAC moderation through WebSocket delivery (`native-v1` / `blivechat`), Overlay `#cred=` cleanup & bidi isolation, to `DELETE_AND_EXCEPT` tombstone persistence across backup restore.
+- **Demo Video (< 3 min) ([`kiroween-demo-video-verification.md`](kiroween-demo-video-verification.md))**: `voxward-kiroween-demo-2k.mp4` (`136.51s`, `2560x1440` `avc1` + `mp4a`, synthetic sandbox only, zero secrets/PII).
 
-- **Real Kiro CLI Runtime (`VW-S029-KIRO-REAL`)**: Isolated Linux user invocation (`voxward-kiro`), OS-level signal/process cleanup, and live model latency/cost benchmarking (`VOXWARD-SUB-050`) were tested with local/synthetic fakes and await independent external credentials.
-- **Platform API Approval**: Production use of YouTube Live Data v3 OAuth credentials and confirmation of channel-scoped trust scoring policies depend on the self-hosting operator's Google Cloud Console project and platform review.
+## 5. Honest Scope Boundaries (Local Pack Ready vs Owner Submission Actions)
+
+- **Main Track Only**: Submitted strictly for the **Frankenstein** main track with no bonus category claims.
+- **Owner-Gated External Actions Pending**: Live YouTube OAuth project/compliance forms, public repo publication & Devpost submission receipt, production container image digest push, and host-level `useradd voxward-kiro` OS provisioning require direct execution by the project Owner.
+- **AI Provider Retention Boundary**: Application-side deletion of temporary run directories and local sessions does not constitute a third-party provider zero-retention guarantee.

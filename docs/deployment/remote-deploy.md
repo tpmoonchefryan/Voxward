@@ -52,14 +52,22 @@ unset VOXWARD_BOOTSTRAP_PASSWORD
   - 变更路由要求在请求头携带登录返回的 `x-csrf-token`。
   - WebSocket 握手校验请求 `Origin` 与 `Host` 一致；反代必须透传原始 `Host` 头（`header_up Host {host}`），且不可将后端端口直接暴露到公网。
 
-## 6. Kiro 运行时隔离（`deploy/kiro-runtime/`）
+## 6. 安全加固与供应链不可变基线（`INIT-004`..`INIT-007`）
 
-- Kiro CLI 必须运行在独立操作系统账号（示例 `voxward-kiro`）下，拥有独立的 `KIRO_RUNTIME_ROOT`（0700）与 `KIRO_RUNTIME_HOME`（0700），不得读取 VoxWard 源码、SQLite 数据库或个人资料。
-- 适配器不继承服务器环境变量，仅传入显式 `env`。真实环境演练状态见 `deploy/kiro-runtime/README.md` 与 `docs/deployment/troubleshooting-and-quotas.md`。
+- **认证、限流与 RBAC 防护**：`/auth/login`、`POST /auth/logout`、SPA/静态入口与所有频道面板变更路由均受 `@fastify/rate-limit` 与全局并发/请求体限制约束；预设角色模板不可变，频道成员授权强制实施委派上限与频道隔离；日志仅保留结构化脱敏 URL。
+- **出站 SSRF 与凭据保险箱**：OpenAI-compat、Anthropic-compat 与适配器校验统一经 `safeOutboundFetch`（DNS 解析环回/私网/元数据拦截 + `redirect: "error"`）；`VOXWARD_SECRETS_KEY` 缺失或不可用时 `503 VAULT_UNAVAILABLE` fail-closed 拒绝降级明文；遗留密文迁移失败返回 `CREDENTIAL_REBIND_REQUIRED`。
+- **WebSocket 配额与隔离交付**：升级限流于查库前生效，强制执行单凭据/单频道/总连接数配额与健康目标隔离投递。
+- **不可变镜像与部署门禁**：`Dockerfile`（`node:24-bookworm-slim@sha256:...` 与 `pnpm@12.18.0` SHA-256 校验）与 `deploy/k3s/*/deployment.yaml`（`@sha256:` 不可变摘要 + `deploy/provenance.json` 对齐）须在上线前通过：
+  `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`
 
-## 7. 真实数据准入前提
+## 7. Kiro 运行时隔离（`deploy/kiro-runtime/`）
 
-在接入真实直播间或真实观众数据前，必须满足以下全部前提（未满足前仅允许合成演练）：
-1. **`VW-S029-KIRO-REAL`**：Owner 使用独立运行时账号与密钥完成真实 `kiro-cli` 演练（`minutes:8fc0b8640384844e0b2a1787#D2`）。
-2. **`VOXWARD-SUB-050`（`Q60`）**：使用 Owner 提供的独立 Kiro 账号完成真实模型性能与费用基准测量。
-3. **YouTube 凭据与合规**：按 `docs/deployment/youtube-credentials.md` 完成 Google Cloud 项目、OAuth 同意屏、回调登记与合规审核。
+- Kiro CLI 必须运行在独立操作系统账号（示例 `voxward-kiro`）下，拥有独立的 `KIRO_RUNTIME_ROOT`（0700）与 `KIRO_RUNTIME_HOME`（0700），不得读取 VoxWard 源码、SQLite 数据库或个人资料（目标生产机由 root 运维执行 `useradd` 创建）。
+- 适配器不继承服务器环境变量，仅传入显式 `env`。`kiro-cli 3.6.0` 隔离实测结果见 `deploy/kiro-runtime/README.md` 与 `docs/deployment/troubleshooting-and-quotas.md`。
+
+## 8. 真实数据准入前提
+
+在接入真实直播间或真实观众数据前，须分别核验本地已验证证据与仍待 Owner/生产运维完成的外部项：
+1. **`VOXWARD-SUB-050`（`Q60`）**：已在 81 条合成样本上完成 `openai-compat` / `anthropic-compat` / `kiro-cli 3.6.0` 三提供方实测（见 `docs/acceptance/ai-quality-latency-cleanup-report.md`）。
+2. **`VW-S029-KIRO-REAL`**：已在隔离 `0700` 运行目录完成 `kiro-cli 3.6.0` 正常、超时、取消、`--trust-tools=` 与孤儿清理实测；目标生产机仍需 root 管理员创建独立系统账号 `voxward-kiro`。
+3. **YouTube 凭据、镜像推送与合规审核**：由 Owner 按 `docs/deployment/youtube-credentials.md` 完成 Google Cloud 项目、OAuth 同意屏、回调登记与合规审核，并由发布管理员完成生产容器镜像构建与不可变 `@sha256:` 摘要替换。

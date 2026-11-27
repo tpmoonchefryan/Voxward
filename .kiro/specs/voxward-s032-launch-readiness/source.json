@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:7ae2b9eed7667befe4143a5c",
+  "workRevision": 4,
+  "sourceDigest": "32dbc5db6e14d6cd30f58990d56681bd1246060f68fb1526f15b279241a41e34",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:7ae2b9eed7667befe4143a5c",
+    "workRevision": 4,
+    "sourceDigest": "32dbc5db6e14d6cd30f58990d56681bd1246060f68fb1526f15b279241a41e34",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:7ae2b9eed7667befe4143a5c",
+        "externalKey": "VOXWARD-STORY-032",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "对齐实现后的申请及部署披露材料",
+        "summary": "Activate VOXWARD-STORY-032 on branch fix/voxward-open-tickets",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:38f6781a2897f516ae7c2c81",
+        "scopeDigest": "7fc45722bf181f4e22ed88d18cc0f0caaadafbe07f892eb7763e69edbe21c7ec",
+        "relations": {
+          "blockedBy": [
+            "work:2d989e13eeb4a9b2a8bde05d",
+            "work:40b84e7e9a57ceaa64f3a742",
+            "work:511cb54c5651b27a740fd69e",
+            "work:7f0ac0774bc508523d09b5f1",
+            "work:c9c3c501eab15d2b2e980f45"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:38f6781a2897f516ae7c2c81",
+          "supersedes": []
+        },
+        "fieldSha256": "5cc8e6c9a3d735db263fae4a4e88910bddaed916eb8b0c0f3224c5fc8a31e8fc",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "515d3c913f67ff757a01bd78721f7366dfed120ea15689a598f51ed150314f19",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "24c9a2ae0086f4d1a0723457826ad773c22d6195c37db077fe4b8da2015e6ed8",
+    "design.md": "8204d6c502aac7d30bd519addcfc878ecb62fe80f733c9f5229ac0737c66cec6",
+    "tasks.md": "90cd2429da640c3b5bf95a48dfa66501fadadb5111b766a8421dab17b4fb9258"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "b46904769a338c8f66f9b955bbce2fbc7e46b3bc500ca60a42ccd80402ef459a"
+}

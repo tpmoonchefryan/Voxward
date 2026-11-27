@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:40fb35d2241008cfa2196f6d",
+  "workRevision": 4,
+  "sourceDigest": "4963e615b351bd0844a80c19fea2518eff10b74b49e585fb8f07abcaae02e3ee",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:40fb35d2241008cfa2196f6d",
+    "workRevision": 4,
+    "sourceDigest": "4963e615b351bd0844a80c19fea2518eff10b74b49e585fb8f07abcaae02e3ee",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:40fb35d2241008cfa2196f6d",
+        "externalKey": "VOXWARD-STORY-033",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "准备 Frankenstein 演示与参赛交付材料",
+        "summary": "Activate VOXWARD-STORY-033 on branch fix/voxward-open-tickets",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:38f6781a2897f516ae7c2c81",
+        "scopeDigest": "14e1e186e456f86f11f3b416620cfe38dd70a20b452d4abb612a37cda6f2cf87",
+        "relations": {
+          "blockedBy": [
+            "work:4cf6a15287447d5046c0df9c",
+            "work:511cb54c5651b27a740fd69e",
+            "work:7ae2b9eed7667befe4143a5c",
+            "work:ac8ff494373ad248e549ea4a"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:38f6781a2897f516ae7c2c81",
+          "supersedes": []
+        },
+        "fieldSha256": "dcc23f142a7daaaebd7c6548f336588f0f3f4fb2739e4e99a36b71232a708d15",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "1f9405886071984d38ff72e08eab778bb1d5bc5ae887c4c1f7887542b55df560",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "ff3043f8f9b90fb6dd5626a3ff90eb7c5b27b0e6ef13c2ca43675891a59ea7e5",
+    "design.md": "f1b2fb717ecf1ba1982819b947dd7c419c07aba26458b6d1272cf29a22b74e9d",
+    "tasks.md": "b8ba1db64d55b559644bee218ccb3977ce6156b4872626fd054521bf4589cfd1"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "2cb6b62b652a234618abebcc83073d085d09120d2a5aaefe2fb7dd9dd1f4c6ff"
+}

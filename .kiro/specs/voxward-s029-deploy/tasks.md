@@ -25,4 +25,5 @@ A checked task is local progress only. Formal completion still requires the engi
 - [x] S029-6：新增非联机检查脚本 `scripts/deploy-check.mjs`（校验产物、迁移、模板占位、Q37 超时与生产 fail-closed；支持 `--json` 与退出码；`check-deps.mjs` 0 violations）。
 - [x] S029-7（SUB-053）：在 `docs/deployment/` 下新增全套运维与排障手册（远端部署、多房管邀请与最小权限、日志权限与保留期 sweep、备份与 `.restoring` 恢复、升级与回退、YouTube/Kiro 配额与 `Q41` NTP 校时、真实数据准入 `VW-S029-KIRO-REAL` 与 `VOXWARD-SUB-050`/`Q60`）。
 - [x] S029-8（SUB-053）：新增 `apps/server/test/deployment/deployment-drill.test.ts` 端到端非真实演练测试。
-- [x] S029-9：运行全量构建、typecheck、check-deps、guarded 全量测试与 `kiro-specs.mjs check`，编写 `.kiro/specs/voxward-s029-deploy/evidence/self-check.md`（显式保留 `VW-S029-KIRO-REAL` `UNVERIFIED`）。
+- [x] S029-9：运行全量构建、typecheck、check-deps、guarded 全量测试与 `kiro-specs.mjs check`，编写 `.kiro/specs/voxward-s029-deploy/evidence/self-check.md`。
+- [x] S029-10（`VW-S029-KIRO-REAL` & `INIT-004..007` 加固同步）：完成 `kiro-cli 3.6.0` 隔离 `0700` 目录实测与崩溃孤儿清理验证，并同步安全加固与不可变部署说明至 `deploy/kiro-runtime/README.md` 与 `docs/deployment/{remote-deploy,troubleshooting-and-quotas}.md`（生产宿主机 `voxward-kiro` `useradd` 仍由目标环境 root 运维执行）。

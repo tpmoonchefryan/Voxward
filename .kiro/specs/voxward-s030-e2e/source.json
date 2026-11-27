@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "einzbern.kiro-spec-source.v1",
+  "workId": "work:511cb54c5651b27a740fd69e",
+  "workRevision": 4,
+  "sourceDigest": "00d668cd15a8efe26bd304153b8af7f082dc0199e7099d19d77ec8e150ffe2eb",
+  "sourceStamp": {
+    "schemaVersion": "einzbern.kiro-spec-source.v1",
+    "workId": "work:511cb54c5651b27a740fd69e",
+    "workRevision": 4,
+    "sourceDigest": "00d668cd15a8efe26bd304153b8af7f082dc0199e7099d19d77ec8e150ffe2eb",
+    "legacy": false,
+    "sources": {
+      "work": {
+        "id": "work:511cb54c5651b27a740fd69e",
+        "externalKey": "VOXWARD-STORY-030",
+        "kind": "Story",
+        "revision": 4,
+        "status": "active",
+        "title": "汇总浏览器到 OBS 的整体验收",
+        "summary": "Activate VOXWARD-STORY-030 on branch fix/voxward-open-tickets",
+        "projectId": "project:f824c7861e6888255132af42",
+        "parentId": "work:79b813cdbe785e9ab7d32228",
+        "scopeDigest": "d2a3ce4a638fb6846903b993baf25577693496e847832df633fbd6fd56745b70",
+        "relations": {
+          "blockedBy": [
+            "work:3ebb2c33e7560e8661143983",
+            "work:40b84e7e9a57ceaa64f3a742",
+            "work:4cf6a15287447d5046c0df9c",
+            "work:58dd548e00e4c319dce50484",
+            "work:7575417f5d8162013086ea6f",
+            "work:7fca6e51424bb603b416c643",
+            "work:ac8ff494373ad248e549ea4a",
+            "work:e5f4bbecea9a82b6068a9ca7"
+          ],
+          "decidedIn": [
+            "minutes:a791ac5683fc0b966d851c2f"
+          ],
+          "fixes": [],
+          "implements": [],
+          "parent": "work:79b813cdbe785e9ab7d32228",
+          "supersedes": []
+        },
+        "fieldSha256": "7ad62f93efc9f33c67f97331ee0f0fcbd70bc373c99ccd995c84a1ae0571d651",
+        "sourceStatus": "complete"
+      },
+      "contextDigest": "55c9ec02adeff84b36521fd6d2d8f51814ff93708736ce545ede70b6948dad85",
+      "minuteRevisions": [
+        {
+          "id": "minutes:92f6353f4d2e04aa552ea04e",
+          "revision": null
+        },
+        {
+          "id": "minutes:a791ac5683fc0b966d851c2f",
+          "revision": null
+        },
+        {
+          "id": "minutes:be2ce03bcd6fda69f1db9839",
+          "revision": null
+        }
+      ],
+      "design": {
+        "status": "unconfigured",
+        "targets": [
+          {
+            "reference": {
+              "libraryId": "workspace:7732a51de4c38afb83bb77cf",
+              "projectId": "project:f824c7861e6888255132af42"
+            },
+            "status": "unconfigured",
+            "design": null,
+            "authoritySetting": null,
+            "reason": "coordination-is-not-development"
+          }
+        ]
+      }
+    }
+  },
+  "managedSha256": {
+    "requirements.md": "e8593b18db58ad0709c10170bcead2117f11ba486b3cfaadcc669a83efc69b6f",
+    "design.md": "bef39ef7378d8b1cdf566bbc74d08bff9cf14ddf4e5821d71eb70588b93a03af",
+    "tasks.md": "9533e0ad92b0c8116dfbcd13aebf1fe7a436bfb14ebc424d18a39acf44ce58d9"
+  },
+  "files": [
+    "requirements.md",
+    "design.md",
+    "tasks.md"
+  ],
+  "manifestDigest": "b53dfd3fdb1f188c9d459c204ca711db4a7bd07fd526f7bf3dad1a2caa0ffe1e"
+}
