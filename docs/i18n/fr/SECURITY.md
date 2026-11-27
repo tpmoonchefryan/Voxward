@@ -1,4 +1,4 @@
-> Remarque : la [version anglaise](../../../SECURITY.md) fait foi · `synced-to: a4604fcd310a91971ac82f36677957567ee67d70eaeac9942a499063d82e6d65`
+> Remarque : la [version anglaise](../../../SECURITY.md) fait foi · `synced-to: 1bb454fccfd5004da0cf5de381b3709d306563f3a23f4ecdfe6d041ad20b7ecd`
 
 # Politique de sécurité
 
@@ -6,7 +6,7 @@
 
 ## Versions prises en charge
 
-Les correctifs de sécurité visent la branche `main` actuelle et la dernière version étiquetée (série `rc0.1.0` avant la version 1.0). Les anciens instantanés pré-version ne reçoivent pas de rétroportages dédiés ; veuillez mettre à jour vers la version la plus récente.
+Les correctifs de sécurité visent la branche `main` actuelle et la dernière version étiquetée (série `rc0.1.x` avant la version 1.0). Les anciens instantanés pré-version ne reçoivent pas de rétroportages dédiés ; veuillez mettre à jour vers la version la plus récente.
 
 ## Signaler une vulnérabilité
 

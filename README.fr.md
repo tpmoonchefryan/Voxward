@@ -1,4 +1,4 @@
-> Remarque : la [version anglaise](./README.md) fait foi · `synced-to: 27d8f9ec0339989539fa4558b628adbdb6f524883ba786a9e036639497e3f3f9`
+> Remarque : la [version anglaise](./README.md) fait foi · `synced-to: 7aa3633e2be29c8ced064a5f661eea1e6273b33b6ab5ca78d4e814f6aba78cdc`
 
 <div align="center">
 
@@ -14,7 +14,7 @@ Intergiciel auto-hébergé de modération de chat et danmaku en direct, notation
 
 [English](./README.md) · [简体中文](./README.zh-CN.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md) · **Français**
 
-[![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
+[![release](https://img.shields.io/badge/release-rc0.1.1-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.1)
 [![live-sandbox](https://img.shields.io/badge/Live%20Demo-Bac%20%C3%A0%20sable%20en%20ligne-f58a33?style=flat-square)](https://voxward.tcrn-platform.com/sandbox)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
@@ -28,7 +28,7 @@ Intergiciel auto-hébergé de modération de chat et danmaku en direct, notation
 > Développé par **tpmoonchefryan** sous licence **Apache-2.0** pour **Kiroween 2026 (Catégorie Frankenstein)**. L'interface démarre par défaut en **thème Halloween + anglais (`en`)** avec bascule dynamique en **5 langues** (`English`, `简体中文`, `日本語`, `한국어`, `Français`).
 
 > [!IMPORTANT]
-> **Avis de pré-version** : cette version (`rc0.1.0`) est une **pré-version** qui n'a **pas encore été testée en conditions réelles de diffusion en production**. Si vous êtes streamer ou équipe VTuber intéressé(e) par une utilisation réelle, contactez directement le mainteneur via [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) — les retours d'usage guideront la livraison d'une version validée en production.
+> **Avis de pré-version** : cette version (`rc0.1.1`) est une **pré-version** qui n'a **pas encore été testée en conditions réelles de diffusion en production**. Si vous êtes streamer ou équipe VTuber intéressé(e) par une utilisation réelle, contactez directement le mainteneur via [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) — les retours d'usage guideront la livraison d'une version validée en production.
 
 ---
 
@@ -158,7 +158,7 @@ Le déploiement en production cible un serveur Linux derrière un proxy inverse 
 
 ### Vérifications et limites externes
 
-Pour `rc0.1.0` : `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm build`, `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`, `pnpm test -- --run` (187 fichiers / 2 019 tests) et tests Playwright E2E ont tous réussi.
+Pour `rc0.1.1` : `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm build`, `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`, `node scripts/verify-provenance.mjs`, `pnpm test -- --run` (199 fichiers / 2 074 tests) et tests Playwright E2E ont tous réussi.
 
 Déploiement conteneurisé vérifié en direct : le [`Dockerfile`](./Dockerfile) multi-étapes compile avec succès sur Cloud Build et la configuration k3s `/sandbox` est en ligne et vérifiée en HTTPS + Playwright E2E sur **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)**.
 
@@ -190,6 +190,6 @@ Déploiement conteneurisé vérifié en direct : le [`Dockerfile`](./Dockerfile)
 | [`PRIVACY.md`](./PRIVACY.md) | Flux de données auto-hébergés, minimisation IA et copies externes | [EN](./PRIVACY.md) · [zh-CN](./docs/i18n/zh-CN/PRIVACY.md) · [JA](./docs/i18n/ja/PRIVACY.md) · [KO](./docs/i18n/ko/PRIVACY.md) · [FR](./docs/i18n/fr/PRIVACY.md) |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Prérequis, portes de validation et synchronisation multilingue | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | Code de conduite et signalement confidentiel | [EN](./CODE_OF_CONDUCT.md) · [zh-CN](./docs/i18n/zh-CN/CODE_OF_CONDUCT.md) · [JA](./docs/i18n/ja/CODE_OF_CONDUCT.md) · [KO](./docs/i18n/ko/CODE_OF_CONDUCT.md) · [FR](./docs/i18n/fr/CODE_OF_CONDUCT.md) |
-| [`CHANGELOG.md`](./CHANGELOG.md) | Historique des versions (`rc0.1.0`) | English |
+| [`CHANGELOG.md`](./CHANGELOG.md) | Historique des versions (`rc0.1.1`) | English |
 | [`deploy/k3s/README.md`](./deploy/k3s/README.md) | Build conteneur k3s, manifestes `/sandbox` en ligne et production auto-hébergée | English |
 | [`LICENSE`](./LICENSE) & [`NOTICE`](./NOTICE) | Licence Apache-2.0 et mentions tierces (incluant polices SIL OFL 1.1) | English (authoritative) |

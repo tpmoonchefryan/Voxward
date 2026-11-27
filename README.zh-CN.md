@@ -1,4 +1,4 @@
-> 说明：本文档以[英文原版](./README.md)为准 · `synced-to: 27d8f9ec0339989539fa4558b628adbdb6f524883ba786a9e036639497e3f3f9`
+> 说明：本文档以[英文原版](./README.md)为准 · `synced-to: 7aa3633e2be29c8ced064a5f661eea1e6273b33b6ab5ca78d4e814f6aba78cdc`
 
 <div align="center">
 
@@ -14,7 +14,7 @@
 
 [English](./README.md) · **简体中文** · [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Français](./README.fr.md)
 
-[![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
+[![release](https://img.shields.io/badge/release-rc0.1.1-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.1)
 [![live-sandbox](https://img.shields.io/badge/Live%20Demo-在线沙盒体验-f58a33?style=flat-square)](https://voxward.tcrn-platform.com/sandbox)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
@@ -28,7 +28,7 @@
 > 由 **tpmoonchefryan** 基于 **Apache-2.0** 为 **Kiroween 2026（Frankenstein 赛道）** 构建。默认首屏为 **万圣节（Halloween）主题 + 英文（`en`）**，支持在界面中实时切换 **五种语言**（`English`、`简体中文`、`日本語`、`한국어`、`Français`）。
 
 > [!IMPORTANT]
-> **预发布版本声明**：当前 `rc0.1.0` 为**预发布版本**，尚未进行真实直播间生产测试。如果有主播或运营团队希望实际试用，欢迎直接通过 [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) 联系作者——后续会结合真实使用需求评估并交付经生产验证的正式版本。
+> **预发布版本声明**：当前 `rc0.1.1` 为**预发布版本**，尚未进行真实直播间生产测试。如果有主播或运营团队希望实际试用，欢迎直接通过 [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) 联系作者——后续会结合真实使用需求评估并交付经生产验证的正式版本。
 
 ---
 
@@ -158,7 +158,7 @@ Voxward/
 
 ### 已验证范围与外部未验证边界
 
-预发布版本 `rc0.1.0` 已在本地完成 `pnpm check:deps`、`pnpm check:ds`、`pnpm typecheck`、`pnpm build`、`node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`、`pnpm test -- --run`（187 组测试文件、2,019 项测试全过）及 Playwright 全链路 E2E 验证。
+预发布版本 `rc0.1.1` 已在本地完成 `pnpm check:deps`、`pnpm check:ds`、`pnpm typecheck`、`pnpm build`、`node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`、`node scripts/verify-provenance.mjs`、`pnpm test -- --run`（199 组测试文件、2,074 项测试全过）及 Playwright 全链路 E2E 验证。
 
 容器与在线沙盒已通过实测：多阶段 [`Dockerfile`](./Dockerfile) 已在 Cloud Build 构建通过，k3s `/sandbox` 清单已上线 **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)** 并完成公网 HTTPS 与 Playwright E2E 验证。
 
@@ -190,6 +190,6 @@ Voxward/
 | [`PRIVACY.md`](./PRIVACY.md) | 自托管数据流、AI 最小化传入与平台原始副本边界 | [EN](./PRIVACY.md) · [zh-CN](./docs/i18n/zh-CN/PRIVACY.md) · [JA](./docs/i18n/ja/PRIVACY.md) · [KO](./docs/i18n/ko/PRIVACY.md) · [FR](./docs/i18n/fr/PRIVACY.md) |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | 环境要求、校验门禁、开发约定与五语文档同步规范 | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | 社区行为准则与私密投诉通道 | [EN](./CODE_OF_CONDUCT.md) · [zh-CN](./docs/i18n/zh-CN/CODE_OF_CONDUCT.md) · [JA](./docs/i18n/ja/CODE_OF_CONDUCT.md) · [KO](./docs/i18n/ko/CODE_OF_CONDUCT.md) · [FR](./docs/i18n/fr/CODE_OF_CONDUCT.md) |
-| [`CHANGELOG.md`](./CHANGELOG.md) | 版本变更日志（`rc0.1.0`） | English |
+| [`CHANGELOG.md`](./CHANGELOG.md) | 版本变更日志（`rc0.1.1`） | English |
 | [`deploy/k3s/README.md`](./deploy/k3s/README.md) | k3s 容器构建、在线 `/sandbox` 与自托管生产部署清单 | English |
 | [`LICENSE`](./LICENSE) & [`NOTICE`](./NOTICE) | Apache-2.0 许可证、第三方包与 SIL OFL 1.1 字体声明 | English (authoritative) |

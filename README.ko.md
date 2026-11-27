@@ -1,4 +1,4 @@
-> 참고: 이 문서는 [영문 원본](./README.md)을 정본으로 합니다 · `synced-to: 27d8f9ec0339989539fa4558b628adbdb6f524883ba786a9e036639497e3f3f9`
+> 참고: 이 문서는 [영문 원본](./README.md)을 정본으로 합니다 · `synced-to: 7aa3633e2be29c8ced064a5f661eea1e6273b33b6ab5ca78d4e814f6aba78cdc`
 
 <div align="center">
 
@@ -14,7 +14,7 @@
 
 [English](./README.md) · [简体中文](./README.zh-CN.md) · [日本語](./README.ja.md) · **한국어** · [Français](./README.fr.md)
 
-[![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
+[![release](https://img.shields.io/badge/release-rc0.1.1-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.1)
 [![live-sandbox](https://img.shields.io/badge/Live%20Demo-온라인%20샌드박스-f58a33?style=flat-square)](https://voxward.tcrn-platform.com/sandbox)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
@@ -28,7 +28,7 @@
 > **tpmoonchefryan** 이 **Apache-2.0** 라이선스로 **Kiroween 2026(Frankenstein 트랙)** 출품을 위해 개발했습니다. 초기 화면은 **Halloween 테마 + 영어(`en`)** 로 시작하며 UI에서 **5개 언어**(`English`, `简体中文`, `日本語`, `한국어`, `Français`)를 즉시 전환할 수 있습니다.
 
 > [!IMPORTANT]
-> **프리릴리스 안내**: 현재 `rc0.1.0`은 **프리릴리스 버전**이며 실제 방송 운영 환경에서의 프로덕션 테스트는 아직 수행되지 않았습니다. 실제 방송에서 사용을 희망하는 스트리머나 운영 팀은 [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) 로 직접 연락해 주세요. 실제 수요를 바탕으로 향후 프로덕션 검증 정식 버전 제공을 추진할 예정입니다.
+> **프리릴리스 안내**: 현재 `rc0.1.1`은 **프리릴리스 버전**이며 실제 방송 운영 환경에서의 프로덕션 테스트는 아직 수행되지 않았습니다. 실제 방송에서 사용을 희망하는 스트리머나 운영 팀은 [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) 로 직접 연락해 주세요. 실제 수요를 바탕으로 향후 프로덕션 검증 정식 버전 제공을 추진할 예정입니다.
 
 ---
 
@@ -158,7 +158,7 @@ Voxward/
 
 ### 검증 범위 및 외부 미검증 경계
 
-`rc0.1.0` 기준 로컬에서 `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm build`, `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`, `pnpm test -- --run`(187개 파일, 2,019개 테스트) 및 Playwright E2E 검증을 통과했습니다.
+`rc0.1.1` 기준 로컬에서 `pnpm check:deps`, `pnpm check:ds`, `pnpm typecheck`, `pnpm build`, `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`, `node scripts/verify-provenance.mjs`, `pnpm test -- --run`(199개 파일, 2,074개 테스트) 및 Playwright E2E 검증을 통과했습니다.
 
 컨테이너 및 온라인 샌드박스 실배포 검증: 멀티 스테이지 [`Dockerfile`](./Dockerfile) 은 Cloud Build에서 정상 빌드되었으며, k3s `/sandbox` 배포는 **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)** 에서 실제 HTTPS 및 Playwright E2E 검증을 마쳤습니다.
 
@@ -190,6 +190,6 @@ Voxward/
 | [`PRIVACY.md`](./PRIVACY.md) | 셀프 호스팅 데이터 처리, AI 최소화 및 플랫폼 원본 경계 | [EN](./PRIVACY.md) · [zh-CN](./docs/i18n/zh-CN/PRIVACY.md) · [JA](./docs/i18n/ja/PRIVACY.md) · [KO](./docs/i18n/ko/PRIVACY.md) · [FR](./docs/i18n/fr/PRIVACY.md) |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | 개발 환경, 검증 게이트 및 5개 언어 문서 동기화 규칙 | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | 커뮤니티 행동 강령 및 비공개 신고 안내 | [EN](./CODE_OF_CONDUCT.md) · [zh-CN](./docs/i18n/zh-CN/CODE_OF_CONDUCT.md) · [JA](./docs/i18n/ja/CODE_OF_CONDUCT.md) · [KO](./docs/i18n/ko/CODE_OF_CONDUCT.md) · [FR](./docs/i18n/fr/CODE_OF_CONDUCT.md) |
-| [`CHANGELOG.md`](./CHANGELOG.md) | 릴리스 변경 이력 (`rc0.1.0`) | English |
+| [`CHANGELOG.md`](./CHANGELOG.md) | 릴리스 변경 이력 (`rc0.1.1`) | English |
 | [`deploy/k3s/README.md`](./deploy/k3s/README.md) | k3s 컨테이너 빌드, 온라인 `/sandbox` 및 셀프 호스팅 운영 매니페스트 | English |
 | [`LICENSE`](./LICENSE) & [`NOTICE`](./NOTICE) | Apache-2.0 라이선스 및 SIL OFL 1.1 폰트를 포함한 제3자 고지 | English (authoritative) |

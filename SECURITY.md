@@ -4,7 +4,7 @@
 
 ## Supported Versions
 
-Security fixes target the current `main` branch and the latest tagged release (`rc0.1.0` series during pre-1.0 development). Pre-release candidates and older snapshots do not receive separate backports; upgrade to the latest release or commit to receive fixes.
+Security fixes target the current `main` branch and the latest tagged release (`rc0.1.x` series during pre-1.0 development). Pre-release candidates and older snapshots do not receive separate backports; upgrade to the latest release or commit to receive fixes.
 
 ## Reporting a Vulnerability
 

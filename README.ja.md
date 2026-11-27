@@ -1,4 +1,4 @@
-> 注：本ドキュメントは[英語版](./README.md)を正文とします · `synced-to: 27d8f9ec0339989539fa4558b628adbdb6f524883ba786a9e036639497e3f3f9`
+> 注：本ドキュメントは[英語版](./README.md)を正文とします · `synced-to: 7aa3633e2be29c8ced064a5f661eea1e6273b33b6ab5ca78d4e814f6aba78cdc`
 
 <div align="center">
 
@@ -14,7 +14,7 @@
 
 [English](./README.md) · [简体中文](./README.zh-CN.md) · **日本語** · [한국어](./README.ko.md) · [Français](./README.fr.md)
 
-[![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
+[![release](https://img.shields.io/badge/release-rc0.1.1-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.1)
 [![live-sandbox](https://img.shields.io/badge/Live%20Demo-オンラインサンドボックス-f58a33?style=flat-square)](https://voxward.tcrn-platform.com/sandbox)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
@@ -28,7 +28,7 @@
 > **tpmoonchefryan** が **Apache-2.0** の下で **Kiroween 2026（Frankenstein トラック）** 向けに開発しました。初期画面は **Halloween テーマ + 英語（`en`）** で起動し、UI から **5 言語**（`English`、`简体中文`、`日本語`、`한국어`、`Français`）へ即座に切り替えられます。
 
 > [!IMPORTANT]
-> **プレリリースのお知らせ**：現在の `rc0.1.0` は**プレリリース版**であり、実際の配信環境での本番検証は未実施です。実配信での導入・試用をご希望の配信者・運営チームの方は、[**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) より直接ご連絡ください。実際の需要を踏まえ、本番検証済みバージョンの提供を検討・推進します。
+> **プレリリースのお知らせ**：現在の `rc0.1.1` は**プレリリース版**であり、実際の配信環境での本番検証は未実施です。実配信での導入・試用をご希望の配信者・運営チームの方は、[**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) より直接ご連絡ください。実際の需要を踏まえ、本番検証済みバージョンの提供を検討・推進します。
 
 ---
 
@@ -158,7 +158,7 @@ Voxward/
 
 ### 検証範囲と外部未検証境界
 
-`rc0.1.0` では `pnpm check:deps`、`pnpm check:ds`、`pnpm typecheck`、`pnpm build`、`node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`、`pnpm test -- --run`（187 ファイル / 2,019 テスト）および Playwright E2E を完了しています。
+`rc0.1.1` では `pnpm check:deps`、`pnpm check:ds`、`pnpm typecheck`、`pnpm build`、`node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`、`node scripts/verify-provenance.mjs`、`pnpm test -- --run`（199 ファイル / 2,074 テスト）および Playwright E2E を完了しています。
 
 コンテナ・オンラインサンドボックスの実機検証：マルチステージ [`Dockerfile`](./Dockerfile) は Cloud Build で正常にビルドされ、k3s `/sandbox` 構成は **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)** にて公開 HTTPS と Playwright E2E で稼働確認済みです。
 
@@ -190,6 +190,6 @@ Voxward/
 | [`PRIVACY.md`](./PRIVACY.md) | セルフホスト処理範囲、AI 最小送信原則、プラットフォーム原本との境界 | [EN](./PRIVACY.md) · [zh-CN](./docs/i18n/zh-CN/PRIVACY.md) · [JA](./docs/i18n/ja/PRIVACY.md) · [KO](./docs/i18n/ko/PRIVACY.md) · [FR](./docs/i18n/fr/PRIVACY.md) |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | 開発環境、検証ゲート、多言語ドキュメント同期ルール | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | 行動規範と非公開の報告手順 | [EN](./CODE_OF_CONDUCT.md) · [zh-CN](./docs/i18n/zh-CN/CODE_OF_CONDUCT.md) · [JA](./docs/i18n/ja/CODE_OF_CONDUCT.md) · [KO](./docs/i18n/ko/CODE_OF_CONDUCT.md) · [FR](./docs/i18n/fr/CODE_OF_CONDUCT.md) |
-| [`CHANGELOG.md`](./CHANGELOG.md) | リリース変更履歴（`rc0.1.0`） | English |
+| [`CHANGELOG.md`](./CHANGELOG.md) | リリース変更履歴（`rc0.1.1`） | English |
 | [`deploy/k3s/README.md`](./deploy/k3s/README.md) | k3s コンテナビルド、オンライン `/sandbox` およびセルフホスト本番マニフェスト | English |
 | [`LICENSE`](./LICENSE) & [`NOTICE`](./NOTICE) | Apache-2.0 ライセンスおよび SIL OFL 1.1 フォントを含む第三者表記 | English (authoritative) |

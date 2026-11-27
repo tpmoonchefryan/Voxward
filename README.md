@@ -12,7 +12,7 @@ Cross-language livestream danmaku & chat moderation, channel-scoped trust scorin
 
 **English** · [简体中文](./README.zh-CN.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Français](./README.fr.md)
 
-[![release](https://img.shields.io/badge/release-rc0.1.0-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.0)
+[![release](https://img.shields.io/badge/release-rc0.1.1-orange?style=flat-square)](https://github.com/tpmoonchefryan/Voxward/releases/tag/rc0.1.1)
 [![live-sandbox](https://img.shields.io/badge/Live%20Demo-Online%20Sandbox-f58a33?style=flat-square)](https://voxward.tcrn-platform.com/sandbox)
 [![license](https://img.shields.io/badge/license-Apache--2.0-lightgrey?style=flat-square)](./LICENSE)
 [![kiroween](https://img.shields.io/badge/Kiroween%202026-Frankenstein-6f42c1?style=flat-square)](./docs/KIROWEEN.md)
@@ -26,7 +26,7 @@ Cross-language livestream danmaku & chat moderation, channel-scoped trust scorin
 > Built by **tpmoonchefryan** for **Kiroween 2026 (Frankenstein Track)** under **Apache-2.0**. The default experience ships in **Halloween theme + English (`en`)** with live 5-language switching (`English`, `简体中文`, `日本語`, `한국어`, `Français`).
 
 > [!IMPORTANT]
-> **Pre-Release Notice**: `rc0.1.0` is a **pre-release candidate** and has **not yet been validated in live broadcast production**. Streamers or VTuber channels interested in real-world deployment are warmly encouraged to contact the maintainer via [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) — real streamer demand will guide a future production-validated release.
+> **Pre-Release Notice**: `rc0.1.1` is a **pre-release candidate** and has **not yet been validated in live broadcast production**. Streamers or VTuber channels interested in real-world deployment are warmly encouraged to contact the maintainer via [**GitHub Discussions**](https://github.com/tpmoonchefryan/Voxward/discussions) — real streamer demand will guide a future production-validated release.
 
 ---
 
@@ -157,7 +157,7 @@ Production deployment targets self-hosted Linux servers behind an HTTPS reverse 
 
 ### Current Verification & External Boundaries
 
-Local engineering gates enforced in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml): `pnpm check:deps`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm check:ds`, and `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`. End-to-end browser verification runs locally against built VoxWard assets using Playwright Chromium (not packaged as a mandatory CI browser matrix job).
+Local engineering gates enforced in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml): `pnpm check:deps`, `pnpm typecheck`, `pnpm test`, `pnpm build`, `pnpm check:ds`, `node scripts/deploy-check.mjs --env-file deploy/server/server.env.example`, and `node scripts/verify-provenance.mjs`. End-to-end browser verification runs locally against built VoxWard assets using Playwright Chromium (not packaged as a mandatory CI browser matrix job).
 
 Containerized deployment checks verified live: the multi-stage [`Dockerfile`](./Dockerfile) builds cleanly and the k3s `/sandbox` overlay is live over HTTPS at **[https://voxward.tcrn-platform.com/sandbox](https://voxward.tcrn-platform.com/sandbox)**.
 
@@ -189,6 +189,6 @@ External dependencies explicitly outside local/synthetic verification (see [`doc
 | [`PRIVACY.md`](./PRIVACY.md) | Self-hosted data flow, AI minimization & platform copy boundaries | [EN](./PRIVACY.md) · [zh-CN](./docs/i18n/zh-CN/PRIVACY.md) · [JA](./docs/i18n/ja/PRIVACY.md) · [KO](./docs/i18n/ko/PRIVACY.md) · [FR](./docs/i18n/fr/PRIVACY.md) |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Local workflow, DS/deps gates & five-language sync rules | [EN](./CONTRIBUTING.md) · [zh-CN](./docs/i18n/zh-CN/CONTRIBUTING.md) · [JA](./docs/i18n/ja/CONTRIBUTING.md) · [KO](./docs/i18n/ko/CONTRIBUTING.md) · [FR](./docs/i18n/fr/CONTRIBUTING.md) |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | Community standards & confidential reporting | [EN](./CODE_OF_CONDUCT.md) · [zh-CN](./docs/i18n/zh-CN/CODE_OF_CONDUCT.md) · [JA](./docs/i18n/ja/CODE_OF_CONDUCT.md) · [KO](./docs/i18n/ko/CODE_OF_CONDUCT.md) · [FR](./docs/i18n/fr/CODE_OF_CONDUCT.md) |
-| [`CHANGELOG.md`](./CHANGELOG.md) | Release history (`rc0.1.0`) | English |
+| [`CHANGELOG.md`](./CHANGELOG.md) | Release history (`rc0.1.1`) | English |
 | [`deploy/k3s/README.md`](./deploy/k3s/README.md) | k3s container build, online `/sandbox` & self-hosted production manifests | English |
 | [`LICENSE`](./LICENSE) & [`NOTICE`](./NOTICE) | Apache-2.0 license, third-party & bundled SIL OFL 1.1 font notices | English (authoritative) |
